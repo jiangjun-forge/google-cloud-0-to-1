@@ -11,6 +11,8 @@
 ```text
 .
 ├── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
+│   ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
+│   ├── cloud-sql-iam-db-auth-resolver/         # Cloud SQL IAM DB 인증 전환 및 토큰 만료 장애 진단
 │   ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
 │   ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
 │   ├── gemini-enterprise-domain-in-use-resolver/# 도메인 선점 충돌 진단 및 Cloud Identity 배포
@@ -26,11 +28,13 @@
 │   ├── gpu-future-reservation-checker/         # GPU Future Reservation 상태 및 쿼터 정책 정밀 진단
 │   ├── gpu-region-latency-probe/               # 서울 대체 GPU 리전 100ms RTT 프로브 및 가용성 추천
 │   ├── iam-permission-resolver/                # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
+│   ├── kms-key-rotation-outage-guard/          # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
 │   ├── llm-pairwise-autorater/                 # 두 모델 간 병렬 배치 추론 및 교차 판사 자동 평가
 │   ├── nct-gen-ai-compliance-checker/          # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
 │   ├── org-policy-resolver/                    # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
 │   ├── service-account-leak-investigator/      # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
-│   └── storage-transfer-secure-on-prem-uploader/# 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증
+│   ├── storage-transfer-secure-on-prem-uploader/# 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증
+│   └── vertex-search-datastore-grounding-validator/# RAG 데이터 저장소 색인 누락 및 그라운딩 정합성 진단
 ├── notebooks/                                  # 레거시 실습 노트북 (2026-09-30 까지만 유지)
 └── scripts/                                    # 레거시 진단 스크립트 (2026-09-30 까지만 유지)
 ```
