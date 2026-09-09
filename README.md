@@ -11,9 +11,11 @@
 ```text
 .
 ├── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
+│   ├── cloud-run-cud-optimizer/                # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
 │   ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
 │   ├── cloud-sql-iam-db-auth-resolver/         # Cloud SQL IAM DB 인증 전환 및 토큰 만료 장애 진단
 │   ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
+│   ├── fcm-push-quota-guard/                   # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
 │   ├── gce-capacity-stockout-guard/            # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
 │   ├── gce-future-reservation-checker/         # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
 │   ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
@@ -23,6 +25,7 @@
 │   ├── gemini-enterprise-cross-org-agent-resolver/# Cross-Org 커스텀 에이전트 연동 권한 및 조직 정책 진단
 │   ├── gemini-enterprise-domain-in-use-resolver/# 도메인 선점 충돌 진단 및 Cloud Identity 배포
 │   ├── gemini-enterprise-firewall-fqdn-checker/# 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
+│   ├── gemini-enterprise-overage-guard/        # 일일 풀링 쿼터 초과 쓰로틀링 방어 및 Spend Cap 과금 가드
 │   ├── gemini-enterprise-usage-by-account/     # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
 │   ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
 │   ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
@@ -40,6 +43,7 @@
 │   ├── org-policy-resolver/                    # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
 │   ├── service-account-leak-investigator/      # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
 │   ├── storage-transfer-secure-on-prem-uploader/# 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증
+│   ├── swg-tenant-access-guard/                # 사내 관문 SWG 헤더 주입 및 Context-Aware Access 인가 진단
 │   └── vertex-search-datastore-grounding-validator/# RAG 데이터 저장소 색인 누락 및 그라운딩 정합성 진단
 ├── notebooks/                                  # 레거시 실습 노트북 (2026-09-30 까지만 유지)
 └── scripts/                                    # 레거시 진단 스크립트 (2026-09-30 까지만 유지)
