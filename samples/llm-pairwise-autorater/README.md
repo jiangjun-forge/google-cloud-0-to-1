@@ -1,10 +1,9 @@
 # LLM 페어와이즈 배치 자동 평가기 (`llm-pairwise-autorater`)
 
-대규모 질문 데이터셋에 대해 두 LLM 모델의 출력을 병렬 배치 추론하고, 교차 판사 모델을 통해 **정확도, 명확성, 완성도 및 승률(Win-rate)을 자동 채점하여 BigQuery에 누적 적재 및 시각화**하는 엔터프라이즈 평가 도구다.
+대규모 질문 데이터셋에 대해 두 LLM 모델의 출력을 병렬 배치 추론하고, 교차 판사 모델을 통해 **정확도, 명확성, 완성도 및 승률(Win-rate)을 자동 채점하여 BigQuery에 누적 적재 및 시각화**하는 엔터프라이즈 평가 도구다. (As of 2026-07-01)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
-**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#CloudStorage`, `#GeminiAPI`, `#VertexAI`
 
 ---

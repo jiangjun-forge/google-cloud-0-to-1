@@ -1,10 +1,9 @@
 # Gemini Enterprise 사내망 방화벽 FQDN 연결 진단기 (`gemini-enterprise-firewall-fqdn-checker`)
 
-사내망 보안 정책상 와일드카드 도메인 등록이 불가한 환경에서 Gemini Enterprise App 정상 구동에 필요한 필수 코어 API, 인증, 정적 에셋 FQDN의 아웃바운드 443 및 DNS 연결성을 1분 만에 일괄 진단하고 방화벽 허용 명세를 자동 생성하는 도구다.
+사내망 보안 정책상 와일드카드 도메인 등록이 불가한 환경에서 Gemini Enterprise App 정상 구동에 필요한 필수 코어 API, 인증, 정적 에셋 FQDN의 아웃바운드 443 및 DNS 연결성을 1분 만에 일괄 진단하고 방화벽 허용 명세를 자동 생성하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
-**Date**: `2026-09-09`  
 **Service**: `#CloudNextGenerationFirewall`, `#GeminiEnterprise`
 
 ---

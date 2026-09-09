@@ -1,10 +1,9 @@
 # Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기
 
-Cloud KMS 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 Cloud Storage 객체 및 영구 데이터의 복호화 실패로 인한 대형 서비스 장애(Outage)를 사전 탐지하고 안전한 데이터 재암호화(Rewrite) 워크플로우를 처방하는 도구다.
+Cloud KMS 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 Cloud Storage 객체 및 영구 데이터의 복호화 실패로 인한 대형 서비스 장애(Outage)를 사전 탐지하고 안전한 데이터 재암호화(Rewrite) 워크플로우를 처방하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Resilience`, `#Security`  
-**Date**: `2026-09-09`  
 **Service**: `#CloudKMS`, `#CloudStorage`
 
 ---

@@ -1,10 +1,9 @@
 # 제미나이(Gemini) API 비용 급증 원인 진단 (`gemini-billing-spike`)
 
-데이터 액세스 감사 로그(Audit Logs)가 꺼져 있어도, 구글 클라우드 기본 모니터링 지표를 통해 **어떤 인증 수단(API 키, 서비스 계정, OAuth 등)에서 Gemini 호출 비용이 급증했는지 1분 만에 규명**하는 진단 가이드다.
+데이터 액세스 감사 로그(Audit Logs)가 꺼져 있어도, 구글 클라우드 기본 모니터링 지표를 통해 **어떤 인증 수단(API 키, 서비스 계정, OAuth 등)에서 Gemini 호출 비용이 급증했는지 1분 만에 규명**하는 진단 가이드다. (As of 2026-07-01)
 
 **Audience**: `#Developer`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#CostSpike`, `#Security`  
-**Date**: `2026-09-09`  
 **Service**: `#CloudMonitoring`, `#GeminiAPI`
 
 ---

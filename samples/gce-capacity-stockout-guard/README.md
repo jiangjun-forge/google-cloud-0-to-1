@@ -1,10 +1,9 @@
 # Compute Engine 리전 용량 고갈 장애 방어 및 CUD, Reservation 정합성 진단기
 
-Compute Engine 특정 리전 및 존에서 발생하는 머신 패밀리 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 사태를 감사 로그로 역추적하고, 요금 할인만 적용되고 물리적 용량 확보가 없는 무방비 약정(Unreserved CUD) 위험과 GKE 자동 복구/업그레이드로 인한 노드 영구 결손을 방어하는 엔터프라이즈 인프라 진단 도구다.
+Compute Engine 특정 리전 및 존에서 발생하는 머신 패밀리 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 사태를 감사 로그로 역추적하고, 요금 할인만 적용되고 물리적 용량 확보가 없는 무방비 약정(Unreserved CUD) 위험과 GKE 자동 복구/업그레이드로 인한 노드 영구 결손을 방어하는 엔터프라이즈 인프라 진단 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`, `#Resilience`  
-**Date**: `2026-09-09`  
 **Service**: `#ComputeEngine`, `#GoogleKubernetesEngine`  
 
 ---

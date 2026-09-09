@@ -1,10 +1,9 @@
 # Gemini Enterprise Overage 빌링 방어 및 일일 쿼터 쓰로틀링 가드
 
-Gemini Enterprise App 도입 환경에서 신규 오버리지 빌링(Overage Billing) 체계에 따른 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험과 무제한 오버리지 과금 누수(비용 급증) 위험을 진단하고, 에디션별 차등 제어와 Cloud Billing Spend Cap(월 지출 한도) 가드레일을 처방한다.
+Gemini Enterprise App 도입 환경에서 신규 오버리지 빌링(Overage Billing) 체계에 따른 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험과 무제한 오버리지 과금 누수(비용 급증) 위험을 진단하고, 에디션별 차등 제어와 Cloud Billing Spend Cap(월 지출 한도) 가드레일을 처방한다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#FinOps`  
 **Concern**: `#Billing`, `#Resilience`  
-**Date**: `2026-09-09`  
 **Service**: `#AgentPlatform`, `#CloudBilling`  
 
 ---

@@ -1,10 +1,9 @@
 # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
 
-모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다.
+모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다. (As of 2026-09-09)
 
 **Audience**: `#Developer`, `#FinOps`  
 **Concern**: `#Performance`, `#Resilience`  
-**Date**: `2026-09-09`  
 **Service**: `#CloudMonitoring`  
 
 ---

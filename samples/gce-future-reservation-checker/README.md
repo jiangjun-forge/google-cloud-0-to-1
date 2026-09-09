@@ -1,10 +1,9 @@
 # Compute Engine GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단기 (`gce-future-reservation-checker`)
 
-Compute Engine GPU 및 특수 머신 타입 Future Reservation(FR) 신청 현황을 전수 점검하여 콘솔 제출 누락(DRAFTING 잔류), 프로젝트 식별자 불일치, CUD 연계 필수 옵션 누락 여부를 1분 만에 자동 진단하고 즉시 복구 명령어를 처방하는 도구다.
+Compute Engine GPU 및 특수 머신 타입 Future Reservation(FR) 신청 현황을 전수 점검하여 콘솔 제출 누락(DRAFTING 잔류), 프로젝트 식별자 불일치, CUD 연계 필수 옵션 누락 여부를 1분 만에 자동 진단하고 즉시 복구 명령어를 처방하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Billing`, `#Resilience`  
-**Date**: `2026-09-09`  
 **Service**: `#ComputeEngine`
 
 ---

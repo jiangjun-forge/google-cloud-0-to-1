@@ -1,10 +1,9 @@
 # 제미나이(Gemini) API 프롬프트 민감 정보 실시간 마스킹 (`gemini-sensitive-data-masking`)
 
-제미나이(Gemini) API로 프롬프트를 전송하기 전, Cloud DLP(Sensitive Data Protection)를 연동하여 **전화번호, 주민등록번호, 이메일 등 개인 식별 정보(PII)를 실시간으로 탐지 및 마스킹(Redaction)하는 엔터프라이즈 보안 게이트웨이** 가이드다.
+제미나이(Gemini) API로 프롬프트를 전송하기 전, Cloud DLP(Sensitive Data Protection)를 연동하여 **전화번호, 주민등록번호, 이메일 등 개인 식별 정보(PII)를 실시간으로 탐지 및 마스킹(Redaction)하는 엔터프라이즈 보안 게이트웨이** 가이드다. (As of 2026-06-16)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
-**Date**: `2026-09-09`  
 **Service**: `#CloudDLP`, `#GeminiAPI`
 
 ---

@@ -1,10 +1,9 @@
 # Gemini Enterprise Cross-Org 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-cross-org-agent-resolver`)
 
-Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책(Domain Restricted Sharing) 차단, 서비스 에이전트 IAM 권한 부재, VPC-SC 경계 위반을 1분 만에 자동 진단하고 복구 명령어를 처방하는 도구다.
+Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책(Domain Restricted Sharing) 차단, 서비스 에이전트 IAM 권한 부재, VPC-SC 경계 위반을 1분 만에 자동 진단하고 복구 명령어를 처방하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Resilience`, `#Security`  
-**Date**: `2026-09-09`  
 **Service**: `#AgentPlatform`, `#GeminiEnterprise`
 
 ---

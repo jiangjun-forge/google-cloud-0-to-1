@@ -1,10 +1,9 @@
 # 제미나이(Gemini) API 요청 및 응답 BigQuery 자동 로깅 (`gemini-request-response-logging`)
 
-별도의 복잡한 엔드포인트 프록시 서버 구축 없이, 제미나이(Gemini) 파운데이션 모델 자체의 설정을 통해 **모든 프롬프트 요청 및 응답 데이터를 BigQuery로 자동 내보내고 사용자별 토큰 소비량을 1분 만에 분석**하는 가이드다.
+별도의 복잡한 엔드포인트 프록시 서버 구축 없이, 제미나이(Gemini) 파운데이션 모델 자체의 설정을 통해 **모든 프롬프트 요청 및 응답 데이터를 BigQuery로 자동 내보내고 사용자별 토큰 소비량을 1분 만에 분석**하는 가이드다. (As of 2026-06-22)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Compliance`, `#Security`  
-**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#GeminiAPI`
 
 ---

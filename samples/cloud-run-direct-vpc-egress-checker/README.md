@@ -1,10 +1,9 @@
 # Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기
 
-Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 Cloud NAT 라우팅 정합성을 1분 만에 일괄 진단하는 도구다.
+Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 Cloud NAT 라우팅 정합성을 1분 만에 일괄 진단하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
-**Date**: `2026-09-09`  
 **Service**: `#CloudRun`, `#ComputeEngine`
 
 ---

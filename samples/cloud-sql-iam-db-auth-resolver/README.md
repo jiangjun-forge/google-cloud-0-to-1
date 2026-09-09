@@ -1,10 +1,9 @@
 # Cloud SQL IAM 데이터베이스 인증 및 연결 장애 진단기
 
-Cloud SQL 고정 데이터베이스 비밀번호를 폐기하고 IAM 데이터베이스 인증(Automatic IAM Authentication)으로 전환할 때 발생하는 인스턴스 플래그 누락, IAM DB 사용자 유형 불일치, 토큰 만료(1시간) 및 연결 권한 거부 장애를 1분 만에 일괄 진단하고 처방하는 도구다.
+Cloud SQL 고정 데이터베이스 비밀번호를 폐기하고 IAM 데이터베이스 인증(Automatic IAM Authentication)으로 전환할 때 발생하는 인스턴스 플래그 누락, IAM DB 사용자 유형 불일치, 토큰 만료(1시간) 및 연결 권한 거부 장애를 1분 만에 일괄 진단하고 처방하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Security`  
-**Date**: `2026-09-09`  
 **Service**: `#CloudIAM`, `#CloudSQL`
 
 ---

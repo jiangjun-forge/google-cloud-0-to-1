@@ -1,10 +1,9 @@
 # Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석
 
-서버리스 Cloud Run 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough) 기반의 최적 Compute Flexible CUD 약정액과 사전 리소스 최적화 가이드를 처방한다.
+서버리스 Cloud Run 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough) 기반의 최적 Compute Flexible CUD 약정액과 사전 리소스 최적화 가이드를 처방한다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
-**Date**: `2026-09-09`  
 **Service**: `#CloudBilling`, `#CloudRun`  
 
 ---

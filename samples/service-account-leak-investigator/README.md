@@ -1,10 +1,9 @@
 # 서비스 계정 유출 긴급 대응 및 감사 로그 역추적기
 
-유출된 서비스 계정 키의 악용 이력을 Cloud Audit Logs로 전수 추적하고, 위험 키 비활성화 및 Workload Identity Federation 전환을 지원하는 보안 긴급 대응 진단 도구다.
+유출된 서비스 계정 키의 악용 이력을 Cloud Audit Logs로 전수 추적하고, 위험 키 비활성화 및 Workload Identity Federation 전환을 지원하는 보안 긴급 대응 진단 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Security`  
-**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#CloudAuditLogs`, `#CloudIAM`, `#CloudStorage`
 
 ---
