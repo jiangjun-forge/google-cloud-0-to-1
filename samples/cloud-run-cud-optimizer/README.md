@@ -4,6 +4,7 @@
 
 **Audience**: `#Architect`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudBilling`, `#CloudRun`  
 
 ---
@@ -71,8 +72,8 @@ flowchart TD
 1. GCP 콘솔에서 **결제(Billing) > 약정 사용 할인(CUD)** 메뉴로 이동한다.
 2. **약정 구매(Purchase commitment)**를 선택하고 다음 옵션을 지정한다:
    - **약정 유형**: **Compute Flexible CUD** (Cloud Run, GKE, Compute Engine에 공통 적용되며 서비스별 종속 제약이 없음)
-   - **약정 기간**: 1년(약 17% 할인) 또는 3년(약 28% 할인)
-   - **시간당 커밋 금액($/hr)**: 콘솔의 보수적 추천액이 아닌, 진단 리포트에서 도출된 `실질 최적 권장 약정액`을 입력한다.
+   - **약정 기간**: 1년 또는 3년 (약정 할인율은 구글 클라우드 공식 요금 페이지 참조)
+   - **시간당 커밋 금액**: 콘솔의 보수적 추천액이 아닌, 진단 리포트에서 도출된 최적 권장 약정액을 입력한다.
 
 ### 공식 가이드 및 콘솔 링크
 - [약정 사용 할인(CUD) 개요 및 플렉시블 약정] ( https://cloud.google.com/docs/cuds )

@@ -4,6 +4,7 @@ Compute Engine 특정 리전 및 존에서 발생하는 머신 패밀리 용량 
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`, `#Resilience`  
+**Date**: `2026-09-09`  
 **Service**: `#ComputeEngine`, `#GoogleKubernetesEngine`  
 
 ---

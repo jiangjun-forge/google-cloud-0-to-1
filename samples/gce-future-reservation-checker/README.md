@@ -4,6 +4,7 @@ Compute Engine GPU 및 특수 머신 타입 Future Reservation(FR) 신청 현황
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Billing`, `#Resilience`  
+**Date**: `2026-09-09`  
 **Service**: `#ComputeEngine`
 
 ---

@@ -4,6 +4,7 @@ Cloud SQL 고정 데이터베이스 비밀번호를 폐기하고 IAM 데이터�
 
 **Audience**: `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudIAM`, `#CloudSQL`
 
 ---

@@ -4,6 +4,7 @@ Gemini Enterprise App 도입 환경에서 신규 오버리지 빌링(Overage Bil
 
 **Audience**: `#Architect`, `#FinOps`  
 **Concern**: `#Billing`, `#Resilience`  
+**Date**: `2026-09-09`  
 **Service**: `#AgentPlatform`, `#CloudBilling`  
 
 ---
@@ -71,7 +72,7 @@ flowchart TD
 
 ### 2단계: Cloud Billing Spend Cap 및 실시간 예산 알림 연동
 1. 콘솔의 **결제(Billing) > 예산 및 알림(Budgets & alerts)** 메뉴로 이동한다.
-2. 월간 허용 가능한 최대 오버리지 지출 한도(Spend Cap, 예: $1,000)를 생성한다.
+2. 월간 허용 가능한 최대 오버리지 지출 한도(Spend Cap)를 사내 예산에 맞추어 생성한다. (구체적인 에디션별 토큰 단가는 공식 요금 가이드 참조)
 3. 80%, 90%, 100% 도달 시 FinOps 및 인프라 담당자에게 Pub/Sub 실시간 알림이 발송되도록 구성한다.
 
 ### 공식 가이드 및 콘솔 링크

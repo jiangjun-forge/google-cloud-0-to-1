@@ -4,6 +4,7 @@ Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의�
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudIdentity`, `#GeminiEnterprise`
 
 ---
@@ -24,7 +25,7 @@ graph TD
     B --> C["DNS 공급자 콘솔에 TXT 레코드 배포"]
     C --> D["Google Admin Console 도메인 소유권 인증"]
     D --> E["미관리 사용자(Unmanaged Users) 일괄 인수 및 계정 전환"]
-    E --> F["Cloud Identity Free 50개 무료 라이선스 프로비저닝"]
+    E --> F["Cloud Identity Free 50+개 무료 라이선스 프로비저닝"]
     F --> G["Gemini Enterprise 엔터프라이즈 권한 안전 할당"]
 ```
 
@@ -88,7 +89,7 @@ Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Ide
 
 [3단계] 라이선스 최적화 및 Gemini Enterprise 배포 전략
 -------------------------------------------------------------------------------------
-* Cloud Identity Free 지원 여부: 지원 가능 (50개 무료 라이선스 즉시 제공)
+* Cloud Identity Free 지원 여부: 지원 가능 (50+개 무료 라이선스 즉시 제공)
 * 비용 최적화 제안: 전사 Google Workspace 유료 라이선스 구매 없이도 Cloud Identity Free 계정에
   Gemini Enterprise 전용 애드온 라이선스만 할당하여 그룹사 분할 배포 가능
 -------------------------------------------------------------------------------------

@@ -4,6 +4,7 @@ BigQuery에 적재된 제미나이(Gemini) API 자동 로깅 데이터를 바탕
 
 **Audience**: `#Architect`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`  
+**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#GeminiAPI`
 
 ---

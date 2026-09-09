@@ -4,6 +4,7 @@
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Compliance`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#GeminiAPI`
 
 ---

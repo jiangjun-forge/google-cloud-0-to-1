@@ -4,6 +4,7 @@ Model Armor의 살균(Sanitize) 검사 로그를 BigQuery 로그 싱크로 실�
 
 **Audience**: `#Architect`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#CloudLogging`, `#GeminiAPI`, `#ModelArmor`
 
 ---

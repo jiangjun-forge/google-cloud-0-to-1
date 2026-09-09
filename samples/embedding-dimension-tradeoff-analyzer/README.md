@@ -4,6 +4,7 @@ Vertex AI 및 Gemini API 임베딩 모델(text-embedding-005)의 Matryoshka Repr
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
+**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#GeminiAPI`, `#VertexAI`
 
 ---

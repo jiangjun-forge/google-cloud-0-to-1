@@ -4,6 +4,7 @@ Agent Platform 및 RAG 파이프라인에서 Cloud Storage 원본 문서와 Vert
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
+**Date**: `2026-09-09`  
 **Service**: `#AgentPlatform`, `#CloudStorage`, `#GeminiAPI`, `#VertexAI`
 
 ---

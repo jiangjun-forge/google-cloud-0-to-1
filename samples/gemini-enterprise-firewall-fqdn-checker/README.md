@@ -4,6 +4,7 @@
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudNextGenerationFirewall`, `#GeminiEnterprise`
 
 ---

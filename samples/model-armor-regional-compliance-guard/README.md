@@ -4,6 +4,7 @@
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#Resilience`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#GeminiAPI`, `#ModelArmor`, `#SensitiveDataProtection`
 
 ---

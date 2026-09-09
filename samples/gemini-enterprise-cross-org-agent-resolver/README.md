@@ -4,6 +4,7 @@ Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Resilience`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#AgentPlatform`, `#GeminiEnterprise`
 
 ---

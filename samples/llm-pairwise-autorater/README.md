@@ -4,6 +4,7 @@
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
+**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#CloudStorage`, `#GeminiAPI`, `#VertexAI`
 
 ---

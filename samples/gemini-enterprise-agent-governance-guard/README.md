@@ -4,6 +4,7 @@ Gemini Enterprise 환경에서 외부 공개 에이전트 마켓플레이스 접
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#AgentPlatform`, `#GeminiEnterprise`
 
 ---

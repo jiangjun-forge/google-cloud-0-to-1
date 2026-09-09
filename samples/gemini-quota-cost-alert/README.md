@@ -4,6 +4,7 @@
 
 **Audience**: `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Resilience`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudFunctions`, `#CloudPubSub`, `#GeminiAPI`, `#GoogleCloudBilling`
 
 ---

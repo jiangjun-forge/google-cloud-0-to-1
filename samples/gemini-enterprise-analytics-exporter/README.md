@@ -4,6 +4,7 @@
 
 **Audience**: `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`  
+**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#CloudIdentity`, `#GeminiEnterprise`
 
 ---

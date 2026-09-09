@@ -4,6 +4,7 @@
 
 **Audience**: `#Developer`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#CostSpike`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudMonitoring`, `#GeminiAPI`
 
 ---

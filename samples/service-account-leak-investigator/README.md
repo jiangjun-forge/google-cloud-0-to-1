@@ -4,6 +4,7 @@
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#BigQuery`, `#CloudAuditLogs`, `#CloudIAM`, `#CloudStorage`
 
 ---

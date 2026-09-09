@@ -4,6 +4,7 @@ GCP 클라우드 환경에서 발생하는 403 권한 거부(Permission Denied) 
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudIAM`, `#CloudLogging`
 
 ---

@@ -4,6 +4,7 @@ GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정�
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudLogging`, `#ResourceManager`
 
 ---

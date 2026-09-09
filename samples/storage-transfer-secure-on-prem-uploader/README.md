@@ -4,6 +4,7 @@
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Performance`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudKMS`, `#CloudStorage`, `#StorageTransferService`
 
 ---

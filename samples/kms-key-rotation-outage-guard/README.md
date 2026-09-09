@@ -4,6 +4,7 @@ Cloud KMS 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키�
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Resilience`, `#Security`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudKMS`, `#CloudStorage`
 
 ---

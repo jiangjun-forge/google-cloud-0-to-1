@@ -4,6 +4,7 @@ GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Compliance`, `#Performance`, `#Resilience`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudLoadBalancing`, `#GoogleKubernetesEngine`
 
 ---

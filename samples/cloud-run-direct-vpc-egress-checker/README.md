@@ -4,6 +4,7 @@ Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
+**Date**: `2026-09-09`  
 **Service**: `#CloudRun`, `#ComputeEngine`
 
 ---
