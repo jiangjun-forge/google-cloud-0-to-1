@@ -1,0 +1,1 @@
+# 표준 라이브러리(socket, ssl, urllib, concurrent.futures) 기반으로 구동되므로 추가 필수 패키지 없음
