@@ -18,7 +18,9 @@
 │   ├── gce-future-reservation-checker/         # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
 │   ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
 │   ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
+│   ├── gemini-enterprise-agent-governance-guard/# 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단
 │   ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
+│   ├── gemini-enterprise-cross-org-agent-resolver/# Cross-Org 커스텀 에이전트 연동 권한 및 조직 정책 진단
 │   ├── gemini-enterprise-domain-in-use-resolver/# 도메인 선점 충돌 진단 및 Cloud Identity 배포
 │   ├── gemini-enterprise-firewall-fqdn-checker/# 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
 │   ├── gemini-enterprise-usage-by-account/     # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
@@ -29,9 +31,11 @@
 │   ├── gemini-sensitive-data-masking/          # 프롬프트 전송 전 Cloud DLP 실시간 개인정보 마스킹
 │   ├── gemini-usage-by-account/                # BigQuery 로그 기반 계정별 토큰(생각 토큰 포함) 집계
 │   ├── gemini-vpc-sc-denial-resolver/          # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
+│   ├── gke-source-ip-snat-guard/               # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
 │   ├── iam-permission-resolver/                # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
 │   ├── kms-key-rotation-outage-guard/          # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
 │   ├── llm-pairwise-autorater/                 # 두 모델 간 병렬 배치 추론 및 교차 판사 자동 평가
+│   ├── model-armor-regional-compliance-guard/  # 서울 리전 Model Armor 기능 제약 진단 및 하이브리드 가드레일 처방
 │   ├── nct-gen-ai-compliance-checker/          # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
 │   ├── org-policy-resolver/                    # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
 │   ├── service-account-leak-investigator/      # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
