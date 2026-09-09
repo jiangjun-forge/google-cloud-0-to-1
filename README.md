@@ -15,6 +15,8 @@
 │   ├── cloud-sql-iam-db-auth-resolver/         # Cloud SQL IAM DB 인증 전환 및 토큰 만료 장애 진단
 │   ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
 │   ├── gce-capacity-stockout-guard/            # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
+│   ├── gce-future-reservation-checker/         # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
+│   ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
 │   ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
 │   ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
 │   ├── gemini-enterprise-domain-in-use-resolver/# 도메인 선점 충돌 진단 및 Cloud Identity 배포
@@ -27,8 +29,6 @@
 │   ├── gemini-sensitive-data-masking/          # 프롬프트 전송 전 Cloud DLP 실시간 개인정보 마스킹
 │   ├── gemini-usage-by-account/                # BigQuery 로그 기반 계정별 토큰(생각 토큰 포함) 집계
 │   ├── gemini-vpc-sc-denial-resolver/          # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
-│   ├── gpu-future-reservation-checker/         # GPU Future Reservation 상태 및 쿼터 정책 정밀 진단
-│   ├── gpu-region-latency-probe/               # 서울 대체 GPU 리전 100ms RTT 프로브 및 가용성 추천
 │   ├── iam-permission-resolver/                # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
 │   ├── kms-key-rotation-outage-guard/          # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
 │   ├── llm-pairwise-autorater/                 # 두 모델 간 병렬 배치 추론 및 교차 판사 자동 평가

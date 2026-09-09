@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2026 Google LLC
 # SPDX-License-Identifier: Apache-2.0
-"""Compute Engine GPU Future Reservation Diagnostic Tool.
+"""Compute Engine GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단기.
 
 Compute Engine Future Reservation(FR) 신청 상태를 점검하여 DRAFTING 잔류,
 필수 파라미터 누락, 120시간 리드 타임 위반 및 프로젝트 불일치 문제를 신속하게 진단한다.
@@ -40,7 +40,7 @@ def get_mock_reservations() -> list[dict]:
           "name": "fr-g4-robotics-draft",
           "id": "9042446426570361614",
           "zone": "us-south1-a",
-          "project": "carbon6-dev",
+          "project": "example-corp-dev",
           "status": "DRAFTING",
           "machineType": "g4-standard-48",
           "acceleratorType": "nvidia-rtx-pro-6000",
@@ -55,7 +55,7 @@ def get_mock_reservations() -> list[dict]:
           "name": "fr-a3-training-pending",
           "id": "2312445798605452488",
           "zone": "us-central1-a",
-          "project": "carbon6-dev",
+          "project": "example-corp-dev",
           "status": "PENDING_APPROVAL",
           "machineType": "a3-highgpu-8g",
           "acceleratorType": "nvidia-h100-80gb",
@@ -70,7 +70,7 @@ def get_mock_reservations() -> list[dict]:
           "name": "fr-g2-inference-approved",
           "id": "4152849182740192841",
           "zone": "asia-northeast3-a",
-          "project": "carbon6-dev",
+          "project": "example-corp-dev",
           "status": "APPROVED",
           "machineType": "g2-standard-16",
           "acceleratorType": "nvidia-l4",
@@ -152,7 +152,7 @@ def evaluate_reservation(fr: dict, active_project: str | None) -> dict:
           severity = "WARNING"
         issues.append(f"시작 시점까지 남은 리드 타임이 {lead_hours:.1f}시간으로 최소 권장 120시간(5일) 미만임")
         remediations.append(
-            "go/rtx-quota-policy 기준에 맞추어 시작 일시를 최소 120시간(5일) 이후로 수정하여 재신청한다."
+            "Future Reservation 사전 신청 쿼터 정책 기준에 맞추어 시작 일시를 최소 120시간(5일) 이후로 수정하여 재신청한다."
         )
     except ValueError:
       pass
@@ -208,7 +208,7 @@ def print_table(diagnoses: list[dict]):
 
 def main():
   parser = argparse.ArgumentParser(
-      description="Compute Engine GPU Future Reservation 상태 및 쿼터 정책 정밀 진단기"
+      description="Compute Engine GPU 및 특수 인스턴스 Future Reservation 상태 및 쿼터 정책 정밀 진단기"
   )
   parser.add_argument("--project", help="대상 GCP 프로젝트 ID")
   parser.add_argument("--zone", help="특정 영역 필터 (예: us-south1-a, us-central1-a)")
@@ -221,7 +221,7 @@ def main():
     print("GCP 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
     sys.exit(1)
 
-  print(f"Compute Engine GPU Future Reservation 상태 진단 시작 (프로젝트: {project_id or 'dry-run-mode'})")
+  print(f"Compute Engine GPU 및 특수 인스턴스 Future Reservation 상태 진단 시작 (프로젝트: {project_id or 'dry-run-mode'})")
   if args.dry_run:
     print("--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 데이터를 분석한다.")
     raw_reservations = get_mock_reservations()

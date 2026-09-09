@@ -1,6 +1,6 @@
-# 서울 워크로드 대체 GPU 리전 레이턴시 및 가용성 프로브 (`gpu-region-latency-probe`)
+# 서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시/가용성 프로브 (`gce-region-latency-probe`)
 
-서울 리전(asia-northeast3) GPU 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다.
+서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다.
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -9,9 +9,9 @@
 ---
 
 ## 1. 문제 증상 체크리스트
-- 서울 리전(`asia-northeast3`)에서 고성능 GPU(A100, H100, G4, L4) 할당 쿼터 부족 또는 온디맨드 인스턴스 생성 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러가 빈번하게 발생한다.
+- 서울 리전(`asia-northeast3`)에서 고성능 GPU(A100, H100, G4, L4) 및 최신 고성능 머신 타입(C4, N4 등) 할당 쿼터 부족 또는 온디맨드 인스턴스 생성 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러가 빈번하게 발생한다.
 - 국내 데이터 레지던시 의무 규정은 없으나, 실시간 대화형 추론이나 서빙 지연 시간을 고려하여 서울 사용자 기준 100ms 미만 왕복 지연 시간(RTT)을 반드시 충족해야 한다.
-- 도쿄, 오사카, 대만, 싱가포르 등 인접 아시아 태평양(APAC) 리전 중 어떤 리전이 지연 시간이 가장 짧고 목표 GPU 머신 타입을 보유하고 있는지 즉각적인 비교 데이터가 부족하다.
+- 도쿄, 오사카, 대만, 싱가포르 등 인접 아시아 태평양(APAC) 리전 중 어떤 리전이 지연 시간이 가장 짧고 목표 GPU 및 고성능 머신 타입을 보유하고 있는지 즉각적인 비교 데이터가 부족하다.
 - 미국 리전(`us-central1` 등)으로 우회 배포할 경우 발생하는 레이턴시 페널티(140ms 이상)가 서비스 품질(SLA)에 미치는 영향을 사전에 수치로 검증해야 한다.
 
 ---
@@ -84,8 +84,14 @@ H100 가속기 지원 리전만 필터링하여 서울 발 실시간 네트워�
 
 ---
 
-## 6. 자원 정리(Teardown) 안내
-본 도구는 순수 네트워크 레이턴시 측정 스크립트로 클라우드 리소스를 생성하지 않는다. 테스트로 배포한 Compute Engine GPU 인스턴스는 사용 완료 후 즉시 삭제한다:
+## 6. 결과 확인 후 즉각 조치 가이드
+- Compute Engine 리전 및 영역 안내 ( https://cloud.google.com/compute/docs/regions-zones )
+- Compute Engine GPU 리전 가용성 가이드 ( https://cloud.google.com/compute/docs/regions-zones/gpu-regions-zones )
+
+---
+
+## 7. 자원 정리 (Teardown) 안내
+본 도구는 순수 네트워크 레이턴시 측정 스크립트로 클라우드 리소스를 생성하지 않는다. 테스트로 배포한 Compute Engine GPU 및 인스턴스는 사용 완료 후 즉시 삭제한다:
 ```bash
 gcloud compute instances delete [INSTANCE_NAME] --zone=[ZONE] --quiet
 ```

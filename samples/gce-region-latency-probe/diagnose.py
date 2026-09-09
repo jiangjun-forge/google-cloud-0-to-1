@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # Copyright 2026 Google LLC
 # SPDX-License-Identifier: Apache-2.0
-"""Alternative GPU Regions Latency & Availability Probe for Seoul Workloads.
+"""Alternative Compute Engine GPU & Infrastructure Regions Latency Probe for Seoul Workloads.
 
-서울 리전(asia-northeast3)의 GPU 재고 고갈 시 100ms 미만 지연 시간(RTT)을 보장하는
+서울 리전(asia-northeast3)의 GPU 및 고성능 인스턴스 재고 고갈 시 100ms 미만 지연 시간(RTT)을 보장하는
 대체 리전(도쿄, 오사카, 대만, 싱가포르)의 실시간 네트워크 레이턴시와 지원 GPU 가용성을 진단한다.
 """
 
@@ -171,7 +171,7 @@ def print_table(results: list[dict], threshold_ms: float, gpu_filter: str | None
     print(f"{r['region']:<18} {r['location_name']:<24} {rtt_str:<14} {r['suitability']:<18} {gpus_str}")
   print("=" * 108)
 
-  print(f"\n[서울 워크로드 대체 배포 전략 권고안 (기준: <= {threshold_ms} ms)]")
+  print(f"\n[서울 워크로드 대체 Compute Engine GPU 및 인프라 배포 전략 권고안 (기준: <= {threshold_ms} ms)]")
   filtered = [r for r in results if r["gpu_match"]]
   pass_candidates = [r for r in filtered if r["status"] in ("OPTIMAL", "ACCEPTABLE")]
   pass_candidates.sort(key=lambda x: x["measured_rtt_ms"])
@@ -192,7 +192,7 @@ def print_table(results: list[dict], threshold_ms: float, gpu_filter: str | None
 
 def main():
   parser = argparse.ArgumentParser(
-      description="서울 워크로드 대체 GPU 리전 네트워크 레이턴시 프로브 및 추천기"
+      description="서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 네트워크 레이턴시 프로브 및 추천기"
   )
   parser.add_argument(
       "--threshold-ms",
@@ -209,7 +209,7 @@ def main():
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()
 
-  print(f"서울 워크로드 대체 GPU 리전 레이턴시 진단 시작 (지연 기준: {args.threshold_ms} ms, 타깃 GPU: {args.gpu_type or '전체'})")
+  print(f"서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시 진단 시작 (지연 기준: {args.threshold_ms} ms, 타깃 GPU: {args.gpu_type or '전체'})")
 
   if args.dry_run:
     print("--> 가상 실행 모드 (--dry-run) 활성화: 사전 벤치마크 데이터를 분석한다.")
