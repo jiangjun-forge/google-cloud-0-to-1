@@ -102,12 +102,12 @@ STS 에이전트 풀: on-prem-posix-pool
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **Storage Transfer Service 온프레미스 에이전트 관리**:
-   - 콘솔 경로: Storage Transfer Service > 온프레미스 ( https://console.cloud.google.com/transfer/on-premises )
-   - 공식 가이드: 온프레미스 데이터 전송 개요 ( https://cloud.google.com/storage-transfer/docs/on-prem-overview )
-   - 공식 가이드: 온프레미스 에이전트 풀 관리 ( https://cloud.google.com/storage-transfer/docs/on-prem-agent-pools )
+   - Storage Transfer Service > 온프레미스 ( https://console.cloud.google.com/transfer/on-premises )
+   - 온프레미스 데이터 전송 개요 ( https://cloud.google.com/storage-transfer/docs/on-prem-overview )
+   - 온프레미스 에이전트 풀 관리 ( https://cloud.google.com/storage-transfer/docs/on-prem-agent-pools )
 2. **Cloud Storage 버킷 보안 강화**:
-   - 콘솔 경로: Cloud Storage > 버킷 브라우저 ( https://console.cloud.google.com/storage/browser )
-   - 공식 가이드: 공개 접근 차단(PAP) 적용 ( https://cloud.google.com/storage/docs/public-access-prevention )
+   - Cloud Storage > 버킷 브라우저 ( https://console.cloud.google.com/storage/browser )
+   - 공개 접근 차단(PAP) 적용 ( https://cloud.google.com/storage/docs/public-access-prevention )
 
 ---
 

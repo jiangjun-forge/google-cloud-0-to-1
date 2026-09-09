@@ -182,14 +182,14 @@ graph TD
 
 1. **사내 실데이터 기반 최적 차원 파라미터 적용**:
    - `google-genai` SDK를 통해 `output_dimensionality` 매개변수를 결정된 차원(예: 128 또는 256)으로 지정하여 호출한다.
-   - 공식 가이드: Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )
+   - Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )
 2. **BigQuery Vector Search 인덱스 생성 및 쿼리 최적화**:
-   - 콘솔 경로: BigQuery 콘솔 ( https://console.cloud.google.com/bigquery )
-   - 공식 가이드: BigQuery Vector Search 개요 ( https://cloud.google.com/bigquery/docs/vector-search-intro )
+   - BigQuery 콘솔 ( https://console.cloud.google.com/bigquery )
+   - BigQuery Vector Search 개요 ( https://cloud.google.com/bigquery/docs/vector-search-intro )
    - 축소된 차원의 벡터를 저장할 경우 테이블 용량 및 쿼리당 스캔 바이트가 최대 90% 이상 절감된다.
 3. **Vertex AI Vector Search 인덱스 배포**:
-   - 콘솔 경로: Vertex AI Vector Search 콘솔 ( https://console.cloud.google.com/vertex-ai/matching-engine/indexes )
-   - 공식 가이드: Vertex AI Vector Search 개요 ( https://cloud.google.com/vertex-ai/docs/vector-search/overview )
+   - Vertex AI Vector Search 콘솔 ( https://console.cloud.google.com/vertex-ai/matching-engine/indexes )
+   - Vertex AI Vector Search 개요 ( https://cloud.google.com/vertex-ai/docs/vector-search/overview )
    - 차원 축소에 따라 인덱스 노드 머신 유형을 다운사이징하여 인프라 비용을 절감한다.
 
 ---

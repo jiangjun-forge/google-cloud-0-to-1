@@ -144,14 +144,14 @@ customer-faq-ds            500          500          100.0%     OK
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **데이터 저장소 수동 재색인 및 상태 모니터링**:
-   - 콘솔 경로: Agent Builder / Vertex AI Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/gen-app-builder/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
-   - 공식 가이드: 비정형 데이터 저장소 생성 및 관리 ( https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es )
+   - Agent Builder / Vertex AI Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/gen-app-builder/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
+   - 비정형 데이터 저장소 생성 및 관리 ( https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es )
 2. **문서 청킹 및 Layout Parser 설정**:
    - 고품질 RAG 검색을 위해 복잡한 PDF 구조를 이해하는 Layout Parser와 적절한 청크 크기(200~500 토큰)를 설정한다.
-   - 공식 가이드: 문서 파싱 및 청킹 가이드 ( https://cloud.google.com/generative-ai-app-builder/docs/parse-chunk-documents )
+   - 문서 파싱 및 청킹 가이드 ( https://cloud.google.com/generative-ai-app-builder/docs/parse-chunk-documents )
 3. **제미나이(Gemini) 그라운딩 연동 최적화**:
    - 검색된 문서를 파운데이션 모델에 공급할 때 검색 점수 임계치(Dynamic Retrieval Threshold)를 설정하여 무관한 문서 인입을 차단한다.
-   - 공식 가이드: Vertex AI Search를 활용한 Gemini 그라운딩 ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
+   - Vertex AI Search를 활용한 Gemini 그라운딩 ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
 
 ---
 

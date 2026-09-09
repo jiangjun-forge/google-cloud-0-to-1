@@ -111,14 +111,14 @@ Audit Logging      Cloud Audit Logs 데이터 접근 로깅   PASS     DATA_READ
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **조직 정책 리소스 위치 제약 설정**:
-   - 공식 가이드: 리소스 위치 정의 ( https://cloud.google.com/resource-manager/docs/organization-policy/defining-locations )
-   - 공식 가이드: 대한민국 Data Boundary 패키지 ( https://cloud.google.com/assured-workloads/docs/control-packages/south-korea-data-boundary )
+   - 리소스 위치 정의 ( https://cloud.google.com/resource-manager/docs/organization-policy/defining-locations )
+   - 대한민국 Data Boundary 패키지 ( https://cloud.google.com/assured-workloads/docs/control-packages/south-korea-data-boundary )
 2. **IAM Deny Policy 구성**:
-   - 콘솔 경로: IAM 및 관리자 > 거부 정책 ( https://console.cloud.google.com/iam-admin/deny-policies )
-   - 공식 가이드: IAM 거부 정책 개요 ( https://cloud.google.com/iam/docs/deny-overview )
+   - IAM 및 관리자 > 거부 정책 ( https://console.cloud.google.com/iam-admin/deny-policies )
+   - IAM 거부 정책 개요 ( https://cloud.google.com/iam/docs/deny-overview )
 3. **Cloud KMS CMEK 키 관리**:
-   - 콘솔 경로: 보안 > 키 관리 ( https://console.cloud.google.com/security/kms )
-   - 공식 가이드: 고객 관리 암호화 키(CMEK) ( https://cloud.google.com/kms/docs/cmek )
+   - 보안 > 키 관리 ( https://console.cloud.google.com/security/kms )
+   - 고객 관리 암호화 키(CMEK) ( https://cloud.google.com/kms/docs/cmek )
 
 ---
 

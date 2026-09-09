@@ -111,15 +111,15 @@ Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Ide
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **도메인 소유권 확인 및 인수(Takeover)**:
-   - 콘솔 경로: Google Admin Console > 계정 > 도메인 > 도메인 관리 ( https://admin.google.com/ac/domains/manage )
-   - 공식 가이드: 도메인 소유권 확인 ( https://support.google.com/a/answer/7126229 )
-   - 공식 가이드: 도메인 충돌(domain_in_use) 해결 가이드 ( https://support.google.com/a/answer/11112794 )
+   - Google Admin Console > 계정 > 도메인 > 도메인 관리 ( https://admin.google.com/ac/domains/manage )
+   - 도메인 소유권 확인 ( https://support.google.com/a/answer/7126229 )
+   - 도메인 충돌(domain_in_use) 해결 가이드 ( https://support.google.com/a/answer/11112794 )
 2. **미관리 사용자 계정 통합 및 관리**:
-   - 콘솔 경로: 디렉터리 > 사용자 ( https://admin.google.com/ac/users )
+   - 디렉터리 > 사용자 ( https://admin.google.com/ac/users )
 3. **Cloud Identity Free 라이선스 발급**:
-   - 콘솔 경로: 결제 > 구독 ( https://admin.google.com/ac/billing/subscriptions )
-   - 공식 가이드: Cloud Identity 개요 ( https://cloud.google.com/identity/docs/overview )
-   - 공식 가이드: Cloud Identity 에디션 비교 ( https://cloud.google.com/identity/docs/editions )
+   - 결제 > 구독 ( https://admin.google.com/ac/billing/subscriptions )
+   - Cloud Identity 개요 ( https://cloud.google.com/identity/docs/overview )
+   - Cloud Identity 에디션 비교 ( https://cloud.google.com/identity/docs/editions )
 
 ---
 

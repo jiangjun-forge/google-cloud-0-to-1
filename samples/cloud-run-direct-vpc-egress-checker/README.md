@@ -149,14 +149,14 @@ user-auth-service-prod   DIRECT_VPC     private-ranges-only OK
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **Direct VPC Egress 마이그레이션 적용**:
-   - 콘솔 경로: Cloud Run 콘솔 ( https://console.cloud.google.com/run ) > 대상 서비스 선택 > 수정 및 새 버전 배포 > 네트워킹 탭
-   - 공식 가이드: Cloud Run Direct VPC Egress 설정 가이드 ( https://cloud.google.com/run/docs/configuring/vpc-direct-vpc )
+   - Cloud Run 콘솔 ( https://console.cloud.google.com/run ) > 대상 서비스 선택 > 수정 및 새 버전 배포 > 네트워킹 탭
+   - Cloud Run Direct VPC Egress 설정 가이드 ( https://cloud.google.com/run/docs/configuring/vpc-direct-vpc )
    - VPC 네트워크 연결 옵션 비교 ( https://cloud.google.com/run/docs/configuring/connecting-vpc )
 2. **서브넷 Private Google Access 활성화**:
-   - 콘솔 경로: VPC 네트워크 ( https://console.cloud.google.com/networking/networks/list ) > 서브넷 선택 > 수정 > 비공개 Google 액세스 사용 설정
-   - 공식 가이드: Private Google Access 개요 ( https://cloud.google.com/vpc/docs/private-google-access )
+   - VPC 네트워크 ( https://console.cloud.google.com/networking/networks/list ) > 서브넷 선택 > 수정 > 비공개 Google 액세스 사용 설정
+   - Private Google Access 개요 ( https://cloud.google.com/vpc/docs/private-google-access )
 3. **Cloud NAT 게이트웨이 구성**:
-   - 콘솔 경로: Cloud NAT ( https://console.cloud.google.com/net-services/nat/list )
+   - Cloud NAT ( https://console.cloud.google.com/net-services/nat/list )
    - 외부 아웃바운드 트래픽(`all-traffic`)을 안전하게 처리하기 위한 Cloud NAT 게이트웨이를 배치한다.
 
 ---

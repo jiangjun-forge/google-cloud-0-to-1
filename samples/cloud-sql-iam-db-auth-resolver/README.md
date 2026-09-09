@@ -158,12 +158,12 @@ auth-mysql-replica       MYSQL_8_0        asia-northeast3    ON (활성)
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **인스턴스 IAM 인증 활성화**:
-   - 콘솔 경로: Cloud SQL 인스턴스 ( https://console.cloud.google.com/sql/instances ) > 대상 인스턴스 선택 > 구성 수정 > 플래그 추가 > `cloudsql.iam_authentication=on`
-   - 공식 가이드: Cloud SQL MySQL IAM 인증 ( https://cloud.google.com/sql/docs/mysql/iam-authentication )
+   - Cloud SQL 인스턴스 ( https://console.cloud.google.com/sql/instances ) > 대상 인스턴스 선택 > 구성 수정 > 플래그 추가 > `cloudsql.iam_authentication=on`
+   - Cloud SQL MySQL IAM 인증 ( https://cloud.google.com/sql/docs/mysql/iam-authentication )
    - Cloud SQL PostgreSQL IAM 인증 ( https://cloud.google.com/sql/docs/postgres/iam-authentication )
 2. **Cloud SQL Auth Proxy 연동 및 토큰 자동 갱신**:
    - 직접 고정 토큰을 전달하는 방식은 1시간 후 만료되므로, Cloud SQL Auth Proxy의 `-enable-iam-login` 옵션 또는 공식 언어별 커넥터(Cloud SQL Python/Java/Go Connector)를 사용하여 단기 토큰을 주기적으로 자동 재발급하도록 구성한다.
-   - 공식 가이드: Cloud SQL Auth Proxy 연결 가이드 ( https://cloud.google.com/sql/docs/mysql/connect-auth-proxy )
+   - Cloud SQL Auth Proxy 연결 가이드 ( https://cloud.google.com/sql/docs/mysql/connect-auth-proxy )
 3. **데이터베이스 내부 권한(GRANT) 부여**:
    - IAM 인증으로 데이터베이스에 로그인한 이후에도 테이블 조회/수정을 위한 내부 권한이 필요하므로 관리자 권한으로 로그인하여 `GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO "sa-name";` 등의 SQL을 수행한다.
 

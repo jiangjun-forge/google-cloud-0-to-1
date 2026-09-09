@@ -121,19 +121,19 @@ data-pipeline-sa a1b2c3d4e5f6...    2026-05-15   ACTIVE   침해 의심 시점 �
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **유출 키 즉시 비활성화 및 삭제**:
-   - 콘솔 경로: IAM 및 관리자 > 서비스 계정 ( https://console.cloud.google.com/iam-admin/serviceaccounts )
+   - IAM 및 관리자 > 서비스 계정 ( https://console.cloud.google.com/iam-admin/serviceaccounts )
    - 즉시 조치 CLI:
      ```bash
      gcloud iam service-accounts keys disable KEY_ID --iam-account=SERVICE_ACCOUNT_EMAIL
      gcloud iam service-accounts keys delete KEY_ID --iam-account=SERVICE_ACCOUNT_EMAIL
      ```
 2. **Cloud Audit Logs 정밀 쿼리 확인**:
-   - 콘솔 경로: 로그 탐색기 ( https://console.cloud.google.com/logs/query )
-   - 공식 가이드: Cloud Audit Logs 개요 ( https://cloud.google.com/logging/docs/audit )
+   - 로그 탐색기 ( https://console.cloud.google.com/logs/query )
+   - Cloud Audit Logs 개요 ( https://cloud.google.com/logging/docs/audit )
 3. **Workload Identity Federation 전환**:
    - 영구 JSON 키 발급을 전면 중단하고 임시 OIDC 토큰 기반 연동을 구성한다.
-   - 공식 가이드: Workload Identity Federation 구성 ( https://cloud.google.com/iam/docs/workload-identity-federation )
-   - 공식 가이드: 서비스 계정 키 관리 권장사항 ( https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys )
+   - Workload Identity Federation 구성 ( https://cloud.google.com/iam/docs/workload-identity-federation )
+   - 서비스 계정 키 관리 권장사항 ( https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys )
 
 ---
 
