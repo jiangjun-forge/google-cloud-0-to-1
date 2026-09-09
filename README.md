@@ -13,6 +13,7 @@
 ├── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
 │   ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
 │   ├── cloud-sql-iam-db-auth-resolver/         # Cloud SQL IAM DB 인증 전환 및 토큰 만료 장애 진단
+│   ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
 │   ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
 │   ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
 │   ├── gemini-enterprise-domain-in-use-resolver/# 도메인 선점 충돌 진단 및 Cloud Identity 배포
