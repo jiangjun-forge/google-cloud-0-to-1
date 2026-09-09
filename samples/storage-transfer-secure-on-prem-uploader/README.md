@@ -1,10 +1,10 @@
 # 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기
 
+온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 Cloud KMS 암호화 및 무결성 검증을 거쳐 Cloud Storage로 안전하게 이관하는 진단 도구다.
+
 `#Audience` `#Architect` `#SecOps`  
 `#Concern` `#Compliance` `#Performance` `#Security`  
-`#Service` `#CloudKMS` `#CloudStorage` `#StorageTransferService`  
-
-요약: 온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 Cloud KMS 암호화 및 무결성 검증을 거쳐 Cloud Storage로 안전하게 이관하는 진단 도구다.
+`#Service` `#CloudKMS` `#CloudStorage` `#StorageTransferService`
 
 ---
 

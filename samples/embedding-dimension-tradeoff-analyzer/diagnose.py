@@ -72,7 +72,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data-path",
         default=os.getenv("DATA_PATH", ""),
-        help="고객 실데이터 파일 경로 (CSV, JSONL, TXT 지원, 미지정 시 내장 벤치마크 사용)",
+        help="사내 실데이터 파일 경로 (CSV, JSONL, TXT 지원, 미지정 시 내장 벤치마크 사용)",
     )
     parser.add_argument(
         "--dry-run",
@@ -120,7 +120,7 @@ def parse_dimension_list(raw_dims: str) -> List[int]:
 
 
 def load_dataset(data_path: str, max_samples: int) -> Tuple[List[str], List[Dict[str, Any]], str]:
-    """고객 실데이터 파일 또는 내장 벤치마크 데이터를 로드한다."""
+    """사내 실데이터 파일 또는 내장 벤치마크 데이터를 로드한다."""
     if data_path and os.path.exists(data_path):
         docs: List[str] = []
         queries: List[Dict[str, Any]] = []
@@ -136,7 +136,7 @@ def load_dataset(data_path: str, max_samples: int) -> Tuple[List[str], List[Dict
                     if q:
                         queries.append({"query": q, "target_doc_id": len(docs)})
                         docs.append(doc)
-            source_desc = f"고객 실데이터 JSONL ({os.path.basename(data_path)}, {len(queries)}건 로드)"
+            source_desc = f"사내 실데이터 JSONL ({os.path.basename(data_path)}, {len(queries)}건 로드)"
             return docs, queries, source_desc
 
         if data_path.endswith(".csv"):
@@ -150,7 +150,7 @@ def load_dataset(data_path: str, max_samples: int) -> Tuple[List[str], List[Dict
                     if q:
                         queries.append({"query": q, "target_doc_id": len(docs)})
                         docs.append(doc)
-            source_desc = f"고객 실데이터 CSV ({os.path.basename(data_path)}, {len(queries)}건 로드)"
+            source_desc = f"사내 실데이터 CSV ({os.path.basename(data_path)}, {len(queries)}건 로드)"
             return docs, queries, source_desc
 
         if data_path.endswith(".txt"):
@@ -162,7 +162,7 @@ def load_dataset(data_path: str, max_samples: int) -> Tuple[List[str], List[Dict
                     if text:
                         queries.append({"query": text, "target_doc_id": len(docs)})
                         docs.append(text)
-            source_desc = f"고객 실데이터 TXT ({os.path.basename(data_path)}, {len(queries)}건 로드)"
+            source_desc = f"사내 실데이터 TXT ({os.path.basename(data_path)}, {len(queries)}건 로드)"
             return docs, queries, source_desc
 
     # 기본 내장 벤치마크 코퍼스 (클라우드, 아키텍처, 보안 시나리오)
@@ -422,15 +422,15 @@ def print_multi_dimension_report(
     print()
     print("2. 권장 최적 차원 티어링(Tiering):")
     print("   - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (비용 80~90% 절감)")
-    print("   - [Tier 2: 균형/범용]: 일반 기업 사내 지식 검색 및 고객 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)")
+    print("   - [Tier 2: 균형/범용]: 사내 지식 검색 및 대고객 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)")
     print(f"   - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> {base_dim}d 최대 차원 유지")
     print()
-    print("3. 고객 실데이터 적용 코드:")
+    print("3. 사내 실데이터 적용 코드:")
     print("   from google import genai")
     print("   client = genai.Client()")
     print("   response = client.models.embed_content(")
     print(f"       model='{model_name}',")
-    print("       contents='고객 문의 및 검색 문서 텍스트',")
+    print("       contents='사내 문의 및 검색 문서 텍스트',")
     print(f"       config={{'output_dimensionality': {smallest['dimension']}}}")
     print("   )")
     print("=" * 80)
@@ -445,7 +445,7 @@ def main() -> None:
     dimensions = parse_dimension_list(args.dimensions)
     base_dim = dimensions[0]
 
-    # 2. 데이터셋 로드 (고객 실데이터 또는 기본 벤치마크, 1,000건 표본 제어)
+    # 2. 데이터셋 로드 (사내 실데이터 또는 기본 벤치마크, 1,000건 표본 제어)
     docs, queries, data_desc = load_dataset(args.data_path, args.sample_count)
 
     # 3. 큰 차원부터 작은 차원까지 전수 평가

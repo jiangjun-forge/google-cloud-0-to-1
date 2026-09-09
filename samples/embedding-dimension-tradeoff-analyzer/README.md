@@ -1,16 +1,16 @@
 # 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기
 
+Vertex AI 및 Gemini API 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 1536, 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 91.7%)과 검색 정확도 손실률(3.0%) 트레이드오프를 1분 만에 비교 분석하는 도구다.
+
 `#Audience` `#Architect` `#Developer` `#FinOps`  
 `#Concern` `#Billing` `#Performance`  
-`#Service` `#BigQuery` `#GeminiAPI` `#VertexAI`  
-
-요약: Vertex AI 및 Gemini API 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 고객 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 1536, 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 91.7%)과 검색 정확도 손실률(3.0%) 트레이드오프를 1분 만에 비교 분석하는 도구다.
+`#Service` `#BigQuery` `#GeminiAPI` `#VertexAI`
 
 ---
 
 ## 1. 이 가이드가 필요한 상황
 
-- 고객사의 실제 비즈니스 도메인 데이터(질의, 문서)를 직접 주입하여 차원 축소 시 실제 검색 정확도 손실과 랭킹 품질(MRR) 변화를 정밀하게 측정해야 하는 경우
+- 자사의 실제 비즈니스 도메인 데이터(질의, 문서)를 직접 주입하여 차원 축소 시 실제 검색 정확도 손실과 랭킹 품질(MRR) 변화를 정밀하게 측정해야 하는 경우
 - 대규모 임베딩 API 호출에 따른 비용 누수를 방지하기 위해 기본 평가 표본을 1,000건 수준으로 안전하게 제한하면서도 전사 100만 건 기준 인덱스 RAM/스토리지 절감량을 산정하고자 하는 경우
 - 최고 차원(1536)부터 최저 차원(128)까지 지원되는 모든 차원을 한 번에 일괄 비교하거나, 특정 2개 이상의 차원만 지정하여 맞춤형 비교표를 산출하려는 경우
 - BigQuery Vector Search 또는 Vertex AI Vector Search 도입 전 인프라 용량 및 비용 최적화를 위한 정량적 근거 보고서가 필요한 경우
@@ -22,7 +22,7 @@
 
 ```mermaid
 graph TD
-    A["고객 실데이터(CSV/JSONL/TXT) 또는 표본 1,000건 로드"] --> B["비교 차원 목록 수집 및 내림차순(큰 차원 -> 작은 차원) 정렬"]
+    A["사내 실데이터(CSV/JSONL/TXT) 또는 표본 1,000건 로드"] --> B["비교 차원 목록 수집 및 내림차순(큰 차원 -> 작은 차원) 정렬"]
     B --> C["최대 차원(1536d) 기준점(Baseline) 벡터 추출 및 평가"]
     C --> D["축소 대상 차원들(768d, 512d, 256d, 128d) 일괄 추출 및 평가"]
     D --> E["차원별 벡터당 용량 및 인덱스 총 RAM 산정"]
@@ -65,16 +65,16 @@ graph TD
 ./run.sh --dry-run -d 1536,768,128
 ```
 
-### 고객 실데이터 파일 연동 실행
+### 사내 실데이터 파일 연동 실행
 
-고객사의 실제 텍스트 데이터 파일(CSV, JSONL, TXT)을 주입하여 도메인 특화 검색 성능을 측정한다:
+자사의 실제 텍스트 데이터 파일(CSV, JSONL, TXT)을 주입하여 도메인 특화 검색 성능을 측정한다:
 
 ```bash
-# 고객 실데이터 CSV 파일(query, target 컬럼) 연동 및 1,000건 표본 제한
-./run.sh --dry-run --data-path=/path/to/customer_dataset.csv --sample-count=1000
+# 사내 실데이터 CSV 파일(query, target 컬럼) 연동 및 1,000건 표본 제한
+./run.sh --dry-run --data-path=/path/to/dataset.csv --sample-count=1000
 
-# 고객 실데이터 JSONL 연동 및 특정 차원들 비교
-./run.sh --dry-run --data-path=/path/to/customer_dataset.jsonl -d 1536,512,128
+# 사내 실데이터 JSONL 연동 및 특정 차원들 비교
+./run.sh --dry-run --data-path=/path/to/dataset.jsonl -d 1536,512,128
 ```
 
 ### 실제 환경 API 호출 실행
@@ -162,15 +162,15 @@ graph TD
 
 2. 권장 최적 차원 티어링(Tiering):
    - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (비용 80~90% 절감)
-   - [Tier 2: 균형/범용]: 일반 기업 사내 지식 검색 및 고객 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)
+   - [Tier 2: 균형/범용]: 사내 지식 검색 및 대고객 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)
    - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> 1536d 최대 차원 유지
 
-3. 고객 실데이터 적용 코드:
+3. 사내 실데이터 적용 코드:
    from google import genai
    client = genai.Client()
    response = client.models.embed_content(
        model='text-embedding-005',
-       contents='고객 문의 및 검색 문서 텍스트',
+       contents='사내 문의 및 검색 문서 텍스트',
        config={'output_dimensionality': 128}
    )
 ================================================================================
@@ -180,7 +180,7 @@ graph TD
 
 ## 6. 결과 확인 후 즉각 조치 가이드
 
-1. **고객 실데이터 기반 최적 차원 파라미터 적용**:
+1. **사내 실데이터 기반 최적 차원 파라미터 적용**:
    - `google-genai` SDK를 통해 `output_dimensionality` 매개변수를 결정된 차원(예: 128 또는 256)으로 지정하여 호출한다.
    - 공식 가이드: Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )
 2. **BigQuery Vector Search 인덱스 생성 및 쿼리 최적화**:

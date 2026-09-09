@@ -1,14 +1,17 @@
 # 제미나이(Gemini) API 프롬프트 민감 정보 실시간 마스킹 (`gemini-sensitive-data-masking`)
 
-> **태그**: `#Architect`, `#Developer`, `#SecOps` | `#Compliance`, `#Security` | `#CloudDLP`, `#GeminiAPI`  
-> **요약**: 제미나이(Gemini) API로 프롬프트를 전송하기 전, Cloud DLP(Sensitive Data Protection)를 연동하여 **전화번호, 주민등록번호, 이메일 등 개인 식별 정보(PII)를 실시간으로 탐지 및 마스킹(Redaction)하는 엔터프라이즈 보안 게이트웨이** 가이드다.
+제미나이(Gemini) API로 프롬프트를 전송하기 전, Cloud DLP(Sensitive Data Protection)를 연동하여 **전화번호, 주민등록번호, 이메일 등 개인 식별 정보(PII)를 실시간으로 탐지 및 마스킹(Redaction)하는 엔터프라이즈 보안 게이트웨이** 가이드다.
+
+`#Audience` `#Architect` `#Developer` `#SecOps`  
+`#Concern` `#Compliance` `#Security`  
+`#Service` `#CloudDLP` `#GeminiAPI`
 
 ---
 
 ## 이 가이드가 필요한 상황 (증상 체크리스트)
 
-- **개인정보보호법 및 컴플라이언스 준수**: 고객이나 임직원이 LLM 프롬프트에 주민등록번호, 계좌번호, 전화번호 등을 직접 입력하여 발생할 수 있는 데이터 유출 사고를 사전에 차단하고자 할 때
-- **엔터프라이즈 보안 게이트웨이 구현**: 사내 챗봇 또는 고객 지원 AI 파이프라인 전면에 위치하여 모든 입출력 텍스트의 민감 정보를 자동 필터링하고자 할 때
+- **개인정보보호법 및 컴플라이언스 준수**: 서비스 이용자나 사내 임직원이 LLM 프롬프트에 주민등록번호, 계좌번호, 전화번호 등을 직접 입력하여 발생할 수 있는 데이터 유출 사고를 사전에 차단하고자 할 때
+- **엔터프라이즈 보안 게이트웨이 구현**: 사내 챗봇 또는 대고객 지원 AI 파이프라인 전면에 위치하여 모든 입출력 텍스트의 민감 정보를 자동 필터링하고자 할 때
 - **사전 마스킹 테스트**: 실제 Cloud DLP API 호출 및 로컬 정규식 모의 엔진을 통해 마스킹 정책이 정상 동작하는지 1분 만에 검증하고자 할 때
 
 ---

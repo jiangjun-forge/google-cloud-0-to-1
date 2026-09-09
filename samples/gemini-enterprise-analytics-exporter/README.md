@@ -1,7 +1,10 @@
 # Gemini Enterprise 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
 
-> **태그**: `#FinOps`, `#SecOps` | `#Billing`, `#Compliance` | `#BigQuery`, `#CloudIdentity`, `#GeminiEnterprise`  
-> **요약**: 전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 BigQuery 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다.
+전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 BigQuery 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다.
+
+`#Audience` `#FinOps` `#SecOps`  
+`#Concern` `#Billing` `#Compliance`  
+`#Service` `#BigQuery` `#CloudIdentity` `#GeminiEnterprise`
 
 ---
 

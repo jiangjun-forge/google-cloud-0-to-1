@@ -1,10 +1,10 @@
 # Vertex AI Search 데이터 저장소 색인 및 그라운딩 정합성 진단기
 
+Agent Platform 및 RAG 파이프라인에서 Cloud Storage 원본 문서와 Vertex AI Search 데이터 저장소(Data Store) 간의 색인 누락, 청킹(Chunking) 실패, 서비스 에이전트 권한 누락 및 Gemini 그라운딩 검색 품질 저하를 1분 만에 일괄 진단하고 처방하는 도구다.
+
 `#Audience` `#Architect` `#Developer`  
 `#Concern` `#Performance` `#Resilience`  
-`#Service` `#AgentPlatform` `#CloudStorage` `#GeminiAPI` `#VertexAI`  
-
-요약: Agent Platform 및 RAG 파이프라인에서 Cloud Storage 원본 문서와 Vertex AI Search 데이터 저장소(Data Store) 간의 색인 누락, 청킹(Chunking) 실패, 서비스 에이전트 권한 누락 및 Gemini 그라운딩 검색 품질 저하를 1분 만에 일괄 진단하고 처방하는 도구다.
+`#Service` `#AgentPlatform` `#CloudStorage` `#GeminiAPI` `#VertexAI`
 
 ---
 

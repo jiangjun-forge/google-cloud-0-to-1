@@ -1,10 +1,10 @@
 # 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기
 
+국가 핵심 기술(NCT) 및 산업 기밀 워크로드 도입 시 요구되는 서울 리전 데이터 보관, RAG 벡터 차단 IAM Deny 정책, Cloud KMS 암호화 통제를 일괄 검증하는 보안 감사 진단 도구다.
+
 `#Audience` `#Architect` `#SecOps`  
 `#Concern` `#Compliance` `#Security`  
-`#Service` `#CloudIAM` `#CloudKMS` `#CloudStorage` `#VertexAI`  
-
-요약: 국가 핵심 기술(NCT) 및 산업 기밀 워크로드 도입 시 요구되는 서울 리전 데이터 보관, RAG 벡터 차단 IAM Deny 정책, Cloud KMS 암호화 통제를 일괄 검증하는 보안 감사 진단 도구다.
+`#Service` `#CloudIAM` `#CloudKMS` `#CloudStorage` `#VertexAI`
 
 ---
 

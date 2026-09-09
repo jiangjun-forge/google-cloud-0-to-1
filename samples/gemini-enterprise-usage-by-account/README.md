@@ -1,7 +1,10 @@
 # 제미나이 엔터프라이즈 Model Armor 감사 및 토큰 소모량 추정 (`gemini-enterprise-usage-by-account`)
 
-> **태그**: `#Architect`, `#FinOps`, `#SecOps` | `#Billing`, `#Compliance`, `#Security` | `#BigQuery`, `#CloudLogging`, `#GeminiAPI`, `#ModelArmor`  
-> **요약**: Model Armor의 살균(Sanitize) 검사 로그를 BigQuery 로그 싱크로 실시간 적재하여, **엔터프라이즈 Gemini 환경에서 사용자별 프롬프트 검사 이력과 추정 토큰 소모량을 1분 만에 분석**하는 가이드다.
+Model Armor의 살균(Sanitize) 검사 로그를 BigQuery 로그 싱크로 실시간 적재하여, **엔터프라이즈 Gemini 환경에서 사용자별 프롬프트 검사 이력과 추정 토큰 소모량을 1분 만에 분석**하는 가이드다.
+
+`#Audience` `#Architect` `#FinOps` `#SecOps`  
+`#Concern` `#Billing` `#Compliance` `#Security`  
+`#Service` `#BigQuery` `#CloudLogging` `#GeminiAPI` `#ModelArmor`
 
 ---
 

@@ -1,7 +1,10 @@
 # 제미나이(Gemini) API 계정별 토큰 사용량 동적 분석 (`gemini-usage-by-account`)
 
-> **태그**: `#Architect`, `#FinOps`, `#SecOps` | `#Billing`, `#Compliance` | `#BigQuery`, `#GeminiAPI`  
-> **요약**: BigQuery에 적재된 제미나이(Gemini) API 자동 로깅 데이터를 바탕으로, **사용자(계정) 및 서비스 계정별 호출 횟수, 입력 토큰, 출력 토큰, 생각(Thinking) 토큰 소비량을 1분 만에 동적 집계**하는 분석 도구다.
+BigQuery에 적재된 제미나이(Gemini) API 자동 로깅 데이터를 바탕으로, **사용자(계정) 및 서비스 계정별 호출 횟수, 입력 토큰, 출력 토큰, 생각(Thinking) 토큰 소비량을 1분 만에 동적 집계**하는 분석 도구다.
+
+`#Audience` `#Architect` `#FinOps` `#SecOps`  
+`#Concern` `#Billing` `#Compliance`  
+`#Service` `#BigQuery` `#GeminiAPI`
 
 ---
 

@@ -1,7 +1,10 @@
 # 제미나이(Gemini) VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`)
 
-> **태그**: `#Architect`, `#SecOps` | `#Compliance`, `#Security` | `#CloudLogging`, `#GeminiAPI`, `#VPCServiceControls`  
-> **요약**: 제미나이(Gemini / Vertex AI) API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다.
+제미나이(Gemini / Vertex AI) API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다.
+
+`#Audience` `#Architect` `#SecOps`  
+`#Concern` `#Compliance` `#Security`  
+`#Service` `#CloudLogging` `#GeminiAPI` `#VPCServiceControls`
 
 ---
 
