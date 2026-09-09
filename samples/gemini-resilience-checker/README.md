@@ -2,9 +2,9 @@
 
 제미나이(Gemini) API 호출 소스 코드에서 429 과부하 에러와 일시적 네트워크 장애를 방어하기 위한 **지수 백오프, 지터(무작위 대기), 최대 재시도 제약, 폴백 모델 체인 구비 여부를 1분 만에 정적 진단**하고 표준 처방 코드를 제시하는 도구다.
 
-`#Audience` `#Architect` `#Developer`  
-`#Concern` `#Performance` `#Resilience`  
-`#Service` `#GeminiAPI`
+**Audience**: `#Architect`, `#Developer`  
+**Concern**: `#Performance`, `#Resilience`  
+**Service**: `#GeminiAPI`
 
 ---
 

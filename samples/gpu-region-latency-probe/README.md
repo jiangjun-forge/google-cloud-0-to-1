@@ -2,9 +2,9 @@
 
 서울 리전(asia-northeast3) GPU 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다.
 
-`#Audience` `#Architect` `#Developer`  
-`#Concern` `#Performance` `#Resilience`  
-`#Service` `#CloudMonitoring` `#ComputeEngine`
+**Audience**: `#Architect`, `#Developer`  
+**Concern**: `#Performance`, `#Resilience`  
+**Service**: `#CloudMonitoring`, `#ComputeEngine`
 
 ---
 

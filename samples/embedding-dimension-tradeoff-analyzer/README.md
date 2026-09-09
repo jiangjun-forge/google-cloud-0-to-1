@@ -2,9 +2,9 @@
 
 Vertex AI 및 Gemini API 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 1536, 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 91.7%)과 검색 정확도 손실률(3.0%) 트레이드오프를 1분 만에 비교 분석하는 도구다.
 
-`#Audience` `#Architect` `#Developer` `#FinOps`  
-`#Concern` `#Billing` `#Performance`  
-`#Service` `#BigQuery` `#GeminiAPI` `#VertexAI`
+**Audience**: `#Architect`, `#Developer`, `#FinOps`  
+**Concern**: `#Billing`, `#Performance`  
+**Service**: `#BigQuery`, `#GeminiAPI`, `#VertexAI`
 
 ---
 

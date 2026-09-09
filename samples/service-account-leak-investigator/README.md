@@ -2,9 +2,9 @@
 
 유출된 서비스 계정 키의 악용 이력을 Cloud Audit Logs로 전수 추적하고, 위험 키 비활성화 및 Workload Identity Federation 전환을 지원하는 보안 긴급 대응 진단 도구다.
 
-`#Audience` `#Architect` `#SecOps`  
-`#Concern` `#Compliance` `#IAM` `#Security`  
-`#Service` `#BigQuery` `#CloudAuditLogs` `#CloudIAM` `#CloudStorage`
+**Audience**: `#Architect`, `#SecOps`  
+**Concern**: `#Compliance`, `#IAM`, `#Security`  
+**Service**: `#BigQuery`, `#CloudAuditLogs`, `#CloudIAM`, `#CloudStorage`
 
 ---
 

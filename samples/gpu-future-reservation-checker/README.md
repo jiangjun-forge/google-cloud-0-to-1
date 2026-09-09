@@ -2,9 +2,9 @@
 
 Compute Engine GPU Future Reservation(FR) 신청 현황을 전수 점검하여 콘솔 제출 누락(DRAFTING 잔류), 프로젝트 식별자 불일치, CUD 연계 필수 옵션 누락 여부를 1분 만에 자동 진단하고 즉시 복구 명령어를 처방하는 도구다.
 
-`#Audience` `#Architect` `#Developer`  
-`#Concern` `#Billing` `#Resilience`  
-`#Service` `#ComputeEngine`
+**Audience**: `#Architect`, `#Developer`  
+**Concern**: `#Billing`, `#Resilience`  
+**Service**: `#ComputeEngine`
 
 ---
 

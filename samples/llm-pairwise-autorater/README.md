@@ -2,9 +2,9 @@
 
 대규모 질문 데이터셋에 대해 두 LLM 모델의 출력을 병렬 배치 추론하고, 교차 판사 모델을 통해 **정확도, 명확성, 완성도 및 승률(Win-rate)을 자동 채점하여 BigQuery에 누적 적재 및 시각화**하는 엔터프라이즈 평가 도구다.
 
-`#Audience` `#Architect` `#Developer`  
-`#Concern` `#Performance` `#Resilience`  
-`#Service` `#BigQuery` `#CloudStorage` `#GeminiAPI` `#VertexAI`
+**Audience**: `#Architect`, `#Developer`  
+**Concern**: `#Performance`, `#Resilience`  
+**Service**: `#BigQuery`, `#CloudStorage`, `#GeminiAPI`, `#VertexAI`
 
 ---
 

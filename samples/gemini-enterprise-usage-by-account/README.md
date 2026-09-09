@@ -2,9 +2,9 @@
 
 Model Armor의 살균(Sanitize) 검사 로그를 BigQuery 로그 싱크로 실시간 적재하여, **엔터프라이즈 Gemini 환경에서 사용자별 프롬프트 검사 이력과 추정 토큰 소모량을 1분 만에 분석**하는 가이드다.
 
-`#Audience` `#Architect` `#FinOps` `#SecOps`  
-`#Concern` `#Billing` `#Compliance` `#Security`  
-`#Service` `#BigQuery` `#CloudLogging` `#GeminiAPI` `#ModelArmor`
+**Audience**: `#Architect`, `#FinOps`, `#SecOps`  
+**Concern**: `#Billing`, `#Compliance`, `#Security`  
+**Service**: `#BigQuery`, `#CloudLogging`, `#GeminiAPI`, `#ModelArmor`
 
 ---
 

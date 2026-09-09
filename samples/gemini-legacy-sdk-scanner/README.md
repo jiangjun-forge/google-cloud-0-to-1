@@ -2,9 +2,9 @@
 
 소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 **`google-genai`로의 마이그레이션 가이드를 1분 만에 제공**하는 도구다.
 
-`#Audience` `#Architect` `#Developer`  
-`#Concern` `#Compliance` `#Performance`  
-`#Service` `#GeminiAPI`
+**Audience**: `#Architect`, `#Developer`  
+**Concern**: `#Compliance`, `#Performance`  
+**Service**: `#GeminiAPI`
 
 ---
 

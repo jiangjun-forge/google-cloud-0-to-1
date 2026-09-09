@@ -2,9 +2,9 @@
 
 사내망 보안 정책상 와일드카드 도메인 등록이 불가한 환경에서 Gemini Enterprise App 정상 구동에 필요한 필수 코어 API, 인증, 정적 에셋 FQDN의 아웃바운드 443 및 DNS 연결성을 1분 만에 일괄 진단하고 방화벽 허용 명세를 자동 생성하는 도구다.
 
-`#Audience` `#Architect` `#SecOps`  
-`#Concern` `#Compliance` `#Security`  
-`#Service` `#CloudNextGenerationFirewall` `#GeminiEnterprise`
+**Audience**: `#Architect`, `#SecOps`  
+**Concern**: `#Compliance`, `#Security`  
+**Service**: `#CloudNextGenerationFirewall`, `#GeminiEnterprise`
 
 ---
 

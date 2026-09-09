@@ -2,9 +2,9 @@
 
 GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정책 제약 조건(Constraints) 위반 에러를 감사 로그에서 역추적하고, **위반된 제약 조건 ID와 즉시 복구/우회 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다.
 
-`#Audience` `#Architect` `#SecOps`  
-`#Concern` `#Compliance` `#Security`  
-`#Service` `#CloudLogging` `#ResourceManager`
+**Audience**: `#Architect`, `#SecOps`  
+**Concern**: `#Compliance`, `#Security`  
+**Service**: `#CloudLogging`, `#ResourceManager`
 
 ---
 

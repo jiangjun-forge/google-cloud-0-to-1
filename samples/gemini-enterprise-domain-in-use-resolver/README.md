@@ -2,9 +2,9 @@
 
 Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의해 선점되어 발생하는 도메인 충돌(domain_in_use)을 진단하고, Google Workspace 라이선스 구매 없이 Cloud Identity Free를 활용하여 독립적인 엔터프라이즈 AI 환경을 배포하도록 지원하는 진단 도구다.
 
-`#Audience` `#Architect` `#SecOps`  
-`#Concern` `#Compliance` `#IAM`  
-`#Service` `#CloudIdentity` `#GeminiEnterprise`
+**Audience**: `#Architect`, `#SecOps`  
+**Concern**: `#Compliance`, `#IAM`  
+**Service**: `#CloudIdentity`, `#GeminiEnterprise`
 
 ---
 

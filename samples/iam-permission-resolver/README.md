@@ -2,9 +2,9 @@
 
 GCP 클라우드 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다.
 
-`#Audience` `#Architect` `#Developer` `#SecOps`  
-`#Concern` `#IAM` `#Security`  
-`#Service` `#CloudIAM` `#CloudLogging`
+**Audience**: `#Architect`, `#Developer`, `#SecOps`  
+**Concern**: `#IAM`, `#Security`  
+**Service**: `#CloudIAM`, `#CloudLogging`
 
 ---
 

@@ -2,9 +2,9 @@
 
 제미나이(Gemini) API 비용 급증 및 예산 임계치 도달 시, Cloud Pub/Sub과 Cloud Functions를 연동하여 **실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로 차단하는 안전 아키텍처**를 검증 및 시뮬레이션하는 도구다.
 
-`#Audience` `#FinOps` `#SecOps`  
-`#Concern` `#Billing` `#Resilience`  
-`#Service` `#CloudFunctions` `#CloudPubSub` `#GeminiAPI` `#GoogleCloudBilling`
+**Audience**: `#FinOps`, `#SecOps`  
+**Concern**: `#Billing`, `#Resilience`  
+**Service**: `#CloudFunctions`, `#CloudPubSub`, `#GeminiAPI`, `#GoogleCloudBilling`
 
 ---
 
