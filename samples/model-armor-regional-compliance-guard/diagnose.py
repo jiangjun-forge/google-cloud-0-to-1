@@ -136,7 +136,7 @@ def evaluate_template(tpl: dict) -> dict:
       if severity != "CRITICAL":
         severity = "WARNING"
       issues.append(
-          f"국내 개인정보보호법 핵심 마스킹 항목 중 [{', '.join(missing_infotypes)}] 인포타입 설정이 누락됨"
+          f"국내 개인정보 보호법 핵심 마스킹 항목 중 [{', '.join(missing_infotypes)}] 인포타입 설정이 누락됨"
       )
       remediations.append(
           f"Model Armor SDP 설정에 한국 전용 인포타입({', '.join(missing_infotypes)})을 추가 바인딩한다."

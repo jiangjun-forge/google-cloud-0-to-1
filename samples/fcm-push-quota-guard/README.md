@@ -1,3 +1,19 @@
+<!--
+Copyright 2026 Google LLC. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+
+NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+[고지 사항] 본 저장소 및 문서는 구글 (Google LLC) 소유이며 Apache 2.0 라이선스 하에 예시 (Sample) 용도로 제공된다.
+프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
+-->
+
+> [!IMPORTANT]
+> **구글 (Google LLC) 참조용 샘플 고지 사항**:
+> 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
+
 # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
 
 모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다. (As of 2026-09-09)

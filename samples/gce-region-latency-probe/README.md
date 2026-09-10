@@ -1,3 +1,19 @@
+<!--
+Copyright 2026 Google LLC. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+
+NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+[고지 사항] 본 저장소 및 문서는 구글 (Google LLC) 소유이며 Apache 2.0 라이선스 하에 예시 (Sample) 용도로 제공된다.
+프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
+-->
+
+> [!IMPORTANT]
+> **구글 (Google LLC) 참조용 샘플 고지 사항**:
+> 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
+
 # 서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시/가용성 프로브 (`gce-region-latency-probe`)
 
 서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다. (As of 2026-09-09)

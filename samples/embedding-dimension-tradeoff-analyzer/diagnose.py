@@ -173,7 +173,7 @@ def load_dataset(data_path: str, max_samples: int) -> Tuple[List[str], List[Dict
         "Cloud KMS는 고객 관리 암호화 키 CMEK 생성 및 주기적 자동 순환을 관리하는 클라우드 보안 서비스다.",
         "Cloud SQL은 PostgreSQL, MySQL 엔진을 클라우드 환경에서 완전 관리형으로 제공하는 관계형 데이터베이스다.",
         "VPC Service Controls는 구글 클라우드 리소스 간 사설 보안 경계를 형성하여 비인가 데이터 유출을 방지한다.",
-        "Compute Engine GPU 예약은 대규모 AI 딥러닝 모델 학습 및 고성능 추론을 위한 전용 하드웨어 자원을 보장한다.",
+        "Compute Engine GPU 예약은 대규모 AI 딥 러닝 모델 학습 및 고성능 추론을 위한 전용 하드웨어 자원을 보장한다.",
         "Cloud Storage는 전 세계 어디서나 대용량 비정형 객체 데이터를 99.999999999% 내구성으로 저장하는 스토리지다.",
         "IAM 데이터베이스 인증은 고정 비밀번호 없이 단기 OAuth 토큰으로 Cloud SQL에 안전하게 접속하는 인증 체계다.",
         "Direct VPC Egress는 Serverless 커넥터 없이 Cloud Run에서 사설 VPC 서브넷으로 직접 트래픽을 전송하는 최신 네트워킹이다.",

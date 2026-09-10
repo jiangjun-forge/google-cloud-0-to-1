@@ -31,7 +31,7 @@ echo "조회 대상 기간: 최근 ${DAYS}일"
 echo "조회 대상 로그 개수: 최대 ${LIMIT_COUNT}개"
 echo "========================================================================"
 
-# DAYS를 기준으로 UTC 포맷 시작 날짜를 도출한다. macOS와 Linux 운영체제 환경을 모두 지원한다.
+# DAYS를 기준으로 UTC 포맷 시작 날짜를 도출한다. macOS와 Linux 운영 체제 환경을 모두 지원한다.
 if [[ "$OSTYPE" == "darwin"* ]]; then
   START_DATE=$(date -u -v-"${DAYS}"d +%Y-%m-%dT%H:%M:%SZ)
 else
