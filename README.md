@@ -27,6 +27,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ```text
 .
 ├── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
+│   ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
 │   ├── cloud-run-cud-optimizer/                # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
 │   ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
 │   ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
