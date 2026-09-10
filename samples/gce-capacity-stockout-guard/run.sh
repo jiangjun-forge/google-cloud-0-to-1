@@ -36,4 +36,5 @@ else
   exit 1
 fi
 
-exec "${PYTHON_BIN}" "${SCRIPT_DIR}/diagnose.py" "$@"
+export PYTHONUNBUFFERED=1
+exec "${PYTHON_BIN}" -u "${SCRIPT_DIR}/diagnose.py" "$@"

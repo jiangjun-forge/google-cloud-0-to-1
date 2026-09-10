@@ -133,8 +133,10 @@ def run_gcloud_json(cmd: list[str]) -> dict | list | None:
 def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     """실제 GCP 환경의 NCT 컴플라이언스 상태를 점검한다."""
     results = []
+    print("[*] Google Cloud 제어 평면(Control Plane) 보안 통제 상태를 진단한다...\n", flush=True)
 
     # 1. Org Policy 리소스 위치 제약 검사
+    print(f"[1/7] 산업기술보호법 서울 리전({region}) Data Boundary 조직 정책 점검 중...", flush=True)
     org_cmd = [
         "gcloud", "resource-manager", "org-policies", "describe",
         "constraints/gcp.resourceLocations",
@@ -171,6 +173,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
         })
 
     # 2. IAM Deny Policy (RAG 벡터 데이터 차단)
+    print("[2/7] RAG 벡터 인덱스 사외 적재 차단 IAM Deny 정책 확인 중...", flush=True)
     deny_cmd = [
         "gcloud", "iam", "deny-policies", "list",
         f"--attachment-point=cloudresourcemanager.googleapis.com/projects/{project_id}",
@@ -195,6 +198,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
         })
 
     # 3. KMS CMEK 키 검사
+    print(f"[3/7] Cloud KMS 서울 키링({region}) CMEK 이중 암호화 상태 조회 중...", flush=True)
     kms_cmd = [
         "gcloud", "kms", "keyrings", "list",
         f"--location={region}",
@@ -220,6 +224,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
         })
 
     # 4. 추론 리전 국소화 (Vertex AI 서울 리전 엔드포인트 격리)
+    print(f"[4/7] Vertex AI 서울 리전 엔드포인트 격리 상태 검증 중...", flush=True)
     endpoint_cmd = [
         "gcloud", "config", "get-value", "api_endpoint_overrides/aiplatform",
     ]
@@ -249,6 +254,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
         })
 
     # 5. 감사 로깅 점검
+    print(f"[5/7] Cloud Audit Logs 데이터 접근 감사 로깅 싱크 점검 중...", flush=True)
     logging_cmd = [
         "gcloud", "logging", "sinks", "list",
         f"--project={project_id}",
@@ -272,7 +278,8 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
             "remediation": "BigQuery 또는 Cloud Storage 감사 로그 싱크 연동 필요",
         })
 
-    # 5. 사외/외국 계정 공유 차단 (iam.allowedPolicyMemberDomains)
+    # 6. 사외/외국 계정 공유 차단 (iam.allowedPolicyMemberDomains)
+    print(f"[6/7] 사외/외국 계정 공유 차단 조직 정책(iam.allowedPolicyMemberDomains) 검사 중...", flush=True)
     member_domain_cmd = [
         "gcloud", "resource-manager", "org-policies", "describe",
         "constraints/iam.allowedPolicyMemberDomains",
@@ -296,7 +303,8 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
         "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 방어)",
     })
 
-    # 6. 클라우드 제공자 임의 접근 통제 (Access Approval / Access Transparency)
+    # 7. 클라우드 제공자 임의 접근 통제 (Access Approval / Access Transparency)
+    print(f"[7/7] 클라우드 제공자 임의 접근 통제(Access Approval) 사전 승인 설정 조회 중...\n", flush=True)
     approval_cmd = [
         "gcloud", "access-approval", "settings", "get",
         f"--project={project_id}",
@@ -328,14 +336,16 @@ def main() -> None:
     region = args.region
 
     mode_label = "가상 실행 (Dry-run)" if args.dry_run else "실제 환경 (Live)"
-    print("=" * 85)
-    print("국가 핵심 기술(NCT) 대상 생성형 AI 보안 통제 및 데이터 주권 진단 리포트")
-    print(f"진단 모드: {mode_label}")
-    print(f"대상 프로젝트: {project_id}")
-    print(f"지정 리전: {region} (대한민국 서울 리전)")
-    print("=" * 85)
+    print("=" * 85, flush=True)
+    print("국가 핵심 기술(NCT) 대상 생성형 AI 보안 통제 및 데이터 주권 진단 도구", flush=True)
+    print(f"진단 모드: {mode_label}", flush=True)
+    print(f"대상 프로젝트: {project_id}", flush=True)
+    print(f"지정 리전: {region} (대한민국 서울 리전)", flush=True)
+    print("=" * 85, flush=True)
+    print(flush=True)
 
     if args.dry_run:
+        print("[*] 가상 모의 감사 데이터를 로드하고 점검 항목을 시뮬레이션한다...\n", flush=True)
         results = get_mock_check_results(region)
     else:
         results = inspect_live_environment(project_id, region)

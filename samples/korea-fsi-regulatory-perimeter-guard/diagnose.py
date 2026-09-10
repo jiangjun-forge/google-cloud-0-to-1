@@ -143,8 +143,10 @@ def run_gcloud_json(cmd: List[str]) -> Optional[Any]:
 def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], kms_key: Optional[str]) -> List[Dict[str, Any]]:
     """실제 GCP 환경의 보안 설정 상태를 진단한다."""
     findings = []
+    print("[*] Google Cloud 실시간 제어 평면(Control Plane) 보안 설정을 진단한다...\n", flush=True)
 
     # 1. VPC-SC 서비스 경계 진단
+    print("[1/9] VPC-SC 보안 경계 내 Vertex AI 보호 여부 확인 중...", flush=True)
     perimeter_data = run_gcloud_json(["gcloud", "access-context-manager", "perimeters", "list", "--format=json"])
     vpc_sc_pass = False
     vpc_sc_detail = "접근 가능한 서비스 경계가 없거나 권한이 부족함"
@@ -173,6 +175,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     })
 
     # 2. VPC-SC Web Search Grounding 격리 진단
+    print("[2/9] VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부 점검 중...", flush=True)
     findings.append({
         "id": "FR-02",
         "category": "논리적 망 분리",
@@ -185,6 +188,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
 
     # 3. Cloud Storage 불변 보존 (Retention Policy / Bucket Lock)
     target_bucket = audit_bucket or f"{project_id}-fsi-audit"
+    print(f"[3/9] Cloud Storage(gs://{target_bucket}) 5년 불변 보존 및 Bucket Lock 조회 중...", flush=True)
     bucket_info = run_gcloud_json(["gcloud", "storage", "buckets", "describe", f"gs://{target_bucket}", "--format=json"])
     retention_pass = False
     retention_detail = f"버킷 gs://{target_bucket} 조회가 불가능하거나 미생성 상태임"
@@ -214,6 +218,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     })
 
     # 4. 고객 관리 암호화 키 (CMEK) 진단
+    print(f"[4/9] 고객 관리 암호화 키(CMEK) 적용 상태 검사 중...", flush=True)
     cmek_pass = False
     cmek_detail = f"버킷 gs://{target_bucket} 에 CMEK 암호화 설정이 미적용됨"
     if bucket_info and isinstance(bucket_info, dict):
@@ -233,6 +238,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     })
 
     # 5. 감사 로그 (Audit Logs) 진단
+    print(f"[5/9] 프로젝트 IAM 데이터 접근 감사 로그(DATA_READ/WRITE) 조회 중...", flush=True)
     iam_policy = run_gcloud_json(["gcloud", "projects", "get-iam-policy", project_id, "--format=json"])
     audit_pass = False
     audit_detail = "프로젝트 IAM 정책에서 감사 로그(auditConfigs) 설정 조회 실패 또는 미설정"
@@ -263,6 +269,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     })
 
     # 6. Model Armor 가드레일 진단
+    print(f"[6/9] Model Armor 실시간 프롬프트 인젝션 방어 가드레일 조회 중 (리전: {location})...", flush=True)
     model_armor_templates = run_gcloud_json(["gcloud", "beta", "model-armor", "templates", "list", f"--location={location}", "--format=json"])
     ma_pass = False
     ma_detail = f"리전({location}) 내에 활성화된 Model Armor 템플릿이 없음"
@@ -282,6 +289,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     })
 
     # 7. Sensitive Data Protection (SDP) 진단
+    print(f"[7/9] Sensitive Data Protection(SDP) 개인 신용 정보 가명 처리 템플릿 검사 중 (리전: {location})...", flush=True)
     dlp_templates = run_gcloud_json(["gcloud", "dlp", "inspect-templates", "list", f"--location={location}", "--format=json"])
     sdp_pass = False
     sdp_detail = f"리전({location}) 내에 등록된 DLP 검사 템플릿이 없음"
@@ -300,6 +308,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     })
 
     # 8. 서비스 계정 키 발급 제한 조직 정책 진단 (전자금융감독규정 제13조)
+    print(f"[8/9] 서비스 계정 키 발급 제한 조직 정책(Org Policy) 검증 중...", flush=True)
     sa_key_policy = run_gcloud_json([
         "gcloud", "resource-manager", "org-policies", "describe",
         "constraints/iam.disableServiceAccountKeyCreation",
@@ -324,6 +333,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     })
 
     # 9. SSL/TLS 정책 진단 (전자금융감독규정 제14조)
+    print(f"[9/9] 전송 구간 SSL/TLS 1.2+ 고강도 암호화 정책 조회 중...\n", flush=True)
     ssl_policies = run_gcloud_json(["gcloud", "compute", "ssl-policies", "list", f"--project={project_id}", "--format=json"])
     ssl_pass = False
     ssl_detail = "프로젝트 내에 커스텀 SSL 정책(TLS 1.2+)이 미구성됨"
@@ -402,12 +412,23 @@ def main() -> None:
 
     if args.dry_run:
         project_id = args.project or "example-fsi-corp"
-        findings = get_mock_findings(project_id)
     else:
         project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_active_project()
         if not project_id:
             print("오류: 프로젝트 ID가 지정되지 않았다. -p/--project 인자 또는 PROJECT_ID 환경 변수를 설정해야 한다.", file=sys.stderr)
             sys.exit(2)
+
+    mode_str = "가상 진단 (Dry-Run)" if args.dry_run else "실제 환경 스캔"
+    print("=" * 88, flush=True)
+    print(" 혁신 금융 서비스(FSI) 규제 준수 보안 경계 진단 도구", flush=True)
+    print(f" 대상 프로젝트: {project_id} | 점검 리전: {args.location} | 실행 모드: {mode_str}", flush=True)
+    print("=" * 88, flush=True)
+    print(flush=True)
+
+    if args.dry_run:
+        print("[*] 가상 모의 감사 데이터를 로드하고 점검 항목을 시뮬레이션한다...\n", flush=True)
+        findings = get_mock_findings(project_id)
+    else:
         findings = diagnose_live(project_id, args.location, args.audit_bucket, args.kms_key)
 
     exit_code = print_report(project_id, args.location, args.dry_run, findings)

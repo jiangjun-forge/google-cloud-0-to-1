@@ -23,4 +23,5 @@ pip install -q --upgrade pip
 pip install -q -r requirements.txt
 
 echo "[INFO] 진단 스크립트를 실행한다..."
-python3 diagnose.py "$@"
+export PYTHONUNBUFFERED=1
+exec python3 -u diagnose.py "$@"

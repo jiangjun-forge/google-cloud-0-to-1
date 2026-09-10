@@ -30,4 +30,5 @@ if ! command -v "${PYTHON_CMD}" &>/dev/null; then
     exit 1
 fi
 
-exec "${PYTHON_CMD}" "${SCRIPT_DIR}/diagnose.py" "$@"
+export PYTHONUNBUFFERED=1
+exec "${PYTHON_CMD}" -u "${SCRIPT_DIR}/diagnose.py" "$@"

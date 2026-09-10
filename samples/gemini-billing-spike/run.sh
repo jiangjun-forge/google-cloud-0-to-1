@@ -14,4 +14,5 @@ if [ -f "${SCRIPT_DIR}/.env" ]; then
 fi
 
 # 3. 파이썬 진단 스크립트 실행
-python3 diagnose.py "$@"
+export PYTHONUNBUFFERED=1
+exec python3 -u diagnose.py "$@"

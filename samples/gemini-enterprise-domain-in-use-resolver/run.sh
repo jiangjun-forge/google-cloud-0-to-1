@@ -23,4 +23,5 @@ if [[ -f ".env" ]]; then
   source ".env"
 fi
 
-python3 diagnose.py "$@"
+export PYTHONUNBUFFERED=1
+exec python3 -u diagnose.py "$@"

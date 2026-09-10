@@ -312,18 +312,21 @@ def inspect_live_dataset(project_id: str, dataset_id: str, location: str, enrich
 
     try:
         dataset = client.get_dataset(dataset_ref)
-        print(f"대상 BigQuery 데이터셋 연결 성공: {dataset.dataset_id} (리전: {dataset.location})")
+        print(f"대상 BigQuery 데이터셋 연결 성공: {dataset.dataset_id} (리전: {dataset.location})", flush=True)
     except Exception as e:
-        print(f"오류: 데이터셋 '{dataset_ref}' 조회 실패: {e}", file=sys.stderr)
+        print(f"오류: 데이터셋 '{dataset_ref}' 조회 실패: {e}", file=sys.stderr, flush=True)
         sys.exit(1)
 
+    print("데이터셋 내 테이블 목록 조회 중...", flush=True)
     tables = list(client.list_tables(dataset))
     if not tables:
-        print(f"데이터셋 '{dataset_ref}' 내에 테이블이 존재하지 않는다.")
+        print(f"데이터셋 '{dataset_ref}' 내에 테이블이 존재하지 않는다.", flush=True)
         return
 
+    print(f"총 {len(tables)}개 테이블 메타데이터 분석 시작...", flush=True)
     table_records = []
-    for t_item in tables:
+    for idx, t_item in enumerate(tables, 1):
+        print(f"  [{idx}/{len(tables)}] 테이블 '{t_item.table_id}' 스키마 및 설명 분석 중...", flush=True)
         t = client.get_table(t_item.reference)
         has_desc = bool(t.description and len(t.description.strip()) > 5)
         total_cols = len(t.schema)
