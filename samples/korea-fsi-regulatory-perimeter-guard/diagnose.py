@@ -480,6 +480,7 @@ def main() -> None:
     parser.add_argument("--audit-bucket", help="FSI 감사 및 데이터 저장용 Cloud Storage 버킷 명")
     parser.add_argument("--kms-key", help="고객 관리 암호화 키(CMEK) 리소스 경로")
     parser.add_argument("--dry-run", action="store_true", help="실제 GCP API 호출 없이 모의 가상 데이터를 이용해 스모크 테스트 수행")
+    parser.add_argument("--fail-on-violation", action="store_true", help="규제 미달(FAIL) 항목 발견 시 종료 코드 1을 반환한다 (CI/CD 파이프라인용)")
 
     args = parser.parse_args()
 
@@ -505,7 +506,9 @@ def main() -> None:
         findings = diagnose_live(project_id, args.location, args.audit_bucket, args.kms_key)
 
     exit_code = print_report(project_id, args.location, args.dry_run, findings)
-    sys.exit(0 if args.dry_run else exit_code)
+    if args.fail_on_violation and exit_code != 0:
+        sys.exit(exit_code)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

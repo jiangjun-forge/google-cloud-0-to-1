@@ -52,8 +52,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-d",
         "--dimensions",
-        default=os.getenv("DIMENSIONS") or "1536,768,512,256,128",
-        help="비교할 임베딩 차원 목록 (콤마 구분, 2개 이상 필수, 기본값: 1536,768,512,256,128)",
+        default=os.getenv("DIMENSIONS") or "768,512,256,128",
+        help="비교할 임베딩 차원 목록 (콤마 구분, 2개 이상 필수, 기본값: 768,512,256,128)",
     )
     sample_env = os.getenv("SAMPLE_COUNT")
     vector_env = os.getenv("PROJECTED_VECTOR_COUNT")
@@ -143,9 +143,20 @@ def parse_dimension_list(raw_dims: str) -> List[int]:
         sys.exit(1)
 
     unique_sorted = sorted(list(set(parts)), reverse=True)
+    valid_dims = []
+    for d in unique_sorted:
+        if d > 768:
+            print(f"[경고] {d}차원은 text-embedding-005 지원 상한(최대 768)을 초과하여 768로 조정되거나 제외된다.")
+            if 768 not in valid_dims:
+                valid_dims.append(768)
+        elif d < 1:
+            print(f"[경고] {d}차원은 유효하지 않은 차원이므로 제외된다.")
+        else:
+            valid_dims.append(d)
+
+    unique_sorted = sorted(list(set(valid_dims)), reverse=True)
     if len(unique_sorted) < 2:
-        print(f"오류: 비교 분석을 위해 최소 2개 이상의 차원이 필요하다. 입력값: {unique_sorted}")
-        sys.exit(1)
+        unique_sorted = [768, 512, 256, 128]
 
     return unique_sorted
 
@@ -242,7 +253,7 @@ def cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
     return dot_product / (norm_a * norm_b)
 
 
-def generate_mock_vector(text: str, dim: int, full_dim: int = 1536) -> List[float]:
+def generate_mock_vector(text: str, dim: int, full_dim: int = 768) -> List[float]:
     """MRL 특성을 모사한 가상 임베딩 벡터를 생성한다 (앞선 차원에 핵심 정보 집중)."""
     seed = sum(ord(c) for c in text)
     max_len = max(full_dim, dim)
@@ -337,7 +348,7 @@ def evaluate_dimension(
         top1_recall = 100.0
         top3_recall = 100.0
         mrr = 1.000
-        avg_latency = round(15.0 + (dim / 1536.0) * 5.5, 1)
+        avg_latency = round(15.0 + (dim / 768.0) * 5.5, 1)
     else:
         # MRL 이론 곡선 기반 보정 (차원 축소비 대비 높은 정보 보존율 반영)
         retention = 1.0 - (0.052 * (1.0 - math.pow(dim_ratio, 0.35)))

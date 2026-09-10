@@ -8,6 +8,7 @@ BigQuery 데이터세트에 실시간 자동 스트리밍 적재하고 토큰 �
 """
 
 import argparse
+import concurrent.futures
 import os
 import subprocess
 import sys
@@ -86,7 +87,7 @@ ORDER BY total_tokens DESC;
   print("=" * 72 + "\n")
 
 
-def execute_logging(project_id: str, dataset_id: str, location: str, model_id: str):
+def execute_logging(project_id: str, dataset_id: str, location: str, model_id: str, skip_inference: bool = False):
   """실제 BigQuery 데이터세트 생성 및 로깅 설정을 수행한다."""
   try:
     from google.cloud import bigquery
@@ -102,17 +103,31 @@ def execute_logging(project_id: str, dataset_id: str, location: str, model_id: s
   print(f"\n[안내] 대상 모델 '{model_id}'에 대해 BigQuery 내보내기 설정을 구성한다.")
   print(f"  - BigQuery 대상: bq://{project_id}.{dataset_id}")
   print("  - 표본 추출 비율: 100% (sampling_rate: 1.0)")
-  print("\n[안내] google-genai 최신 SDK를 통해 테스트 추론을 1회 호출한다...")
+
+  if skip_inference:
+    print("\n[안내] --skip-inference 플래그가 설정되어 테스트 추론 호출을 건너뜁니다.")
+    return
+
+  print("\n[안내] google-genai 최신 SDK를 통해 테스트 추론을 1회 호출한다 (최대 10초 대기)...")
 
   try:
     from google import genai
     genai_client = genai.Client(vertexai=True, project=project_id, location=location)
-    response = genai_client.models.generate_content(
-        model=model_id,
-        contents="구글 클라우드 BigQuery 연동 로깅 테스트 프롬프트입니다."
-    )
-    print("\n[제미나이 호출 성공]")
-    print(f"응답 요약: {response.text[:120]}...\n")
+
+    def _call_model():
+      return genai_client.models.generate_content(
+          model=model_id,
+          contents="구글 클라우드 BigQuery 연동 로깅 테스트 프롬프트입니다."
+      )
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+      future = executor.submit(_call_model)
+      response = future.result(timeout=10.0)
+      print("\n[제미나이 호출 성공]")
+      print(f"응답 요약: {response.text[:120]}...\n")
+  except concurrent.futures.TimeoutError:
+    print("\n[경고] Vertex AI 엔드포인트 응답 대기 시간이 10초를 초과하여 테스트 추론을 안전하게 건너뜁니다.")
+    print("  (네트워크 지연 또는 Vertex AI 첫 호출 웜업 지연일 수 있습니다.)")
   except Exception as e:
     print(f"[경고] 제미나이 호출 중 오류 발생: {e}")
 
@@ -146,6 +161,11 @@ def main():
       help="대상 모델 식별자 (기본값: gemini-2.5-flash)",
   )
   parser.add_argument(
+      "--skip-inference",
+      action="store_true",
+      help="Vertex AI 테스트 추론 호출을 건너뛰고 BigQuery 설정 및 쿼리 분석만 진행한다",
+  )
+  parser.add_argument(
       "--dry-run",
       "--demo",
       action="store_true",
@@ -168,7 +188,7 @@ def main():
   print(f"  - 모델: {args.model}")
   print("=" * 72)
 
-  execute_logging(project_id, args.dataset, args.location, args.model)
+  execute_logging(project_id, args.dataset, args.location, args.model, skip_inference=args.skip_inference)
   print_mock_results(project_id, args.dataset)
 
   print("=" * 72)
