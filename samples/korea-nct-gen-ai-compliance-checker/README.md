@@ -185,3 +185,10 @@ gcloud iam deny-policies delete nct-rag-deny --attachment-point=cloudresourceman
 # Cloud KMS 키 버전 비활성화 및 파기 예약
 gcloud kms keys versions destroy 1 --key=nct-cmek-key --keyring=nct-keyring --location=asia-northeast3
 ```
+
+---
+
+## 8. 관련 규격 문서
+
+- [비즈니스 요구사항 명세서 (BRD.md)](docs/BRD.md)
+- [기술 상세 설계서 (TDD.md)](docs/TDD.md)

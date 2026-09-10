@@ -205,3 +205,10 @@ FSI-SEC-09   | 전송 보안          | [PASS] | 전송 구간 고강도 암호�
 # 테스트용 버킷 삭제 (잠금되지 않은 버킷에 한함)
 gcloud storage rm -r gs://<TEST_BUCKET_NAME>
 ```
+
+---
+
+## 8. 관련 규격 문서
+
+- [비즈니스 요구사항 명세서 (BRD.md)](docs/BRD.md)
+- [기술 상세 설계서 (TDD.md)](docs/TDD.md)

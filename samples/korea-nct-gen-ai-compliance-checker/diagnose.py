@@ -219,7 +219,36 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
             "remediation": f"gcloud kms keyrings create 명령으로 {region}에 키링 생성 필요 (이중 암호화 의무 준수)",
         })
 
-    # 4. 감사 로깅 점검
+    # 4. 추론 리전 국소화 (Vertex AI 서울 리전 엔드포인트 격리)
+    endpoint_cmd = [
+        "gcloud", "config", "get-value", "api_endpoint_overrides/aiplatform",
+    ]
+    endpoint_override = ""
+    try:
+        ep_res = subprocess.run(endpoint_cmd, capture_output=True, text=True)
+        endpoint_override = ep_res.stdout.strip()
+    except Exception:
+        pass
+
+    target_endpoint = f"{region}-aiplatform.googleapis.com"
+    if target_endpoint in endpoint_override:
+        results.append({
+            "category": "Inference Boundary",
+            "control": "추론 리전 국소화 (Vertex AI - 안내서 국내 위치)",
+            "status": "PASS",
+            "current_state": f"Vertex AI 서울 리전 엔드포인트({target_endpoint}) 국소화 강제 확인",
+            "remediation": "추가 조치 불필요 (국내 추론 엔드포인트 격리 상태 유지)",
+        })
+    else:
+        results.append({
+            "category": "Inference Boundary",
+            "control": "추론 리전 국소화 (Vertex AI - 안내서 국내 위치)",
+            "status": "WARN",
+            "current_state": f"기본 글로벌 엔드포인트 참조 가능성 존재 (현재 오버라이드: '{endpoint_override or 'unset'}')",
+            "remediation": f"gcloud config set api_endpoint_overrides/aiplatform https://{target_endpoint}/ 명령으로 엔드포인트 서울 강제 필요",
+        })
+
+    # 5. 감사 로깅 점검
     logging_cmd = [
         "gcloud", "logging", "sinks", "list",
         f"--project={project_id}",
