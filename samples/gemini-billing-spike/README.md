@@ -173,9 +173,9 @@ python diagnose.py --project your-project-id --days 90
 ## 향후 비용 누수 방지 베스트 프랙티스
 
 1. **예산 알림(Budget Alert) 설정**:
-   - 청구 계정에서 예상 사용 금액의 50%, 90%, 100% 도달 시 담당자에게 즉시 이메일이 발송되도록 구성한다. (예산 설정: https://console.cloud.google.com/billing/budgets )
+   - 청구 계정에서 예상 사용 금액의 50%, 90%, 100% 도달 시 담당자에게 즉시 이메일이 발송되도록 Cloud Billing 예산 및 알림 콘솔 ( https://console.cloud.google.com/billing/budgets ) 에서 구성한다.
 2. **일일 할당량(Quota Caps) 강제 적용**:
-   - 테스트/개발 프로젝트라면 Vertex AI API의 `분당 요청 수(RPM)` 또는 `일일 요청 한도`를 낮게 고정하여 실수로 인한 요금 폭탄을 구조적으로 차단한다. (할당량 콘솔: https://console.cloud.google.com/iam-admin/quotas )
+   - 테스트/개발 프로젝트라면 Vertex AI API의 `분당 요청 수(RPM)` 또는 `일일 요청 한도`를 낮게 고정하여 실수로 인한 요금 폭탄을 구조적으로 차단하도록 IAM 및 관리자 할당량 콘솔 ( https://console.cloud.google.com/iam-admin/quotas ) 에서 설정한다.
 
 ---
 

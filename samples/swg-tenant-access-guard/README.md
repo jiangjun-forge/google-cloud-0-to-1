@@ -96,9 +96,9 @@ flowchart TD
 3. 대상 사용자 그룹(`gcp-authorized-users@example-corp.com`)에 해당 레벨을 적용하고 적용 앱으로 Google Cloud 콘솔 및 관련 서비스를 바인딩한다.
 
 ### 공식 가이드 및 콘솔 링크
-- [Organization Restrictions 개요 및 헤더 규격] ( https://docs.cloud.google.com/resource-manager/docs/organization-restrictions/overview )
-- [Google Workspace 개인 계정 로그인 차단 설정] ( https://support.google.com/a/answer/1668854 )
-- [Context-Aware Access 개요 및 장치 정책] ( https://docs.cloud.google.com/chrome-enterprise-premium/docs/overview )
+- Organization Restrictions 개요 및 헤더 규격 ( https://docs.cloud.google.com/resource-manager/docs/organization-restrictions/overview )
+- Google Workspace 개인 계정 로그인 차단 설정 ( https://support.google.com/a/answer/1668854 )
+- Context-Aware Access 개요 및 장치 정책 ( https://docs.cloud.google.com/chrome-enterprise-premium/docs/overview )
 
 ---
 

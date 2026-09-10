@@ -109,7 +109,7 @@ CLUSTER BY department, activity_tier;
 ```
 
 ### 2) 관리 콘솔 조치 링크 및 라이선스 회수
-- **Google Workspace 관리 콘솔 라이선스 관리**: ( https://admin.google.com/ac/billing/subscriptions )
+- Google Workspace 관리 콘솔 라이선스 관리 ( https://admin.google.com/ac/billing/subscriptions )
 - **회수 권고 대상 계정**:
   - 진단 결과 도출된 `[회수 권고]` 계정의 Gemini Enterprise 라이선스를 해제하고 대기 중인 신규 부서 임직원에게 재할당한다.
 

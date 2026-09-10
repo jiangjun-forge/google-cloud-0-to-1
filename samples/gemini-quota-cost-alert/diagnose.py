@@ -191,7 +191,7 @@ def main():
   print("테스트 완료 후 요금 발생 및 불필요한 자원 잔존을 방지하기 위해 아래 명령어로 삭제한다:")
   print(f"  1. Pub/Sub 주제 삭제: gcloud pubsub topics delete {args.topic} --project={project_id}")
   print("  2. Cloud Functions 삭제: gcloud functions delete quota-auto-disable --region=asia-northeast3")
-  print(f"  3. 예산 규칙 삭제: GCP 결제 콘솔(https://console.cloud.google.com/billing) '예산 및 알림' 메뉴에서 '{args.budget_name}' 삭제")
+  print(f"  3. 예산 규칙 삭제: GCP 결제 콘솔 ( https://console.cloud.google.com/billing ) '예산 및 알림' 메뉴에서 '{args.budget_name}' 삭제")
   print("=" * 72 + "\n")
 
 

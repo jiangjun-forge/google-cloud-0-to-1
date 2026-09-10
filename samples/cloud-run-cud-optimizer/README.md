@@ -91,8 +91,8 @@ flowchart TD
    - **시간당 커밋 금액**: 콘솔의 보수적 추천액이 아닌, 진단 리포트에서 도출된 최적 권장 약정액을 입력한다.
 
 ### 공식 가이드 및 콘솔 링크
-- [약정 사용 할인(CUD) 개요 및 플렉시블 약정] ( https://cloud.google.com/docs/cuds )
-- [Cloud Run 비용 최적화 권장사항] ( https://docs.cloud.google.com/run/docs/tips/services-cost-optimization )
+- 약정 사용 할인(CUD) 개요 및 플렉시블 약정 ( https://cloud.google.com/docs/cuds )
+- Cloud Run 비용 최적화 권장사항 ( https://docs.cloud.google.com/run/docs/tips/services-cost-optimization )
 
 ---
 

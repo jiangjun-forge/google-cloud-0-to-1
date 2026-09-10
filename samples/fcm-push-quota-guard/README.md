@@ -111,8 +111,8 @@ def exponential_backoff_retry(attempt, base=1.0, max_backoff=32.0):
 ```
 
 ### 공식 가이드 및 콘솔 링크
-- [FCM 스로틀링 및 할당량 공식 가이드] ( https://firebase.google.com/docs/cloud-messaging/throttling-and-quotas )
-- [Cloud Monitoring Firebase 및 FCM 지표 목록] ( https://cloud.google.com/monitoring/api/metrics_gcp )
+- FCM 스로틀링 및 할당량 공식 가이드 ( https://firebase.google.com/docs/cloud-messaging/throttling-and-quotas )
+- Cloud Monitoring Firebase 및 FCM 지표 목록 ( https://cloud.google.com/monitoring/api/metrics_gcp )
 
 ---
 

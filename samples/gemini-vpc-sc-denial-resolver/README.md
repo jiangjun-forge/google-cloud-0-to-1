@@ -127,8 +127,8 @@ python3 diagnose.py --project your-project-id --days 7 --limit 10
   - 고유 거부 ID  : vpc-sc-denial-8f2a1b9c-4d3e-41a2-98bc-abcdef012345
   [권장 처방 및 복구 가이드]
     - 원인 분석 및 해결책: API 호출자가 신뢰할 수 없는 공용 IP 대역 또는 미지정 사설 서브넷에서 접근했다. VPC-SC 수신(Ingress) 규칙에 호출자의 IP 서브넷 대역 또는 서비스 계정을 명시적으로 허용해야 한다.
-    - VPC-SC 문제 해결사 콘솔: https://console.cloud.google.com/security/vpc-service-controls/troubleshooter
-    - 서비스 경계 관리 콘솔  : https://console.cloud.google.com/security/vpc-service-controls
+    - VPC-SC 문제 해결사 콘솔 ( https://console.cloud.google.com/security/vpc-service-controls/troubleshooter )
+    - 서비스 경계 관리 콘솔 ( https://console.cloud.google.com/security/vpc-service-controls )
 ------------------------------------------------------------------------
 ```
 

@@ -177,25 +177,25 @@ def parse_and_report(project_id: str, days: int, data: dict):
   if has_api_key:
     print("\n[API 키 발견] 'apikey:AIzaSy...' 형태의 호출 감지:")
     print("  1. 소스 코드나 클라이언트 앱에 API 키가 노출되었을 가능성이 있다.")
-    print("  2. GCP 콘솔 [API 및 서비스 > 사용자 인증 정보] 페이지로 이동:")
-    print(f"     URL: https://console.cloud.google.com/apis/credentials?project={project_id}")
+    print("  2. GCP 콘솔 사용자 인증 정보 페이지로 이동:")
+    print(f"     사용자 인증 정보 콘솔 ( https://console.cloud.google.com/apis/credentials?project={project_id} )")
     print("  3. 해당 키를 찾아 'API 제한사항'을 점검하거나, 즉시 삭제 또는 재발급 조치한다.")
 
   if has_sa:
     print("\n[서비스 계정 발견] 'serviceAccount:...' 형태의 호출 감지:")
     print("  1. 백엔드 배치 잡이나 유출된 서비스 계정 키 파일(JSON)을 통한 호출이다.")
-    print("  2. GCP 콘솔 [IAM 및 관리자 > 서비스 계정] 페이지로 이동:")
-    print(f"     URL: https://console.cloud.google.com/iam-admin/serviceaccounts?project={project_id}")
+    print("  2. GCP 콘솔 서비스 계정 페이지로 이동:")
+    print(f"     서비스 계정 콘솔 ( https://console.cloud.google.com/iam-admin/serviceaccounts?project={project_id} )")
     print("  3. 해당 계정의 활성 키를 점검하고 미사용 키는 즉시 삭제 조치한다.")
 
   if has_oauth:
     print("\n[OAuth2 클라이언트 발견] 'oauth2:...' 형태의 호출 감지:")
     print("  1. 등록된 웹/모바일 앱 클라이언트를 통해 사용자 인증 후 호출된 내역이다.")
-    print(f"     URL: https://console.cloud.google.com/apis/credentials?project={project_id}")
+    print(f"     사용자 인증 정보 콘솔 ( https://console.cloud.google.com/apis/credentials?project={project_id} )")
 
   print("\n추가 비용 누수 방지 권장 사항:")
-  print(f"   - 예산 알림 설정: https://console.cloud.google.com/billing/budgets")
-  print(f"   - 일일 할당량(Quota) 제한: https://console.cloud.google.com/iam-admin/quotas?project={project_id}")
+  print(f"   - Cloud Billing 예산 설정 ( https://console.cloud.google.com/billing/budgets )")
+  print(f"   - IAM 및 관리자 할당량 설정 ( https://console.cloud.google.com/iam-admin/quotas?project={project_id} )")
   print("=" * 72 + "\n")
 
 

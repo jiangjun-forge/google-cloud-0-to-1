@@ -90,8 +90,8 @@ def report_denials(denials: list[dict], project_id: str, days: int):
     print(f"  - 고유 거부 ID  : {d['denial_id']}")
     print("  [권장 처방 및 복구 가이드]")
     print(f"    - 원인 분석 및 해결책: {get_prescription(d['reason'])}")
-    print("    - VPC-SC 문제 해결사 콘솔: https://console.cloud.google.com/security/vpc-service-controls/troubleshooter")
-    print("    - 서비스 경계 관리 콘솔  : https://console.cloud.google.com/security/vpc-service-controls")
+    print("    - VPC-SC 문제 해결사 콘솔 ( https://console.cloud.google.com/security/vpc-service-controls/troubleshooter )")
+    print("    - 서비스 경계 관리 콘솔 ( https://console.cloud.google.com/security/vpc-service-controls )")
     print("-" * 72)
 
   print("=" * 72 + "\n")

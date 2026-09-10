@@ -91,8 +91,8 @@ flowchart TD
 3. 80%, 90%, 100% 도달 시 FinOps 및 인프라 담당자에게 Pub/Sub 실시간 알림이 발송되도록 구성한다.
 
 ### 공식 가이드 및 콘솔 링크
-- [Gemini Enterprise 오버리지 빌링 공식 가이드] ( https://docs.cloud.google.com/gemini/enterprise/docs/overages )
-- [Cloud Billing 예산 및 지출 한도 알림 생성] ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
+- Gemini Enterprise 오버리지 빌링 공식 가이드 ( https://docs.cloud.google.com/gemini/enterprise/docs/overages )
+- Cloud Billing 예산 및 지출 한도 알림 생성 ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
 
 ---
 

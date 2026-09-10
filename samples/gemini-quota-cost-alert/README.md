@@ -137,7 +137,7 @@ python3 diagnose.py --project your-project-id --topic gemini-cost-alerts
 테스트 완료 후 요금 발생 및 불필요한 자원 잔존을 방지하기 위해 아래 명령어로 삭제한다:
   1. Pub/Sub 주제 삭제: gcloud pubsub topics delete gemini-cost-alerts --project=my-prod-project
   2. Cloud Functions 삭제: gcloud functions delete quota-auto-disable --region=asia-northeast3
-  3. 예산 규칙 삭제: GCP 결제 콘솔(https://console.cloud.google.com/billing) '예산 및 알림' 메뉴에서 'gemini-budget-alert' 삭제
+  3. 예산 규칙 삭제: GCP 결제 콘솔 ( https://console.cloud.google.com/billing ) '예산 및 알림' 메뉴에서 'gemini-budget-alert' 삭제
 ========================================================================
 ```
 
@@ -155,5 +155,5 @@ gcloud pubsub topics delete gemini-cost-alerts --project=YOUR_PROJECT_ID
 gcloud functions delete quota-auto-disable --region=asia-northeast3 --project=YOUR_PROJECT_ID
 
 # 3. 결제 예산 규칙 정리
-# GCP 결제 콘솔 (https://console.cloud.google.com/billing)에 접속하여 '예산 및 알림' 메뉴에서 생성한 예산 규칙을 삭제한다.
+# GCP 결제 콘솔 ( https://console.cloud.google.com/billing ) 에 접속하여 '예산 및 알림' 메뉴에서 생성한 예산 규칙을 삭제한다.
 ```
