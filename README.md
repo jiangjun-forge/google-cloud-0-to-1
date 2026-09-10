@@ -29,7 +29,6 @@ All contents, designs, and code examples are subject to change, modification, or
 ├── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
 │   ├── cloud-run-cud-optimizer/                # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
 │   ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
-│   ├── cloud-sql-iam-db-auth-resolver/         # Cloud SQL IAM DB 인증 전환 및 토큰 만료 장애 진단
 │   ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
 │   ├── fcm-push-quota-guard/                   # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
 │   ├── gce-capacity-stockout-guard/            # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
@@ -45,15 +44,12 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── gemini-enterprise-usage-by-account/     # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
 │   ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
 │   ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
-│   ├── gemini-request-response-logging/        # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재
+│   ├── gemini-request-response-logging/        # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재 및 토큰 분석
 │   ├── gemini-resilience-checker/              # 429 장애 극복 복원력 패턴(백오프, 지터, 폴백) 진단
-│   ├── gemini-sensitive-data-masking/          # 프롬프트 전송 전 Cloud DLP 실시간 개인 정보 마스킹
-│   ├── gemini-usage-by-account/                # BigQuery 로그 기반 계정별 토큰(생각 토큰 포함) 집계
 │   ├── gemini-vpc-sc-denial-resolver/          # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
 │   ├── gke-source-ip-snat-guard/               # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
 │   ├── iam-permission-resolver/                # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
 │   ├── kms-key-rotation-outage-guard/          # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
-│   ├── llm-pairwise-autorater/                 # 두 모델 간 병렬 배치 추론 및 교차 판사 자동 평가
 │   ├── model-armor-regional-compliance-guard/  # 서울 리전 Model Armor 기능 제약 진단 및 하이브리드 가드레일 처방
 │   ├── nct-gen-ai-compliance-checker/          # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
 │   ├── org-policy-resolver/                    # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방

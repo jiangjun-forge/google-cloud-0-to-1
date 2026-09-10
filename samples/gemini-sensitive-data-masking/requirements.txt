@@ -1,2 +1,0 @@
-google-cloud-dlp>=3.15.0
-google-genai>=1.0.0
