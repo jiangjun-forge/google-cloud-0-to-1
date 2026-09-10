@@ -37,8 +37,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-d",
         "--dataset",
-        default=os.getenv("DATASET_ID") or "cymbal_gold",
-        help="진단 및 보강 대상 BigQuery 데이터셋 ID (기본값: cymbal_gold)",
+        default=os.getenv("DATASET_ID") or None,
+        help="진단 및 보강 대상 BigQuery 데이터셋 ID (미지정 시 자동 감지 또는 대화형 선택)",
     )
     parser.add_argument(
         "-l",
@@ -112,6 +112,52 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
         pass
 
     return "demo-data-agent-project"
+
+
+def detect_dataset_id(client: Any, project_id: str, cli_dataset: str | None = None, is_dry_run: bool = False) -> str:
+    """BigQuery 데이터셋 ID를 감지하거나 대화형으로 선택한다."""
+    if cli_dataset:
+        return cli_dataset
+    env_dataset = os.getenv("DATASET_ID")
+    if env_dataset:
+        return env_dataset
+
+    if is_dry_run:
+        return "cymbal_gold"
+
+    try:
+        datasets = [d.dataset_id for d in client.list_datasets(project=project_id)]
+    except Exception as e:
+        print(f"경고: 프로젝트 '{project_id}' 내 데이터셋 목록 조회 실패: {e}", file=sys.stderr)
+        datasets = []
+
+    if datasets:
+        if len(datasets) == 1:
+            print(f"프로젝트 '{project_id}' 내 단일 데이터셋 자동 감지: {datasets[0]}")
+            return datasets[0]
+
+        if not sys.stdin.isatty():
+            print(f"비대화형 환경: 첫 번째 감지 데이터셋 자동 채택: {datasets[0]}")
+            return datasets[0]
+
+        print(f"\n[?] 진단 대상 BigQuery 데이터셋이 지정되지 않았습니다. '{project_id}' 내 가용 데이터셋 목록:")
+        for idx, ds in enumerate(datasets, 1):
+            print(f"  [{idx}] {ds}")
+        print(f"  [{len(datasets) + 1}] 직접 입력 (Custom Input)")
+        try:
+            choice = input(f"선택할 번호를 입력하세요 [1-{len(datasets) + 1}] (Enter 시 1번): ").strip()
+            if not choice or choice == "1":
+                return datasets[0]
+            if choice.isdigit() and 1 <= int(choice) <= len(datasets):
+                return datasets[int(choice) - 1]
+            if choice == str(len(datasets) + 1):
+                custom = input("데이터셋 ID를 직접 입력하세요: ").strip()
+                if custom:
+                    return custom
+        except (EOFError, KeyboardInterrupt):
+            return datasets[0]
+
+    return ""
 
 
 def get_mock_audit_data() -> dict[str, Any]:
@@ -298,6 +344,10 @@ def print_enrichment_plan(audit_data: dict[str, Any]) -> None:
 
 def generate_glossary_yaml(audit_data: dict[str, Any], output_path: str = "dataplex_glossary_terms.yaml") -> None:
     """Dataplex Knowledge Catalog 비즈니스 용어집 배포용 YAML 템플릿을 생성한다."""
+    if not os.path.isabs(output_path):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, output_path)
+
     terms = []
     for t in audit_data["tables"]:
         term_id = t["table_id"].replace("_", "-") + "-metrics"
@@ -329,7 +379,7 @@ def generate_glossary_yaml(audit_data: dict[str, Any], output_path: str = "datap
         print(f"용어집 파일 생성 중 오류 발생: {e}", file=sys.stderr)
 
 
-def inspect_live_dataset(project_id: str, dataset_id: str, location: str, enrich: bool, apply: bool) -> None:
+def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location: str, enrich: bool, apply: bool) -> None:
     """실제 BigQuery 환경의 데이터셋 스키마를 점검하고 보강한다."""
     try:
         from google.cloud import bigquery
@@ -338,14 +388,25 @@ def inspect_live_dataset(project_id: str, dataset_id: str, location: str, enrich
         print("pip install -r requirements.txt 명령으로 의존성을 먼저 설치하라.", file=sys.stderr)
         sys.exit(1)
 
-    client = bigquery.Client(project=project_id, location=location)
     dataset_ref = f"{project_id}.{dataset_id}"
 
     try:
         dataset = client.get_dataset(dataset_ref)
         print(f"대상 BigQuery 데이터셋 연결 성공: {dataset.dataset_id} (리전: {dataset.location})", flush=True)
     except Exception as e:
-        print(f"오류: 데이터셋 '{dataset_ref}' 조회 실패: {e}", file=sys.stderr, flush=True)
+        print(f"\n[오류] 데이터셋 '{dataset_ref}' 조회 실패: {e}", file=sys.stderr, flush=True)
+        try:
+            available = [d.dataset_id for d in client.list_datasets(project=project_id)]
+            if available:
+                print(f"\n[참고] 프로젝트 '{project_id}' 내에서 발견된 데이터셋 목록:", file=sys.stderr)
+                for ds in available:
+                    print(f"  - {ds}", file=sys.stderr)
+                print(f"\n올바른 데이터셋 ID를 지정하여 다시 실행하라: python3 diagnose.py -d {available[0]}", file=sys.stderr)
+            else:
+                print(f"\n[참고] 프로젝트 '{project_id}' 내에 가용 데이터셋이 없습니다.", file=sys.stderr)
+        except Exception:
+            pass
+        print("\n가상 실행 모드로 시뮬레이션을 수행하려면 '--dry-run' 플래그를 사용하라.", file=sys.stderr)
         sys.exit(1)
 
     print("데이터셋 내 테이블 목록 조회 중...", flush=True)
@@ -420,18 +481,18 @@ def main() -> None:
     """메인 실행 함수."""
     args = parse_args()
     project_id = detect_project_id(args.project, is_dry_run=args.dry_run)
-    dataset_id = args.dataset
     location = args.location
 
-    print("=" * 90)
-    print("BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강기")
-    print(f"진단 모드  : {'가상 실행 (Dry-run)' if args.dry_run else '실제 환경 (Live)'}")
-    print(f"대상 프로젝트: {project_id}")
-    print(f"대상 데이터셋: {dataset_id}")
-    print(f"리전      : {location}")
-    print("=" * 90)
-
     if args.dry_run:
+        dataset_id = args.dataset or "cymbal_gold"
+        print("=" * 90)
+        print("BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강기")
+        print("진단 모드  : 가상 실행 (Dry-run)")
+        print(f"대상 프로젝트: {project_id}")
+        print(f"대상 데이터셋: {dataset_id}")
+        print(f"리전      : {location}")
+        print("=" * 90)
+
         mock_data = get_mock_audit_data()
         score = calculate_readiness_score(mock_data["tables"])
         print_diagnostic_report(mock_data, score)
@@ -441,9 +502,39 @@ def main() -> None:
             generate_glossary_yaml(mock_data, "dataplex_glossary_terms_sample.yaml")
         else:
             print("\n[안내] 메타데이터 자동 보강 계획 및 비즈니스 공식 생성을 확인하려면 '--enrich' 플래그를 추가하라.")
-            print(f"  실행 예시: python3 diagnose.py --dry-run --enrich")
-    else:
-        inspect_live_dataset(project_id, dataset_id, location, args.enrich, args.apply)
+            print("  실행 예시: python3 diagnose.py --dry-run --enrich")
+        return
+
+    # 실제 환경 (Live)
+    try:
+        from google.cloud import bigquery
+    except ImportError:
+        print("오류: google-cloud-bigquery 패키지가 설치되지 않았다.", file=sys.stderr)
+        print("pip install -r requirements.txt 명령으로 의존성을 먼저 설치하라.", file=sys.stderr)
+        sys.exit(1)
+
+    client = bigquery.Client(project=project_id, location=location)
+    dataset_id = detect_dataset_id(client, project_id, cli_dataset=args.dataset, is_dry_run=args.dry_run)
+
+    print("=" * 90)
+    print("BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강기")
+    print("진단 모드  : 실제 환경 (Live)")
+    print(f"대상 프로젝트: {project_id}")
+    print(f"대상 데이터셋: {dataset_id or '(미지정 / 없음)'}")
+    print(f"리전      : {location}")
+    print("=" * 90)
+
+    if not dataset_id:
+        print("\n[알림] 점검할 데이터셋이 없습니다. 모의 데이터셋(--dry-run)으로 시뮬레이션을 진행합니다.\n")
+        mock_data = get_mock_audit_data()
+        score = calculate_readiness_score(mock_data["tables"])
+        print_diagnostic_report(mock_data, score)
+        if args.enrich:
+            print_enrichment_plan(mock_data)
+            generate_glossary_yaml(mock_data, "dataplex_glossary_terms_sample.yaml")
+        return
+
+    inspect_live_dataset(client, project_id, dataset_id, location, args.enrich, args.apply)
 
 
 if __name__ == "__main__":
