@@ -31,7 +31,7 @@
 │   ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
 │   ├── gemini-request-response-logging/        # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재
 │   ├── gemini-resilience-checker/              # 429 장애 극복 복원력 패턴(백오프, 지터, 폴백) 진단
-│   ├── gemini-sensitive-data-masking/          # 프롬프트 전송 전 Cloud DLP 실시간 개인정보 마스킹
+│   ├── gemini-sensitive-data-masking/          # 프롬프트 전송 전 Cloud DLP 실시간 개인 정보 마스킹
 │   ├── gemini-usage-by-account/                # BigQuery 로그 기반 계정별 토큰(생각 토큰 포함) 집계
 │   ├── gemini-vpc-sc-denial-resolver/          # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
 │   ├── gke-source-ip-snat-guard/               # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단

@@ -1,6 +1,6 @@
 # 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 (`model-armor-regional-compliance-guard`)
 
-대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전 규제 위반 위험을 1분 만에 자동 진단하고, 한국형 개인정보(Korea-specific InfoTypes) 및 로컬 하이브리드 가드레일 파이프라인 처방을 제공하는 도구다. (As of 2026-09-09)
+대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전 규제 위반 위험을 1분 만에 자동 진단하고, 한국형 개인 정보(Korea-specific InfoTypes) 및 로컬 하이브리드 가드레일 파이프라인 처방을 제공하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#Resilience`, `#Security`  
@@ -9,7 +9,7 @@
 ---
 
 ## 1. 문제 증상 체크리스트
-- 금융감독원 '혁신금융서비스 지정' 또는 국내 개인정보보호법 준수를 위해 생성형 AI 데이터 처리를 서울 리전(`asia-northeast3`) 내에서만 완결해야 한다.
+- 금융감독원 '혁신 금융 서비스 지정' 또는 국내 개인 정보 보호법 준수를 위해 생성형 AI 데이터 처리를 서울 리전(`asia-northeast3`) 내에서만 완결해야 한다.
 - Model Armor 콘솔에서 프롬프트 인젝션(Prompt Injection) 및 악성 URL 차단 필터를 활성화했으나, 서울 리전 로컬 엔진 부재로 인해 실제 검사가 바이패스되거나 해외 리전으로 데이터가 유출될 위험이 존재한다.
 - Model Armor는 서울 리전에서 SDP(Sensitive Data Protection)만 정식 지원하므로, 인젝션 방어 및 안전성 필터는 별도의 로컬 가드레일 계층으로 분리해야 함을 사전에 인지하지 못했다.
 - SDP 템플릿 설정 시 주민등록번호(`KOREA_RRN`), 여권번호(`KOREA_PASSPORT`), 운전면허번호, 외국인등록번호, 사업자등록번호 등 한국 전용 민감 정보(Korea-specific InfoTypes)가 누락되어 비식별화 처리가 누락된다.
@@ -99,7 +99,7 @@ gcloud dlp inspect-templates create \
 ```
 
 ### 3. 하이브리드 로컬 가드레일 권고 아키텍처
-서울 리전의 Model Armor가 지원하지 않는 프롬프트 인젝션 및 악성 URL 검사는 애플리케이션 수신단에서 로컬 경량 검사 엔진(Regex 패턴 검사기 또는 사내 호스팅 오픈소스 가드레일 모듈)을 1차 통과시킨 후, Model Armor의 서울 SDP 엔드포인트를 호출하는 투트랙(Two-track) 방어선을 구축한다.
+서울 리전의 Model Armor가 지원하지 않는 프롬프트 인젝션 및 악성 URL 검사는 애플리케이션 수신단에서 로컬 경량 검사 엔진(Regex 패턴 검사기 또는 사내 호스팅 오픈 소스 가드레일 모듈)을 1차 통과시킨 후, Model Armor의 서울 SDP 엔드포인트를 호출하는 투트랙(Two-track) 방어선을 구축한다.
 
 ---
 

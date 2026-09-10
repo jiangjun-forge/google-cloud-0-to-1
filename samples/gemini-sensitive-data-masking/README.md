@@ -10,7 +10,7 @@
 
 ## 이 가이드가 필요한 상황 (증상 체크리스트)
 
-- **개인정보보호법 및 컴플라이언스 준수**: 서비스 이용자나 사내 임직원이 LLM 프롬프트에 주민등록번호, 계좌번호, 전화번호 등을 직접 입력하여 발생할 수 있는 데이터 유출 사고를 사전에 차단하고자 할 때
+- **개인 정보 보호법 및 컴플라이언스 준수**: 서비스 이용자나 사내 임직원이 LLM 프롬프트에 주민등록번호, 계좌번호, 전화번호 등을 직접 입력하여 발생할 수 있는 데이터 유출 사고를 사전에 차단하고자 할 때
 - **엔터프라이즈 보안 게이트웨이 구현**: 사내 챗봇 또는 대고객 지원 AI 파이프라인 전면에 위치하여 모든 입출력 텍스트의 민감 정보를 자동 필터링하고자 할 때
 - **사전 마스킹 테스트**: 실제 Cloud DLP API 호출 및 로컬 정규식 모의 엔진을 통해 마스킹 정책이 정상 동작하는지 1분 만에 검증하고자 할 때
 
@@ -22,7 +22,7 @@
 flowchart TD
     Start(["사용자 원본 프롬프트 입력<br/>(전화번호, 주민등록번호 등 포함)"]) --> Gate["DLP 보안 전처리 게이트웨이 진입"]
     
-    Gate --> Inspect["Cloud DLP API 개인정보(PII) 검사<br/>(PHONE_NUMBER, KOREA_RRN, EMAIL_ADDRESS)"]
+    Gate --> Inspect["Cloud DLP API 개인 정보(PII) 검사<br/>(PHONE_NUMBER, KOREA_RRN, EMAIL_ADDRESS)"]
     Inspect --> Detect{"민감 정보가 검출되었는가?"}
     
     Detect -- "미검출" --> Clean["원본 프롬프트 그대로 승인"]
@@ -32,7 +32,7 @@ flowchart TD
     Mask --> Forward
     
     Forward --> GenAI["Gemini 모델 추론 및 답변 생성"]
-    GenAI --> Done(["[안전 응답 반환] 개인정보 유출 원천 방지 완료"])
+    GenAI --> Done(["[안전 응답 반환] 개인 정보 유출 원천 방지 완료"])
 
     classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
     classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
@@ -98,7 +98,7 @@ python3 diagnose.py --project your-project-id --text "제 번호는 010-9999-888
 ========================================================================
 [진단 결과] 제미나이(Gemini) 프롬프트 민감 정보 마스킹 리포트
 ========================================================================
-감지 타겟 개인정보 유형 (InfoTypes): PHONE_NUMBER, EMAIL_ADDRESS, KOREA_RRN
+감지 타겟 개인 정보 유형 (InfoTypes): PHONE_NUMBER, EMAIL_ADDRESS, KOREA_RRN
 ------------------------------------------------------------------------
 [1. 원본 전송 프롬프트 (민감 정보 포함 위험)]
   안녕하세요. 제 연락처는 010-1234-5678이고 주민등록번호는 900101-1234567입니다. gcp-user@example.com 으로 제미나이 2.5 기술 자료를 보내주세요.
