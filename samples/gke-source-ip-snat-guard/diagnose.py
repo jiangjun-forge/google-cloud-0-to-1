@@ -237,9 +237,9 @@ def main():
       description="GKE Internal Passthrough NLB 원본 Client IP 보존 및 SNAT/부하 불균형 진단기"
   )
   parser.add_argument("--project", help="대상 GCP 프로젝트 ID")
-  parser.add_argument("--cluster", default=os.getenv("CLUSTER_NAME", "prod-core-cluster"), help="대상 GKE 클러스터명")
-  parser.add_argument("--location", default=os.getenv("LOCATION", "asia-northeast3"), help="대상 리전 또는 영역")
-  parser.add_argument("--namespace", default=os.getenv("NAMESPACE", None), help="특정 네임스페이스 필터")
+  parser.add_argument("--cluster", default=os.getenv("CLUSTER_NAME") or "prod-core-cluster", help="대상 GKE 클러스터명")
+  parser.add_argument("--location", default=os.getenv("LOCATION") or "asia-northeast3", help="대상 리전 또는 영역")
+  parser.add_argument("--namespace", default=os.getenv("NAMESPACE") or None, help="특정 네임스페이스 필터")
   parser.add_argument("--dry-run", action="store_true", help="실제 k8s 클러스터 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()

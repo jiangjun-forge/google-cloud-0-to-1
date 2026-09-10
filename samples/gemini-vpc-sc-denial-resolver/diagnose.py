@@ -151,18 +151,20 @@ def main():
       default=os.getenv("PROJECT_ID") or get_default_project(),
       help="GCP 프로젝트 ID (기본값: 활성 프로젝트 자동 감지)",
   )
+  days_env = os.getenv("DAYS")
+  limit_env = os.getenv("LIMIT_COUNT")
   parser.add_argument(
       "-d",
       "--days",
       type=int,
-      default=int(os.getenv("DAYS", "7")),
+      default=int(days_env) if days_env else 7,
       help="조회 대상 최근 기간 일수 (기본값: 7)",
   )
   parser.add_argument(
       "-l",
       "--limit",
       type=int,
-      default=int(os.getenv("LIMIT_COUNT", "5")),
+      default=int(limit_env) if limit_env else 5,
       help="조회 대상 실패 로그 최대 건수 (기본값: 5)",
   )
   parser.add_argument(

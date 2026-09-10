@@ -21,30 +21,35 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Cloud Run 사용량 시계열을 분석하여 Compute Flexible CUD 최적 약정액을 산출한다."
     )
+    billing_env = os.getenv("BILLING_ACCOUNT_ID")
+    project_env = os.getenv("PROJECT_ID")
+    lookback_env = os.getenv("LOOKBACK_DAYS")
+    margin_env = os.getenv("SAFETY_MARGIN")
+
     parser.add_argument(
         "--billing-account-id",
         dest="billing_account_id",
-        default=os.getenv("BILLING_ACCOUNT_ID", "012345-6789AB-CDEF01"),
+        default=billing_env or "012345-6789AB-CDEF01",
         help="Cloud Billing 계정 ID",
     )
     parser.add_argument(
         "--project-id",
         dest="project_id",
-        default=os.getenv("PROJECT_ID", "demo-project"),
+        default=project_env or "demo-project",
         help="진단 대상 GCP 프로젝트 ID",
     )
     parser.add_argument(
         "--lookback-days",
         dest="lookback_days",
         type=int,
-        default=int(os.getenv("LOOKBACK_DAYS", "90")),
+        default=int(lookback_env) if lookback_env else 90,
         help="사용량 분석 기간 (일 단위, 기본값: 90)",
     )
     parser.add_argument(
         "--safety-margin",
         dest="safety_margin",
         type=float,
-        default=float(os.getenv("SAFETY_MARGIN", "0.85")),
+        default=float(margin_env) if margin_env else 0.85,
         help="안전 마진 계수 (0.5 ~ 0.95, 기본값: 0.85)",
     )
     parser.add_argument(

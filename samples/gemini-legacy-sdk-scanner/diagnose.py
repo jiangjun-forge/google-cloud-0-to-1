@@ -160,7 +160,7 @@ def main():
   parser.add_argument(
       "-p",
       "--path",
-      default=os.getenv("SCAN_PATH", "."),
+      default=os.getenv("SCAN_PATH") or ".",
       help="스캔 대상 소스 코드 디렉터리 경로 (기본값: 현재 디렉터리)",
   )
   parser.add_argument(

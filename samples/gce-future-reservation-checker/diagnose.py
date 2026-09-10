@@ -221,12 +221,13 @@ def main():
     print("GCP 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
     sys.exit(1)
 
+  target_zone = args.zone or os.getenv("ZONE") or os.getenv("LOCATION")
   print(f"Compute Engine GPU 및 특수 인스턴스 Future Reservation 상태 진단 시작 (프로젝트: {project_id or 'dry-run-mode'})")
   if args.dry_run:
     print("--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 데이터를 분석한다.")
     raw_reservations = get_mock_reservations()
   else:
-    raw_reservations = fetch_future_reservations(project_id, args.zone)
+    raw_reservations = fetch_future_reservations(project_id, target_zone)
 
   if not raw_reservations:
     print("조회된 Future Reservation 예약 내역이 없다.")

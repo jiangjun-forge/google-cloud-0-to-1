@@ -318,10 +318,10 @@ def main() -> None:
         description="제미나이 엔터프라이즈 신뢰 스택(Trust Stack) 구간별 지연 시간 분석 프로파일러"
     )
     parser.add_argument("-p", "--project", help="대상 Google Cloud 프로젝트 ID")
-    parser.add_argument("-l", "--location", default="asia-northeast3", help="엔드포인트 리전 (기본값: asia-northeast3)")
-    parser.add_argument("-m", "--model", default="gemini-2.5-flash", help="테스트 대상 모델 ID (기본값: gemini-2.5-flash)")
-    parser.add_argument("--prompt", default="엔터프라이즈 보안 거버넌스와 LLM 지연 시간 트레이드오프 분석", help="벤치마크 테스트 프롬프트")
-    parser.add_argument("--template", help="Model Armor 검사용 템플릿 리소스 경로")
+    parser.add_argument("-l", "--location", default=os.getenv("LOCATION") or "asia-northeast3", help="엔드포인트 리전 (기본값: asia-northeast3)")
+    parser.add_argument("-m", "--model", default=os.getenv("MODEL_ID") or "gemini-2.5-flash", help="테스트 대상 모델 ID (기본값: gemini-2.5-flash)")
+    parser.add_argument("--prompt", default=os.getenv("PROMPT") or "엔터프라이즈 보안 거버넌스와 LLM 지연 시간 트레이드오프 분석", help="벤치마크 테스트 프롬프트")
+    parser.add_argument("--template", default=os.getenv("MODEL_ARMOR_TEMPLATE") or None, help="Model Armor 검사용 템플릿 리소스 경로")
     parser.add_argument("--dry-run", action="store_true", help="실제 GCP API 호출 없이 모의 가상 데이터를 이용해 스모크 테스트 수행")
 
     args = parser.parse_args()

@@ -124,21 +124,22 @@ def main():
       default=os.getenv("PROJECT_ID") or get_default_project(),
       help="GCP 프로젝트 ID (기본값: 활성 프로젝트 자동 감지)",
   )
+  days_env = os.getenv("DAYS")
   parser.add_argument(
       "-d",
       "--days",
       type=int,
-      default=int(os.getenv("DAYS", "7")),
+      default=int(days_env) if days_env else 7,
       help="조회 대상 최근 기간 일수 (기본값: 7)",
   )
   parser.add_argument(
       "--dataset",
-      default=os.getenv("BIGQUERY_DATASET", "gcp_logs"),
+      default=os.getenv("BIGQUERY_DATASET") or "gcp_logs",
       help="BigQuery 대상 데이터세트 ID (기본값: gcp_logs)",
   )
   parser.add_argument(
       "--sink-name",
-      default=os.getenv("LOG_SINK_NAME", "model-armor-logs-sink"),
+      default=os.getenv("LOG_SINK_NAME") or "model-armor-logs-sink",
       help="Cloud Logging 로그 싱크 이름 (기본값: model-armor-logs-sink)",
   )
   parser.add_argument(

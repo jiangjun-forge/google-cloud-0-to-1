@@ -31,31 +31,31 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-p",
         "--project",
-        default=os.getenv("PROJECT_ID", ""),
+        default=os.getenv("PROJECT_ID") or "",
         help="GCP 프로젝트 ID (지정하지 않을 경우 gcloud 기본 프로젝트 사용)",
     )
     parser.add_argument(
         "-l",
         "--location",
-        default=os.getenv("LOCATION", "global"),
+        default=os.getenv("LOCATION") or "global",
         help="데이터 저장소 리전 위치 (기본값: global)",
     )
     parser.add_argument(
         "-d",
         "--datastore",
-        default=os.getenv("DATASTORE_ID", ""),
+        default=os.getenv("DATASTORE_ID") or "",
         help="점검 대상 Vertex AI Search 데이터 저장소 ID",
     )
     parser.add_argument(
         "-b",
         "--bucket",
-        default=os.getenv("SOURCE_GCS_BUCKET", ""),
+        default=os.getenv("SOURCE_GCS_BUCKET") or "",
         help="원본 Cloud Storage 버킷 이름 (선택 사항)",
     )
     parser.add_argument(
         "-q",
         "--query",
-        default=os.getenv("TEST_QUERY", "2026 클라우드 보안 정책 가이드라인"),
+        default=os.getenv("TEST_QUERY") or "2026 클라우드 보안 정책 가이드라인",
         help="그라운딩 검색 품질 검증용 프로브 질의어",
     )
     parser.add_argument(

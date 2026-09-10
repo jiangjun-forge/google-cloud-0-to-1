@@ -239,20 +239,21 @@ def main():
       description="Gemini Enterprise 사용자별 채택률 분석 및 유휴 라이선스 회수 진단기"
   )
   parser.add_argument("--project", help="대상 GCP 프로젝트 ID")
+  threshold_env = os.getenv("INACTIVITY_DAYS_THRESHOLD")
   parser.add_argument(
       "--dataset",
-      default=os.getenv("BQ_DATASET", "gemini_analytics"),
+      default=os.getenv("BQ_DATASET") or "gemini_analytics",
       help="BigQuery 데이터세트명 (기본값: gemini_analytics)",
   )
   parser.add_argument(
       "--table",
-      default=os.getenv("BQ_TABLE", "user_adoption_metrics"),
+      default=os.getenv("BQ_TABLE") or "user_adoption_metrics",
       help="BigQuery 테이블명 (기본값: user_adoption_metrics)",
   )
   parser.add_argument(
       "--threshold-days",
       type=int,
-      default=int(os.getenv("INACTIVITY_DAYS_THRESHOLD", "30")),
+      default=int(threshold_env) if threshold_env else 30,
       help="유휴 라이선스 판단 미사용 기준 일수 (기본값: 30일)",
   )
   parser.add_argument("--dry-run", action="store_true", help="실제 API 호출 없이 가상 부서 데이터로 진단")

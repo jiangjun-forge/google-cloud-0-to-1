@@ -324,11 +324,12 @@ def main():
   parser = argparse.ArgumentParser(
       description="Gemini Enterprise 사내망 FQDN 방화벽 연결성 진단기"
   )
+  timeout_env = os.getenv("PROBE_TIMEOUT_SECONDS")
   parser.add_argument(
       "--timeout",
       type=float,
-      default=float(os.getenv("PROBE_TIMEOUT_SECONDS", "2.0")),
-      help="개별 FQDN 연결 타임아웃 (초 단위)",
+      default=float(timeout_env) if timeout_env else 2.0,
+      help="개별 FQDN 연결 타임아웃 (초 단위, 기본값: 2.0초)",
   )
   parser.add_argument("--dry-run", action="store_true", help="실제 통신 없이 모의 차단 시나리오 진단")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")

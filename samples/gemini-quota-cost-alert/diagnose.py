@@ -138,12 +138,12 @@ def main():
   parser.add_argument(
       "-t",
       "--topic",
-      default=os.getenv("PUBSUB_TOPIC", "gemini-cost-alerts"),
+      default=os.getenv("PUBSUB_TOPIC") or "gemini-cost-alerts",
       help="Pub/Sub 알림 주제 이름 (기본값: gemini-cost-alerts)",
   )
   parser.add_argument(
       "--budget-name",
-      default=os.getenv("BUDGET_NAME", "gemini-budget-alert"),
+      default=os.getenv("BUDGET_NAME") or "gemini-budget-alert",
       help="예산 경보 규칙 이름 (기본값: gemini-budget-alert)",
   )
   parser.add_argument(

@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-d",
         "--domain",
-        default=os.getenv("TARGET_DOMAIN", "example.com"),
+        default=os.getenv("TARGET_DOMAIN") or "example.com",
         help="점검 대상 기업 도메인명 (기본값: example.com)",
     )
     parser.add_argument(

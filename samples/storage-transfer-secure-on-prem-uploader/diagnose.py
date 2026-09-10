@@ -24,31 +24,32 @@ import sys
 
 def parse_args() -> argparse.Namespace:
     """명령줄 인자를 파싱한다."""
+    bw_val = os.getenv("BANDWIDTH_LIMIT_MB")
     parser = argparse.ArgumentParser(
         description="온프레미스 대용량 미디어 STS 보안 전송 파이프라인 진단기"
     )
     parser.add_argument(
         "-p",
         "--project",
-        default=os.getenv("PROJECT_ID", ""),
+        default=os.getenv("PROJECT_ID") or "",
         help="GCP 프로젝트 ID (지정하지 않을 경우 gcloud 기본 프로젝트 사용)",
     )
     parser.add_argument(
         "-b",
         "--bucket",
-        default=os.getenv("TARGET_BUCKET", "secure-media-archive"),
+        default=os.getenv("TARGET_BUCKET") or "secure-media-archive",
         help="타깃 Cloud Storage 버킷명 (기본값: secure-media-archive)",
     )
     parser.add_argument(
         "-a",
         "--agent-pool",
-        default=os.getenv("AGENT_POOL", "on-prem-posix-pool"),
+        default=os.getenv("AGENT_POOL") or "on-prem-posix-pool",
         help="Storage Transfer Service 에이전트 풀 이름 (기본값: on-prem-posix-pool)",
     )
     parser.add_argument(
         "--bandwidth-limit",
         type=int,
-        default=int(os.getenv("BANDWIDTH_LIMIT_MB", "100")),
+        default=int(bw_val) if bw_val else 100,
         help="전송 대역폭 제한 (MB/s 단위, 기본값: 100)",
     )
     parser.add_argument(

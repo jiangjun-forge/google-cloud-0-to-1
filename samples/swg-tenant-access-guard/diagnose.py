@@ -24,25 +24,25 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--org-id",
         dest="org_id",
-        default=os.getenv("TARGET_ORG_ID", "123456789012"),
+        default=os.getenv("TARGET_ORG_ID") or "123456789012",
         help="Google Cloud 조직 ID (기본값: TARGET_ORG_ID 환경 변수 또는 123456789012)",
     )
     parser.add_argument(
         "--domain",
         dest="domain",
-        default=os.getenv("ALLOWED_DOMAIN", "example-corp.com"),
+        default=os.getenv("ALLOWED_DOMAIN") or "example-corp.com",
         help="사내 승인 허용 도메인 (기본값: ALLOWED_DOMAIN 환경 변수 또는 example-corp.com)",
     )
     parser.add_argument(
         "--group-email",
         dest="group_email",
-        default=os.getenv("AUTHORIZED_GROUP_EMAIL", "gcp-authorized-users@example-corp.com"),
+        default=os.getenv("AUTHORIZED_GROUP_EMAIL") or "gcp-authorized-users@example-corp.com",
         help="CAA 인가 관리자 보안 그룹 이메일",
     )
     parser.add_argument(
         "--proxy-url",
         dest="proxy_url",
-        default=os.getenv("SWG_PROXY_URL", "https://swg-proxy.internal.example-corp.com:8080"),
+        default=os.getenv("SWG_PROXY_URL") or "https://swg-proxy.internal.example-corp.com:8080",
         help="사내 관문 SWG 프록시 엔드포인트 URL",
     )
     parser.add_argument(

@@ -104,19 +104,19 @@ def main():
   parser.add_argument(
       "-d",
       "--dataset",
-      default=os.getenv("BIGQUERY_DATASET", "gcp_logs"),
+      default=os.getenv("BIGQUERY_DATASET") or "gcp_logs",
       help="BigQuery 데이터세트 ID (기본값: gcp_logs)",
   )
   parser.add_argument(
       "-l",
       "--location",
-      default=os.getenv("LOCATION", "us-central1"),
-      help="Vertex AI 리전 위치 (기본값: us-central1)",
+      default=os.getenv("LOCATION") or "asia-northeast3",
+      help="Vertex AI 리전 위치 (기본값: asia-northeast3)",
   )
   parser.add_argument(
       "-m",
       "--model",
-      default=os.getenv("MODEL_ID", "gemini-2.5-flash"),
+      default=os.getenv("MODEL_ID") or "gemini-2.5-flash",
       help="대상 모델 식별자 (기본값: gemini-2.5-flash)",
   )
   parser.add_argument(

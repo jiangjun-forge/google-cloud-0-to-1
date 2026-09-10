@@ -37,13 +37,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-d",
         "--dataset",
-        default=os.getenv("DATASET_ID", "cymbal_gold"),
+        default=os.getenv("DATASET_ID") or "cymbal_gold",
         help="진단 및 보강 대상 BigQuery 데이터셋 ID (기본값: cymbal_gold)",
     )
     parser.add_argument(
         "-l",
         "--location",
-        default=os.getenv("LOCATION", "asia-northeast3"),
+        default=os.getenv("LOCATION") or "asia-northeast3",
         help="BigQuery 및 Dataplex 리전 (기본값: asia-northeast3)",
     )
     parser.add_argument(

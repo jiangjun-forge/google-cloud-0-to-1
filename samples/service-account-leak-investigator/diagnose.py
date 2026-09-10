@@ -25,26 +25,27 @@ import sys
 
 def parse_args() -> argparse.Namespace:
     """명령줄 인자를 파싱한다."""
+    days_val = os.getenv("LOOKBACK_DAYS")
     parser = argparse.ArgumentParser(
         description="유출 의심 서비스 계정 감사 로그 역추적 및 긴급 조치 진단기"
     )
     parser.add_argument(
         "-p",
         "--project",
-        default=os.getenv("PROJECT_ID", ""),
+        default=os.getenv("PROJECT_ID") or "",
         help="GCP 프로젝트 ID (지정하지 않을 경우 gcloud 기본 프로젝트 사용)",
     )
     parser.add_argument(
         "-s",
         "--service-accounts",
-        default=os.getenv("COMPROMISED_SA_EMAILS", ""),
+        default=os.getenv("COMPROMISED_SA_EMAILS") or "",
         help="조사 대상 서비스 계정 이메일 목록 (콤마 구분)",
     )
     parser.add_argument(
         "-d",
         "--days",
         type=int,
-        default=int(os.getenv("LOOKBACK_DAYS", "7")),
+        default=int(days_val) if days_val else 7,
         help="감사 로그 역추적 기간 (일 단위, 기본값: 7)",
     )
     parser.add_argument(

@@ -177,9 +177,9 @@ def main():
   parser = argparse.ArgumentParser(
       description="Gemini Enterprise Cross-Org/Project 커스텀 에이전트 연동 및 조직 정책 진단기"
   )
-  parser.add_argument("--ge-project", default=os.getenv("GE_PROJECT_ID", "demo-ge-app"), help="Gemini Enterprise 프로젝트 ID")
-  parser.add_argument("--agent-project", default=os.getenv("AGENT_PROJECT_ID", "demo-agent-engine"), help="Agent Engine 프로젝트 ID")
-  parser.add_argument("--engine-id", default=os.getenv("REASONING_ENGINE_ID", "8492049182740192841"), help="Reasoning Engine 고유 ID")
+  parser.add_argument("--ge-project", default=os.getenv("GE_PROJECT_ID") or get_default_project() or "demo-ge-app", help="Gemini Enterprise 프로젝트 ID")
+  parser.add_argument("--agent-project", default=os.getenv("AGENT_PROJECT_ID") or "demo-agent-engine", help="Agent Engine 프로젝트 ID")
+  parser.add_argument("--engine-id", default=os.getenv("REASONING_ENGINE_ID") or "8492049182740192841", help="Reasoning Engine 고유 ID")
   parser.add_argument("--dry-run", action="store_true", help="실제 GCP 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()

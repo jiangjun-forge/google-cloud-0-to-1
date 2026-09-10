@@ -40,33 +40,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-l",
         "--location",
-        default=os.getenv("LOCATION", "asia-northeast3"),
+        default=os.getenv("LOCATION") or "asia-northeast3",
         help="Vertex AI 리전 위치 (기본값: asia-northeast3)",
     )
     parser.add_argument(
         "-m",
         "--model",
-        default=os.getenv("MODEL_NAME", "text-embedding-005"),
+        default=os.getenv("MODEL_NAME") or "text-embedding-005",
         help="임베딩 파운데이션 모델 이름 (기본값: text-embedding-005)",
     )
     parser.add_argument(
         "-d",
         "--dimensions",
-        default=os.getenv("DIMENSIONS", "1536,768,512,256,128"),
+        default=os.getenv("DIMENSIONS") or "1536,768,512,256,128",
         help="비교할 임베딩 차원 목록 (콤마 구분, 2개 이상 필수, 기본값: 1536,768,512,256,128)",
     )
+    sample_env = os.getenv("SAMPLE_COUNT")
+    vector_env = os.getenv("PROJECTED_VECTOR_COUNT")
     parser.add_argument(
         "-s",
         "--sample-count",
         type=int,
-        default=int(os.getenv("SAMPLE_COUNT", "1000")),
+        default=int(sample_env) if sample_env else 1000,
         help="API 비용 절감을 위한 평가 테스트 샘플 건수 (기본값: 1000)",
     )
     parser.add_argument(
         "-n",
         "--projected-vectors",
         type=int,
-        default=int(os.getenv("PROJECTED_VECTOR_COUNT", "1000000")),
+        default=int(vector_env) if vector_env else 1000000,
         help="스토리지 및 인덱스 용량 추산용 전사 기준 벡터 수 (기본값: 1,000,000)",
     )
     parser.add_argument(

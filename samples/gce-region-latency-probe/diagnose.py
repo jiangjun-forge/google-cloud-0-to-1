@@ -194,15 +194,16 @@ def main():
   parser = argparse.ArgumentParser(
       description="서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 네트워크 레이턴시 프로브 및 추천기"
   )
+  threshold_env = os.getenv("MAX_LATENCY_THRESHOLD_MS")
   parser.add_argument(
       "--threshold-ms",
       type=float,
-      default=float(os.getenv("MAX_LATENCY_THRESHOLD_MS", "100.0")),
+      default=float(threshold_env) if threshold_env else 100.0,
       help="허용 최대 지연 시간 임계치 (기본값: 100.0 ms)",
   )
   parser.add_argument(
       "--gpu-type",
-      default=os.getenv("TARGET_GPU_TYPE", None),
+      default=os.getenv("TARGET_GPU_TYPE") or None,
       help="필터링할 GPU 모델명 (예: H100, A100, L4, G4)",
   )
   parser.add_argument("--dry-run", action="store_true", help="실제 네트워크 프로브 없이 시뮬레이션 데이터로 진단")

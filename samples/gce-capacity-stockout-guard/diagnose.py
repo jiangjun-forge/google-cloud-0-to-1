@@ -36,24 +36,25 @@ def parse_args() -> argparse.Namespace:
         default=os.getenv("GCP_PROJECT_ID", ""),
         help="진단 대상 GCP 프로젝트 ID (미지정 시 활성 프로젝트 자동 감지)",
     )
+    days_env = os.getenv("INSPECT_DAYS")
     parser.add_argument(
         "-r",
         "--region",
-        default=os.getenv("INSPECT_REGION", "us-central1"),
+        default=os.getenv("INSPECT_REGION") or "us-central1",
         help="점검 대상 리전 (기본값: us-central1)",
     )
     parser.add_argument(
         "-m",
         "--machine-families",
-        default=os.getenv("INSPECT_MACHINE_FAMILIES", "n4,n2"),
+        default=os.getenv("INSPECT_MACHINE_FAMILIES") or "n4,n2",
         help="점검 대상 머신 패밀리 목록 (콤마 구분, 기본값: n4,n2)",
     )
     parser.add_argument(
         "-d",
         "--days",
         type=int,
-        default=int(os.getenv("INSPECT_DAYS", "14")),
-        help="감사 로그 점검 기간 (일 단위, 기본값: 14)",
+        default=int(days_env) if days_env else 14,
+        help="에러 감사 로그 조회 기간 (일 단위, 기본값: 14)",
     )
     parser.add_argument(
         "--dry-run",

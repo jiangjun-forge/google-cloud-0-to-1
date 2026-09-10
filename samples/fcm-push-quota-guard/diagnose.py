@@ -21,24 +21,28 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="FCM 대량 다운스트림 메시지 전송량과 429 쓰로틀링 및 재시도 복원력을 진단한다."
     )
+    project_env = os.getenv("PROJECT_ID")
+    peak_env = os.getenv("PEAK_MESSAGES_PER_MINUTE")
+    quota_env = os.getenv("CURRENT_QUOTA_LIMIT_PER_MINUTE")
+
     parser.add_argument(
         "--project-id",
         dest="project_id",
-        default=os.getenv("PROJECT_ID", "demo-project"),
+        default=project_env or "demo-project",
         help="진단 대상 GCP 프로젝트 ID (Firebase 프로젝트)",
     )
     parser.add_argument(
         "--peak-msg-per-min",
         dest="peak_msg_per_min",
         type=int,
-        default=int(os.getenv("PEAK_MESSAGES_PER_MINUTE", "750000")),
+        default=int(peak_env) if peak_env else 750000,
         help="피크 시 분당 푸시 발송 시도량 (기본값: 750000)",
     )
     parser.add_argument(
         "--quota-limit-per-min",
         dest="quota_limit_per_min",
         type=int,
-        default=int(os.getenv("CURRENT_QUOTA_LIMIT_PER_MINUTE", "600000")),
+        default=int(quota_env) if quota_env else 600000,
         help="현재 프로젝트의 분당 다운스트림 메시지 할당량 (기본값: 600000)",
     )
     parser.add_argument(

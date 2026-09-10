@@ -190,8 +190,8 @@ def main():
       description="서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기"
   )
   parser.add_argument("--project", help="대상 GCP 프로젝트 ID")
-  parser.add_argument("--location", default=os.getenv("LOCATION", "asia-northeast3"), help="대상 리전 (기본: asia-northeast3)")
-  parser.add_argument("--template", default=os.getenv("TEMPLATE_ID", None), help="특정 Model Armor 템플릿 ID")
+  parser.add_argument("--location", default=os.getenv("LOCATION") or "asia-northeast3", help="대상 리전 (기본: asia-northeast3)")
+  parser.add_argument("--template", default=os.getenv("TEMPLATE_ID") or None, help="특정 Model Armor 템플릿 ID")
   parser.add_argument("--dry-run", action="store_true", help="실제 API 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()

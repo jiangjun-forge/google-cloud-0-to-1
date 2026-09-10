@@ -161,7 +161,7 @@ def main():
       description="Gemini Enterprise 에이전트 마켓플레이스 차단 및 사내 커스텀 에이전트 거버넌스 진단기"
   )
   parser.add_argument("--project", help="대상 GCP 프로젝트 ID")
-  parser.add_argument("--app-id", default=os.getenv("APP_ID", "default-enterprise-agent-app"), help="대상 Gemini Enterprise 앱 ID")
+  parser.add_argument("--app-id", default=os.getenv("APP_ID") or "default-enterprise-agent-app", help="대상 Gemini Enterprise 앱 ID")
   parser.add_argument("--dry-run", action="store_true", help="실제 API 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()

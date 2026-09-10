@@ -37,25 +37,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-l",
         "--location",
-        default=os.getenv("KMS_LOCATION", "asia-northeast3"),
+        default=os.getenv("KMS_LOCATION") or "asia-northeast3",
         help="Cloud KMS 리전 위치 (기본값: asia-northeast3)",
     )
     parser.add_argument(
         "-k",
         "--keyring",
-        default=os.getenv("KEY_RING", "prod-keyring"),
+        default=os.getenv("KEY_RING") or "prod-keyring",
         help="Cloud KMS 키 링 이름 (기본값: prod-keyring)",
     )
     parser.add_argument(
         "-n",
         "--key-name",
-        default=os.getenv("KEY_NAME", "customer-data-key"),
+        default=os.getenv("KEY_NAME") or "customer-data-key",
         help="Cloud KMS 암호화 키 이름 (기본값: customer-data-key)",
     )
     parser.add_argument(
         "-b",
         "--bucket",
-        default=os.getenv("BUCKET_NAME", ""),
+        default=os.getenv("BUCKET_NAME") or "",
         help="점검 대상 Cloud Storage 버킷 이름 (지정하지 않을 경우 KMS 연동 버킷 자동 탐색)",
     )
     parser.add_argument(

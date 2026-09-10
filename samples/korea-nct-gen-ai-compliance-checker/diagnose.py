@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-r",
         "--region",
-        default=os.getenv("TARGET_REGION", "asia-northeast3"),
+        default=os.getenv("TARGET_REGION") or "asia-northeast3",
         help="데이터 보관 및 처리 대상 국내 리전 (기본값: asia-northeast3)",
     )
     parser.add_argument(

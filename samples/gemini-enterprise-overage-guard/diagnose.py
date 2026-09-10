@@ -21,30 +21,35 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Gemini Enterprise 오버리지 빌링 설정과 일일 풀링 쿼터 쓰로틀링 위험을 진단한다."
     )
+    project_env = os.getenv("PROJECT_ID")
+    billing_env = os.getenv("BILLING_ACCOUNT_ID")
+    spend_env = os.getenv("SPEND_CAP_USD")
+    alert_env = os.getenv("ALERT_THRESHOLD_PERCENT")
+
     parser.add_argument(
         "--project-id",
         dest="project_id",
-        default=os.getenv("PROJECT_ID", "demo-project"),
+        default=project_env or "demo-project",
         help="진단 대상 GCP 프로젝트 ID",
     )
     parser.add_argument(
         "--billing-account-id",
         dest="billing_account_id",
-        default=os.getenv("BILLING_ACCOUNT_ID", "012345-6789AB-CDEF01"),
+        default=billing_env or "012345-6789AB-CDEF01",
         help="Cloud Billing 계정 ID",
     )
     parser.add_argument(
         "--spend-cap-usd",
         dest="spend_cap_usd",
         type=float,
-        default=float(os.getenv("SPEND_CAP_USD", "1000.0")),
+        default=float(spend_env) if spend_env else 1000.0,
         help="월간 오버리지 지출 한도 상한선 (USD 단위, 기본값: 1000.0)",
     )
     parser.add_argument(
         "--alert-threshold",
         dest="alert_threshold",
         type=int,
-        default=int(os.getenv("ALERT_THRESHOLD_PERCENT", "80")),
+        default=int(alert_env) if alert_env else 80,
         help="예산 알림 임계치 백분율 (기본값: 80)",
     )
     parser.add_argument(

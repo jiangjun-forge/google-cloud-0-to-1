@@ -168,6 +168,8 @@ def main():
   parser = argparse.ArgumentParser(
       description="GCP 조직 정책(Organization Policy) 위반 감사 추적 및 복구 처방 도구"
   )
+  days_val = os.getenv("DAYS")
+  limit_val = os.getenv("LIMIT_COUNT")
   parser.add_argument(
       "-p",
       "--project",
@@ -178,14 +180,14 @@ def main():
       "-d",
       "--days",
       type=int,
-      default=int(os.getenv("DAYS", "7")),
+      default=int(days_val) if days_val else 7,
       help="조회 대상 최근 기간 일수 (기본값: 7)",
   )
   parser.add_argument(
       "-l",
       "--limit",
       type=int,
-      default=int(os.getenv("LIMIT_COUNT", "5")),
+      default=int(limit_val) if limit_val else 5,
       help="조회 대상 실패 로그 최대 건수 (기본값: 5)",
   )
   parser.add_argument(
