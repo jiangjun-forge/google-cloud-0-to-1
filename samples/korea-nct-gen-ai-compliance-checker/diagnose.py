@@ -71,35 +71,35 @@ def get_mock_check_results(region: str) -> list[dict]:
     return [
         {
             "category": "Data Residency",
-            "control": "gcp.resourceLocations (조직 정책)",
+            "control": "gcp.resourceLocations (조직 정책 - 법 제11조)",
             "status": "PASS",
             "current_state": f"서울 리전({region})으로 리소스 생성 제한 적용 완료",
-            "remediation": "추가 조치 불필요",
+            "remediation": "추가 조치 불필요 (산업기술 해외 이전 및 불법 수출 방지)",
         },
         {
             "category": "Vector Security",
-            "control": "RAG 벡터 데이터 저장 차단 (IAM Deny)",
+            "control": "RAG 벡터 데이터 저장 차단 (IAM Deny - 법 제10조)",
             "status": "FAIL",
             "current_state": "aiplatform.indexes.* 권한 차단 Deny Policy 미발견",
-            "remediation": "gcloud iam deny-policies create 명령으로 벡터 인덱스 생성 차단 정책 적용 필요",
+            "remediation": "gcloud iam deny-policies create 명령으로 벡터 인덱스 사외 생성 차단 정책 적용 필요",
         },
         {
             "category": "Encryption",
-            "control": "Cloud KMS CMEK 이중 암호화",
+            "control": "Cloud KMS CMEK 이중 암호화 (안내서 필수 요건)",
             "status": "FAIL",
             "current_state": "기본 구글 관리 키 사용 중 (KMS CMEK 미연동 버킷 2개 감지)",
-            "remediation": f"서울 리전 Cloud KMS 키링 및 암호화 키 생성 후 GCS/BigQuery CMEK 지정",
+            "remediation": f"서울 리전 Cloud KMS 키링 및 암호화 키 생성 후 GCS/BigQuery CMEK 지정 (이중 암호화 의무 준수)",
         },
         {
             "category": "Inference Boundary",
-            "control": "추론 리전 국소화 (Vertex AI)",
+            "control": "추론 리전 국소화 (Vertex AI - 안내서 국내 위치)",
             "status": "PASS",
             "current_state": f"Vertex AI 서울 리전 엔드포인트({region}-aiplatform.googleapis.com) 사용 강제 확인",
-            "remediation": "추가 조치 불필요 (Gemini 2.5 Flash 국내 추론 모델 표준 채택 유지)",
+            "remediation": "추가 조치 불필요 (국내 추론 엔드포인트 격리 상태 유지)",
         },
         {
             "category": "Audit Logging",
-            "control": "Cloud Audit Logs 데이터 접근 로깅",
+            "control": "Cloud Audit Logs 데이터 접근 로깅 (법 제10조)",
             "status": "PASS",
             "current_state": "DATA_READ, DATA_WRITE 감사 로그 활성화 상태",
             "remediation": "추가 조치 불필요",
@@ -134,15 +134,15 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
         if has_region_rule:
             results.append({
                 "category": "Data Residency",
-                "control": "gcp.resourceLocations (조직 정책)",
+                "control": "gcp.resourceLocations (조직 정책 - 법 제11조)",
                 "status": "PASS",
                 "current_state": f"서울 리전({region}) 한정 제한 적용됨",
-                "remediation": "추가 조치 불필요",
+                "remediation": "추가 조치 불필요 (산업기술 해외 이전 및 불법 수출 방지)",
             })
         else:
             results.append({
                 "category": "Data Residency",
-                "control": "gcp.resourceLocations (조직 정책)",
+                "control": "gcp.resourceLocations (조직 정책 - 법 제11조)",
                 "status": "FAIL",
                 "current_state": f"정책은 설정되었으나 {region} 한정 규칙 미확인",
                 "remediation": f"조직 정책에서 {region}만 허용하도록 규칙 갱신 필요",
@@ -150,7 +150,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     else:
         results.append({
             "category": "Data Residency",
-            "control": "gcp.resourceLocations (조직 정책)",
+            "control": "gcp.resourceLocations (조직 정책 - 법 제11조)",
             "status": "FAIL",
             "current_state": "프로젝트 수준 리소스 위치 제약 정책 미배포",
             "remediation": f"gcloud org-policies set-policy 명령으로 {region} 강제 필요",
@@ -166,7 +166,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     if deny_policies and len(deny_policies) > 0:
         results.append({
             "category": "Vector Security",
-            "control": "RAG 벡터 데이터 저장 차단 (IAM Deny)",
+            "control": "RAG 벡터 데이터 저장 차단 (IAM Deny - 법 제10조)",
             "status": "PASS",
             "current_state": "IAM Deny 정책 활성화 확인",
             "remediation": "추가 조치 불필요",
@@ -174,10 +174,10 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     else:
         results.append({
             "category": "Vector Security",
-            "control": "RAG 벡터 데이터 저장 차단 (IAM Deny)",
+            "control": "RAG 벡터 데이터 저장 차단 (IAM Deny - 법 제10조)",
             "status": "FAIL",
             "current_state": "벡터 데이터 저장 차단 IAM Deny 정책 미발견",
-            "remediation": "aiplatform.indexes.* 차단 IAM Deny 정책 배포 필요",
+            "remediation": "aiplatform.indexes.* 차단 IAM Deny 정책 배포 필요 (사외 유출 방지)",
         })
 
     # 3. KMS CMEK 키 검사
@@ -191,7 +191,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     if kms_keyrings and len(kms_keyrings) > 0:
         results.append({
             "category": "Encryption",
-            "control": "Cloud KMS CMEK 이중 암호화",
+            "control": "Cloud KMS CMEK 이중 암호화 (안내서 필수 요건)",
             "status": "PASS",
             "current_state": f"서울 리전({region}) 내 KMS 키링 및 암호화 키 식별됨",
             "remediation": "추가 조치 불필요",
@@ -199,10 +199,10 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     else:
         results.append({
             "category": "Encryption",
-            "control": "Cloud KMS CMEK 이중 암호화",
+            "control": "Cloud KMS CMEK 이중 암호화 (안내서 필수 요건)",
             "status": "FAIL",
             "current_state": f"서울 리전({region}) 내 활성 KMS 키링 미발견",
-            "remediation": f"gcloud kms keyrings create 명령으로 {region}에 키링 생성 필요",
+            "remediation": f"gcloud kms keyrings create 명령으로 {region}에 키링 생성 필요 (이중 암호화 의무 준수)",
         })
 
     # 4. 감사 로깅 점검
@@ -215,7 +215,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     if sinks and len(sinks) > 0:
         results.append({
             "category": "Audit Logging",
-            "control": "Cloud Audit Logs 데이터 접근 로깅",
+            "control": "Cloud Audit Logs 데이터 접근 로깅 (법 제10조)",
             "status": "PASS",
             "current_state": "감사 로그 싱크 정상 운영 중",
             "remediation": "추가 조치 불필요",
@@ -223,7 +223,7 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     else:
         results.append({
             "category": "Audit Logging",
-            "control": "Cloud Audit Logs 데이터 접근 로깅",
+            "control": "Cloud Audit Logs 데이터 접근 로깅 (법 제10조)",
             "status": "FAIL",
             "current_state": "전사 감사 로그 싱크 구성 미흡",
             "remediation": "BigQuery 또는 Cloud Storage 감사 로그 싱크 연동 필요",
