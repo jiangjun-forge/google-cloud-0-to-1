@@ -24,23 +24,19 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 규제 수용 범위 및 법적 근거 사실 관계
+## 1. 진단 대상 7대 보안 통제 항목
 
-산업통상자원부 및 한국산업기술보호협회(KAITS)의 보안 관리 체계는 관리적 통제와 기술적 통제로 구분된다. 본 진단 도구는 **클라우드 인프라 아키텍처 관점에서 자동 검증 가능한 기술적 통제 7대 기둥 전수(Full-Set)**를 다룬다:
+본 도구는 산업기술보호법 및 산자부 「국가핵심기술 클라우드 컴퓨팅 보안관리 안내서」에 따른 7대 기술적 통제를 전수 점검한다. 세부 법적 요건 및 상세 구현 명세는 [비즈니스 요구사항 명세서 (BRD.md)](docs/BRD.md) 및 [기술 상세 설계서 (TDD.md)](docs/TDD.md)에 상세히 기술되어 있다.
 
-| 통제 영역 | 법적/안내서 근거 조항 | 본 도구 점검 항목 (7대 기술 통제 풀셋) | 자동 검증 방식 |
-| :--- | :--- | :--- | :--- |
-| **물리적 국내 위치** | 산업기술보호법 제11조, 안내서 제1장 | `FR-01`: `gcp.resourceLocations` 서울 리전 강제 | 리소스 생성 위치 조직 정책 검증 |
-| **사외 유출 차단** | 산업기술보호법 제10조, 안내서 제3장 | `FR-02`: RAG 벡터 데이터 저장 차단 (IAM Deny) | `aiplatform.indexes.*` IAM Deny 검증 |
-| **이중 암호화 의무** | 보안관리 안내서 제2장 (암호화 통제) | `FR-03`: Cloud KMS CMEK 이중 암호화 (Dual Encryption) | 서울 리전 KMS 키링 및 버킷 CMEK 바인딩 확인 |
-| **국내 격리 추론** | 보안관리 안내서 제1장 (시스템 위치) | `FR-04`: 추론 리전 국소화 (Vertex AI 서울 엔드포인트) | `asia-northeast3-aiplatform` 엔드포인트 격리 확인 |
-| **감사 추적** | 산업기술보호법 제10조 (접근 기록) | `FR-05`: Cloud Audit Logs 데이터 접근(DATA_READ/WRITE) 로깅 | 감사 로그 싱크 및 접근 로그 수집 검증 |
-| **외국 기업 배제** | 보안관리 안내서 제3장 (외국 기업 통제) | `FR-06`: 사외/외국 계정 공유 차단 (`iam.allowedPolicyMemberDomains`) | 사내 승인 도메인 외 계정 바인딩 원천 차단 확인 |
-| **제공자 임의 접근 차단** | 보안관리 안내서 제2장 (접근 승인 의무) | `FR-07`: 클라우드 제공자 접근 승인/투명성 (Access Approval) | CSP 엔지니어 사전 승인 강제 설정 검증 |
-
-> [!NOTE]
-> **관리적·물리적 통제와의 역할 분담**:
-> 본 도구는 기술적 인프라 통제(Technical Controls)를 완벽하게 검증한다. 단, 산업통상자원부 장관 대상 사전 수출 승인/신고 행정 절차, 연구원 보안 서약서 징구, 사업장 물리적 보호구역 출입 통제 등 관리적 통제(Administrative Controls)는 기업 내부 법무/보안 절차로 구비되어야 한다.
+| 요구사항 ID | 통제 영역 | 점검 핵심 내용 |
+| :--- | :--- | :--- |
+| **FR-01** | 물리적 국내 위치 | `gcp.resourceLocations` 서울 리전 생성 강제 (법 제11조) |
+| **FR-02** | 사외 유출 차단 | RAG 벡터 데이터 저장 차단 IAM Deny 정책 (법 제10조) |
+| **FR-03** | 이중 암호화 의무 | Cloud KMS CMEK 이중 암호화 및 서울 키링 연동 (안내서 제2장) |
+| **FR-04** | 국내 격리 추론 | 추론 리전 국소화 (Vertex AI 서울 엔드포인트 격리) |
+| **FR-05** | 감사 추적 | Cloud Audit Logs 데이터 접근(DATA_READ/WRITE) 로깅 (법 제10조) |
+| **FR-06** | 외국 기업 배제 | 사외/외국 계정 공유 차단 (`iam.allowedPolicyMemberDomains`) |
+| **FR-07** | 제공자 임의 접근 차단 | 클라우드 제공자 접근 승인/투명성 (Access Approval) |
 
 ---
 
@@ -109,43 +105,22 @@ cd google-cloud-0-to-1/samples/korea-nct-gen-ai-compliance-checker
 =====================================================================================
 국가 핵심 기술(NCT) 대상 생성형 AI 보안 통제 및 데이터 주권 진단 리포트
 진단 모드: 가상 실행 (Dry-run)
-대상 프로젝트: demo-nct-compliance-project
-지정 리전: asia-northeast3 (대한민국 서울 리전)
+대상 프로젝트: demo-nct-compliance-project | 점검 리전: asia-northeast3 (서울)
 =====================================================================================
 
 [항목별 기술적 보안 통제 준수 현황]
 -------------------------------------------------------------------------------------
-구분                 보안 통제 항목                                                     상태     현재 상태
+ID    | 보안 통제 항목              | 상태   | 현황 및 규제 요건
 -------------------------------------------------------------------------------------
-Data Residency     gcp.resourceLocations (조직 정책 - 법 제11조)                       PASS     서울 리전(asia-northeast3)으로 리소스 생성 제한 적용 완료
-Vector Security    RAG 벡터 데이터 저장 차단 (IAM Deny - 법 제10조)                    FAIL     aiplatform.indexes.* 권한 차단 Deny Policy 미발견
-Encryption         Cloud KMS CMEK 이중 암호화 (안내서 필수 요건)                      FAIL     기본 구글 관리 키 사용 중 (KMS CMEK 미연동 버킷 2개 감지)
-Inference Boundary 추론 리전 국소화 (Vertex AI - 안내서 국내 위치)                    PASS     Vertex AI 서울 리전 엔드포인트(asia-northeast3-aiplatform.googleapis.com) 사용 강제 확인
-Audit Logging      Cloud Audit Logs 데이터 접근 로깅 (법 제10조)                       PASS     DATA_READ, DATA_WRITE 감사 로그 활성화 상태
-Access Control     사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)   FAIL     iam.allowedPolicyMemberDomains 조직 정책 미적용 (외부 계정 초대 위험 존재)
-Provider Isolation 클라우드 제공자 임의 접근 통제 (Access Approval - 안내서 사전 승인 의무) PASS     Access Approval 및 Access Transparency 정상 활성화 (CSP 엔지니어 사전 승인 강제)
+FR-01 | 물리적 국내 위치 (법 제11조)  | PASS | 서울 리전(asia-northeast3) 생성 제한 적용 완료
+FR-02 | RAG 벡터 사외 저장 차단     | FAIL | aiplatform.indexes.* 차단 Deny Policy 미설정
+FR-03 | Cloud KMS CMEK 이중 암호화  | FAIL | 기본 구글 관리 키 사용 중 (KMS CMEK 미연동)
+FR-04 | 추론 리전 국소화 (Vertex AI) | PASS | Vertex AI 서울 엔드포인트 사용 강제 확인
+FR-05 | 데이터 접근 감사 로그       | PASS | DATA_READ, DATA_WRITE 감사 로그 활성화 상태
+FR-06 | 사외/외국 계정 공유 차단    | FAIL | iam.allowedPolicyMemberDomains 조직 정책 미적용
+FR-07 | 제공자 임의 접근 사전 승인  | PASS | Access Approval 정상 활성화 확인
 -------------------------------------------------------------------------------------
-
-[진단 종합 점수: 총 7개 항목 중 PASS 4건, FAIL 3건]
-
-[미준수 항목 긴급 조치 가이드]
-1. RAG 벡터 데이터 저장 차단 (IAM Deny - 법 제10조)
-   - 조치 방향: gcloud iam deny-policies create 명령으로 벡터 인덱스 사외 생성 차단 정책 적용 필요
-2. Cloud KMS CMEK 이중 암호화 (안내서 필수 요건)
-   - 조치 방향: 서울 리전 Cloud KMS 키링 및 암호화 키 생성 후 GCS/BigQuery CMEK 지정 (이중 암호화 의무 준수)
-3. 사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)
-   - 조치 방향: gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 원천 차단)
-
-[표준 보안 처방 CLI 명령어]
-1. 서울 리전 Data Boundary 조직 정책 강제 (불법 해외 기술 이전 방지):
-   gcloud resource-manager org-policies enable-enforce constraints/gcp.resourceLocations --project=demo-nct-compliance-project
-2. RAG 벡터 데이터 저장 차단 Deny Policy 배포:
-   gcloud iam deny-policies create nct-rag-deny --attachment-point=cloudresourcemanager.googleapis.com/projects/demo-nct-compliance-project --file=deny-rules.json
-3. 서울 리전 Cloud KMS CMEK 키 생성 (이중 암호화):
-   gcloud kms keyrings create nct-keyring --location=asia-northeast3 --project=demo-nct-compliance-project
-   gcloud kms keys create nct-cmek-key --keyring=nct-keyring --location=asia-northeast3 --purpose=encryption --project=demo-nct-compliance-project
-4. 사외 승인 도메인 외 계정 바인딩 원천 차단:
-   gcloud resource-manager org-policies set-policy policy.yaml --project=demo-nct-compliance-project
+진단 결과: 총 7개 항목 중 PASS 4건, FAIL 3건 (미준수 항목 즉각 조치 필요)
 =====================================================================================
 ```
 

@@ -24,25 +24,21 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 규제 수용 범위 및 법적 근거 사실 관계
+## 1. 진단 대상 9대 보안 통제 항목
 
-금융보안원 및 금융위원회의 보안 규제 프레임워크는 관리적 통제와 기술적 통제로 구분된다. 본 진단 도구는 **클라우드 인프라 아키텍처 관점에서 자동 검증 가능한 기술적 통제 9대 기둥 전수(Full-Set)**를 다룬다:
+본 도구는 금융위원회 1단계 생성형 인공 지능 망분리 특례 및 전자금융감독규정에 따른 9대 기술적 통제를 전수 점검한다. 상세한 규제 조항 및 아키텍처 구현 명세는 [비즈니스 요구사항 명세서 (BRD.md)](docs/BRD.md) 및 [기술 상세 설계서 (TDD.md)](docs/TDD.md)에 상세히 기술되어 있다.
 
-| 통제 영역 | 법적/규정 근거 조항 | 본 도구 점검 항목 (9대 기술 통제 풀셋) | 자동 검증 방식 |
-| :--- | :--- | :--- | :--- |
-| **논리적 망분리** | 전자금융감독규정 제15조 제1항 제3호 및 제5호 | `FR-01`: VPC-SC 보안 경계 내 Vertex AI 보호 여부 | `access-context-manager` 경계 서비스 검증 |
-| **외부망 차단** | 감독규정 제15조 및 1단계 특례 부가조건 | `FR-02`: 실시간 웹 검색(Web Search Grounding) 격리 여부 | Egress 정책 위반 및 DMZ 분리 구조 점검 |
-| **전자기록 보존** | 전자금융거래법 제22조, 감독규정 제63조 | `FR-03`: Cloud Storage 5년 불변 보존 (Bucket Lock) | 보존 기간(157,680,000초) 및 잠금 상태 확인 |
-| **데이터 암호화** | 전자금융감독규정 제14조 (전산자료 보호대책) | `FR-04`: 고객 관리 암호화 키(CMEK) 전면 적용 여부 | Cloud KMS 사내 키 바인딩 및 키링 검증 |
-| **감사 추적** | 전자금융거래법 제22조, 감독규정 제14조 | `FR-05`: 데이터 접근 감사 로그(DATA_READ/WRITE) 활성화 | IAM `auditConfigs` 전산자료 조회 로그 검증 |
-| **AI 모델 안전성** | 금융위원회 1단계 샌드박스 특례 부가조건 | `FR-06`: Model Armor 실시간 프롬프트 인젝션/탈옥 방어 | Model Armor 템플릿 및 악성 필터 검증 |
-| **개인신용정보 보호** | 신용정보의 이용 및 보호에 관한 법률 제20조의2 | `FR-07`: SDP 개인신용정보 가명처리 템플릿 | Sensitive Data Protection 주민등록번호/계좌번호 규칙 확인 |
-| **단말/시스템 통제** | 전자금융감독규정 제13조 (접근 통제) | `FR-08`: 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 | 조직 정책 `disableServiceAccountKeyCreation` 검증 |
-| **전송 구간 암호화** | 전자금융감독규정 제14조 제2항 제2호 | `FR-09`: 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 | Cloud Load Balancing 커스텀 SSL Policy 검증 |
-
-> [!NOTE]
-> **관리적·물리적 통제와의 역할 분담**:
-> 본 도구는 기술적 인프라 통제(Technical Controls)를 완벽하게 검증한다. 단, 사내 정보보호 지침 제정, CISO 및 준법감시인 내부 결재, 임직원 보안 서약서 징구, 재해 복구 비상대응 계획 수립 등 관리적 통제(Administrative Controls)는 금융사 내부 서류 및 절차로 구비되어야 한다.
+| 요구사항 ID | 통제 영역 | 점검 핵심 내용 |
+| :--- | :--- | :--- |
+| **FR-01** | 논리적 망분리 | VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조) |
+| **FR-02** | 논리적 망분리 | VPC-SC 내부 실시간 웹 검색 격리 여부 및 DMZ 분리 |
+| **FR-03** | 데이터 보호 | Cloud Storage 불변 보존(Bucket Lock) 5년 충족 여부 (법 제22조) |
+| **FR-04** | 데이터 보호 | 고객 관리 암호화 키(CMEK) 전면 적용 여부 (감독규정 제14조) |
+| **FR-05** | 감사 추적 | 데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부 (법 제22조) |
+| **FR-06** | AI 거버넌스 | Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 |
+| **FR-07** | AI 거버넌스 | Sensitive Data Protection(SDP) 개인신용정보 가명처리 템플릿 (신용정보법 제20조의2) |
+| **FR-08** | 접근 통제 | 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조) |
+| **FR-09** | 전송 보안 | 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조) |
 
 ---
 
@@ -118,50 +114,19 @@ python3 diagnose.py --dry-run
 
 진단 요약: 총 9개 규제 항목 중 충족 4건, 주의 2건, 미달 3건
 ----------------------------------------------------------------------------------------
-ID           | 분류             | 상태     | 진단 항목 및 현황
+ID      | 분류             | 상태     | 진단 항목 및 조치 요약
 ----------------------------------------------------------------------------------------
-FR-01   | 논리적 망분리        | [PASS] | VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조)
-  - 현재 상태: aiplatform.googleapis.com 이 서비스 경계(accessPolicies/123456/servicePerimeters/fsi_perimeter)에 등록됨
-
-FR-02   | 논리적 망분리        | [WARN] | VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부
-  - 현재 상태: VPC-SC 내부에서 web_search_tool 호출 시 egress 차단 위험 존재
-  - 규제 요건: 외부 인터넷 직접 통신 차단 원칙에 따라 웹 검색이 필요한 워크로드는 DMZ 전용 프로젝트로 분리 후 비동기 벡터 DB 적재 아키텍처 적용 필요
-  - 조치 권고: 외부 검색 연동 워크로드를 VPC-SC 외부 DMZ 프로젝트로 이관하고 내부 인스턴스로의 비동기 적재 파이프라인 구성 권장
-
-FR-03   | 데이터 보호         | [FAIL] | Cloud Storage 불변 보존(Retention Policy / Bucket Lock) 5년 충족 여부 (법 제22조)
-  - 현재 상태: 지정 버킷에 보존 정책 미설정 (retention_period: 0s)
-  - 규제 요건: 전자금융거래법 제22조 및 전자금융감독규정 제63조에 따라 감사 로그 및 AI 입출력 저장 버킷은 최소 5년(157,680,000초) 보존 및 잠금(Bucket Lock) 필수
-  - 조치 권고: gcloud storage buckets update gs://example-fsi-corp-audit-logs --retention-period=157680000s && gcloud storage buckets lock gs://example-fsi-corp-audit-logs
-
-FR-04   | 데이터 보호         | [PASS] | 고객 관리 암호화 키(CMEK) 전면 적용 여부 (감독규정 제14조)
-  - 현재 상태: Cloud KMS 키(projects/example-fsi-corp/locations/asia-northeast3/keyRings/fsi-ring/cryptoKeys/cmek-key) 정상 바인딩 확인
-
-FR-05   | 감사 추적          | [FAIL] | 데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부 (법 제22조)
-  - 현재 상태: aiplatform.googleapis.com 데이터 접근 로그 미설정 (ADMIN_READ 만 활성화됨)
-  - 규제 요건: 전자금융거래법 제22조 및 전자금융감독규정 제14조에 따라 금융 거래 및 AI 추론 데이터 조회를 위해 DATA_READ, DATA_WRITE 로그 감사 필수 수집
-  - 조치 권고: gcloud projects get-iam-policy $PROJECT_ID 후 auditConfigs 에 aiplatform.googleapis.com 및 storage.googleapis.com 추가
-
-FR-06   | AI 모델 거버넌스     | [PASS] | Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가조건)
-  - 현재 상태: Model Armor 템플릿(fsi-prompt-guard) 활성화 및 프롬프트 인젝션 탐지 필터 적용됨
-
-FR-07   | AI 모델 거버넌스     | [WARN] | Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿 (신용정보법 제20조의2)
-  - 현재 상태: 기본 민감 정보 템플릿 존재하나 주민등록번호(RRN) 및 계좌번호 특화 커스텀 InfoType 미등록
-  - 규제 요건: 신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인신용정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명처리 템플릿 등록 필수
-  - 조치 권고: gcloud dlp inspect-templates create --display-name='fsi-rrn-filter' --info-types=KOREA_RESIDENT_REGISTRATION_NUMBER
-
-FR-08   | 접근 통제          | [FAIL] | 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)
-  - 현재 상태: 조직 정책 iam.disableServiceAccountKeyCreation 미적용 (로컬 JSON 키 발급 가능 위험)
-  - 규제 요건: 전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 전면 차단하고 Workload Identity Federation(WIF) 필수 적용
-  - 조치 권고: gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project=example-fsi-corp
-
-FR-09   | 전송 보안          | [PASS] | 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)
-  - 현재 상태: SSL 정책(fsi-tls-policy)을 통해 TLS 1.0, 1.1 차단 및 TLS 1.2+ 고강도 암호화 스위트 적용 확인
-
-========================================================================================
-종합 평가 및 감사 준비 가이드:
-본 진단 결과 규제 필수 요건에 미달하는 항목이 존재한다.
-금융감독원 현장 실사 및 금융보안원 보안성 심의 전 미달(FAIL) 항목을 우선 조치해야 한다.
-특히 스토리지 5년 불변 보존(Bucket Lock), 서비스 계정 키 생성 차단, Vertex AI 감사 로깅은 필수 소명 대상이다.
+FR-01   | 논리적 망분리        | [PASS] | VPC-SC 보안 경계 내 Vertex AI 보호 확인
+FR-02   | 논리적 망분리        | [WARN] | 실시간 웹 검색 DMZ 분리 및 비동기 적재 구조 권고
+FR-03   | 데이터 보호         | [FAIL] | Cloud Storage 5년 불변 보존(Bucket Lock) 미설정 (법 제22조)
+FR-04   | 데이터 보호         | [PASS] | 고객 관리 암호화 키(CMEK) 전면 바인딩 확인 (감독규정 제14조)
+FR-05   | 감사 추적          | [FAIL] | Vertex AI 데이터 접근 감사 로그(DATA_READ/WRITE) 미설정
+FR-06   | AI 모델 거버넌스     | [PASS] | Model Armor 프롬프트 인젝션 방어 필터 적용 확인
+FR-07   | AI 모델 거버넌스     | [WARN] | SDP 주민등록번호/계좌번호 특화 가명처리 템플릿 등록 권고
+FR-08   | 접근 통제          | [FAIL] | 서비스 계정 키 생성 차단 조직 정책 미적용 (감독규정 제13조)
+FR-09   | 전송 보안          | [PASS] | 전송 구간 TLS 1.2+ 고강도 암호화 적용 확인 (감독규정 제14조)
+----------------------------------------------------------------------------------------
+종합 평가: 금융보안원 보안성 심의 전 미달(FAIL) 3건의 우선 조치가 요구된다.
 ========================================================================================
 ```
 
