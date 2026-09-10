@@ -8,6 +8,7 @@ import argparse
 import base64
 import json
 import os
+import subprocess
 import sys
 from typing import Any, Dict, List
 try:
@@ -24,8 +25,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--org-id",
         dest="org_id",
-        default=os.getenv("TARGET_ORG_ID") or "123456789012",
-        help="Google Cloud 조직 ID (기본값: TARGET_ORG_ID 환경 변수 또는 123456789012)",
+        default=os.getenv("TARGET_ORG_ID") or "",
+        help="Google Cloud 조직 ID (지정하지 않을 경우 gcloud 활성 조직 자동 감지)",
     )
     parser.add_argument(
         "--domain",
@@ -58,6 +59,47 @@ def parse_arguments() -> argparse.Namespace:
         help="결과를 JSON 형식으로 출력한다.",
     )
     return parser.parse_args()
+
+
+def detect_org_id(cli_org: str, is_dry_run: bool = False) -> str:
+    """조직 ID를 탐지하거나 대화형으로 선택한다."""
+    if cli_org:
+        return cli_org
+    env_org = os.getenv("TARGET_ORG_ID")
+    if env_org:
+        return env_org
+
+    if is_dry_run or not sys.stdin.isatty():
+        return "123456789012"
+
+    try:
+        res = subprocess.run(
+            ["gcloud", "organizations", "list", "--format=value(ID,displayName)", "--limit=5"],
+            capture_output=True,
+            text=True,
+        )
+        lines = [line.strip().split("\t") for line in res.stdout.splitlines() if line.strip()]
+        orgs = [item for item in lines if len(item) >= 1]
+        if orgs:
+            print("\n[?] 대상 Google Cloud 조직 ID가 지정되지 않았습니다. 현재 접근 가능한 조직 목록:")
+            for idx, item in enumerate(orgs, 1):
+                org_id = item[0]
+                name = item[1] if len(item) > 1 else ""
+                print(f"  [{idx}] {org_id} ({name})")
+            print(f"  [{len(orgs) + 1}] 직접 입력 (Custom Input)")
+            choice = input(f"선택할 번호를 입력하세요 [1-{len(orgs) + 1}] (Enter 시 1번): ").strip()
+            if not choice or choice == "1":
+                return orgs[0][0]
+            if choice.isdigit() and 1 <= int(choice) <= len(orgs):
+                return orgs[int(choice) - 1][0]
+            if choice == str(len(orgs) + 1):
+                custom = input("조직 ID를 직접 입력하세요: ").strip()
+                if custom:
+                    return custom
+    except Exception:
+        pass
+
+    return "123456789012"
 
 
 def build_expected_resource_header(org_id: str) -> str:
@@ -180,8 +222,9 @@ def print_text_report(report: Dict[str, Any]) -> None:
 
 def main() -> None:
     args = parse_arguments()
+    org_id = detect_org_id(args.org_id, is_dry_run=args.dry_run)
     report = run_diagnostics(
-        org_id=args.org_id,
+        org_id=org_id,
         domain=args.domain,
         group_email=args.group_email,
         proxy_url=args.proxy_url,

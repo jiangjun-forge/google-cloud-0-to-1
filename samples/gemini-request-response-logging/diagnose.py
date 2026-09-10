@@ -19,10 +19,36 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project():
-  """gcloud 설정에서 활성 프로젝트 ID를 조회한다."""
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-project-id") -> str:
+  """gcloud 설정 및 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+  env_proj = os.getenv("PROJECT_ID")
+  if env_proj:
+    return env_proj
   _, stdout, _ = run_cmd(["gcloud", "config", "get-value", "project"])
-  return stdout if stdout and "(unset)" not in stdout else None
+  if stdout and "(unset)" not in stdout:
+    return stdout
+
+  if is_dry_run or not sys.stdin.isatty():
+    return fallback_demo
+
+  code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
+  projects = [p.strip() for p in stdout.splitlines() if p.strip()] if code == 0 and stdout else []
+  if projects:
+    print("\n[?] 대상 GCP 프로젝트가 지정되지 않았습니다. 현재 접근 가능한 프로젝트 목록:")
+    for idx, p in enumerate(projects, 1):
+      print(f"  [{idx}] {p}")
+    print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
+    choice = input(f"선택할 번호를 입력하세요 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
+    if not choice or choice == "1":
+      return projects[0]
+    if choice.isdigit() and 1 <= int(choice) <= len(projects):
+      return projects[int(choice) - 1]
+    if choice == str(len(projects) + 1):
+      custom = input("프로젝트 ID를 직접 입력하세요: ").strip()
+      if custom:
+        return custom
+
+  return fallback_demo
 
 
 def print_mock_results(project_id: str, dataset_id: str):
@@ -98,7 +124,7 @@ def main():
   parser.add_argument(
       "-p",
       "--project",
-      default=os.getenv("PROJECT_ID") or get_default_project(),
+      default=os.getenv("PROJECT_ID") or None,
       help="GCP 프로젝트 ID (기본값: 활성 프로젝트 자동 감지)",
   )
   parser.add_argument(
@@ -127,7 +153,7 @@ def main():
   )
   args = parser.parse_args()
 
-  project_id = args.project or "demo-project-id"
+  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
 
   if args.dry_run:
     print("\n[데모 실행] --dry-run 모드가 활성화되어 가상 BigQuery 로깅 분석을 시뮬레이션한다.")

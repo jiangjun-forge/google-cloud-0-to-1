@@ -21,15 +21,36 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project() -> str | None:
-  """환경 변수 또는 gcloud 설정에서 활성 프로젝트 ID를 조회한다."""
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-analytics-project") -> str:
+  """환경 변수, gcloud 설정, 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
   env_proj = os.getenv("PROJECT_ID")
   if env_proj:
     return env_proj
   _, stdout, _ = run_cmd(["gcloud", "config", "get-value", "project"])
   if stdout and "(unset)" not in stdout:
     return stdout
-  return None
+
+  if is_dry_run or not sys.stdin.isatty():
+    return fallback_demo
+
+  code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
+  projects = [p.strip() for p in stdout.splitlines() if p.strip()] if code == 0 and stdout else []
+  if projects:
+    print("\n[?] 대상 GCP 프로젝트가 지정되지 않았습니다. 현재 접근 가능한 프로젝트 목록:")
+    for idx, p in enumerate(projects, 1):
+      print(f"  [{idx}] {p}")
+    print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
+    choice = input(f"선택할 번호를 입력하세요 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
+    if not choice or choice == "1":
+      return projects[0]
+    if choice.isdigit() and 1 <= int(choice) <= len(projects):
+      return projects[int(choice) - 1]
+    if choice == str(len(projects) + 1):
+      custom = input("프로젝트 ID를 직접 입력하세요: ").strip()
+      if custom:
+        return custom
+
+  return fallback_demo
 
 
 def get_mock_user_metrics(threshold_days: int) -> list[dict]:
@@ -260,7 +281,7 @@ def main():
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project()
+  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
   print(f"Gemini Enterprise 채택률 및 유휴 라이선스 진단 시작 (프로젝트: {project_id or 'dry-run-mode'})")
 
   if args.dry_run:

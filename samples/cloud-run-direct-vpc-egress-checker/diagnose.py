@@ -55,11 +55,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
-    """프로젝트 ID를 탐지한다."""
+    """프로젝트 ID를 탐지하거나 대화형으로 선택한다."""
     if cli_project:
         return cli_project
-    if is_dry_run:
-        return "demo-vpc-egress-project"
+    env_proj = os.getenv("PROJECT_ID")
+    if env_proj:
+        return env_proj
     try:
         res = subprocess.run(
             ["gcloud", "config", "get-value", "project"],
@@ -72,6 +73,34 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
             return detected
     except Exception:
         pass
+
+    if is_dry_run or not sys.stdin.isatty():
+        return "demo-vpc-egress-project"
+
+    try:
+        res = subprocess.run(
+            ["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"],
+            capture_output=True,
+            text=True,
+        )
+        projects = [p.strip() for p in res.stdout.splitlines() if p.strip()]
+        if projects:
+            print("\n[?] 대상 GCP 프로젝트가 지정되지 않았습니다. 현재 접근 가능한 프로젝트 목록:")
+            for idx, p in enumerate(projects, 1):
+                print(f"  [{idx}] {p}")
+            print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
+            choice = input(f"선택할 번호를 입력하세요 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
+            if not choice or choice == "1":
+                return projects[0]
+            if choice.isdigit() and 1 <= int(choice) <= len(projects):
+                return projects[int(choice) - 1]
+            if choice == str(len(projects) + 1):
+                custom = input("프로젝트 ID를 직접 입력하세요: ").strip()
+                if custom:
+                    return custom
+    except Exception:
+        pass
+
     return "demo-vpc-egress-project"
 
 

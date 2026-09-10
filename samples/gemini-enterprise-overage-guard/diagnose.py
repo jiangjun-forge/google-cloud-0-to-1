@@ -7,6 +7,7 @@
 import argparse
 import json
 import os
+import subprocess
 import sys
 from typing import Any, Dict, List
 
@@ -15,6 +16,46 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-project") -> str:
+    """gcloud 설정 및 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+    try:
+        res = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True)
+        out = res.stdout.strip()
+        if out and "(unset)" not in out:
+            return out
+    except Exception:
+        pass
+
+    if is_dry_run or not sys.stdin.isatty():
+        return fallback_demo
+
+    try:
+        res = subprocess.run(
+            ["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"],
+            capture_output=True,
+            text=True,
+        )
+        projects = [p.strip() for p in res.stdout.splitlines() if p.strip()]
+        if projects:
+            print("\n[?] 대상 GCP 프로젝트가 지정되지 않았습니다. 현재 접근 가능한 프로젝트 목록:")
+            for idx, p in enumerate(projects, 1):
+                print(f"  [{idx}] {p}")
+            print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
+            choice = input(f"선택할 번호를 입력하세요 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
+            if not choice or choice == "1":
+                return projects[0]
+            if choice.isdigit() and 1 <= int(choice) <= len(projects):
+                return projects[int(choice) - 1]
+            if choice == str(len(projects) + 1):
+                custom = input("프로젝트 ID를 직접 입력하세요: ").strip()
+                if custom:
+                    return custom
+    except Exception:
+        pass
+
+    return fallback_demo
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -29,8 +70,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--project-id",
         dest="project_id",
-        default=project_env or "demo-project",
-        help="진단 대상 GCP 프로젝트 ID",
+        default=project_env or "",
+        help="진단 대상 GCP 프로젝트 ID (미지정 시 활성 프로젝트 감지)",
     )
     parser.add_argument(
         "--billing-account-id",
@@ -165,8 +206,9 @@ def print_text_report(report: Dict[str, Any]) -> None:
 
 def main() -> None:
     args = parse_arguments()
+    proj_id = args.project_id or get_default_project(is_dry_run=args.dry_run)
     report = run_diagnostics(
-        project_id=args.project_id,
+        project_id=proj_id,
         billing_id=args.billing_account_id,
         spend_cap_usd=args.spend_cap_usd,
         alert_threshold=args.alert_threshold,

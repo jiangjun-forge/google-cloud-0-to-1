@@ -19,7 +19,7 @@ import urllib.parse
 import urllib.request
 
 
-def get_gcp_project_id(cli_project: str | None = None) -> str | None:
+def get_gcp_project_id(cli_project: str | None = None, is_dry_run: bool = False, fallback_demo: str = "demo-project") -> str | None:
   """우선순위에 따라 활성 GCP 프로젝트 ID를 결정합니다."""
   if cli_project:
     return cli_project
@@ -40,6 +40,34 @@ def get_gcp_project_id(cli_project: str | None = None) -> str | None:
       return project
   except Exception:
     pass
+
+  if is_dry_run or not sys.stdin.isatty():
+    return fallback_demo
+
+  try:
+    res = subprocess.run(
+        ["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"],
+        capture_output=True,
+        text=True,
+    )
+    projects = [p.strip() for p in res.stdout.splitlines() if p.strip()]
+    if projects:
+      print("\n[?] 대상 GCP 프로젝트가 지정되지 않았습니다. 현재 접근 가능한 프로젝트 목록:")
+      for idx, p in enumerate(projects, 1):
+        print(f"  [{idx}] {p}")
+      print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
+      choice = input(f"선택할 번호를 입력하세요 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
+      if not choice or choice == "1":
+        return projects[0]
+      if choice.isdigit() and 1 <= int(choice) <= len(projects):
+        return projects[int(choice) - 1]
+      if choice == str(len(projects) + 1):
+        custom = input("프로젝트 ID를 직접 입력하세요: ").strip()
+        if custom:
+          return custom
+  except Exception:
+    pass
+
   return None
 
 
@@ -266,7 +294,7 @@ def main():
     parse_and_report(demo_project, args.days, get_mock_metrics())
     return
 
-  project_id = get_gcp_project_id(args.project)
+  project_id = get_gcp_project_id(args.project, is_dry_run=args.dry_run)
   if not project_id:
     print(
         "[오류] 분석할 GCP 프로젝트 ID를 확인할 수 없다.\n"
