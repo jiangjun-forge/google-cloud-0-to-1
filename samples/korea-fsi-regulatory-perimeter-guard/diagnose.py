@@ -187,25 +187,45 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     })
 
     # 3. Cloud Storage 불변 보존 (Retention Policy / Bucket Lock)
-    target_bucket = audit_bucket or f"{project_id}-fsi-audit"
-    print(f"[3/9] Cloud Storage(gs://{target_bucket}) 5년 불변 보존 및 Bucket Lock 조회 중...", flush=True)
-    bucket_info = run_gcloud_json(["gcloud", "storage", "buckets", "describe", f"gs://{target_bucket}", "--format=json"])
-    retention_pass = False
-    retention_detail = f"버킷 gs://{target_bucket} 조회가 불가능하거나 미생성 상태임"
-    if bucket_info and isinstance(bucket_info, dict):
-        ret_policy = bucket_info.get("retention_policy") or bucket_info.get("retentionPolicy")
-        if ret_policy:
-            period = int(ret_policy.get("retention_period", 0) or ret_policy.get("retentionPeriod", 0))
-            is_locked = ret_policy.get("is_locked", False) or ret_policy.get("isLocked", False)
-            if period >= 157680000 and is_locked:
-                retention_pass = True
-                retention_detail = f"5년(157,680,000초) 보존 정책 설정 및 Bucket Lock 완료됨"
-            elif period >= 157680000:
-                retention_detail = f"보존 기간은 {period}초로 5년 이상이나 Bucket Lock 이 잠기지 않음"
+    target_bucket = audit_bucket or os.environ.get("AUDIT_BUCKET_NAME")
+    bucket_info = None
+    if not target_bucket:
+        buckets_list = run_gcloud_json(["gcloud", "storage", "buckets", "list", f"--project={project_id}", "--format=json"])
+        if buckets_list and isinstance(buckets_list, list) and len(buckets_list) > 0:
+            candidate = None
+            for b in buckets_list:
+                name = b.get("name", "")
+                if any(kw in name.lower() for kw in ["fsi", "audit", "log"]):
+                    candidate = name
+                    break
+            target_bucket = candidate or buckets_list[0].get("name")
+            print(f"  [자동 감지] 프로젝트 내 점검 대상 Cloud Storage 버킷 발견: gs://{target_bucket}", flush=True)
+
+    if target_bucket:
+        print(f"[3/9] Cloud Storage(gs://{target_bucket}) 5년 불변 보존 및 Bucket Lock 조회 중...", flush=True)
+        bucket_info = run_gcloud_json(["gcloud", "storage", "buckets", "describe", f"gs://{target_bucket}", "--format=json"])
+        retention_pass = False
+        retention_detail = f"버킷 gs://{target_bucket} 조회가 불가능하거나 권한이 부족함"
+        if bucket_info and isinstance(bucket_info, dict):
+            ret_policy = bucket_info.get("retention_policy") or bucket_info.get("retentionPolicy")
+            if ret_policy:
+                period = int(ret_policy.get("retention_period", 0) or ret_policy.get("retentionPeriod", 0))
+                is_locked = ret_policy.get("is_locked", False) or ret_policy.get("isLocked", False)
+                if period >= 157680000 and is_locked:
+                    retention_pass = True
+                    retention_detail = f"5년(157,680,000초) 보존 정책 설정 및 Bucket Lock 완료됨"
+                elif period >= 157680000:
+                    retention_detail = f"보존 기간은 {period}초로 5년 이상이나 Bucket Lock 이 잠기지 않음"
+                else:
+                    retention_detail = f"보존 기간이 {period}초로 규정 요건(5년: 157,680,000초)에 미달함"
             else:
-                retention_detail = f"보존 기간이 {period}초로 규정 요건(5년: 157,680,000초)에 미달함"
-        else:
-            retention_detail = f"버킷에 보존 정책(Retention Policy)이 설정되지 않음"
+                retention_detail = f"버킷 gs://{target_bucket} 에 보존 정책(Retention Policy)이 설정되지 않음"
+        remediation_retention = f"gcloud storage buckets update gs://{target_bucket} --retention-period=157680000s && gcloud storage buckets lock gs://{target_bucket}"
+    else:
+        print(f"[3/9] Cloud Storage 5년 불변 보존 및 Bucket Lock 점검 중...", flush=True)
+        retention_pass = False
+        retention_detail = f"프로젝트({project_id}) 내에 점검 가능한 Cloud Storage 버킷이 존재하지 않음"
+        remediation_retention = f"gcloud storage buckets create gs://{project_id}-fsi-audit --location={location} --retention-period=157680000s"
 
     findings.append({
         "id": "FR-03",
@@ -214,19 +234,44 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
         "status": "PASS" if retention_pass else "FAIL",
         "current": retention_detail,
         "requirement": "금융 규제 요건에 따라 감사 로그 및 AI 입출력 저장 버킷은 최소 5년(157,680,000초) 보존 및 잠금(Bucket Lock) 필수",
-        "remediation": f"gcloud storage buckets update gs://{target_bucket} --retention-period=157680000s && gcloud storage buckets lock gs://{target_bucket}",
+        "remediation": remediation_retention,
     })
 
     # 4. 고객 관리 암호화 키 (CMEK) 진단
+    target_kms = kms_key or os.environ.get("KMS_KEY_NAME")
+    if not target_kms:
+        keyrings_data = run_gcloud_json(["gcloud", "kms", "keyrings", "list", f"--location={location}", f"--project={project_id}", "--format=json"])
+        if keyrings_data and isinstance(keyrings_data, list) and len(keyrings_data) > 0:
+            for kr in keyrings_data:
+                kr_name = kr.get("name", "")
+                keys_data = run_gcloud_json(["gcloud", "kms", "keys", "list", f"--keyring={kr_name}", f"--location={location}", f"--project={project_id}", "--format=json"])
+                if keys_data and isinstance(keys_data, list) and len(keys_data) > 0:
+                    target_kms = keys_data[0].get("name")
+                    print(f"  [자동 감지] 리전({location}) 내 사내 Cloud KMS 키 발견: {target_kms}", flush=True)
+                    break
+
     print(f"[4/9] 고객 관리 암호화 키(CMEK) 적용 상태 검사 중...", flush=True)
     cmek_pass = False
-    cmek_detail = f"버킷 gs://{target_bucket} 에 CMEK 암호화 설정이 미적용됨"
-    if bucket_info and isinstance(bucket_info, dict):
+    if target_bucket and bucket_info and isinstance(bucket_info, dict):
         enc = bucket_info.get("encryption", {})
         default_kms = enc.get("default_kms_key_name") or enc.get("defaultKmsKeyName")
         if default_kms:
             cmek_pass = True
-            cmek_detail = f"버킷 기본 암호화 키로 CMEK({default_kms})가 적용됨"
+            cmek_detail = f"버킷 gs://{target_bucket} 기본 암호화 키로 CMEK({default_kms})가 적용됨"
+        else:
+            cmek_detail = f"버킷 gs://{target_bucket} 에 CMEK 암호화 설정이 미적용됨"
+    elif target_kms:
+        cmek_pass = True
+        cmek_detail = f"리전({location}) 내 사내 CMEK 키({target_kms}) 보유 확인됨"
+    else:
+        cmek_detail = f"프로젝트({project_id}) 및 리전({location}) 내에 등록된 사내 Cloud KMS 키가 없음"
+
+    remediation_cmek = (
+        f"gcloud storage buckets update gs://{target_bucket} --default-encryption-key={target_kms or '<KMS_KEY_NAME>'}"
+        if target_bucket
+        else f"gcloud kms keyrings create fsi-keyring --location={location} --project={project_id} && gcloud kms keys create fsi-cmek-key --keyring=fsi-keyring --location={location} --purpose=encryption --project={project_id}"
+    )
+
     findings.append({
         "id": "FR-04",
         "category": "데이터 보호",
@@ -234,7 +279,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
         "status": "PASS" if cmek_pass else "FAIL",
         "current": cmek_detail,
         "requirement": "Cloud Storage 버킷 및 Vertex AI 파이프라인에 사내 고객 관리 암호화 키(CMEK) 강제",
-        "remediation": f"gcloud storage buckets update gs://{target_bucket} --default-encryption-key=<KMS_KEY_NAME>",
+        "remediation": remediation_cmek,
     })
 
     # 5. 감사 로그 (Audit Logs) 진단
@@ -403,7 +448,7 @@ def main() -> None:
         description="혁신 금융 서비스(FSI) 생성형 AI 보안 경계 및 규제 컴플라이언스 진단 도구"
     )
     parser.add_argument("-p", "--project", help="대상 Google Cloud 프로젝트 ID")
-    parser.add_argument("-l", "--location", default="asia-northeast3", help="검사 대상 리전 (기본값: asia-northeast3)")
+    parser.add_argument("-l", "--location", default=os.environ.get("LOCATION") or "asia-northeast3", help="검사 대상 리전 (기본값: asia-northeast3)")
     parser.add_argument("--audit-bucket", help="FSI 감사 및 데이터 저장용 Cloud Storage 버킷 명")
     parser.add_argument("--kms-key", help="고객 관리 암호화 키(CMEK) 리소스 경로")
     parser.add_argument("--dry-run", action="store_true", help="실제 GCP API 호출 없이 모의 가상 데이터를 이용해 스모크 테스트 수행")
