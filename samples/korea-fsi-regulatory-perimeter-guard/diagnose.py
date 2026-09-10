@@ -110,6 +110,24 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "requirement": "신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인신용정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명처리 템플릿 등록 필수",
             "remediation": "gcloud dlp inspect-templates create --display-name='fsi-rrn-filter' --info-types=KOREA_RESIDENT_REGISTRATION_NUMBER",
         },
+        {
+            "id": "FSI-SEC-08",
+            "category": "접근 통제",
+            "name": "서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)",
+            "status": "FAIL",
+            "current": "조직 정책 iam.disableServiceAccountKeyCreation 미적용 (로컬 JSON 키 발급 가능 위험)",
+            "requirement": "전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 전면 차단하고 Workload Identity Federation(WIF) 필수 적용",
+            "remediation": f"gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project={project_id}",
+        },
+        {
+            "id": "FSI-SEC-09",
+            "category": "전송 보안",
+            "name": "전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)",
+            "status": "PASS",
+            "current": "SSL 정책(fsi-tls-policy)을 통해 TLS 1.0, 1.1 차단 및 TLS 1.2+ 고강도 암호화 스위트 적용 확인",
+            "requirement": "전자금융감독규정 제14조 제2항 제2호에 따라 통신 회선상 전송 데이터의 도청 방지를 위해 레거시 취약 TLS 버전을 전면 차단하고 TLS 1.2 이상 및 안전한 암호화 알고리즘 강제",
+            "remediation": "gcloud compute ssl-policies create fsi-tls-policy --profile=RESTRICTED --min-tls-version=1.2",
+        },
     ]
 
 
@@ -277,8 +295,53 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
         "name": "Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿",
         "status": "PASS" if sdp_pass else "WARN",
         "current": sdp_detail,
-        "requirement": "금융보안원 가명처리 기술 가이드라인에 따른 주민등록번호, 계좌번호, 카드번호 특화 검사 및 마스킹 규칙 등록",
+        "requirement": "신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인신용정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명처리 템플릿 등록 필수",
         "remediation": f"gcloud dlp inspect-templates create --location={location} --display-name='fsi-rrn-filter'",
+    })
+
+    # 8. 서비스 계정 키 발급 제한 조직 정책 진단 (전자금융감독규정 제13조)
+    sa_key_policy = run_gcloud_json([
+        "gcloud", "resource-manager", "org-policies", "describe",
+        "constraints/iam.disableServiceAccountKeyCreation",
+        f"--project={project_id}",
+        "--format=json",
+    ])
+    sa_key_pass = False
+    sa_key_detail = "조직 정책 iam.disableServiceAccountKeyCreation 설정 미조회 또는 미적용"
+    if sa_key_policy and isinstance(sa_key_policy, dict):
+        rules = sa_key_policy.get("spec", {}).get("rules", [])
+        if any(r.get("enforce", False) for r in rules):
+            sa_key_pass = True
+            sa_key_detail = "정적 서비스 계정 키 발급 제한(disableServiceAccountKeyCreation) 강제 적용됨"
+    findings.append({
+        "id": "FSI-SEC-08",
+        "category": "접근 통제",
+        "name": "서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)",
+        "status": "PASS" if sa_key_pass else "FAIL",
+        "current": sa_key_detail,
+        "requirement": "전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 전면 차단하고 Workload Identity Federation(WIF) 필수 적용",
+        "remediation": f"gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project={project_id}",
+    })
+
+    # 9. SSL/TLS 정책 진단 (전자금융감독규정 제14조)
+    ssl_policies = run_gcloud_json(["gcloud", "compute", "ssl-policies", "list", f"--project={project_id}", "--format=json"])
+    ssl_pass = False
+    ssl_detail = "프로젝트 내에 커스텀 SSL 정책(TLS 1.2+)이 미구성됨"
+    if ssl_policies and isinstance(ssl_policies, list) and len(ssl_policies) > 0:
+        for sp in ssl_policies:
+            min_tls = sp.get("minTlsVersion", "")
+            if min_tls in ["TLS_1_2", "TLS_1_3"]:
+                ssl_pass = True
+                ssl_detail = f"안전한 SSL 정책({sp.get('name')}) 적용 (최소 버전: {min_tls})"
+                break
+    findings.append({
+        "id": "FSI-SEC-09",
+        "category": "전송 보안",
+        "name": "전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)",
+        "status": "PASS" if ssl_pass else "WARN",
+        "current": ssl_detail,
+        "requirement": "전자금융감독규정 제14조 제2항 제2호에 따라 통신 회선상 전송 데이터의 도청 방지를 위해 레거시 취약 TLS 버전을 전면 차단하고 TLS 1.2 이상 및 안전한 암호화 알고리즘 강제",
+        "remediation": "gcloud compute ssl-policies create fsi-tls-policy --profile=RESTRICTED --min-tls-version=1.2",
     })
 
     return findings

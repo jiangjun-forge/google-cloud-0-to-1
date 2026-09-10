@@ -16,30 +16,33 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드
 
-대한민국 금융위원회의 「금융분야 망분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 상에 물리적 망분리에 준하는 논리적 망분리 및 대체 정보보호통제(VPC Service Controls, Cloud Storage 5년 Bucket Lock, 고객 관리 암호화 키, 감사 로그, Model Armor 가드레일, Sensitive Data Protection)를 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-09-10)
+대한민국 금융위원회의 「금융분야 망분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 인프라가 책임져야 하는 **9대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 1클릭으로 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-09-10)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`
-**Service**: `#CloudKMS`, `#CloudStorage`, `#ModelArmor`, `#SensitiveDataProtection`, `#VertexAI`, `#VPCServiceControls`
+**Service**: `#CloudKMS`, `#CloudStorage`, `#ModelArmor`, `#ResourceManager`, `#SensitiveDataProtection`, `#VertexAI`, `#VPCServiceControls`
 
 ---
 
-## 1. 법적 근거 및 규제 프레임워크 사실 관계
+## 1. 규제 수용 범위 및 법적 근거 사실 관계
 
-본 도구는 현행 대한민국 금융 법령 및 감독 당국 규정에 정의된 조항에 근거하여 인프라를 진단한다:
+금융보안원 및 금융위원회의 보안 규제 프레임워크는 관리적 통제와 기술적 통제로 구분된다. 본 진단 도구는 **클라우드 인프라 아키텍처 관점에서 자동 검증 가능한 기술적 통제 9대 기둥 전수(Full-Set)**를 다룬다:
 
-1. **전자금융거래법 제21조(안전성의 확보의무) 및 제22조(전자금융거래기록의 생성 및 보존)**:
-   - 금융회사는 컴퓨터 침해 사고 방지 및 안전성 확보를 위한 기술적, 물리적 조치를 다하여야 한다.
-   - 금융 거래 및 시스템 접속 기록은 최소 **5년간 보존**하여야 한다.
-2. **전자금융감독규정 제14조(전산자료 보호대책), 제15조(고유식별정보 등의 처리) 제1항 제3호 및 제5호**:
-   - 내부 업무용 시스템은 인터넷 등 외부 통신망과 물리적으로 분리 및 차단(망분리 의무)되어야 한다.
-   - 단, 금융위원회 규제 샌드박스(혁신 금융 서비스) 지정을 통해 예외 특례를 부여받는 경우, 이에 상응하는 엄격한 **논리적 망분리 및 대체 정보보호통제**를 구축하여야 한다.
-3. **전자금융감독규정 제15조의2(클라우드컴퓨팅서비스 이용절차 등) 및 제63조(전자금융거래기록의 보기 및 보존 기간)**:
-   - 중요 단말 및 시스템에서 클라우드 서비스를 이용할 경우 보안성 평가를 완료하여야 하며, 관련 감사 추적 로그는 5년간 불변 상태로 보관되어야 한다.
-4. **신용정보의 이용 및 보호에 관한 법률 제20조의2(가명정보의 이용 및 제공)**:
-   - 생성형 AI 모델에 원본 개인신용정보나 주민등록번호 등 고유식별정보를 직접 입력할 수 없으며, 반드시 비식별화 또는 **가명처리된 가명정보** 형태로만 처리되어야 한다.
-5. **금융위원회 「금융분야 망분리 개선 로드맵」(1단계 규제 특례 부가조건)**:
-   - 혁신 금융 서비스 지정을 통해 생성형 AI를 내부 업무망에서 활용할 경우 외부 인터넷 차단, 사내 고객 관리 암호화 키(CMEK) 적용, AI 악성 프롬프트 방어 가드레일, 비인가 데이터 유출 차단 조치가 의무 부과된다.
+| 통제 영역 | 법적/규정 근거 조항 | 본 도구 점검 항목 (9대 기술 통제 풀셋) | 자동 검증 방식 |
+| :--- | :--- | :--- | :--- |
+| **논리적 망분리** | 전자금융감독규정 제15조 제1항 제3호 및 제5호 | `FSI-SEC-01`: VPC-SC 보안 경계 내 Vertex AI 보호 여부 | `access-context-manager` 경계 서비스 검증 |
+| **외부망 차단** | 감독규정 제15조 및 1단계 특례 부가조건 | `FSI-SEC-02`: 실시간 웹 검색(Web Search Grounding) 격리 여부 | Egress 정책 위반 및 DMZ 분리 구조 점검 |
+| **전자기록 보존** | 전자금융거래법 제22조, 감독규정 제63조 | `FSI-SEC-03`: Cloud Storage 5년 불변 보존 (Bucket Lock) | 보존 기간(157,680,000초) 및 잠금 상태 확인 |
+| **데이터 암호화** | 전자금융감독규정 제14조 (전산자료 보호대책) | `FSI-SEC-04`: 고객 관리 암호화 키(CMEK) 전면 적용 여부 | Cloud KMS 사내 키 바인딩 및 키링 검증 |
+| **감사 추적** | 전자금융거래법 제22조, 감독규정 제14조 | `FSI-SEC-05`: 데이터 접근 감사 로그(DATA_READ/WRITE) 활성화 | IAM `auditConfigs` 전산자료 조회 로그 검증 |
+| **AI 모델 안전성** | 금융위원회 1단계 샌드박스 특례 부가조건 | `FSI-SEC-06`: Model Armor 실시간 프롬프트 인젝션/탈옥 방어 | Model Armor 템플릿 및 악성 필터 검증 |
+| **개인신용정보 보호** | 신용정보의 이용 및 보호에 관한 법률 제20조의2 | `FSI-SEC-07`: SDP 개인신용정보 가명처리 템플릿 | Sensitive Data Protection 주민등록번호/계좌번호 규칙 확인 |
+| **단말/시스템 통제** | 전자금융감독규정 제13조 (접근 통제) | `FSI-SEC-08`: 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 | 조직 정책 `disableServiceAccountKeyCreation` 검증 |
+| **전송 구간 암호화** | 전자금융감독규정 제14조 제2항 제2호 | `FSI-SEC-09`: 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 | Cloud Load Balancing 커스텀 SSL Policy 검증 |
+
+> [!NOTE]
+> **관리적·물리적 통제와의 역할 분담**:
+> 본 도구는 기술적 인프라 통제(Technical Controls)를 완벽하게 검증한다. 단, 사내 정보보호 지침 제정, CISO 및 준법감시인 내부 결재, 임직원 보안 서약서 징구, 재해 복구 비상대응 계획 수립 등 관리적 통제(Administrative Controls)는 금융사 내부 서류 및 절차로 구비되어야 한다.
 
 ---
 
@@ -47,13 +50,15 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (diagnose.py / run.sh)"] --> B["VPC-SC 논리적 망분리 검사 (전자금융감독규정 제15조)"]
-    B --> C["스토리지 5년 불변 보존 및 CMEK 검사 (전자금융거래법 제22조)"]
-    C --> D["Vertex AI 데이터 접근 감사 로그 검사 (전자금융감독규정 제14조/제63조)"]
-    D --> E["Model Armor 및 SDP 가명처리 검사 (신용정보법 제20조의2)"]
-    E --> F{"규제 결격 항목 발견 여부"}
-    F -- "결격 발견 (FAIL/WARN)" --> G["항목별 조치 명령어 및 콘솔 가이드 출력"]
-    F -- "전 항목 충족 (PASS)" --> H["FSI 보안성 심의 소명 준비 완료 리포트 확정"]
+    A["진단 시작 (diagnose.py / run.sh)"] --> B["1. 논리적 망분리 & 웹 검색 격리 검사 (감독규정 제15조)"]
+    B --> C["2. 접근 통제: 서비스 계정 키 발급 차단 검사 (감독규정 제13조)"]
+    C --> D["3. 스토리지 5년 불변 보존 & CMEK 검사 (법 제22조, 감독규정 제14조)"]
+    D --> E["4. Vertex AI 데이터 접근 감사 로그 검사 (법 제22조, 감독규정 제63조)"]
+    E --> F["5. Model Armor & SDP 가명처리 가드레일 (신용정보법 제20조의2)"]
+    F --> G["6. 전송 구간 TLS 1.2+ 고강도 암호화 검사 (감독규정 제14조)"]
+    G --> H{"규제 결격 항목 발견 여부"}
+    H -- "결격 발견 (FAIL/WARN)" --> I["항목별 조치 명령어 및 콘솔 가이드 출력"]
+    H -- "전 항목 충족 (PASS)" --> J["FSI 기술 통제 풀셋 소명 완료 리포트 확정"]
 ```
 
 ---
@@ -64,11 +69,12 @@ flowchart TD
 
 | 권한 역할 | 역할 명칭 | 필요 사유 |
 | :--- | :--- | :--- |
-| `roles/accesscontextmanager.reader` | Access Context Manager 독자 | VPC-SC 서비스 보안 경계 설정 조회 (전자금융감독규정 제15조 대체 통제) |
+| `roles/accesscontextmanager.reader` | Access Context Manager 독자 | VPC-SC 서비스 보안 경계 설정 조회 (감독규정 제15조) |
+| `roles/compute.viewer` | Compute 뷰어 | SSL 정책 TLS 최소 버전 조회 (감독규정 제14조) |
 | `roles/dlp.inspectTemplatesReader` | DLP 검사 템플릿 독자 | Sensitive Data Protection 가명처리 템플릿 조회 (신용정보법 제20조의2) |
-| `roles/logging.viewer` | 로그 뷰어 | 프로젝트 IAM 감사 로그(auditConfigs) 설정 조회 (전자금융거래법 제22조) |
-| `roles/resourcemanager.organizationViewer` | 조직 뷰어 | 조직 차원의 리소스 보안 바인딩 조회 |
-| `roles/storage.admin` | 스토리지 관리자 | Cloud Storage 버킷 보존 정책(Retention Policy) 및 잠금 상태 조회 (5년 보존 규정) |
+| `roles/logging.viewer` | 로그 뷰어 | 프로젝트 IAM 감사 로그(auditConfigs) 설정 조회 (법 제22조) |
+| `roles/orgpolicy.policyViewer` | 조직 정책 뷰어 | 서비스 계정 키 생성 차단 조직 정책 조회 (감독규정 제13조) |
+| `roles/storage.admin` | 스토리지 관리자 | Cloud Storage 버킷 보존 정책 및 잠금 상태 조회 (5년 보존 규정) |
 
 ---
 
@@ -110,16 +116,16 @@ python3 diagnose.py --dry-run
  대상 프로젝트: example-fsi-corp | 점검 리전: asia-northeast3 | 실행 모드: 가상 진단 (Dry-Run)
 ========================================================================================
 
-진단 요약: 총 7개 규제 항목 중 충족 3건, 주의 2건, 미달 2건
+진단 요약: 총 9개 규제 항목 중 충족 4건, 주의 2건, 미달 3건
 ----------------------------------------------------------------------------------------
 ID           | 분류             | 상태     | 진단 항목 및 현황
 ----------------------------------------------------------------------------------------
 FSI-SEC-01   | 논리적 망분리        | [PASS] | VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조)
   - 현재 상태: aiplatform.googleapis.com 이 서비스 경계(accessPolicies/123456/servicePerimeters/fsi_perimeter)에 등록됨
 
-FSI-SEC-02   | 논리적 망분리        | [WARN] | 실시간 웹 검색(Web Search Grounding) 격리 여부 (외부망 차단)
+FSI-SEC-02   | 논리적 망분리        | [WARN] | VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부
   - 현재 상태: VPC-SC 내부에서 web_search_tool 호출 시 egress 차단 위험 존재
-  - 규제 요건: 외부 인터넷 직접 통신 금지 원칙에 따라, 웹 검색 워크로드는 DMZ 전용 프로젝트로 분리 후 비동기 벡터 DB 적재 아키텍처 적용 필요
+  - 규제 요건: 외부 인터넷 직접 통신 차단 원칙에 따라 웹 검색이 필요한 워크로드는 DMZ 전용 프로젝트로 분리 후 비동기 벡터 DB 적재 아키텍처 적용 필요
   - 조치 권고: 외부 검색 연동 워크로드를 VPC-SC 외부 DMZ 프로젝트로 이관하고 내부 인스턴스로의 비동기 적재 파이프라인 구성 권장
 
 FSI-SEC-03   | 데이터 보호         | [FAIL] | Cloud Storage 불변 보존(Retention Policy / Bucket Lock) 5년 충족 여부 (법 제22조)
@@ -132,22 +138,30 @@ FSI-SEC-04   | 데이터 보호         | [PASS] | 고객 관리 암호화 키(C
 
 FSI-SEC-05   | 감사 추적          | [FAIL] | 데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부 (법 제22조)
   - 현재 상태: aiplatform.googleapis.com 데이터 접근 로그 미설정 (ADMIN_READ 만 활성화됨)
-  - 규제 요건: 전자금융거래법 제22조에 따라 금융 거래 및 AI 추론 데이터 조회를 위한 DATA_READ, DATA_WRITE 로그 필수 수집
+  - 규제 요건: 전자금융거래법 제22조 및 전자금융감독규정 제14조에 따라 금융 거래 및 AI 추론 데이터 조회를 위해 DATA_READ, DATA_WRITE 로그 감사 필수 수집
   - 조치 권고: gcloud projects get-iam-policy $PROJECT_ID 후 auditConfigs 에 aiplatform.googleapis.com 및 storage.googleapis.com 추가
 
-FSI-SEC-06   | AI 모델 거버넌스     | [PASS] | Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (샌드박스 부가조건)
+FSI-SEC-06   | AI 모델 거버넌스     | [PASS] | Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가조건)
   - 현재 상태: Model Armor 템플릿(fsi-prompt-guard) 활성화 및 프롬프트 인젝션 탐지 필터 적용됨
 
 FSI-SEC-07   | AI 모델 거버넌스     | [WARN] | Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿 (신용정보법 제20조의2)
   - 현재 상태: 기본 민감 정보 템플릿 존재하나 주민등록번호(RRN) 및 계좌번호 특화 커스텀 InfoType 미등록
-  - 규제 요건: 신용정보법 제20조의2 및 금융보안원 가명처리 기술 가이드라인에 따른 주민등록번호, 계좌번호, 카드번호 특화 검사 및 마스킹 규칙 등록 필수
+  - 규제 요건: 신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인신용정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명처리 템플릿 등록 필수
   - 조치 권고: gcloud dlp inspect-templates create --display-name='fsi-rrn-filter' --info-types=KOREA_RESIDENT_REGISTRATION_NUMBER
+
+FSI-SEC-08   | 접근 통제          | [FAIL] | 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)
+  - 현재 상태: 조직 정책 iam.disableServiceAccountKeyCreation 미적용 (로컬 JSON 키 발급 가능 위험)
+  - 규제 요건: 전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 전면 차단하고 Workload Identity Federation(WIF) 필수 적용
+  - 조치 권고: gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project=example-fsi-corp
+
+FSI-SEC-09   | 전송 보안          | [PASS] | 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)
+  - 현재 상태: SSL 정책(fsi-tls-policy)을 통해 TLS 1.0, 1.1 차단 및 TLS 1.2+ 고강도 암호화 스위트 적용 확인
 
 ========================================================================================
 종합 평가 및 감사 준비 가이드:
 본 진단 결과 규제 필수 요건에 미달하는 항목이 존재한다.
 금융감독원 현장 실사 및 금융보안원 보안성 심의 전 미달(FAIL) 항목을 우선 조치해야 한다.
-특히 스토리지 5년 불변 보존(Bucket Lock) 및 Vertex AI 감사 로깅은 전자금융거래법상 필수 소명 대상이다.
+특히 스토리지 5년 불변 보존(Bucket Lock), 서비스 계정 키 생성 차단, Vertex AI 감사 로깅은 필수 소명 대상이다.
 ========================================================================================
 ```
 
@@ -155,28 +169,30 @@ FSI-SEC-07   | AI 모델 거버넌스     | [WARN] | Sensitive Data Protection (
 
 ## 6. 결과 확인 후 즉각 조치 가이드
 
-1. **Cloud Storage 5년 보존 정책 및 Bucket Lock 적용 (전자금융거래법 제22조 및 전자금융감독규정 제63조)**:
-   - 금융 관련 감사 로그 및 AI 입출력 데이터가 저장되는 버킷에 최소 5년(157,680,000초) 불변 보존을 설정하고 잠근다.
-   - [Cloud Storage 콘솔](https://console.cloud.google.com/storage/browser)
+1. **서비스 계정 키 생성 전면 차단 (전자금융감독규정 제13조)**:
+   - 정적 서비스 계정 JSON 키 발급을 방지하고 WIF 연동을 강제한다.
    ```bash
-   # 보존 기간 5년 설정 (157,680,000초)
-   gcloud storage buckets update gs://<AUDIT_BUCKET_NAME> --retention-period=157680000s
+   gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project=$PROJECT_ID
+   ```
 
-   # 버킷 잠금 (주의: 잠금 후에는 보존 기간 단축 또는 해제가 불가능하다)
+2. **전송 구간 암호화 정책 수립 (전자금융감독규정 제14조)**:
+   - 취약한 프로토콜(TLS 1.0, 1.1)을 차단하고 TLS 1.2 이상만 허용하는 커스텀 SSL 정책을 생성한다.
+   ```bash
+   gcloud compute ssl-policies create fsi-tls-policy --profile=RESTRICTED --min-tls-version=1.2 --project=$PROJECT_ID
+   ```
+
+3. **Cloud Storage 5년 보존 정책 및 Bucket Lock 적용 (전자금융거래법 제22조 및 전자금융감독규정 제63조)**:
+   - 금융 감사 로그 및 AI 입출력 버킷에 5년(157,680,000초) 불변 보존을 강제한다.
+   ```bash
+   gcloud storage buckets update gs://<AUDIT_BUCKET_NAME> --retention-period=157680000s
    gcloud storage buckets lock gs://<AUDIT_BUCKET_NAME>
    ```
 
-2. **Vertex AI 데이터 접근 감사 로그 강제 (전자금융감독규정 제14조 및 제63조)**:
-   - 프로젝트 IAM 정책에 `aiplatform.googleapis.com` 및 `storage.googleapis.com` 데이터 접근 로그(`DATA_READ`, `DATA_WRITE`)를 추가하여 모든 추론 및 모델 호출 이력을 보존한다.
-   - [IAM 감사 로그 콘솔](https://console.cloud.google.com/iam-admin/audit)
+4. **Vertex AI 데이터 접근 감사 로그 강제 (전자금융감독규정 제14조 및 제63조)**:
+   - 프로젝트 IAM 정책에 `aiplatform.googleapis.com` 및 `storage.googleapis.com` 데이터 접근 로그(`DATA_READ`, `DATA_WRITE`)를 추가한다.
 
-3. **VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 아키텍처 수립 (전자금융감독규정 제15조)**:
-   - VPC-SC 보안 경계 내부에서 `web_search_tool`을 직접 호출할 경우 Egress 차단이 발생하므로, 외부 인터넷 검색 전용 DMZ 프로젝트를 별도로 분리하고 수집된 정보를 내부 벡터 데이터베이스로 비동기 동기화하는 배치 파이프라인 구조로 전환한다.
-   - [VPC Service Controls 콘솔](https://console.cloud.google.com/security/service-perimeter)
-
-4. **Model Armor 및 Sensitive Data Protection(SDP) 가드레일 연동 (신용정보법 제20조의2)**:
-   - 프롬프트 인젝션 및 탈옥 시도를 엔드포인트 도달 전 선제 차단하기 위해 Model Armor 템플릿을 생성하고, 주민등록번호(`KOREA_RESIDENT_REGISTRATION_NUMBER`) 특화 마스킹 규칙을 등록한다.
-   - [Sensitive Data Protection 콘솔](https://console.cloud.google.com/security/dlp)
+5. **Model Armor 및 Sensitive Data Protection(SDP) 가드레일 연동 (신용정보법 제20조의2)**:
+   - 악성 프롬프트 인젝션 방어 필터를 활성화하고 주민등록번호(`KOREA_RESIDENT_REGISTRATION_NUMBER`) 가명처리 템플릿을 등록한다.
 
 ---
 

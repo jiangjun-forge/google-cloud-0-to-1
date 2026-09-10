@@ -104,6 +104,20 @@ def get_mock_check_results(region: str) -> list[dict]:
             "current_state": "DATA_READ, DATA_WRITE 감사 로그 활성화 상태",
             "remediation": "추가 조치 불필요",
         },
+        {
+            "category": "Access Control",
+            "control": "사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)",
+            "status": "FAIL",
+            "current_state": "iam.allowedPolicyMemberDomains 조직 정책 미적용 (외부 계정 초대 위험 존재)",
+            "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 원천 차단)",
+        },
+        {
+            "category": "Provider Isolation",
+            "control": "클라우드 제공자 임의 접근 통제 (Access Approval - 안내서 사전 승인 의무)",
+            "status": "PASS",
+            "current_state": "Access Approval 및 Access Transparency 정상 활성화 (CSP 엔지니어 사전 승인 강제)",
+            "remediation": "추가 조치 불필요 (CSP 평문 접근 배제 요건 충족)",
+        },
     ]
 
 
@@ -228,6 +242,52 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
             "current_state": "전사 감사 로그 싱크 구성 미흡",
             "remediation": "BigQuery 또는 Cloud Storage 감사 로그 싱크 연동 필요",
         })
+
+    # 5. 사외/외국 계정 공유 차단 (iam.allowedPolicyMemberDomains)
+    member_domain_cmd = [
+        "gcloud", "resource-manager", "org-policies", "describe",
+        "constraints/iam.allowedPolicyMemberDomains",
+        f"--project={project_id}",
+        "--format=json",
+    ]
+    domain_policy = run_gcloud_json(member_domain_cmd)
+    domain_pass = False
+    domain_detail = "조직 정책 iam.allowedPolicyMemberDomains 미적용 (외부 계정 초대 위험 존재)"
+    if domain_policy and isinstance(domain_policy, dict):
+        rules = domain_policy.get("spec", {}).get("rules", [])
+        if any(r.get("values", {}).get("allowedValues") for r in rules):
+            domain_pass = True
+            domain_detail = "승인된 사내 도메인 외 계정 바인딩 원천 차단 적용됨"
+
+    results.append({
+        "category": "Access Control",
+        "control": "사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)",
+        "status": "PASS" if domain_pass else "FAIL",
+        "current_state": domain_detail,
+        "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 원천 차단)",
+    })
+
+    # 6. 클라우드 제공자 임의 접근 통제 (Access Approval / Access Transparency)
+    approval_cmd = [
+        "gcloud", "access-approval", "settings", "get",
+        f"--project={project_id}",
+        "--format=json",
+    ]
+    approval_settings = run_gcloud_json(approval_cmd)
+    approval_pass = False
+    approval_detail = "Access Approval 미설정 또는 미조회 (CSP 임의 접근 차단 소명 필요)"
+    if approval_settings and isinstance(approval_settings, dict):
+        if approval_settings.get("enrolledServices"):
+            approval_pass = True
+            approval_detail = "Access Approval 활성화됨 (Google 엔지니어 접근 시 고객 사전 승인 강제)"
+
+    results.append({
+        "category": "Provider Isolation",
+        "control": "클라우드 제공자 임의 접근 통제 (Access Approval - 안내서 사전 승인 의무)",
+        "status": "PASS" if approval_pass else "WARN",
+        "current_state": approval_detail,
+        "remediation": "gcloud access-approval settings update --enrolled-services=all-services (CSP 평문 접근 배제 요건 충족)",
+    })
 
     return results
 
