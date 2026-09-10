@@ -13,11 +13,6 @@ All contents, designs, and code examples are subject to change, modification, or
 # 기술 상세 설계서 (TDD: Technical Design Document)
 ## 프로젝트명: Korea FSI Regulatory Perimeter Guard for Gen AI
 
-**문서 버전**: 1.0.0  
-**작성 일자**: 2026-09-10  
-**상태**: 승인 완료 (Approved)  
-**구현 모듈**: `diagnose.py`, `run.sh`
-
 ---
 
 ## 1. 시스템 아키텍처 개요 및 설계 원칙

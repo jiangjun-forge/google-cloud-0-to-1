@@ -13,11 +13,6 @@ All contents, designs, and code examples are subject to change, modification, or
 # 비즈니스 요구사항 명세서 (BRD: Business Requirements Document)
 ## 프로젝트명: Korea National Core Technology (NCT) Gen AI Compliance Checker
 
-**문서 버전**: 1.0.0  
-**작성 일자**: 2026-09-10  
-**상태**: 승인 완료 (Approved)  
-**대상 서비스**: Google Cloud (`Resource Manager`, `Cloud IAM`, `Cloud KMS`, `Cloud Storage`, `Cloud Audit Logs`, `Vertex AI`, `Access Approval`)
-
 ---
 
 ## 1. 비즈니스 개요 및 프로젝트 목적 (Executive Summary)
