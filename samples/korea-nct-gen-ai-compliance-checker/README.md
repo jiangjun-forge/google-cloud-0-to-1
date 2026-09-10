@@ -155,8 +155,8 @@ Provider Isolation 클라우드 제공자 임의 접근 통제 (Access Approval 
 
 1. **조직 정책 리소스 위치 제약 설정 (산업기술보호법 제11조 기술 수출 승인/신고 의무)**:
    - 해외 리전(us-central1 등) 생성을 원천 차단하여 승인 없는 해외 기술 이전 리스크를 방어한다.
-   - [리소스 위치 정의](https://cloud.google.com/resource-manager/docs/organization-policy/defining-locations)
-   - [대한민국 Data Boundary 패키지](https://cloud.google.com/assured-workloads/docs/control-packages/south-korea-data-boundary)
+   - 리소스 위치 정의 ( https://cloud.google.com/resource-manager/docs/organization-policy/defining-locations )
+   - 대한민국 Data Boundary 패키지 ( https://cloud.google.com/assured-workloads/docs/control-packages/south-korea-data-boundary )
 2. **사외/외국 기업 계정 공유 차단 (보안관리 안내서 외국 기업 접근 배제)**:
    - 승인된 사내 Google Workspace 도메인 외 계정으로의 IAM 바인딩을 원천 차단한다.
    ```bash
@@ -170,7 +170,7 @@ Provider Isolation 클라우드 제공자 임의 접근 통제 (Access Approval 
    ```
 4. **Cloud KMS CMEK 키 관리 (보안관리 안내서 이중 암호화 의무)**:
    - 국내 키링에 고객 관리 암호화 키를 생성하고 모든 버킷 및 데이터셋에 연동하여 CSP의 데이터 접근 통제권을 확보한다.
-   - [Cloud KMS 콘솔](https://console.cloud.google.com/security/kms)
+   - Cloud KMS 콘솔 ( https://console.cloud.google.com/security/kms )
 
 ---
 

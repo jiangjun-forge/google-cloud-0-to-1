@@ -148,16 +148,16 @@ HOP-05   | 토큰 생성      |   482.3 ms (27.5%)   | [=========               
 
 1. **Model Armor 가드레일 지연 완화**:
    - 실시간 인스펙션 오버헤드가 과도할 경우, 불필요하게 높은 민감도 설정을 튜닝하거나 응답 검사(Egress Filtering)를 스트리밍 후처리 미들웨어에서 비동기 감사로 전환한다.
-   - [Model Armor 콘솔](https://console.cloud.google.com/security/model-armor )
+   - Model Armor 콘솔 ( https://console.cloud.google.com/security/model-armor )
 
 2. **순수 추론 시간 단축 (Prompt Caching 및 PT 도입)**:
    - 반복되는 시스템 지침이나 사내 가이드라인 문서가 긴 경우, Vertex AI 프롬프트 캐싱(Context Caching)을 적용하여 첫 토큰 지연(TTFT)을 최대 80% 절감한다.
    - 프로덕션 환경의 예측 가능한 베이스로드 확보를 위해 Provisioned Throughput(PT)을 도입하여 멀티 테넌트 큐잉 지연을 제거한다.
-   - [Vertex AI 콘솔](https://console.cloud.google.com/vertex-ai )
+   - Vertex AI 콘솔 ( https://console.cloud.google.com/vertex-ai )
 
 3. **엔드투엔드 네트워크 RTT 최적화**:
    - 사내 클라이언트와 구글 백본망 간의 통신 구간을 최적화하기 위해 Private Service Connect(PSC) 엔드포인트를 구축하여 퍼블릭 인터넷 경유에 따른 패킷 지연을 방어한다.
-   - [Private Service Connect 콘솔](https://console.cloud.google.com/net-services/psc )
+   - Private Service Connect 콘솔 ( https://console.cloud.google.com/net-services/psc )
 
 ---
 

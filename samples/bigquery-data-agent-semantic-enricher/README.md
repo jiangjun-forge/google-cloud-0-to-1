@@ -150,13 +150,13 @@ Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (En
 
 1. **테이블 및 컬럼 설명 패치 확인**:
    - Google Cloud 콘솔 BigQuery Studio에서 대상 테이블의 스키마 탭을 확인하여 각 필드에 구체적인 비즈니스 설명과 유효 범위가 반영되었는지 검증한다.
-   - [BigQuery Studio 콘솔](https://console.cloud.google.com/bigquery)
+   - BigQuery Studio 콘솔 ( https://console.cloud.google.com/bigquery )
 2. **Dataplex 데이터 프로파일링 실행**:
    - 통계 지표가 없는 테이블은 Dataplex Data Profile 스캔을 등록하고 실행하여 최솟값, 최댓값, 고유값 비율을 카탈로그에 게시한다.
-   - [Dataplex Data Profile 안내](https://cloud.google.com/dataplex/docs/data-profiling-overview)
+   - Dataplex Data Profile 안내 ( https://cloud.google.com/dataplex/docs/data-profiling-overview )
 3. **Knowledge Catalog 비즈니스 용어집 등록**:
    - 생성된 `dataplex_glossary_terms.yaml` 템플릿을 참조하여 Dataplex Knowledge Catalog에 비즈니스 용어와 계산 수식(`Formula`)을 등록하고 관련 테이블에 바인딩한다.
-   - [Dataplex Business Glossary 콘솔](https://console.cloud.google.com/dataplex/business-glossaries)
+   - Dataplex Business Glossary 콘솔 ( https://console.cloud.google.com/dataplex/business-glossaries )
 
 ---
 
