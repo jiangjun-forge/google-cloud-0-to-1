@@ -48,7 +48,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
     """가상 실행(--dry-run)을 위한 표준 모의 진단 데이터를 반환한다."""
     return [
         {
-            "id": "FSI-SEC-01",
+            "id": "FR-01",
             "category": "논리적 망분리",
             "name": "VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조)",
             "status": "PASS",
@@ -57,7 +57,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "remediation": "gcloud access-context-manager perimeters update fsi_perimeter --add-restricted-services=aiplatform.googleapis.com",
         },
         {
-            "id": "FSI-SEC-02",
+            "id": "FR-02",
             "category": "논리적 망분리",
             "name": "VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부",
             "status": "WARN",
@@ -66,7 +66,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "remediation": "외부 검색 연동 워크로드를 VPC-SC 외부 DMZ 프로젝트로 이관하고 내부 인스턴스로의 비동기 적재 파이프라인 구성 권장",
         },
         {
-            "id": "FSI-SEC-03",
+            "id": "FR-03",
             "category": "데이터 보호",
             "name": "Cloud Storage 불변 보존(Retention Policy / Bucket Lock) 5년 충족 여부 (법 제22조)",
             "status": "FAIL",
@@ -75,7 +75,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "remediation": f"gcloud storage buckets update gs://{project_id}-audit-logs --retention-period=157680000s && gcloud storage buckets lock gs://{project_id}-audit-logs",
         },
         {
-            "id": "FSI-SEC-04",
+            "id": "FR-04",
             "category": "데이터 보호",
             "name": "고객 관리 암호화 키(CMEK) 전면 적용 여부 (감독규정 제14조)",
             "status": "PASS",
@@ -84,7 +84,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "remediation": f"gcloud storage buckets update gs://{project_id}-audit-logs --default-encryption-key=projects/{project_id}/locations/asia-northeast3/keyRings/fsi-ring/cryptoKeys/cmek-key",
         },
         {
-            "id": "FSI-SEC-05",
+            "id": "FR-05",
             "category": "감사 추적",
             "name": "데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부 (법 제22조)",
             "status": "FAIL",
@@ -93,7 +93,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "remediation": "gcloud projects get-iam-policy $PROJECT_ID 후 auditConfigs 에 aiplatform.googleapis.com 및 storage.googleapis.com 추가",
         },
         {
-            "id": "FSI-SEC-06",
+            "id": "FR-06",
             "category": "AI 모델 거버넌스",
             "name": "Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가조건)",
             "status": "PASS",
@@ -102,7 +102,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "remediation": "gcloud beta model-armor templates create fsi-prompt-guard --location=asia-northeast3",
         },
         {
-            "id": "FSI-SEC-07",
+            "id": "FR-07",
             "category": "AI 모델 거버넌스",
             "name": "Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿 (신용정보법 제20조의2)",
             "status": "WARN",
@@ -111,7 +111,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "remediation": "gcloud dlp inspect-templates create --display-name='fsi-rrn-filter' --info-types=KOREA_RESIDENT_REGISTRATION_NUMBER",
         },
         {
-            "id": "FSI-SEC-08",
+            "id": "FR-08",
             "category": "접근 통제",
             "name": "서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)",
             "status": "FAIL",
@@ -120,7 +120,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "remediation": f"gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project={project_id}",
         },
         {
-            "id": "FSI-SEC-09",
+            "id": "FR-09",
             "category": "전송 보안",
             "name": "전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)",
             "status": "PASS",
@@ -163,7 +163,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
                     vpc_sc_detail = f"서비스 경계({p.get('name')})에 소속되어 있으나 aiplatform.googleapis.com 이 제한 서비스에 누락됨"
 
     findings.append({
-        "id": "FSI-SEC-01",
+        "id": "FR-01",
         "category": "논리적 망분리",
         "name": "VPC-SC 보안 경계 내 Vertex AI 보호 여부",
         "status": "PASS" if vpc_sc_pass else "FAIL",
@@ -174,7 +174,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
 
     # 2. VPC-SC Web Search Grounding 격리 진단
     findings.append({
-        "id": "FSI-SEC-02",
+        "id": "FR-02",
         "category": "논리적 망분리",
         "name": "VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부",
         "status": "WARN",
@@ -204,7 +204,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
             retention_detail = f"버킷에 보존 정책(Retention Policy)이 설정되지 않음"
 
     findings.append({
-        "id": "FSI-SEC-03",
+        "id": "FR-03",
         "category": "데이터 보호",
         "name": "Cloud Storage 불변 보존(Retention Policy / Bucket Lock) 5년 충족 여부",
         "status": "PASS" if retention_pass else "FAIL",
@@ -223,7 +223,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
             cmek_pass = True
             cmek_detail = f"버킷 기본 암호화 키로 CMEK({default_kms})가 적용됨"
     findings.append({
-        "id": "FSI-SEC-04",
+        "id": "FR-04",
         "category": "데이터 보호",
         "name": "고객 관리 암호화 키(CMEK) 전면 적용 여부",
         "status": "PASS" if cmek_pass else "FAIL",
@@ -253,7 +253,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
             audit_detail = "Vertex AI 에 대한 DATA_READ 또는 DATA_WRITE 감사 로그가 누락됨"
 
     findings.append({
-        "id": "FSI-SEC-05",
+        "id": "FR-05",
         "category": "감사 추적",
         "name": "데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부",
         "status": "PASS" if audit_pass else "FAIL",
@@ -272,7 +272,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
         ma_detail = f"Model Armor 템플릿 발견됨: {', '.join(ma_names)}"
 
     findings.append({
-        "id": "FSI-SEC-06",
+        "id": "FR-06",
         "category": "AI 모델 거버넌스",
         "name": "Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일",
         "status": "PASS" if ma_pass else "FAIL",
@@ -290,7 +290,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
         sdp_detail = f"DLP 검사 템플릿 {len(dlp_templates)}개 등록 확인됨"
 
     findings.append({
-        "id": "FSI-SEC-07",
+        "id": "FR-07",
         "category": "AI 모델 거버넌스",
         "name": "Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿",
         "status": "PASS" if sdp_pass else "WARN",
@@ -314,7 +314,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
             sa_key_pass = True
             sa_key_detail = "정적 서비스 계정 키 발급 제한(disableServiceAccountKeyCreation) 강제 적용됨"
     findings.append({
-        "id": "FSI-SEC-08",
+        "id": "FR-08",
         "category": "접근 통제",
         "name": "서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)",
         "status": "PASS" if sa_key_pass else "FAIL",
@@ -335,7 +335,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
                 ssl_detail = f"안전한 SSL 정책({sp.get('name')}) 적용 (최소 버전: {min_tls})"
                 break
     findings.append({
-        "id": "FSI-SEC-09",
+        "id": "FR-09",
         "category": "전송 보안",
         "name": "전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)",
         "status": "PASS" if ssl_pass else "WARN",

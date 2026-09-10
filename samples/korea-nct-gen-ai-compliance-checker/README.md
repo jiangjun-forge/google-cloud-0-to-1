@@ -30,13 +30,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 통제 영역 | 법적/안내서 근거 조항 | 본 도구 점검 항목 (7대 기술 통제 풀셋) | 자동 검증 방식 |
 | :--- | :--- | :--- | :--- |
-| **물리적 국내 위치** | 산업기술보호법 제11조, 안내서 제1장 | `NCT-SEC-01`: `gcp.resourceLocations` 서울 리전 강제 | 리소스 생성 위치 조직 정책 검증 |
-| **사외 유출 차단** | 산업기술보호법 제10조, 안내서 제3장 | `NCT-SEC-02`: RAG 벡터 데이터 저장 차단 (IAM Deny) | `aiplatform.indexes.*` IAM Deny 검증 |
-| **이중 암호화 의무** | 보안관리 안내서 제2장 (암호화 통제) | `NCT-SEC-03`: Cloud KMS CMEK 이중 암호화 (Dual Encryption) | 서울 리전 KMS 키링 및 버킷 CMEK 바인딩 확인 |
-| **국내 격리 추론** | 보안관리 안내서 제1장 (시스템 위치) | `NCT-SEC-04`: 추론 리전 국소화 (Vertex AI 서울 엔드포인트) | `asia-northeast3-aiplatform` 엔드포인트 격리 확인 |
-| **감사 추적** | 산업기술보호법 제10조 (접근 기록) | `NCT-SEC-05`: Cloud Audit Logs 데이터 접근(DATA_READ/WRITE) 로깅 | 감사 로그 싱크 및 접근 로그 수집 검증 |
-| **외국 기업 배제** | 보안관리 안내서 제3장 (외국 기업 통제) | `NCT-SEC-06`: 사외/외국 계정 공유 차단 (`iam.allowedPolicyMemberDomains`) | 사내 승인 도메인 외 계정 바인딩 원천 차단 확인 |
-| **제공자 임의 접근 차단** | 보안관리 안내서 제2장 (접근 승인 의무) | `NCT-SEC-07`: 클라우드 제공자 접근 승인/투명성 (Access Approval) | CSP 엔지니어 사전 승인 강제 설정 검증 |
+| **물리적 국내 위치** | 산업기술보호법 제11조, 안내서 제1장 | `FR-01`: `gcp.resourceLocations` 서울 리전 강제 | 리소스 생성 위치 조직 정책 검증 |
+| **사외 유출 차단** | 산업기술보호법 제10조, 안내서 제3장 | `FR-02`: RAG 벡터 데이터 저장 차단 (IAM Deny) | `aiplatform.indexes.*` IAM Deny 검증 |
+| **이중 암호화 의무** | 보안관리 안내서 제2장 (암호화 통제) | `FR-03`: Cloud KMS CMEK 이중 암호화 (Dual Encryption) | 서울 리전 KMS 키링 및 버킷 CMEK 바인딩 확인 |
+| **국내 격리 추론** | 보안관리 안내서 제1장 (시스템 위치) | `FR-04`: 추론 리전 국소화 (Vertex AI 서울 엔드포인트) | `asia-northeast3-aiplatform` 엔드포인트 격리 확인 |
+| **감사 추적** | 산업기술보호법 제10조 (접근 기록) | `FR-05`: Cloud Audit Logs 데이터 접근(DATA_READ/WRITE) 로깅 | 감사 로그 싱크 및 접근 로그 수집 검증 |
+| **외국 기업 배제** | 보안관리 안내서 제3장 (외국 기업 통제) | `FR-06`: 사외/외국 계정 공유 차단 (`iam.allowedPolicyMemberDomains`) | 사내 승인 도메인 외 계정 바인딩 원천 차단 확인 |
+| **제공자 임의 접근 차단** | 보안관리 안내서 제2장 (접근 승인 의무) | `FR-07`: 클라우드 제공자 접근 승인/투명성 (Access Approval) | CSP 엔지니어 사전 승인 강제 설정 검증 |
 
 > [!NOTE]
 > **관리적·물리적 통제와의 역할 분담**:

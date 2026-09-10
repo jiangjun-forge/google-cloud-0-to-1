@@ -30,15 +30,15 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 통제 영역 | 법적/규정 근거 조항 | 본 도구 점검 항목 (9대 기술 통제 풀셋) | 자동 검증 방식 |
 | :--- | :--- | :--- | :--- |
-| **논리적 망분리** | 전자금융감독규정 제15조 제1항 제3호 및 제5호 | `FSI-SEC-01`: VPC-SC 보안 경계 내 Vertex AI 보호 여부 | `access-context-manager` 경계 서비스 검증 |
-| **외부망 차단** | 감독규정 제15조 및 1단계 특례 부가조건 | `FSI-SEC-02`: 실시간 웹 검색(Web Search Grounding) 격리 여부 | Egress 정책 위반 및 DMZ 분리 구조 점검 |
-| **전자기록 보존** | 전자금융거래법 제22조, 감독규정 제63조 | `FSI-SEC-03`: Cloud Storage 5년 불변 보존 (Bucket Lock) | 보존 기간(157,680,000초) 및 잠금 상태 확인 |
-| **데이터 암호화** | 전자금융감독규정 제14조 (전산자료 보호대책) | `FSI-SEC-04`: 고객 관리 암호화 키(CMEK) 전면 적용 여부 | Cloud KMS 사내 키 바인딩 및 키링 검증 |
-| **감사 추적** | 전자금융거래법 제22조, 감독규정 제14조 | `FSI-SEC-05`: 데이터 접근 감사 로그(DATA_READ/WRITE) 활성화 | IAM `auditConfigs` 전산자료 조회 로그 검증 |
-| **AI 모델 안전성** | 금융위원회 1단계 샌드박스 특례 부가조건 | `FSI-SEC-06`: Model Armor 실시간 프롬프트 인젝션/탈옥 방어 | Model Armor 템플릿 및 악성 필터 검증 |
-| **개인신용정보 보호** | 신용정보의 이용 및 보호에 관한 법률 제20조의2 | `FSI-SEC-07`: SDP 개인신용정보 가명처리 템플릿 | Sensitive Data Protection 주민등록번호/계좌번호 규칙 확인 |
-| **단말/시스템 통제** | 전자금융감독규정 제13조 (접근 통제) | `FSI-SEC-08`: 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 | 조직 정책 `disableServiceAccountKeyCreation` 검증 |
-| **전송 구간 암호화** | 전자금융감독규정 제14조 제2항 제2호 | `FSI-SEC-09`: 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 | Cloud Load Balancing 커스텀 SSL Policy 검증 |
+| **논리적 망분리** | 전자금융감독규정 제15조 제1항 제3호 및 제5호 | `FR-01`: VPC-SC 보안 경계 내 Vertex AI 보호 여부 | `access-context-manager` 경계 서비스 검증 |
+| **외부망 차단** | 감독규정 제15조 및 1단계 특례 부가조건 | `FR-02`: 실시간 웹 검색(Web Search Grounding) 격리 여부 | Egress 정책 위반 및 DMZ 분리 구조 점검 |
+| **전자기록 보존** | 전자금융거래법 제22조, 감독규정 제63조 | `FR-03`: Cloud Storage 5년 불변 보존 (Bucket Lock) | 보존 기간(157,680,000초) 및 잠금 상태 확인 |
+| **데이터 암호화** | 전자금융감독규정 제14조 (전산자료 보호대책) | `FR-04`: 고객 관리 암호화 키(CMEK) 전면 적용 여부 | Cloud KMS 사내 키 바인딩 및 키링 검증 |
+| **감사 추적** | 전자금융거래법 제22조, 감독규정 제14조 | `FR-05`: 데이터 접근 감사 로그(DATA_READ/WRITE) 활성화 | IAM `auditConfigs` 전산자료 조회 로그 검증 |
+| **AI 모델 안전성** | 금융위원회 1단계 샌드박스 특례 부가조건 | `FR-06`: Model Armor 실시간 프롬프트 인젝션/탈옥 방어 | Model Armor 템플릿 및 악성 필터 검증 |
+| **개인신용정보 보호** | 신용정보의 이용 및 보호에 관한 법률 제20조의2 | `FR-07`: SDP 개인신용정보 가명처리 템플릿 | Sensitive Data Protection 주민등록번호/계좌번호 규칙 확인 |
+| **단말/시스템 통제** | 전자금융감독규정 제13조 (접근 통제) | `FR-08`: 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 | 조직 정책 `disableServiceAccountKeyCreation` 검증 |
+| **전송 구간 암호화** | 전자금융감독규정 제14조 제2항 제2호 | `FR-09`: 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 | Cloud Load Balancing 커스텀 SSL Policy 검증 |
 
 > [!NOTE]
 > **관리적·물리적 통제와의 역할 분담**:
@@ -120,41 +120,41 @@ python3 diagnose.py --dry-run
 ----------------------------------------------------------------------------------------
 ID           | 분류             | 상태     | 진단 항목 및 현황
 ----------------------------------------------------------------------------------------
-FSI-SEC-01   | 논리적 망분리        | [PASS] | VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조)
+FR-01   | 논리적 망분리        | [PASS] | VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조)
   - 현재 상태: aiplatform.googleapis.com 이 서비스 경계(accessPolicies/123456/servicePerimeters/fsi_perimeter)에 등록됨
 
-FSI-SEC-02   | 논리적 망분리        | [WARN] | VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부
+FR-02   | 논리적 망분리        | [WARN] | VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부
   - 현재 상태: VPC-SC 내부에서 web_search_tool 호출 시 egress 차단 위험 존재
   - 규제 요건: 외부 인터넷 직접 통신 차단 원칙에 따라 웹 검색이 필요한 워크로드는 DMZ 전용 프로젝트로 분리 후 비동기 벡터 DB 적재 아키텍처 적용 필요
   - 조치 권고: 외부 검색 연동 워크로드를 VPC-SC 외부 DMZ 프로젝트로 이관하고 내부 인스턴스로의 비동기 적재 파이프라인 구성 권장
 
-FSI-SEC-03   | 데이터 보호         | [FAIL] | Cloud Storage 불변 보존(Retention Policy / Bucket Lock) 5년 충족 여부 (법 제22조)
+FR-03   | 데이터 보호         | [FAIL] | Cloud Storage 불변 보존(Retention Policy / Bucket Lock) 5년 충족 여부 (법 제22조)
   - 현재 상태: 지정 버킷에 보존 정책 미설정 (retention_period: 0s)
   - 규제 요건: 전자금융거래법 제22조 및 전자금융감독규정 제63조에 따라 감사 로그 및 AI 입출력 저장 버킷은 최소 5년(157,680,000초) 보존 및 잠금(Bucket Lock) 필수
   - 조치 권고: gcloud storage buckets update gs://example-fsi-corp-audit-logs --retention-period=157680000s && gcloud storage buckets lock gs://example-fsi-corp-audit-logs
 
-FSI-SEC-04   | 데이터 보호         | [PASS] | 고객 관리 암호화 키(CMEK) 전면 적용 여부 (감독규정 제14조)
+FR-04   | 데이터 보호         | [PASS] | 고객 관리 암호화 키(CMEK) 전면 적용 여부 (감독규정 제14조)
   - 현재 상태: Cloud KMS 키(projects/example-fsi-corp/locations/asia-northeast3/keyRings/fsi-ring/cryptoKeys/cmek-key) 정상 바인딩 확인
 
-FSI-SEC-05   | 감사 추적          | [FAIL] | 데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부 (법 제22조)
+FR-05   | 감사 추적          | [FAIL] | 데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부 (법 제22조)
   - 현재 상태: aiplatform.googleapis.com 데이터 접근 로그 미설정 (ADMIN_READ 만 활성화됨)
   - 규제 요건: 전자금융거래법 제22조 및 전자금융감독규정 제14조에 따라 금융 거래 및 AI 추론 데이터 조회를 위해 DATA_READ, DATA_WRITE 로그 감사 필수 수집
   - 조치 권고: gcloud projects get-iam-policy $PROJECT_ID 후 auditConfigs 에 aiplatform.googleapis.com 및 storage.googleapis.com 추가
 
-FSI-SEC-06   | AI 모델 거버넌스     | [PASS] | Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가조건)
+FR-06   | AI 모델 거버넌스     | [PASS] | Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가조건)
   - 현재 상태: Model Armor 템플릿(fsi-prompt-guard) 활성화 및 프롬프트 인젝션 탐지 필터 적용됨
 
-FSI-SEC-07   | AI 모델 거버넌스     | [WARN] | Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿 (신용정보법 제20조의2)
+FR-07   | AI 모델 거버넌스     | [WARN] | Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿 (신용정보법 제20조의2)
   - 현재 상태: 기본 민감 정보 템플릿 존재하나 주민등록번호(RRN) 및 계좌번호 특화 커스텀 InfoType 미등록
   - 규제 요건: 신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인신용정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명처리 템플릿 등록 필수
   - 조치 권고: gcloud dlp inspect-templates create --display-name='fsi-rrn-filter' --info-types=KOREA_RESIDENT_REGISTRATION_NUMBER
 
-FSI-SEC-08   | 접근 통제          | [FAIL] | 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)
+FR-08   | 접근 통제          | [FAIL] | 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)
   - 현재 상태: 조직 정책 iam.disableServiceAccountKeyCreation 미적용 (로컬 JSON 키 발급 가능 위험)
   - 규제 요건: 전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 전면 차단하고 Workload Identity Federation(WIF) 필수 적용
   - 조치 권고: gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project=example-fsi-corp
 
-FSI-SEC-09   | 전송 보안          | [PASS] | 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)
+FR-09   | 전송 보안          | [PASS] | 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)
   - 현재 상태: SSL 정책(fsi-tls-policy)을 통해 TLS 1.0, 1.1 차단 및 TLS 1.2+ 고강도 암호화 스위트 적용 확인
 
 ========================================================================================

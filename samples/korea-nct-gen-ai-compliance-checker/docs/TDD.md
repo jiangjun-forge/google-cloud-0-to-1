@@ -106,17 +106,17 @@ flowchart TD
 
 ---
 
-## 4. 7대 기술 통제 세부 구현 명세
+## 4. 7대 기술 통제 세부 구현 명세 (Functional Requirements)
 
-| 통제 ID | 점검 영역 | 점검 명령어 | 판정 알고리즘 (Evaluation Logic) |
+| 요구사항 ID | 점검 영역 | 점검 명령어 | 판정 알고리즘 (Evaluation Logic) |
 | :--- | :--- | :--- | :--- |
-| **NCT-SEC-01** | 물리적 국내 위치 | `gcloud resource-manager org-policies describe constraints/gcp.resourceLocations --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 서울 리전(`asia-northeast3`) 허용 제약이 존재하면 PASS, 다른 리전 허용 또는 미설정 시 FAIL. |
-| **NCT-SEC-02** | RAG 벡터 유출 차단 | `gcloud iam deny-policies list --attachment-point=cloudresourcemanager.googleapis.com/projects/<PROJECT> --format=json` | 프로젝트에 적용된 IAM Deny 정책 목록이 1개 이상 존재하고 활성화되어 있으면 PASS, 미설정 시 FAIL. |
-| **NCT-SEC-03** | KMS CMEK 이중 암호화 | `gcloud kms keyrings list --location=<REGION> --project=<PROJECT> --format=json` | 대상 서울 리전에 활성화된 Cloud KMS 키링 및 암호화 키가 1개 이상 식별되면 PASS, 구글 기본 키 사용 시 FAIL. |
-| **NCT-SEC-04** | 추론 리전 국소화 | `gcloud config get-value api_endpoint_overrides/aiplatform` | API 엔드포인트 오버라이드 값이 서울 리전(`asia-northeast3-aiplatform.googleapis.com`)을 가리키면 PASS, 기본 글로벌 엔드포인트 참조 가능성 존재 시 WARN. |
-| **NCT-SEC-05** | 데이터 접근 감사 로그 | `gcloud logging sinks list --project=<PROJECT> --format=json` | 구성된 Cloud Logging 싱크가 1개 이상 존재하여 감사 로그 외부 안전 격리 보관이 설정되어 있으면 PASS, 없으면 FAIL. |
-| **NCT-SEC-06** | 사외/외국 계정 배제 | `gcloud resource-manager org-policies describe constraints/iam.allowedPolicyMemberDomains --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 사내 승인된 Google Workspace 고객 ID 목록 제약이 설정되어 있으면 PASS, 미설정 시 FAIL. |
-| **NCT-SEC-07** | CSP 임의 접근 차단 | `gcloud access-approval settings get --project=<PROJECT> --format=json` | `enrolledServices`에 서비스가 등록되어 Google 엔지니어 접근 시 사전 고객 승인을 강제하면 PASS, 미등록 또는 비활성화 시 WARN. |
+| **FR-01** | 물리적 국내 위치 | `gcloud resource-manager org-policies describe constraints/gcp.resourceLocations --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 서울 리전(`asia-northeast3`) 허용 제약이 존재하면 PASS, 다른 리전 허용 또는 미설정 시 FAIL. |
+| **FR-02** | RAG 벡터 유출 차단 | `gcloud iam deny-policies list --attachment-point=cloudresourcemanager.googleapis.com/projects/<PROJECT> --format=json` | 프로젝트에 적용된 IAM Deny 정책 목록이 1개 이상 존재하고 활성화되어 있으면 PASS, 미설정 시 FAIL. |
+| **FR-03** | KMS CMEK 이중 암호화 | `gcloud kms keyrings list --location=<REGION> --project=<PROJECT> --format=json` | 대상 서울 리전에 활성화된 Cloud KMS 키링 및 암호화 키가 1개 이상 식별되면 PASS, 구글 기본 키 사용 시 FAIL. |
+| **FR-04** | 추론 리전 국소화 | `gcloud config get-value api_endpoint_overrides/aiplatform` | API 엔드포인트 오버라이드 값이 서울 리전(`asia-northeast3-aiplatform.googleapis.com`)을 가리키면 PASS, 기본 글로벌 엔드포인트 참조 가능성 존재 시 WARN. |
+| **FR-05** | 데이터 접근 감사 로그 | `gcloud logging sinks list --project=<PROJECT> --format=json` | 구성된 Cloud Logging 싱크가 1개 이상 존재하여 감사 로그 외부 안전 격리 보관이 설정되어 있으면 PASS, 없으면 FAIL. |
+| **FR-06** | 사외/외국 계정 배제 | `gcloud resource-manager org-policies describe constraints/iam.allowedPolicyMemberDomains --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 사내 승인된 Google Workspace 고객 ID 목록 제약이 설정되어 있으면 PASS, 미설정 시 FAIL. |
+| **FR-07** | CSP 임의 접근 차단 | `gcloud access-approval settings get --project=<PROJECT> --format=json` | `enrolledServices`에 서비스가 등록되어 Google 엔지니어 접근 시 사전 고객 승인을 강제하면 PASS, 미등록 또는 비활성화 시 WARN. |
 
 ---
 
@@ -134,9 +134,11 @@ roles/accessapproval.viewer         -> accessapproval.settings.get
 
 ---
 
-## 6. 검증 및 테스트 전략
+## 6. 비기능 설계 및 검증 전략 (Non-Functional Requirements)
 
-1. **스모크 테스트 (Dry-run)**:
-   - 외부 네트워크 및 GCP 인증 없이 `python3 diagnose.py --dry-run`을 실행하여 7개 통제 항목의 표 렌더링 무결성, 상태 집계, 종료 코드를 검증한다.
-2. **실제 환경 통합 검증 (Live Scan)**:
-   - 실사 샌드박스 프로젝트에서 `./run.sh`를 구동하여 제어 평면 API 호출, JSON 파싱, 오류 처리(Fail-Safe) 로직의 정상 작동을 확인한다.
+| 요구사항 ID | 분류 | 세부 설계 및 검증 방법 |
+| :--- | :--- | :--- |
+| **NFR-01** | 비파괴성 (Zero Risk) | 모든 검사를 조회 명령으로 제한하여 운영 환경에 100% 무해성 보장. |
+| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 및 GCP 인증 없이 `python3 diagnose.py --dry-run`으로 7개 항목 1초 내 시뮬레이션. |
+| **NFR-03** | 실행 성능 | 7개 핵심 항목의 실사 점검을 5초 이내에 완료할 수 있도록 경량 CLI 호출 최적화. |
+| **NFR-04** | 민감 정보 비식별화 | 특정 기업의 기밀 및 도메인 정보 하드코딩 배제 및 가명 템플릿 표준화. |

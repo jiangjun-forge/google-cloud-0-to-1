@@ -106,14 +106,14 @@ flowchart TD
 
 ---
 
-## 4. 메타데이터 평가 지표 및 준비도 산출 알고리즘
+## 4. 메타데이터 평가 및 구현 명세 (Functional Requirements)
 
-| 지표 영역 | 가중치 | 평가 기준 (Criteria) | Data Agent에 미치는 영향 |
-| :--- | :--- | :--- | :--- |
-| **Table Description** | 30% | 10자 이상의 구체적 업무 목적 및 AI 라우팅 가이드 기재 여부 | 에이전트가 질문 의도에 맞는 적절한 테이블을 선택하는 라우팅 정확도 결정 |
-| **Column Description** | 30% | 필드의 의미, 유효 범위, 계산 방식 기술 여부 | 모호한 컬럼(예: `amt`, `discount`)에 대한 환각 및 엉뚱한 조건절 생성 방어 |
-| **Data Profile Stats** | 20% | Dataplex Data Profile 스캔(카디널리티, min/max, null 비율) 수집 여부 | 에이전트가 실제 데이터에 존재하는 유효한 범주형 값(Enum)으로 필터링하도록 보장 |
-| **Glossary Formula** | 20% | Dataplex Knowledge Catalog 비즈니스 수식(`Formula`) 연동 여부 | `SAFE_DIVIDE`, 세금/할인 적용 등 핵심 계산 메트릭의 왜곡 없는 일관된 수식 생성 |
+| 요구사항 ID | 지표 영역 | 가중치 | 평가 기준 (Criteria) | Data Agent에 미치는 영향 |
+| :--- | :--- | :--- | :--- | :--- |
+| **FR-01** | Table Description | 30% | 10자 이상의 구체적 업무 목적 및 AI 라우팅 가이드 기재 여부 | 에이전트가 질문 의도에 맞는 적절한 테이블을 선택하는 라우팅 정확도 결정 |
+| **FR-02** | Column Description | 30% | 필드의 의미, 유효 범위, 계산 방식 기술 여부 | 모호한 컬럼(예: `amt`, `discount`)에 대한 환각 및 엉뚱한 조건절 생성 방어 |
+| **FR-03** | Data Profile Stats | 20% | Dataplex Data Profile 스캔(카디널리티, min/max, null 비율) 수집 여부 | 에이전트가 실제 데이터에 존재하는 유효한 범주형 값(Enum)으로 필터링하도록 보장 |
+| **FR-04** | Glossary Formula | 20% | Dataplex Knowledge Catalog 비즈니스 수식(`Formula`) 연동 여부 | `SAFE_DIVIDE`, 세금/할인 적용 등 핵심 계산 메트릭의 왜곡 없는 일관된 수식 생성 |
 
 ---
 
@@ -130,9 +130,10 @@ roles/datacatalog.viewer       -> datacatalog.entries.get, datacatalog.glossarie
 
 ---
 
-## 6. 검증 및 테스트 전략
+## 6. 비기능 설계 및 검증 전략 (Non-Functional Requirements)
 
-1. **스모크 테스트 (Dry-run)**:
-   - 외부 네트워크나 GCP 권한 없이 `python3 diagnose.py --dry-run --enrich`를 실행하여 4개 테이블 진단 점수 산출(15.3점 FAIL), 보강 계획 출력, 용어집 YAML 생성 정상 동작을 검증한다.
-2. **실제 환경 검증 (Live Scan & Apply)**:
-   - 테스트 데이터셋에서 `./run.sh --dataset=test_ds --enrich --apply`를 구동하여 실제 BigQuery 스키마 메타데이터가 올바르게 갱신되는지 확인한다.
+| 요구사항 ID | 분류 | 세부 설계 및 검증 방법 |
+| :--- | :--- | :--- |
+| **NFR-01** | 비파괴성 (Zero Risk) | 읽기 전용 스캔 원칙을 준수하며, `--apply` 옵션 활성화 시에도 스키마 Description 필드만 원자적으로 패치. |
+| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python3 diagnose.py --dry-run --enrich`로 4개 테이블 준비도 점수 산출 및 YAML 생성 1초 내 시뮬레이션. |
+| **NFR-03** | 실행 성능 및 확장성 | 100개 미만 테이블 스키마 진단을 10초 이내에 완료하며, 전사 대규모 데이터 웨어하우스 데이터셋 스캔 지원. |

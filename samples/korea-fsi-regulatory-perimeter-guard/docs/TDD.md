@@ -103,19 +103,19 @@ flowchart TD
 
 ---
 
-## 4. 9대 기술 통제 세부 구현 명세
+## 4. 9대 기술 통제 세부 구현 명세 (Functional Requirements)
 
-| 통제 ID | 점검 명칭 | 실행 명령어 | 판정 알고리즘 (Evaluation Logic) |
+| 요구사항 ID | 점검 명칭 | 실행 명령어 | 판정 알고리즘 (Evaluation Logic) |
 | :--- | :--- | :--- | :--- |
-| **FSI-SEC-01** | VPC-SC 보안 경계 | `gcloud access-context-manager perimeters list --format=json` | 프로젝트 번호/ID가 포함된 서비스 경계의 `restrictedServices` 목록에 `aiplatform.googleapis.com`이 포함되어 있으면 PASS, 아니면 FAIL. |
-| **FSI-SEC-02** | 웹 검색 Grounding 격리 | 아키텍처 정적 분석 | VPC-SC 내부에서 `web_search_tool` 호출 시 Egress 차단 위험을 경고하고 DMZ 프로젝트 분리 구조를 WARN으로 권고. |
-| **FSI-SEC-03** | Cloud Storage 5년 보존 | `gcloud storage buckets describe gs://<BUCKET> --format=json` | `retention_policy.retention_period >= 157680000` (5년) 이고 `retention_policy.is_locked == true` 이면 PASS, 잠금 미설정 시 WARN, 기간 미달/미설정 시 FAIL. |
-| **FSI-SEC-04** | 고객 관리 암호화 키 | `gcloud storage buckets describe gs://<BUCKET> --format=json` | `encryption.default_kms_key_name` 속성이 존재하고 활성화된 Cloud KMS 키와 일치하면 PASS, Google 기본 키면 FAIL. |
-| **FSI-SEC-05** | 데이터 접근 감사 로그 | `gcloud projects get-iam-policy <PROJECT> --format=json` | `auditConfigs` 내 `allServices` 또는 `aiplatform.googleapis.com`의 `auditLogConfigs`에 `DATA_READ`와 `DATA_WRITE`가 모두 포함되어 있으면 PASS, 아니면 FAIL. |
-| **FSI-SEC-06** | Model Armor 가드레일 | `gcloud beta model-armor templates list --location=<LOC> --format=json` | 대상 리전에 활성화된 Model Armor 템플릿이 1개 이상 존재하면 PASS, 없으면 FAIL. |
-| **FSI-SEC-07** | SDP 가명처리 템플릿 | `gcloud dlp inspect-templates list --location=<LOC> --format=json` | 대상 리전에 DLP 검사 템플릿이 존재하면 PASS, 없으면 WARN. |
-| **FSI-SEC-08** | 서비스 계정 키 발급 차단 | `gcloud resource-manager org-policies describe constraints/iam.disableServiceAccountKeyCreation --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 `enforce: true`가 설정되어 있으면 PASS, 아니면 FAIL. |
-| **FSI-SEC-09** | 전송 구간 TLS 1.2+ 암호화 | `gcloud compute ssl-policies list --project=<PROJECT> --format=json` | `minTlsVersion`이 `TLS_1_2` 또는 `TLS_1_3`으로 설정된 커스텀 SSL 정책이 식별되면 PASS, 없으면 WARN. |
+| **FR-01** | VPC-SC 보안 경계 | `gcloud access-context-manager perimeters list --format=json` | 프로젝트 번호/ID가 포함된 서비스 경계의 `restrictedServices` 목록에 `aiplatform.googleapis.com`이 포함되어 있으면 PASS, 아니면 FAIL. |
+| **FR-02** | 웹 검색 Grounding 격리 | 아키텍처 정적 분석 | VPC-SC 내부에서 `web_search_tool` 호출 시 Egress 차단 위험을 경고하고 DMZ 프로젝트 분리 구조를 WARN으로 권고. |
+| **FR-03** | Cloud Storage 5년 보존 | `gcloud storage buckets describe gs://<BUCKET> --format=json` | `retention_policy.retention_period >= 157680000` (5년) 이고 `retention_policy.is_locked == true` 이면 PASS, 잠금 미설정 시 WARN, 기간 미달/미설정 시 FAIL. |
+| **FR-04** | 고객 관리 암호화 키 | `gcloud storage buckets describe gs://<BUCKET> --format=json` | `encryption.default_kms_key_name` 속성이 존재하고 활성화된 Cloud KMS 키와 일치하면 PASS, Google 기본 키면 FAIL. |
+| **FR-05** | 데이터 접근 감사 로그 | `gcloud projects get-iam-policy <PROJECT> --format=json` | `auditConfigs` 내 `allServices` 또는 `aiplatform.googleapis.com`의 `auditLogConfigs`에 `DATA_READ`와 `DATA_WRITE`가 모두 포함되어 있으면 PASS, 아니면 FAIL. |
+| **FR-06** | Model Armor 가드레일 | `gcloud beta model-armor templates list --location=<LOC> --format=json` | 대상 리전에 활성화된 Model Armor 템플릿이 1개 이상 존재하면 PASS, 없으면 FAIL. |
+| **FR-07** | SDP 가명처리 템플릿 | `gcloud dlp inspect-templates list --location=<LOC> --format=json` | 대상 리전에 DLP 검사 템플릿이 존재하면 PASS, 없으면 WARN. |
+| **FR-08** | 서비스 계정 키 발급 차단 | `gcloud resource-manager org-policies describe constraints/iam.disableServiceAccountKeyCreation --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 `enforce: true`가 설정되어 있으면 PASS, 아니면 FAIL. |
+| **FR-09** | 전송 구간 TLS 1.2+ 암호화 | `gcloud compute ssl-policies list --project=<PROJECT> --format=json` | `minTlsVersion`이 `TLS_1_2` 또는 `TLS_1_3`으로 설정된 커스텀 SSL 정책이 식별되면 PASS, 없으면 WARN. |
 
 ---
 
@@ -134,9 +134,11 @@ roles/storage.admin                -> storage.buckets.get, storage.buckets.getIa
 
 ---
 
-## 6. 검증 및 테스트 전략
+## 6. 비기능 설계 및 검증 전략 (Non-Functional Requirements)
 
-1. **스모크 테스트 (Dry-run)**:
-   - 외부 의존성 없이 `python3 diagnose.py --dry-run`을 실행하여 9개 항목의 출력 무결성, 컬럼 정렬, 종료 코드를 자체 검증한다.
-2. **실제 프로젝트 실사 (Live Scan)**:
-   - 금융사 Argolis 샌드박스 또는 테스트 프로젝트에서 `run.sh --project=$PROJECT_ID`를 구동하여 실제 GCP 제어 평면과의 통신 및 JSON 파싱 정상 작동을 확인한다.
+| 요구사항 ID | 분류 | 세부 설계 및 검증 방법 |
+| :--- | :--- | :--- |
+| **NFR-01** | 비파괴성 (Zero Risk) | 모든 GCP 호출을 읽기 전용(`describe`, `list`, `get`)으로 제한하여 기존 리소스 변경 없음 보장. |
+| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 의존성 없이 `python3 diagnose.py --dry-run`으로 9개 항목 무결성 1초 내 시뮬레이션. |
+| **NFR-03** | 실행 성능 | 전체 9개 항목의 실측 검사를 10초 이내에 완료할 수 있도록 경량 gcloud CLI 호출 최적화. |
+| **NFR-04** | 민감 정보 비식별화 | 실제 고객 사명, 프로젝트 ID, 내부 도메인 등의 하드코딩 배제 및 가명 템플릿 변수 표준화. |
