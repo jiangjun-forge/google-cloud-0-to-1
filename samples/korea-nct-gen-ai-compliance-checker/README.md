@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기
 
-대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가핵심기술 클라우드 컴퓨팅 서비스 이용을 위한 보안관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 인공 지능 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 1클릭으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 원천 예방하는 진단 도구다. (As of 2026-09-10)
+대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 인공 지능 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 1클릭으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 원천 예방하는 진단 도구다. (As of 2026-09-10)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`  
@@ -26,9 +26,9 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 진단 대상 7대 보안 통제 항목
 
-본 도구는 산업기술보호법 및 산자부 「국가핵심기술 클라우드 컴퓨팅 보안관리 안내서」에 따른 7대 기술적 통제를 전수 점검한다. 세부 법적 요건 및 상세 구현 명세는 [비즈니스 요구사항 명세서 (BRD.md)](docs/BRD.md) 및 [기술 상세 설계서 (TDD.md)](docs/TDD.md)에 상세히 기술되어 있다.
+본 도구는 산업기술보호법 및 산자부 「국가 핵심 기술 클라우드 컴퓨팅 보안 관리 안내서」에 따른 7대 기술적 통제를 전수 점검한다. 세부 법적 요건 및 상세 구현 명세는 [비즈니스 요구 사항 명세서 (BRD.md)](docs/BRD.md) 및 [기술 상세 설계서 (TDD.md)](docs/TDD.md)에 상세히 기술되어 있다.
 
-| 요구사항 ID | 통제 영역 | 점검 핵심 내용 |
+| 요구 사항 ID | 통제 영역 | 점검 핵심 내용 |
 | :--- | :--- | :--- |
 | **FR-01** | 물리적 국내 위치 | `gcp.resourceLocations` 서울 리전 생성 강제 (법 제11조) |
 | **FR-02** | 사외 유출 차단 | RAG 벡터 데이터 저장 차단 IAM Deny 정책 (법 제10조) |
@@ -132,18 +132,18 @@ FR-07 | 제공자 임의 접근 사전 승인  | PASS | Access Approval 정상 �
    - 해외 리전(us-central1 등) 생성을 원천 차단하여 승인 없는 해외 기술 이전 리스크를 방어한다.
    - 리소스 위치 정의 ( https://cloud.google.com/resource-manager/docs/organization-policy/defining-locations )
    - 대한민국 Data Boundary 패키지 ( https://cloud.google.com/assured-workloads/docs/control-packages/south-korea-data-boundary )
-2. **사외/외국 기업 계정 공유 차단 (보안관리 안내서 외국 기업 접근 배제)**:
+2. **사외/외국 기업 계정 공유 차단 (보안 관리 안내서 외국 기업 접근 배제)**:
    - 승인된 사내 Google Workspace 도메인 외 계정으로의 IAM 바인딩을 원천 차단한다.
    ```bash
    # constraints/iam.allowedPolicyMemberDomains 설정 적용
    gcloud resource-manager org-policies set-policy policy.yaml --project=$PROJECT_ID
    ```
-3. **클라우드 제공자 임의 접근 통제 (보안관리 안내서 사전 승인 의무)**:
+3. **클라우드 제공자 임의 접근 통제 (보안 관리 안내서 사전 승인 의무)**:
    - 구글 엔지니어의 장애 지원 접근 시 고객 사전 승인을 강제한다.
    ```bash
    gcloud access-approval settings update --project=$PROJECT_ID --enrolled-services=all-services
    ```
-4. **Cloud KMS CMEK 키 관리 (보안관리 안내서 이중 암호화 의무)**:
+4. **Cloud KMS CMEK 키 관리 (보안 관리 안내서 이중 암호화 의무)**:
    - 국내 키링에 고객 관리 암호화 키를 생성하고 모든 버킷 및 데이터셋에 연동하여 CSP의 데이터 접근 통제권을 확보한다.
    - Cloud KMS 콘솔 ( https://console.cloud.google.com/security/kms )
 
@@ -165,5 +165,5 @@ gcloud kms keys versions destroy 1 --key=nct-cmek-key --keyring=nct-keyring --lo
 
 ## 8. 관련 규격 문서
 
-- [비즈니스 요구사항 명세서 (BRD.md)](docs/BRD.md)
+- [비즈니스 요구 사항 명세서 (BRD.md)](docs/BRD.md)
 - [기술 상세 설계서 (TDD.md)](docs/TDD.md)

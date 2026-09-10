@@ -202,9 +202,9 @@ def calculate_readiness_score(tables: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def print_diagnostic_report(audit_data: dict[str, Any], score: dict[str, Any]) -> None:
-    """진단 결과표와 통계 요약을 출력한다."""
+    """진단 결과 표와 통계 요약을 출력한다."""
     print("\n" + "=" * 90)
-    print("BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 결과표")
+    print("BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 결과 표")
     print(f"대상 데이터셋: {audit_data['dataset']}")
     print("=" * 90)
 

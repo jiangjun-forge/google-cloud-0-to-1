@@ -105,7 +105,7 @@ cd google-cloud-0-to-1/samples/gemini-billing-spike
 ### 방법 2: 로컬 환경 (Local Python)
 
 ```bash
-# 가상환경 생성 및 의존성 설치
+# 가상 환경 생성 및 의존성 설치
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt

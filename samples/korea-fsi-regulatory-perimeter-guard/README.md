@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드
 
-대한민국 금융위원회의 「금융분야 망분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 인프라가 책임져야 하는 **9대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 1클릭으로 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-09-10)
+대한민국 금융위원회의 「금융 분야 망 분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 인프라가 책임져야 하는 **9대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 1클릭으로 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-09-10)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`
@@ -26,17 +26,17 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 진단 대상 9대 보안 통제 항목
 
-본 도구는 금융위원회 1단계 생성형 인공 지능 망분리 특례 및 전자금융감독규정에 따른 9대 기술적 통제를 전수 점검한다. 상세한 규제 조항 및 아키텍처 구현 명세는 [비즈니스 요구사항 명세서 (BRD.md)](docs/BRD.md) 및 [기술 상세 설계서 (TDD.md)](docs/TDD.md)에 상세히 기술되어 있다.
+본 도구는 금융위원회 1단계 생성형 인공 지능 망 분리 특례 및 전자금융감독규정에 따른 9대 기술적 통제를 전수 점검한다. 상세한 규제 조항 및 아키텍처 구현 명세는 [비즈니스 요구 사항 명세서 (BRD.md)](docs/BRD.md) 및 [기술 상세 설계서 (TDD.md)](docs/TDD.md)에 상세히 기술되어 있다.
 
-| 요구사항 ID | 통제 영역 | 점검 핵심 내용 |
+| 요구 사항 ID | 통제 영역 | 점검 핵심 내용 |
 | :--- | :--- | :--- |
-| **FR-01** | 논리적 망분리 | VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조) |
-| **FR-02** | 논리적 망분리 | VPC-SC 내부 실시간 웹 검색 격리 여부 및 DMZ 분리 |
+| **FR-01** | 논리적 망 분리 | VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조) |
+| **FR-02** | 논리적 망 분리 | VPC-SC 내부 실시간 웹 검색 격리 여부 및 DMZ 분리 |
 | **FR-03** | 데이터 보호 | Cloud Storage 불변 보존(Bucket Lock) 5년 충족 여부 (법 제22조) |
 | **FR-04** | 데이터 보호 | 고객 관리 암호화 키(CMEK) 전면 적용 여부 (감독규정 제14조) |
 | **FR-05** | 감사 추적 | 데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부 (법 제22조) |
 | **FR-06** | AI 거버넌스 | Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 |
-| **FR-07** | AI 거버넌스 | Sensitive Data Protection(SDP) 개인신용정보 가명처리 템플릿 (신용정보법 제20조의2) |
+| **FR-07** | AI 거버넌스 | Sensitive Data Protection(SDP) 개인 신용 정보 가명 처리 템플릿 (신용정보법 제20조의2) |
 | **FR-08** | 접근 통제 | 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조) |
 | **FR-09** | 전송 보안 | 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조) |
 
@@ -46,11 +46,11 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (diagnose.py / run.sh)"] --> B["1. 논리적 망분리 & 웹 검색 격리 검사 (감독규정 제15조)"]
+    A["진단 시작 (diagnose.py / run.sh)"] --> B["1. 논리적 망 분리 & 웹 검색 격리 검사 (감독규정 제15조)"]
     B --> C["2. 접근 통제: 서비스 계정 키 발급 차단 검사 (감독규정 제13조)"]
     C --> D["3. 스토리지 5년 불변 보존 & CMEK 검사 (법 제22조, 감독규정 제14조)"]
     D --> E["4. Vertex AI 데이터 접근 감사 로그 검사 (법 제22조, 감독규정 제63조)"]
-    E --> F["5. Model Armor & SDP 가명처리 가드레일 (신용정보법 제20조의2)"]
+    E --> F["5. Model Armor & SDP 가명 처리 가드레일 (신용정보법 제20조의2)"]
     F --> G["6. 전송 구간 TLS 1.2+ 고강도 암호화 검사 (감독규정 제14조)"]
     G --> H{"규제 결격 항목 발견 여부"}
     H -- "결격 발견 (FAIL/WARN)" --> I["항목별 조치 명령어 및 콘솔 가이드 출력"]
@@ -67,7 +67,7 @@ flowchart TD
 | :--- | :--- | :--- |
 | `roles/accesscontextmanager.reader` | Access Context Manager 독자 | VPC-SC 서비스 보안 경계 설정 조회 (감독규정 제15조) |
 | `roles/compute.viewer` | Compute 뷰어 | SSL 정책 TLS 최소 버전 조회 (감독규정 제14조) |
-| `roles/dlp.inspectTemplatesReader` | DLP 검사 템플릿 독자 | Sensitive Data Protection 가명처리 템플릿 조회 (신용정보법 제20조의2) |
+| `roles/dlp.inspectTemplatesReader` | DLP 검사 템플릿 독자 | Sensitive Data Protection 가명 처리 템플릿 조회 (신용정보법 제20조의2) |
 | `roles/logging.viewer` | 로그 뷰어 | 프로젝트 IAM 감사 로그(auditConfigs) 설정 조회 (법 제22조) |
 | `roles/orgpolicy.policyViewer` | 조직 정책 뷰어 | 서비스 계정 키 생성 차단 조직 정책 조회 (감독규정 제13조) |
 | `roles/storage.admin` | 스토리지 관리자 | Cloud Storage 버킷 보존 정책 및 잠금 상태 조회 (5년 보존 규정) |
@@ -116,13 +116,13 @@ python3 diagnose.py --dry-run
 ----------------------------------------------------------------------------------------
 ID      | 분류             | 상태     | 진단 항목 및 조치 요약
 ----------------------------------------------------------------------------------------
-FR-01   | 논리적 망분리        | [PASS] | VPC-SC 보안 경계 내 Vertex AI 보호 확인
-FR-02   | 논리적 망분리        | [WARN] | 실시간 웹 검색 DMZ 분리 및 비동기 적재 구조 권고
+FR-01   | 논리적 망 분리        | [PASS] | VPC-SC 보안 경계 내 Vertex AI 보호 확인
+FR-02   | 논리적 망 분리        | [WARN] | 실시간 웹 검색 DMZ 분리 및 비동기 적재 구조 권고
 FR-03   | 데이터 보호         | [FAIL] | Cloud Storage 5년 불변 보존(Bucket Lock) 미설정 (법 제22조)
 FR-04   | 데이터 보호         | [PASS] | 고객 관리 암호화 키(CMEK) 전면 바인딩 확인 (감독규정 제14조)
 FR-05   | 감사 추적          | [FAIL] | Vertex AI 데이터 접근 감사 로그(DATA_READ/WRITE) 미설정
 FR-06   | AI 모델 거버넌스     | [PASS] | Model Armor 프롬프트 인젝션 방어 필터 적용 확인
-FR-07   | AI 모델 거버넌스     | [WARN] | SDP 주민등록번호/계좌번호 특화 가명처리 템플릿 등록 권고
+FR-07   | AI 모델 거버넌스     | [WARN] | SDP 주민등록번호/계좌번호 특화 가명 처리 템플릿 등록 권고
 FR-08   | 접근 통제          | [FAIL] | 서비스 계정 키 생성 차단 조직 정책 미적용 (감독규정 제13조)
 FR-09   | 전송 보안          | [PASS] | 전송 구간 TLS 1.2+ 고강도 암호화 적용 확인 (감독규정 제14조)
 ----------------------------------------------------------------------------------------
@@ -157,7 +157,7 @@ FR-09   | 전송 보안          | [PASS] | 전송 구간 TLS 1.2+ 고강도 암
    - 프로젝트 IAM 정책에 `aiplatform.googleapis.com` 및 `storage.googleapis.com` 데이터 접근 로그(`DATA_READ`, `DATA_WRITE`)를 추가한다.
 
 5. **Model Armor 및 Sensitive Data Protection(SDP) 가드레일 연동 (신용정보법 제20조의2)**:
-   - 악성 프롬프트 인젝션 방어 필터를 활성화하고 주민등록번호(`KOREA_RESIDENT_REGISTRATION_NUMBER`) 가명처리 템플릿을 등록한다.
+   - 악성 프롬프트 인젝션 방어 필터를 활성화하고 주민등록번호(`KOREA_RESIDENT_REGISTRATION_NUMBER`) 가명 처리 템플릿을 등록한다.
 
 ---
 
@@ -175,5 +175,5 @@ gcloud storage rm -r gs://<TEST_BUCKET_NAME>
 
 ## 8. 관련 규격 문서
 
-- [비즈니스 요구사항 명세서 (BRD.md)](docs/BRD.md)
+- [비즈니스 요구 사항 명세서 (BRD.md)](docs/BRD.md)
 - [기술 상세 설계서 (TDD.md)](docs/TDD.md)

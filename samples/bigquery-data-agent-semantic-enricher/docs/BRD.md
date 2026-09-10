@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구사항 명세서 (BRD: Business Requirements Document)
+# 비즈니스 요구 사항 명세서 (BRD: Business Requirements Document)
 ## 프로젝트명: BigQuery Data Agent Semantic Metadata Enricher
 
 ---
@@ -18,7 +18,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 1. 비즈니스 개요 및 프로젝트 목적 (Executive Summary)
 
 ### 1.1 배경 및 추진 배경
-엔터프라이즈 기업들은 비즈니스 의사결정 속도를 높이고 데이터 민주화를 달성하기 위해 생성형 인공 지능(Gen AI) 기반의 **자연어 분석 에이전트(BigQuery Data Agent / NL2SQL)**를 적극 도입하고 있다. 그러나 실제 도입 과정에서 자연어 질문에 대해 잘못된 테이블을 조인하거나 엉터리 SQL을 생성하는 **심각한 환각(Hallucination)** 문제가 빈번히 발생하여 프로젝트가 중단되거나 신뢰를 상실하는 사례가 급증하고 있다.
+엔터프라이즈 기업들은 비즈니스 의사 결정 속도를 높이고 데이터 민주화를 달성하기 위해 생성형 인공 지능(Gen AI) 기반의 **자연어 분석 에이전트(BigQuery Data Agent / NL2SQL)**를 적극 도입하고 있다. 그러나 실제 도입 과정에서 자연어 질문에 대해 잘못된 테이블을 조인하거나 엉터리 SQL을 생성하는 **심각한 환각(Hallucination)** 문제가 빈번히 발생하여 프로젝트가 중단되거나 신뢰를 상실하는 사례가 급증하고 있다.
 
 ### 1.2 비즈니스 난제 (Pain Points)
 1. **메타데이터 부재로 인한 모델 환각**: 대다수 기업의 BigQuery 테이블과 컬럼에는 설명(Description)이 비어 있거나 축약어(예: `amt`, `cd`, `qty_diff`)만 존재하여, LLM이 컬럼의 실제 의미나 단위, 할인 전후 여부를 임의로 추정하여 잘못된 계산을 수행한다.
@@ -35,7 +35,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | 페르소나 | 주요 관심사 및 목표 | 본 솔루션을 통한 비즈니스 혜택 |
 | :--- | :--- | :--- |
 | **데이터 플랫폼 리드 / 아키텍트** | Data Agent PoC 성공 및 엔터프라이즈 확산 | 메타데이터 준비도 점수를 통해 신뢰도 지표를 확보하고 전사 롤아웃 가속화 |
-| **빅데이터 엔지니어** | 테이블/컬럼 설명 작성 자동화 | 수작업 메타데이터 등록 부담 90% 경감 및 BigQuery 스키마 원클릭 자동 패치 |
+| **빅 데이터 엔지니어** | 테이블/컬럼 설명 작성 자동화 | 수작업 메타데이터 등록 부담 90% 경감 및 BigQuery 스키마 원클릭 자동 패치 |
 | **비즈니스 분석가 / 현업 사용자** | 자연어 질문에 대한 정확한 SQL 실행 결과 | 계산 공식 왜곡 없는 정밀한 비즈니스 메트릭 도출 및 분석 셀프서비스 달성 |
 | **AI CoE 및 거버넌스 담당자** | 시맨틱 레이어 거버넌스 표준 수립 | Dataplex Knowledge Catalog 기반 비즈니스 용어집 및 데이터 품질 연동 체계 완성 |
 
@@ -59,9 +59,9 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 4. 상세 비즈니스 요구사항 명세 (Functional Requirements)
+## 4. 상세 비즈니스 요구 사항 명세 (Functional Requirements)
 
-| 요구사항 ID | 기능 영역 | 상세 요구사항 및 비즈니스 목적 |
+| 요구 사항 ID | 기능 영역 | 상세 요구 사항 및 비즈니스 목적 |
 | :--- | :--- | :--- |
 | **BR-01** | 테이블 설명 감사 | 대상 데이터셋의 모든 테이블에 대해 AI 에이전트 라우팅에 충분한 길이와 의미를 가진 Table Description이 존재하는지 검사하여야 한다. |
 | **BR-02** | 컬럼 설명 감사 | 전체 컬럼 대비 명확한 설명이 기재된 컬럼의 비율(커버리지 %)을 산출하여 모호한 컬럼 존재 위험을 수치화하여야 한다. |
@@ -75,9 +75,9 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 5. 비기능 요구사항 (Non-Functional Requirements)
+## 5. 비기능 요구 사항 (Non-Functional Requirements)
 
-| 요구사항 ID | 분류 | 상세 요구사항 |
+| 요구 사항 ID | 분류 | 상세 요구 사항 |
 | :--- | :--- | :--- |
 | **NFR-01** | 비파괴성 (Zero Risk) | 기본 진단 모드는 순수 읽기 전용으로 동작하며, 메타데이터 반영(`--apply`) 시에도 실제 데이터 레코드는 일절 변경하지 않는다. |
 | **NFR-02** | 실행 성능 | 100개 미만의 테이블 스키마 진단을 10초 이내에 완료한다. |
@@ -88,6 +88,6 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 6. 검증 및 인수 판정 기준 (Acceptance Criteria)
 
 - [x] 준비도 점수 산출 공식이 4대 핵심 메타데이터 지표를 정확히 반영하는가?
-- [x] 진단 결과표에서 FAIL 판정 시 원인 영역이 명확하게 식별되는가?
+- [x] 진단 결과 표에서 FAIL 판정 시 원인 영역이 명확하게 식별되는가?
 - [x] `--enrich` 옵션 실행 시 표준 설명과 용어집 YAML 파일이 정상 생성되는가?
 - [x] `--dry-run` 모드가 100% 자체 완결적으로 동작하는가?

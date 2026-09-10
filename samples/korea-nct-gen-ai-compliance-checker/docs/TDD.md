@@ -18,7 +18,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 1. 시스템 아키텍처 개요 및 설계 원칙
 
 ### 1.1 설계 목표
-본 도구는 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부·한국산업기술보호협회 「국가핵심기술 클라우드 컴퓨팅 서비스 이용을 위한 보안관리 안내서」에 명시된 **7대 핵심 기술적 통제(Technical Controls)**를 Google Cloud 환경에서 1클릭으로 자동 감사하고 복구 명령어를 처방하는 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
+본 도구는 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부·한국산업기술보호협회 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 명시된 **7대 핵심 기술적 통제(Technical Controls)**를 Google Cloud 환경에서 1클릭으로 자동 감사하고 복구 명령어를 처방하는 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
 
 ### 1.2 핵심 설계 원칙
 1. **투트랙(Two-track) 실행 모델**: 독립 실행형 파이썬 스크립트(`diagnose.py`)와 Cloud Shell 및 터미널 환경 자동 감지 래퍼(`run.sh`)의 결합을 통해 무설치 단일 명령 실행을 지원한다.
@@ -34,7 +34,7 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
         User["사용자 / 보안 관리자 / 감사관"]
-        RunSh["run.sh (실행 환경 감지 및 가상환경 구성)"]
+        RunSh["run.sh (실행 환경 감지 및 가상 환경 구성)"]
         DiagnosePy["diagnose.py (진단 메인 컨트롤러)"]
     end
 
@@ -69,7 +69,7 @@ flowchart TD
     LiveScanner -.->|조회| Access_Approval
     MockProvider --> Reporter
     LiveScanner --> Reporter
-    Reporter -->|포맷된 감사 결과표 및 처방| User
+    Reporter -->|포맷된 감사 결과 표 및 처방| User
 ```
 
 ---
@@ -103,7 +103,7 @@ flowchart TD
 
 ## 4. 7대 기술 통제 세부 구현 명세 (Functional Requirements)
 
-| 요구사항 ID | 점검 영역 | 점검 명령어 | 판정 알고리즘 (Evaluation Logic) |
+| 요구 사항 ID | 점검 영역 | 점검 명령어 | 판정 알고리즘 (Evaluation Logic) |
 | :--- | :--- | :--- | :--- |
 | **FR-01** | 물리적 국내 위치 | `gcloud resource-manager org-policies describe constraints/gcp.resourceLocations --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 서울 리전(`asia-northeast3`) 허용 제약이 존재하면 PASS, 다른 리전 허용 또는 미설정 시 FAIL. |
 | **FR-02** | RAG 벡터 유출 차단 | `gcloud iam deny-policies list --attachment-point=cloudresourcemanager.googleapis.com/projects/<PROJECT> --format=json` | 프로젝트에 적용된 IAM Deny 정책 목록이 1개 이상 존재하고 활성화되어 있으면 PASS, 미설정 시 FAIL. |
@@ -131,7 +131,7 @@ roles/accessapproval.viewer         -> accessapproval.settings.get
 
 ## 6. 비기능 설계 및 검증 전략 (Non-Functional Requirements)
 
-| 요구사항 ID | 분류 | 세부 설계 및 검증 방법 |
+| 요구 사항 ID | 분류 | 세부 설계 및 검증 방법 |
 | :--- | :--- | :--- |
 | **NFR-01** | 비파괴성 (Zero Risk) | 모든 검사를 조회 명령으로 제한하여 운영 환경에 100% 무해성 보장. |
 | **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 및 GCP 인증 없이 `python3 diagnose.py --dry-run`으로 7개 항목 1초 내 시뮬레이션. |

@@ -242,7 +242,7 @@ def main():
   parser.add_argument(
       "-p",
       "--project",
-      help="분석 대상 GCP 프로젝트 ID (기본값: 환경변수 또는 gcloud 기본 프로젝트)",
+      help="분석 대상 GCP 프로젝트 ID (기본값: 환경 변수 또는 gcloud 기본 프로젝트)",
   )
   parser.add_argument(
       "-d",

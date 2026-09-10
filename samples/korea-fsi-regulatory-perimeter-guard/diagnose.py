@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""혁신 금융 서비스 규제 준수를 위한 논리적 망분리 및 데이터 보호 보안 경계 진단 도구.
+"""혁신 금융 서비스 규제 준수를 위한 논리적 망 분리 및 데이터 보호 보안 경계 진단 도구.
 
-금융위원회의 금융 분야 망분리 개선 로드맵 및 혁신 금융 서비스 지정 심사 기준에 따라
-Google Cloud 인프라의 논리적 망분리, 암호화 키 관리, 데이터 불변 보존, 감사 로깅,
+금융위원회의 금융 분야 망 분리 개선 로드맵 및 혁신 금융 서비스 지정 심사 기준에 따라
+Google Cloud 인프라의 논리적 망 분리, 암호화 키 관리, 데이터 불변 보존, 감사 로깅,
 AI 가드레일(Model Armor), 민감 정보 비식별화(SDP) 설정 상태를 전수 진단한다.
 """
 
@@ -49,16 +49,16 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
     return [
         {
             "id": "FR-01",
-            "category": "논리적 망분리",
+            "category": "논리적 망 분리",
             "name": "VPC-SC 보안 경계 내 Vertex AI 보호 여부 (감독규정 제15조)",
             "status": "PASS",
             "current": "aiplatform.googleapis.com 이 서비스 경계(accessPolicies/123456/servicePerimeters/fsi_perimeter)에 등록됨",
-            "requirement": "전자금융감독규정 제15조 제1항 제3호 및 제5호에 따른 망분리 대체 통제로 Vertex AI, Cloud Storage, BigQuery가 지정된 서비스 보안 경계 내에 포함되어야 함",
+            "requirement": "전자금융감독규정 제15조 제1항 제3호 및 제5호에 따른 망 분리 대체 통제로 Vertex AI, Cloud Storage, BigQuery가 지정된 서비스 보안 경계 내에 포함되어야 함",
             "remediation": "gcloud access-context-manager perimeters update fsi_perimeter --add-restricted-services=aiplatform.googleapis.com",
         },
         {
             "id": "FR-02",
-            "category": "논리적 망분리",
+            "category": "논리적 망 분리",
             "name": "VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부",
             "status": "WARN",
             "current": "VPC-SC 내부에서 web_search_tool 호출 시 egress 차단 위험 존재",
@@ -80,7 +80,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "name": "고객 관리 암호화 키(CMEK) 전면 적용 여부 (감독규정 제14조)",
             "status": "PASS",
             "current": f"Cloud KMS 키(projects/{project_id}/locations/asia-northeast3/keyRings/fsi-ring/cryptoKeys/cmek-key) 정상 바인딩 확인",
-            "requirement": "전자금융감독규정 제14조 및 1단계 특례 부가조건에 따라 Cloud Storage 버킷 및 Vertex AI 파이프라인에 고객 관리 암호화 키(CMEK) 강제 필수",
+            "requirement": "전자금융감독규정 제14조 및 1단계 특례 부가 조건에 따라 Cloud Storage 버킷 및 Vertex AI 파이프라인에 고객 관리 암호화 키(CMEK) 강제 필수",
             "remediation": f"gcloud storage buckets update gs://{project_id}-audit-logs --default-encryption-key=projects/{project_id}/locations/asia-northeast3/keyRings/fsi-ring/cryptoKeys/cmek-key",
         },
         {
@@ -95,19 +95,19 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
         {
             "id": "FR-06",
             "category": "AI 모델 거버넌스",
-            "name": "Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가조건)",
+            "name": "Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가 조건)",
             "status": "PASS",
             "current": "Model Armor 템플릿(fsi-prompt-guard) 활성화 및 프롬프트 인젝션 탐지 필터 적용됨",
-            "requirement": "금융위원회 1단계 샌드박스 특례 부가조건에 따라 금융사 내부망 인그레스 사용자 프롬프트에 대한 탈옥 및 악성 명령 주입 실시간 방어 체계 구축 필수",
+            "requirement": "금융위원회 1단계 샌드박스 특례 부가 조건에 따라 금융사 내부망 인그레스 사용자 프롬프트에 대한 탈옥 및 악성 명령 주입 실시간 방어 체계 구축 필수",
             "remediation": "gcloud beta model-armor templates create fsi-prompt-guard --location=asia-northeast3",
         },
         {
             "id": "FR-07",
             "category": "AI 모델 거버넌스",
-            "name": "Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿 (신용정보법 제20조의2)",
+            "name": "Sensitive Data Protection (SDP) 개인 신용 정보 가명 처리 템플릿 (신용정보법 제20조의2)",
             "status": "WARN",
             "current": "기본 민감 정보 템플릿 존재하나 주민등록번호(RRN) 및 계좌번호 특화 커스텀 InfoType 미등록",
-            "requirement": "신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인신용정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명처리 템플릿 등록 필수",
+            "requirement": "신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인 신용 정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명 처리 템플릿 등록 필수",
             "remediation": "gcloud dlp inspect-templates create --display-name='fsi-rrn-filter' --info-types=KOREA_RESIDENT_REGISTRATION_NUMBER",
         },
         {
@@ -164,7 +164,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
 
     findings.append({
         "id": "FR-01",
-        "category": "논리적 망분리",
+        "category": "논리적 망 분리",
         "name": "VPC-SC 보안 경계 내 Vertex AI 보호 여부",
         "status": "PASS" if vpc_sc_pass else "FAIL",
         "current": vpc_sc_detail,
@@ -175,7 +175,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     # 2. VPC-SC Web Search Grounding 격리 진단
     findings.append({
         "id": "FR-02",
-        "category": "논리적 망분리",
+        "category": "논리적 망 분리",
         "name": "VPC-SC 내부 실시간 웹 검색(Web Search Grounding) 격리 여부",
         "status": "WARN",
         "current": "VPC-SC 보안 경계 적용 시 실시간 구글 웹 검색 툴(web_search_tool)이 Egress 정책 위반으로 차단될 수 있음",
@@ -292,10 +292,10 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     findings.append({
         "id": "FR-07",
         "category": "AI 모델 거버넌스",
-        "name": "Sensitive Data Protection (SDP) 개인신용정보 가명처리 템플릿",
+        "name": "Sensitive Data Protection (SDP) 개인 신용 정보 가명 처리 템플릿",
         "status": "PASS" if sdp_pass else "WARN",
         "current": sdp_detail,
-        "requirement": "신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인신용정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명처리 템플릿 등록 필수",
+        "requirement": "신용정보법 제20조의2 및 금융보안원 가이드라인에 따라 원본 개인 신용 정보 직접 입력 금지 및 주민등록번호, 계좌번호 특화 가명 처리 템플릿 등록 필수",
         "remediation": f"gcloud dlp inspect-templates create --location={location} --display-name='fsi-rrn-filter'",
     })
 

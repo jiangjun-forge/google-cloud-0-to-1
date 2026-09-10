@@ -21,7 +21,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 BigQuery Data Agent 및 NL2SQL 파이프라인의 정확도를 좌우하는 시맨틱 레이어(테이블/컬럼 설명, 데이터 프로파일 통계, 비즈니스 공식)의 충실도를 정량 진단하고, 누락된 메타데이터를 지능적으로 보강(Enrichment)하는 **경량 진단 및 보강 엔진**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 스크립트(`diagnose.py`)와 가상환경 및 의존성을 자동 관리하는 래퍼 스크립트(`run.sh`)의 결합.
+1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 스크립트(`diagnose.py`)와 가상 환경 및 의존성을 자동 관리하는 래퍼 스크립트(`run.sh`)의 결합.
 2. **비파괴적 읽기 전용 진단(Non-Destructive Read-Only Scan)**: 기본 모드에서는 오직 메타데이터 조회(`get_dataset`, `list_tables`, `get_table`)만 수행하여 운영 데이터베이스에 무영향.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증이나 데이터셋 없이도 모의 리테일 데이터셋을 바탕으로 진단 점수 및 보강 전후 차이를 3초 내에 시뮬레이션.
 4. **선언적 용어집 템플릿 생성(Declarative Glossary Export)**: Dataplex Knowledge Catalog에 즉시 반영 가능한 표준 비즈니스 용어집 YAML 정의 파일을 자동 도출.
@@ -64,7 +64,7 @@ flowchart TD
     LiveScanner -.->|엔트리 확인| Knowledge_Catalog
     MockProvider --> ScoreEngine
     LiveScanner --> ScoreEngine
-    ScoreEngine -->|진단 결과표 출력| User
+    ScoreEngine -->|진단 결과 표 출력| User
     ArgParser -->|enrich 플래그| Enricher
     Enricher -.->|설명 추론| Gemini_AI
     Enricher --> YamlGen
@@ -103,7 +103,7 @@ flowchart TD
 
 ## 4. 메타데이터 평가 및 구현 명세 (Functional Requirements)
 
-| 요구사항 ID | 지표 영역 | 가중치 | 평가 기준 (Criteria) | Data Agent에 미치는 영향 |
+| 요구 사항 ID | 지표 영역 | 가중치 | 평가 기준 (Criteria) | Data Agent에 미치는 영향 |
 | :--- | :--- | :--- | :--- | :--- |
 | **FR-01** | Table Description | 30% | 10자 이상의 구체적 업무 목적 및 AI 라우팅 가이드 기재 여부 | 에이전트가 질문 의도에 맞는 적절한 테이블을 선택하는 라우팅 정확도 결정 |
 | **FR-02** | Column Description | 30% | 필드의 의미, 유효 범위, 계산 방식 기술 여부 | 모호한 컬럼(예: `amt`, `discount`)에 대한 환각 및 엉뚱한 조건절 생성 방어 |
@@ -127,7 +127,7 @@ roles/datacatalog.viewer       -> datacatalog.entries.get, datacatalog.glossarie
 
 ## 6. 비기능 설계 및 검증 전략 (Non-Functional Requirements)
 
-| 요구사항 ID | 분류 | 세부 설계 및 검증 방법 |
+| 요구 사항 ID | 분류 | 세부 설계 및 검증 방법 |
 | :--- | :--- | :--- |
 | **NFR-01** | 비파괴성 (Zero Risk) | 읽기 전용 스캔 원칙을 준수하며, `--apply` 옵션 활성화 시에도 스키마 Description 필드만 원자적으로 패치. |
 | **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python3 diagnose.py --dry-run --enrich`로 4개 테이블 준비도 점수 산출 및 YAML 생성 1초 내 시뮬레이션. |
