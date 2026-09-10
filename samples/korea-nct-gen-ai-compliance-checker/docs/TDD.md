@@ -18,11 +18,11 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 1. 시스템 아키텍처 개요 및 설계 원칙
 
 ### 1.1 설계 목표
-본 도구는 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부·한국산업기술보호협회 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 명시된 **7대 핵심 기술적 통제(Technical Controls)**를 Google Cloud 환경에서 1클릭으로 자동 감사하고 복구 명령어를 처방하는 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
+본 도구는 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부·한국산업기술보호협회 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 명시된 **7대 핵심 기술적 통제(Technical Controls)**를 Google Cloud 환경에서 자동 감사하고 복구 명령어를 처방하는 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
 
 ### 1.2 핵심 설계 원칙
 1. **투트랙(Two-track) 실행 모델**: 독립 실행형 파이썬 스크립트(`diagnose.py`)와 Cloud Shell 및 터미널 환경 자동 감지 래퍼(`run.sh`)의 결합을 통해 무설치 단일 명령 실행을 지원한다.
-2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 리소스의 설정 상태만 조회(`describe`, `list`, `get`)하며, 클라우드 인프라 자원을 임의로 생성, 변경, 삭제하지 않아 운영 환경에 100% 무해하다.
+2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 리소스의 설정 상태만 조회(`describe`, `list`, `get`)하며, 클라우드 인프라 자원을 임의로 생성, 변경, 삭제하지 않아 운영 환경에 영향을 주지 않고 안전하다.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증 정보나 관리자 IAM 권한이 없는 데모 또는 개발 환경에서도 결정론적(Deterministic) 가상 진단 데이터를 제공하여 사전 기능 검증을 보장한다.
 4. **선언적 처방(Prescriptive Remediation)**: 결격 항목(FAIL/WARN) 발생 시 산자부 안내서 기준에 부합하는 정규 `gcloud` 복구 명령어를 즉시 매핑하여 관리자의 즉각적인 조치를 지원한다.
 
@@ -133,7 +133,7 @@ roles/accessapproval.viewer         -> accessapproval.settings.get
 
 | 요구 사항 ID | 분류 | 세부 설계 및 검증 방법 |
 | :--- | :--- | :--- |
-| **NFR-01** | 비파괴성 (Zero Risk) | 모든 검사를 조회 명령으로 제한하여 운영 환경에 100% 무해성 보장. |
-| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 및 GCP 인증 없이 `python3 diagnose.py --dry-run`으로 7개 항목 1초 내 시뮬레이션. |
-| **NFR-03** | 실행 성능 | 7개 핵심 항목의 실사 점검을 5초 이내에 완료할 수 있도록 경량 CLI 호출 최적화. |
+| **NFR-01** | 비파괴성 (안전성 확보) | 모든 검사를 조회 명령으로 제한하여 운영 환경에 영향을 주지 않고 안전함. |
+| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 및 GCP 인증 없이 `python3 diagnose.py --dry-run`으로 7개 항목을 신속하게 시뮬레이션. |
+| **NFR-03** | 실행 성능 | 7개 핵심 항목의 실사 점검을 지연 없이 신속하게 완료할 수 있도록 경량 CLI 호출 최적화. |
 | **NFR-04** | 민감 정보 비식별화 | 특정 기업의 기밀 및 도메인 정보 하드코딩 배제 및 가명 템플릿 표준화. |

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""BigQuery Data Agent 및 NL2SQL 정확도 극대화를 위한 시맨틱 메타데이터 진단 및 자동 보강 도구."""
+"""BigQuery Data Agent 및 NL2SQL 정확도 향상을 위한 시맨틱 메타데이터 진단 및 자동 보강 도구."""
 
 import argparse
 import json
@@ -229,11 +229,11 @@ def print_diagnostic_report(audit_data: dict[str, Any], score: dict[str, Any]) -
 
     total = score["total_score"]
     if total >= 80.0:
-        grade = "PASS (우수: NL2SQL 생성 및 라우팅 정확도 90%+ 보장)"
+        grade = "PASS (우수: NL2SQL 생성 및 라우팅 정확도 개선)"
     elif total >= 60.0:
         grade = "WARN (보통: 모호한 컬럼 조인 및 환각 발생 위험 존재)"
     else:
-        grade = "FAIL (미달: Data Agent 라우팅 실패 및 SQL 수식 날조 위험 극심)"
+        grade = "FAIL (미달: Data Agent 라우팅 실패 및 SQL 수식 왜곡 주의 요구)"
 
     print(f"종합 준비도 점수: {total} / 100.0점  [{grade}]")
     print("=" * 90)
@@ -258,10 +258,10 @@ def print_enrichment_plan(audit_data: dict[str, Any]) -> None:
     print("\n" + "=" * 90)
     print("보강 후 예상 시뮬레이션 결과:")
     print("  - 테이블 설명 충실도  : 100% (4/4 테이블)")
-    print("  - 주요 컬럼 설명 커버리지: 100% (핵심 분석 컬럼 전수 보강)")
+    print("  - 주요 컬럼 설명 커버리지: 핵심 분석 컬럼 단계적 보강")
     print("  - 비즈니스 용어집 연동  : 4대 핵심 수식 등록 완료")
     print("  - 예상 준비도 점수     : 95.0 / 100.0점 (PASS)")
-    print("  - NL2SQL 환각률 예상   : 기존 64% -> 8% 이하로 극적 감소")
+    print("  - NL2SQL 환각률 예상   : 기존 대비 대폭 경감")
     print("=" * 90)
 
 

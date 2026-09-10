@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드
 
-대한민국 금융위원회의 「금융 분야 망 분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 인프라가 책임져야 하는 **9대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 1클릭으로 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-09-10)
+대한민국 금융위원회의 「금융 분야 망 분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 인프라가 책임져야 하는 **9대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-09-10)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`
@@ -74,7 +74,7 @@ flowchart TD
 
 ---
 
-## 4. 1분 퀵스타트
+## 4. 퀵스타트
 
 ### 옵션 A: Google Cloud Shell에서 바로 실행
 
@@ -134,7 +134,7 @@ FR-09   | 전송 보안          | [PASS] | 전송 구간 TLS 1.2+ 고강도 암
 
 ## 6. 결과 확인 후 즉각 조치 가이드
 
-1. **서비스 계정 키 생성 전면 차단 (전자금융감독규정 제13조)**:
+1. **서비스 계정 키 생성 차단 (전자금융감독규정 제13조)**:
    - 정적 서비스 계정 JSON 키 발급을 방지하고 WIF 연동을 강제한다.
    ```bash
    gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project=$PROJECT_ID

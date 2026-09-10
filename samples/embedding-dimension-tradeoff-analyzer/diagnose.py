@@ -421,7 +421,7 @@ def print_multi_dimension_report(
     print(f"   - 지연 시간 단축 효과: 벡터 연산 레이턴시 {baseline['avg_latency_ms']} ms -> {smallest['avg_latency_ms']} ms (약 {round(baseline['avg_latency_ms'] / smallest['avg_latency_ms'], 1)}배 고속화)")
     print()
     print("2. 권장 최적 차원 티어링(Tiering):")
-    print("   - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (비용 80~90% 절감)")
+    print("   - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (스토리지 비용 대폭 절감)")
     print("   - [Tier 2: 균형/범용]: 사내 지식 검색 및 대고객 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)")
     print(f"   - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> {base_dim}d 최대 차원 유지")
     print()

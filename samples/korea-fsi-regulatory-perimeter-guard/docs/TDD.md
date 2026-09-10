@@ -21,8 +21,8 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 대한민국 금융권의 엄격한 클라우드 보안 컴플라이언스(전자금융거래법, 전자금융감독규정, 신용정보법)를 Google Cloud 환경에서 자동 검증하기 위한 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **투트랙(Two-track) 실행 모델**: CLI 기반 핵심 파이썬 스크립트(`diagnose.py`)와 Cloud Shell 원클릭 실행 래퍼(`run.sh`)의 결합.
-2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 모든 GCP 리소스에 대해 `describe`, `list`, `get` 조회 명령만 수행하여 운영 환경에 100% 무해함.
+1. **투트랙(Two-track) 실행 모델**: CLI 기반 핵심 파이썬 스크립트(`diagnose.py`)와 Cloud Shell 실행 래퍼(`run.sh`)의 결합.
+2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 모든 GCP 리소스에 대해 `describe`, `list`, `get` 조회 명령만 수행하여 운영 환경에 영향을 주지 않고 안전함.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증이나 IAM 권한이 없는 환경에서도 결정론적(Deterministic) 모의 진단 데이터를 반환하여 빠른 데모 및 검증 보장.
 4. **선언적 처방(Prescriptive Remediation)**: 결격 항목(FAIL/WARN) 식별 시 관리자가 즉시 복구할 수 있는 표준 `gcloud` CLI 명령어를 1:1 매핑하여 출력.
 
@@ -133,7 +133,7 @@ roles/storage.admin                -> storage.buckets.get, storage.buckets.getIa
 
 | 요구 사항 ID | 분류 | 세부 설계 및 검증 방법 |
 | :--- | :--- | :--- |
-| **NFR-01** | 비파괴성 (Zero Risk) | 모든 GCP 호출을 읽기 전용(`describe`, `list`, `get`)으로 제한하여 기존 리소스 변경 없음 보장. |
-| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 의존성 없이 `python3 diagnose.py --dry-run`으로 9개 항목 무결성 1초 내 시뮬레이션. |
-| **NFR-03** | 실행 성능 | 전체 9개 항목의 실측 검사를 10초 이내에 완료할 수 있도록 경량 gcloud CLI 호출 최적화. |
+| **NFR-01** | 비파괴성 (안전성 확보) | 모든 GCP 호출을 읽기 전용(`describe`, `list`, `get`)으로 제한하여 기존 리소스 변경 없이 안전성 확보. |
+| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 의존성 없이 `python3 diagnose.py --dry-run`으로 9개 항목 상태를 신속하게 시뮬레이션. |
+| **NFR-03** | 실행 성능 | 전체 9개 항목의 실측 검사를 지연 없이 신속하게 완료할 수 있도록 경량 gcloud CLI 호출 최적화. |
 | **NFR-04** | 민감 정보 비식별화 | 실제 고객 사명, 프로젝트 ID, 내부 도메인 등의 하드코딩 배제 및 가명 템플릿 변수 표준화. |

@@ -177,7 +177,7 @@ graph TD
    - 지연 시간 단축 효과: 벡터 연산 레이턴시 20.5 ms -> 5.4 ms (약 3.8배 고속화)
 
 2. 권장 최적 차원 티어링(Tiering):
-   - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (비용 80~90% 절감)
+   - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (스토리지 비용 대폭 절감)
    - [Tier 2: 균형/범용]: 사내 지식 검색 및 대고객 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)
    - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> 1536d 최대 차원 유지
 
@@ -199,10 +199,9 @@ graph TD
 1. **사내 실데이터 기반 최적 차원 파라미터 적용**:
    - `google-genai` SDK를 통해 `output_dimensionality` 매개변수를 결정된 차원(예: 128 또는 256)으로 지정하여 호출한다.
    - Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )
-2. **BigQuery Vector Search 인덱스 생성 및 쿼리 최적화**:
-   - BigQuery 콘솔 ( https://console.cloud.google.com/bigquery )
-   - BigQuery Vector Search 개요 ( https://cloud.google.com/bigquery/docs/vector-search-intro )
-   - 축소된 차원의 벡터를 저장할 경우 테이블 용량 및 쿼리당 스캔 바이트가 최대 90% 이상 절감된다.
+2. **BigQuery 벡터 검색 및 Vector Search 인덱스 스키마 반영**:
+   - 축소된 차원의 벡터를 저장할 경우 테이블 용량 및 쿼리당 스캔 바이트가 대폭 절감된다.
+   - Vector Search 인덱스 생성 시 대상 차원(`dimension`)을 결정된 축소 차원으로 지정한다.
 3. **Vertex AI Vector Search 인덱스 배포**:
    - Vertex AI Vector Search 콘솔 ( https://console.cloud.google.com/vertex-ai/matching-engine/indexes )
    - Vertex AI Vector Search 개요 ( https://cloud.google.com/vertex-ai/docs/vector-search/overview )

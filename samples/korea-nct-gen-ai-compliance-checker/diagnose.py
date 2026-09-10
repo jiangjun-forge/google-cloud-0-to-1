@@ -109,7 +109,7 @@ def get_mock_check_results(region: str) -> list[dict]:
             "control": "사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)",
             "status": "FAIL",
             "current_state": "iam.allowedPolicyMemberDomains 조직 정책 미적용 (외부 계정 초대 위험 존재)",
-            "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 원천 차단)",
+            "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 방어)",
         },
         {
             "category": "Provider Isolation",
@@ -286,14 +286,14 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
         rules = domain_policy.get("spec", {}).get("rules", [])
         if any(r.get("values", {}).get("allowedValues") for r in rules):
             domain_pass = True
-            domain_detail = "승인된 사내 도메인 외 계정 바인딩 원천 차단 적용됨"
+            domain_detail = "승인된 사내 도메인 외 계정 바인딩 제한 적용됨"
 
     results.append({
         "category": "Access Control",
         "control": "사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)",
         "status": "PASS" if domain_pass else "FAIL",
         "current_state": domain_detail,
-        "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 원천 차단)",
+        "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 방어)",
     })
 
     # 6. 클라우드 제공자 임의 접근 통제 (Access Approval / Access Transparency)

@@ -26,7 +26,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 이 가이드가 필요한 상황 (증상 체크리스트)
 
-- **비용 폭탄 원천 차단**: 비인가 호출이나 잘못 작성된 루프 코드로 인해 예산 상한을 초과했을 때 자동으로 서비스를 일시 차단하고자 할 때
+- **비용 급증 방어**: 비인가 호출이나 잘못 작성된 루프 코드로 인해 예산 상한을 초과했을 때 자동으로 서비스를 일시 차단하고자 할 때
 - **실시간 예산 알림 연동**: 단순 이메일 알림을 넘어 Pub/Sub 메시징 큐로 실시간 예산 초과 이벤트를 수신하여 사내 슬랙이나 모니터링 시스템과 연동하고자 할 때
 - **사전 파이프라인 모의 검증**: 실제 과금이나 서비스 중단 없이 예산 초과 이벤트 페이로드와 차단 로직이 정상 작동하는지 가상 시뮬레이션으로 테스트하고자 할 때
 
@@ -46,7 +46,7 @@ flowchart TD
     PublishPubSub --> InvokeFunction["Cloud Functions 자동 트리거<br/>(quota-auto-disable)"]
     
     InvokeFunction --> QuotaZero["Service Usage API 호출<br/>Gemini RPM/일일 쿼터 한도 0으로 조정"]
-    QuotaZero --> Blocked(["[자동 방어 완료] 추가 비용 발생 원천 차단"])
+    QuotaZero --> Blocked(["[자동 방어 완료] 추가 비용 발생 방어"])
     
     Blocked --> Notify["운영팀 및 보안팀 긴급 슬랙/이메일 통보"]
 

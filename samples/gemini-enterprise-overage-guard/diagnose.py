@@ -152,7 +152,7 @@ def print_text_report(report: Dict[str, Any]) -> None:
     print("1. Standard 티어 업무 중단 긴급 방어:")
     print("   - Gemini Enterprise 관리 콘솔에서 Standard 티어의 오버리지 빌링을 수동 활성화(ON)하여 쿼터 소진 시 즉각적인 쓰로틀링을 차단한다.")
     print("2. Cloud Billing Spend Cap(월 지출 한도) 즉시 설정:")
-    print(f"   - 결제 콘솔에서 월간 오버리지 상한(${report['recommended_spend_cap_usd']:,.2f})을 설정하여 예기치 못한 비용 급증을 원천 차단한다.")
+    print(f"   - 결제 콘솔에서 월간 오버리지 상한(${report['recommended_spend_cap_usd']:,.2f})을 설정하여 예기치 못한 비용 급증을 효과적으로 예방한다.")
     print(f"3. 실시간 예산 경보(Budget Alerts {report['alert_threshold_pct']}%) 연동:")
     print("   - Pub/Sub 및 인프라 담당자 이메일 알림을 등록하여 임계치 초과 시 FinOps 팀에 즉각 노티되도록 조치한다.")
     print("=" * 76 + "\n")

@@ -23,7 +23,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ### 1.2 핵심 설계 원칙
 1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 스크립트(`diagnose.py`)와 가상 환경 및 의존성을 자동 관리하는 래퍼 스크립트(`run.sh`)의 결합.
 2. **비파괴적 읽기 전용 진단(Non-Destructive Read-Only Scan)**: 기본 모드에서는 오직 메타데이터 조회(`get_dataset`, `list_tables`, `get_table`)만 수행하여 운영 데이터베이스에 무영향.
-3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증이나 데이터셋 없이도 모의 리테일 데이터셋을 바탕으로 진단 점수 및 보강 전후 차이를 3초 내에 시뮬레이션.
+3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증이나 데이터셋 없이도 모의 리테일 데이터셋을 바탕으로 진단 점수 및 보강 전후 차이를 신속하게 시뮬레이션.
 4. **선언적 용어집 템플릿 생성(Declarative Glossary Export)**: Dataplex Knowledge Catalog에 즉시 반영 가능한 표준 비즈니스 용어집 YAML 정의 파일을 자동 도출.
 
 ---
@@ -130,5 +130,5 @@ roles/datacatalog.viewer       -> datacatalog.entries.get, datacatalog.glossarie
 | 요구 사항 ID | 분류 | 세부 설계 및 검증 방법 |
 | :--- | :--- | :--- |
 | **NFR-01** | 비파괴성 (Zero Risk) | 읽기 전용 스캔 원칙을 준수하며, `--apply` 옵션 활성화 시에도 스키마 Description 필드만 원자적으로 패치. |
-| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python3 diagnose.py --dry-run --enrich`로 4개 테이블 준비도 점수 산출 및 YAML 생성 1초 내 시뮬레이션. |
-| **NFR-03** | 실행 성능 및 확장성 | 100개 미만 테이블 스키마 진단을 10초 이내에 완료하며, 전사 대규모 데이터 웨어하우스 데이터셋 스캔 지원. |
+| **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python3 diagnose.py --dry-run --enrich`로 4개 테이블 준비도 점수 산출 및 YAML 생성을 신속하게 시뮬레이션. |
+| **NFR-03** | 실행 성능 및 확장성 | 대규모 테이블 스키마 진단을 지연 없이 신속하게 완료하며, 전사 대규모 데이터 웨어하우스 데이터셋 스캔 지원. |

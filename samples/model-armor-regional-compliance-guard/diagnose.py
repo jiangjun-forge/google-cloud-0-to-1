@@ -182,7 +182,7 @@ def print_table(diagnoses: list[dict]):
       for rem in item["remediations"]:
         print(f"  - 처방 조치: {rem}")
   else:
-    print("\n모든 Model Armor 템플릿이 서울 리전 규제 준수 요건을 완벽히 충족한다.")
+    print("\n모든 Model Armor 템플릿이 서울 리전 규제 준수 요건을 충족한다.")
 
 
 def main():

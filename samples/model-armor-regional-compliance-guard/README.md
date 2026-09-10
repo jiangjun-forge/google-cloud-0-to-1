@@ -48,7 +48,7 @@ flowchart TD
     
     CheckSDP --> CheckKoreaInfoTypes{"한국형 6대 필수 InfoType 누락 여부"}
     CheckKoreaInfoTypes -->|"일부 누락"| WarnInfoTypes["[주의] 한국형 민감 정보 마스킹 누락 경고: 필수 InfoType 바인딩 안내"]
-    CheckKoreaInfoTypes -->|"전수 적용"| HealthyPass["[정상] 서울 리전 데이터 주권 및 보안 가드레일 요건 완벽 충족"]
+    CheckKoreaInfoTypes -->|"전수 적용"| HealthyPass["[정상] 서울 리전 데이터 주권 및 보안 가드레일 요건 충족"]
     
     CriticalResidency --> GenerateReport["종합 진단 보고서 및 하이브리드 아키텍처 처방 출력"]
     CriticalGap --> GenerateReport

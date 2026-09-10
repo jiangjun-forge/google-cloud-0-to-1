@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기
 
-대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 인공 지능 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 1클릭으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 원천 예방하는 진단 도구다. (As of 2026-09-10)
+대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 인공 지능 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 효과적으로 예방하는 진단 도구다. (As of 2026-09-10)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`  
@@ -52,7 +52,7 @@ graph TD
     F --> G["6. 사외/외국 계정 공유 차단 조직 정책 점검 (안내서 외국 기업 배제)"]
     G --> H["7. 클라우드 사업자 임의 접근 차단 Access Approval 검사 (안내서 사전 승인 의무)"]
     H --> I{"컴플라이언스 미준수 항목 존재 여부"}
-    I -- "결함 식별 (FAIL)" --> J["원클릭 보안 정책 배포 및 CMEK 연동 처방"]
+    I -- "결함 식별 (FAIL)" --> J["보안 정책 배포 및 CMEK 연동 처방 제시"]
     I -- "전체 적합 (PASS)" --> K["국가 핵심 기술 기술 통제 풀셋 인증 리포트 출력"]
 ```
 
@@ -72,7 +72,7 @@ graph TD
 
 ---
 
-## 4. 1분 퀵스타트
+## 4. 퀵스타트
 
 ### 가상 실행 (Dry-run)
 
@@ -129,11 +129,11 @@ FR-07 | 제공자 임의 접근 사전 승인  | PASS | Access Approval 정상 �
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **조직 정책 리소스 위치 제약 설정 (산업기술보호법 제11조 기술 수출 승인/신고 의무)**:
-   - 해외 리전(us-central1 등) 생성을 원천 차단하여 승인 없는 해외 기술 이전 리스크를 방어한다.
+   - 해외 리전(us-central1 등) 생성을 차단하여 승인 없는 해외 기술 이전 리스크를 방어한다.
    - 리소스 위치 정의 ( https://cloud.google.com/resource-manager/docs/organization-policy/defining-locations )
    - 대한민국 Data Boundary 패키지 ( https://cloud.google.com/assured-workloads/docs/control-packages/south-korea-data-boundary )
 2. **사외/외국 기업 계정 공유 차단 (보안 관리 안내서 외국 기업 접근 배제)**:
-   - 승인된 사내 Google Workspace 도메인 외 계정으로의 IAM 바인딩을 원천 차단한다.
+   - 승인된 사내 Google Workspace 도메인 외 계정으로의 IAM 바인딩을 차단한다.
    ```bash
    # constraints/iam.allowedPolicyMemberDomains 설정 적용
    gcloud resource-manager org-policies set-policy policy.yaml --project=$PROJECT_ID

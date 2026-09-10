@@ -160,9 +160,9 @@ def print_text_report(report: Dict[str, Any]) -> None:
             print(f"   필요 권장값: {f['expected_value']}")
 
     print("\n[사내 관문 프록시(SWG) 설정 가이드]")
-    print("1. 개인 계정 및 외부 비인가 도메인 로그인 원천 차단:")
+    print("1. 개인 계정 및 외부 비인가 도메인 로그인 차단:")
     print(f"   - HTTP 요청 헤더: X-GoogApps-Allowed-Domains: {report['allowed_domain']}")
-    print("2. 사내 승인 계정의 외부 타사 GCP 조직 우회 접근 원천 차단 (Tenant Restriction):")
+    print("2. 사내 승인 계정의 외부 타사 GCP 조직 우회 접근 방지 (Tenant Restriction):")
     print(f"   - HTTP 요청 헤더: X-Goog-Allowed-Resources: {report['expected_resource_header']}")
     print("   - 주의: 과거 비공식 표기인 X-Goog-Allowed-Organizations 대신 공식 X-Goog-Allowed-Resources를 사용해야 한다.")
     print("   - 페이로드 원문: {\"resources\":[\"organizations/" + report['org_id'] + "\"],\"options\":\"strict\"}")

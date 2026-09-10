@@ -16,7 +16,7 @@
 
 금융위원회의 금융 분야 망 분리 개선 로드맵 및 혁신 금융 서비스 지정 심사 기준에 따라
 Google Cloud 인프라의 논리적 망 분리, 암호화 키 관리, 데이터 불변 보존, 감사 로깅,
-AI 가드레일(Model Armor), 민감 정보 비식별화(SDP) 설정 상태를 전수 진단한다.
+AI 가드레일(Model Armor), 민감 정보 비식별화(SDP) 설정 상태를 진단한다.
 """
 
 import argparse
@@ -116,7 +116,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "name": "서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)",
             "status": "FAIL",
             "current": "조직 정책 iam.disableServiceAccountKeyCreation 미적용 (로컬 JSON 키 발급 가능 위험)",
-            "requirement": "전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 전면 차단하고 Workload Identity Federation(WIF) 필수 적용",
+            "requirement": "전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 차단하고 Workload Identity Federation(WIF) 필수 적용",
             "remediation": f"gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project={project_id}",
         },
         {
@@ -125,7 +125,7 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
             "name": "전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)",
             "status": "PASS",
             "current": "SSL 정책(fsi-tls-policy)을 통해 TLS 1.0, 1.1 차단 및 TLS 1.2+ 고강도 암호화 스위트 적용 확인",
-            "requirement": "전자금융감독규정 제14조 제2항 제2호에 따라 통신 회선상 전송 데이터의 도청 방지를 위해 레거시 취약 TLS 버전을 전면 차단하고 TLS 1.2 이상 및 안전한 암호화 알고리즘 강제",
+            "requirement": "전자금융감독규정 제14조 제2항 제2호에 따라 통신 회선상 전송 데이터의 도청 방지를 위해 레거시 취약 TLS 버전을 차단하고 TLS 1.2 이상 및 안전한 암호화 알고리즘 강제",
             "remediation": "gcloud compute ssl-policies create fsi-tls-policy --profile=RESTRICTED --min-tls-version=1.2",
         },
     ]
@@ -319,7 +319,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
         "name": "서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)",
         "status": "PASS" if sa_key_pass else "FAIL",
         "current": sa_key_detail,
-        "requirement": "전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 전면 차단하고 Workload Identity Federation(WIF) 필수 적용",
+        "requirement": "전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 차단하고 Workload Identity Federation(WIF) 필수 적용",
         "remediation": f"gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project={project_id}",
     })
 
@@ -340,7 +340,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
         "name": "전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)",
         "status": "PASS" if ssl_pass else "WARN",
         "current": ssl_detail,
-        "requirement": "전자금융감독규정 제14조 제2항 제2호에 따라 통신 회선상 전송 데이터의 도청 방지를 위해 레거시 취약 TLS 버전을 전면 차단하고 TLS 1.2 이상 및 안전한 암호화 알고리즘 강제",
+        "requirement": "전자금융감독규정 제14조 제2항 제2호에 따라 통신 회선상 전송 데이터의 도청 방지를 위해 레거시 취약 TLS 버전을 차단하고 TLS 1.2 이상 및 안전한 암호화 알고리즘 강제",
         "remediation": "gcloud compute ssl-policies create fsi-tls-policy --profile=RESTRICTED --min-tls-version=1.2",
     })
 

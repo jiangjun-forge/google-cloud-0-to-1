@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단
 
-금융권 및 엔터프라이즈 환경에서 사내 관문 프록시(SWG)의 테넌트 제한 HTTP 헤더 주입 상태와 Context-Aware Access(CAA) 인가 단말기 접근 통제 정책을 종합 진단하여, 금융보안원 생성형 AI 보안대책 이행서 준수 및 외부 비인가 조직으로의 데이터 유출을 원천 방어한다. (As of 2026-09-09)
+금융권 및 엔터프라이즈 환경에서 사내 관문 프록시(SWG)의 테넌트 제한 HTTP 헤더 주입 상태와 Context-Aware Access(CAA) 인가 단말기 접근 통제 정책을 종합 진단하여, 금융보안원 생성형 AI 보안대책 이행서 준수 및 외부 비인가 조직으로의 데이터 유출을 효과적으로 방어한다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
@@ -44,7 +44,7 @@ flowchart TD
     C -- "X-Goog-Allowed-Resources 누락" --> E["외부 타사 GCP 조직 우회 위험 (차단 조치 필요)"]
     C -- "헤더 정상 주입" --> F["Google Cloud 인증 및 게이트웨이 도달"]
     F --> G{"Context-Aware Access (CAA) 평가"}
-    G -- "비인가 단말기 / 미등록 그룹" --> H["접속 원천 거부 (403 Block)"]
+    G -- "비인가 단말기 / 미등록 그룹" --> H["접속 거부 (403 Block)"]
     G -- "인가 단말기 & 사내 승인 그룹" --> I["콘솔 및 생성형 AI 앱 접근 허용"]
 ```
 
