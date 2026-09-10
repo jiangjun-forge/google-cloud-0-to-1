@@ -31,6 +31,7 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
 │   ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
 │   ├── fcm-push-quota-guard/                   # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
+│   ├── fsi-regulatory-perimeter-guard/         # 혁신 금융 서비스 논리적 망분리, 5년 Bucket Lock 및 AI 규제 진단
 │   ├── gce-capacity-stockout-guard/            # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
 │   ├── gce-future-reservation-checker/         # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
 │   ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
@@ -46,6 +47,7 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
 │   ├── gemini-request-response-logging/        # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재 및 토큰 분석
 │   ├── gemini-resilience-checker/              # 429 장애 극복 복원력 패턴(백오프, 지터, 폴백) 진단
+│   ├── gemini-trust-stack-latency-profiler/    # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
 │   ├── gemini-vpc-sc-denial-resolver/          # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
 │   ├── gke-source-ip-snat-guard/               # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
 │   ├── iam-permission-resolver/                # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
