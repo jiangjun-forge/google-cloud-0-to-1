@@ -31,7 +31,6 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
 │   ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
 │   ├── fcm-push-quota-guard/                   # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
-│   ├── fsi-regulatory-perimeter-guard/         # 혁신 금융 서비스 논리적 망분리, 5년 Bucket Lock 및 AI 규제 진단
 │   ├── gce-capacity-stockout-guard/            # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
 │   ├── gce-future-reservation-checker/         # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
 │   ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
@@ -42,18 +41,19 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── gemini-enterprise-domain-in-use-resolver/# 도메인 선점 충돌 진단 및 Cloud Identity 배포
 │   ├── gemini-enterprise-firewall-fqdn-checker/# 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
 │   ├── gemini-enterprise-overage-guard/        # 일일 풀링 쿼터 초과 쓰로틀링 방어 및 Spend Cap 과금 가드
+│   ├── gemini-enterprise-trust-stack-latency-profiler/# 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
 │   ├── gemini-enterprise-usage-by-account/     # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
 │   ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
 │   ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
 │   ├── gemini-request-response-logging/        # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재 및 토큰 분석
 │   ├── gemini-resilience-checker/              # 429 장애 극복 복원력 패턴(백오프, 지터, 폴백) 진단
-│   ├── gemini-trust-stack-latency-profiler/    # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
 │   ├── gemini-vpc-sc-denial-resolver/          # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
 │   ├── gke-source-ip-snat-guard/               # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
 │   ├── iam-permission-resolver/                # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
 │   ├── kms-key-rotation-outage-guard/          # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
+│   ├── korea-fsi-regulatory-perimeter-guard/   # 혁신 금융 서비스 논리적 망분리, 5년 Bucket Lock 및 AI 규제 진단
+│   ├── korea-nct-gen-ai-compliance-checker/    # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
 │   ├── model-armor-regional-compliance-guard/  # 서울 리전 Model Armor 기능 제약 진단 및 하이브리드 가드레일 처방
-│   ├── nct-gen-ai-compliance-checker/          # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
 │   ├── org-policy-resolver/                    # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
 │   ├── service-account-leak-investigator/      # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
 │   ├── storage-transfer-secure-on-prem-uploader/# 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증

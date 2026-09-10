@@ -70,7 +70,7 @@ flowchart TD
 ```bash
 # 저장소 클론 및 폴더 이동
 git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/fsi-regulatory-perimeter-guard
+cd google-cloud-0-to-1/samples/korea-fsi-regulatory-perimeter-guard
 
 # 모의 가상 데이터 기반 스모크 테스트 (--dry-run)
 ./run.sh --dry-run
