@@ -33,7 +33,7 @@ log = logging.getLogger("mcp-proxy")
 
 # 환경 변수 로드
 UPSTREAM_URL = os.environ.get("UPSTREAM_MCP_URL", "http://127.0.0.1:8000/mcp")
-AUTH_MODE = os.environ.get("AUTH_MODE", "jwt").lower()
+AUTH_MODE = os.environ.get("AUTH_MODE", "google_tokeninfo").lower()
 UPSTREAM_AUTH = os.environ.get("UPSTREAM_AUTH", "none").lower()
 CACHE_TTL = int(os.environ.get("TOKEN_CACHE_TTL", "60"))
 
@@ -124,46 +124,52 @@ class IntrospectVerifier:
 
 
 class GoogleTokeninfoVerifier:
-    """Google OAuth2 Tokeninfo 엔드포인트 기반 검증기."""
+    """Google OAuth2 Tokeninfo 엔드포인트 기반 검증기 (Google Identity / Google Workspace 전용)."""
 
     def __init__(self, http_client: Any) -> None:
         self.http_client = http_client
 
     async def verify(self, token: str) -> Dict[str, Any]:
+        # Google OAuth2 Access Token (ya29...) 검증
         url = f"https://oauth2.googleapis.com/tokeninfo?access_token={token}"
         resp = await self.http_client.get(url)
         if resp.status_code != 200:
+            # ID Token 파라미터로 2차 검증 시도
             url_id = f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
             resp = await self.http_client.get(url_id)
             if resp.status_code != 200:
-                raise PermissionError("Google Tokeninfo 검증 실패 (만료 또는 유효하지 않음)")
-        return resp.json()
+                raise PermissionError("Google Tokeninfo 검증 실패 (만료되었거나 유효하지 않은 Google 토큰이다)")
+        
+        data = resp.json()
+        # sub 또는 email 필드 정규화
+        data["sub"] = data.get("sub") or data.get("email") or "google-user"
+        return data
 
 
 class MockVerifier:
     """가상 실행(Dry-Run) 전용 모의 토큰 검증기."""
 
     async def verify(self, token: str) -> Dict[str, Any]:
-        if token.startswith("valid-") or token.startswith("demo-"):
+        if token.startswith("valid-") or token.startswith("demo-") or token.startswith("mock-google-"):
             return {
                 "sub": "user@example-corp.com",
                 "aud": "gemini-enterprise-mcp",
-                "iss": "https://idp.example-corp.com",
+                "iss": "https://accounts.google.com" if token.startswith("mock-google-") else "https://idp.example-corp.com",
                 "exp": time.time() + 3600,
             }
-        raise PermissionError("모의 토큰 검증 실패 (유효 형식: valid-* 또는 demo-*)")
+        raise PermissionError("모의 토큰 검증 실패 (유효 형식: valid-*, demo-*, mock-google-*)")
 
 
 def get_verifier(mode: str, http_client: Any = None, is_dry_run: bool = False) -> TokenVerifier:
     """지정된 인증 모드에 해당하는 검증기 인스턴스를 반환한다."""
     if is_dry_run:
         return MockVerifier()
+    if mode == "google_tokeninfo":
+        return GoogleTokeninfoVerifier(http_client)
     if mode == "jwt":
         return JwtVerifier(http_client)
     if mode == "introspect":
         return IntrospectVerifier(http_client)
-    if mode == "google_tokeninfo":
-        return GoogleTokeninfoVerifier(http_client)
     raise ValueError(f"지원하지 않는 AUTH_MODE 다: {mode}")
 
 
@@ -219,17 +225,25 @@ def run_dry_run_test() -> None:
     print(f"  - 업스트림 모드: {UPSTREAM_AUTH} (Mock)")
     print(f"  - 가상 사내 MCP 엔드포인트: {UPSTREAM_URL}")
 
-    print("\n[2] 테스트 시나리오 1: 유효한 Gemini Enterprise OAuth Bearer 토큰 검증")
-    test_token = "valid-gemini-enterprise-token-xyz"
+    print("\n[2] 테스트 시나리오 1: Google Identity OAuth Access Token 시뮬레이션 검증")
+    google_token = "mock-google-oauth-access-token"
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        claims = loop.run_until_complete(mock_verifier.verify(test_token))
-        print(f"  [성공] 토큰 유효성 검증 완료: subject={claims.get('sub')}, audience={claims.get('aud')}")
+        claims = loop.run_until_complete(mock_verifier.verify(google_token))
+        print(f"  [성공] Google 토큰 검증 완료: sub={claims.get('sub')}, iss={claims.get('iss')}")
     except Exception as e:
         print(f"  [실패] {e}")
 
-    print("\n[3] 테스트 시나리오 2: 비정상 토큰 차단 검증")
+    print("\n[3] 테스트 시나리오 2: 써드파티 JWT Bearer 토큰 (Okta/Entra ID) 검증")
+    jwt_token = "valid-okta-access-token"
+    try:
+        claims = loop.run_until_complete(mock_verifier.verify(jwt_token))
+        print(f"  [성공] JWT 토큰 검증 완료: sub={claims.get('sub')}, aud={claims.get('aud')}")
+    except Exception as e:
+        print(f"  [실패] {e}")
+
+    print("\n[4] 테스트 시나리오 3: 위조/만료 토큰 차단 검증")
     invalid_token = "tampered-token-bad"
     try:
         loop.run_until_complete(mock_verifier.verify(invalid_token))
@@ -237,17 +251,17 @@ def run_dry_run_test() -> None:
     except PermissionError as e:
         print(f"  [성공] 기대한 대로 인증 거부 (401 Unauthorized: {e}) 차단 완료")
 
-    print("\n[4] 테스트 시나리오 3: 업스트림 사설 MCP 헤더 변환 및 프록시 스트리밍 시뮬레이션")
-    dummy_headers = {"authorization": f"Bearer {test_token}", "content-type": "application/json"}
+    print("\n[5] 테스트 시나리오 4: 업스트림 사설 MCP 헤더 변환 및 스트리밍 시뮬레이션")
+    dummy_headers = {"authorization": f"Bearer {google_token}", "content-type": "application/json"}
     loop.run_until_complete(mock_auth.apply_auth(dummy_headers))
     print(f"  - 인바운드 인증 헤더 제거 및 사내 사설망 전달 헤더:")
     for k, v in dummy_headers.items():
         print(f"    * {k}: {v}")
 
-    print("\n[5] IdP별 새로 고침 토큰(Refresh Token) 파라미터 점검 (1시간 401 장애 예방):")
+    print("\n[6] IdP별 새로 고침 토큰(Refresh Token) 파라미터 점검 (1시간 401 장애 예방):")
     print("  * Google Identity: access_type=offline&prompt=consent (필수 지정 확인)")
     print("  * Auth0: audience=https://your-mcp-api (JWT 강제 발급 확인)")
-    print("  * Okta / Entra ID: 기본값 사용 가능")
+    print("  * Okta / Microsoft Entra ID: 기본값 사용 가능")
 
     print("\n[!] 가상 실행 스모크 테스트가 성공적으로 완료되었다.")
     print("=" * 80)
