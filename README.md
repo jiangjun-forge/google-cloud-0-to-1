@@ -42,6 +42,7 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── gemini-enterprise-cross-org-agent-resolver/# Cross-Org 커스텀 에이전트 연동 권한 및 조직 정책 진단
 │   ├── gemini-enterprise-domain-in-use-resolver/# 도메인 선점 충돌 진단 및 Cloud Identity 배포
 │   ├── gemini-enterprise-firewall-fqdn-checker/# 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
+│   ├── gemini-enterprise-mcp-proxy/            # 사내 사설망 및 온프렘 MCP 서버 연동용 Direct VPC Egress 브리지 프록시
 │   ├── gemini-enterprise-overage-guard/        # 일일 풀링 쿼터 초과 쓰로틀링 방어 및 Spend Cap 과금 가드
 │   ├── gemini-enterprise-trust-stack-latency-profiler/# 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
 │   ├── gemini-enterprise-usage-by-account/     # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
