@@ -133,13 +133,14 @@ SYSTEM_INSTRUCTIONS_TEMPLATE = """당신은 엔터프라이즈 옴니채널 유�
 [핵심 비즈니스 계산 공식 (Business Formulas)]
 1. 순매출액(Net Revenue, 원화):
    - 공식: SUM(subtotal_amount - discount + tax_amount) AS net_revenue
-   - 대상 테이블/뷰: `{project_id}.{dataset_id}.pos_transactions_gold` (또는 `v_cymbal_retail_semantic`)
+   - 대상 테이블/뷰: `{project_id}.{dataset_id}.v_cymbal_retail_semantic` (또는 `pos_transactions_gold`)
 2. 결품 예상 커버 시간(Inventory Cover Hours, 시간):
    - 공식: ROUND(SAFE_DIVIDE((shelf_qty + backroom_qty), (total_units_sold_intraday / 12.0)), 1) AS est_cover_hours
    - 설명: 매장 진열 재고(shelf_qty)와 창고 재고(backroom_qty)의 합계를 시간당 평균 판매량(total_units_sold_intraday / 12.0)으로 나누어 산출하며, 6.0시간 이하일 경우 '긴급 발주 대상(CRITICAL_STOCKOUT_RISK)'으로 분류한다.
+   - 대상 테이블/뷰: `{project_id}.{dataset_id}.v_cymbal_retail_semantic` (또는 `gold_inventory_reconciliation_ledger`)
 3. 캐셔 프로모션 남용률(Cashier Promo Override Rate, %):
    - 공식: ROUND(SAFE_DIVIDE(COUNTIF(alert_type = 'cashier_promo_abuse'), COUNT(*)) * 100, 2) AS promo_override_rate_pct
-   - 대상 테이블: `{project_id}.{dataset_id}.pos_anomaly_alerts`
+   - 대상 테이블/뷰: `{project_id}.{dataset_id}.v_cymbal_retail_semantic` (또는 `pos_anomaly_alerts`)
 """
 
 GOLDEN_PROMPTS: List[Dict[str, Any]] = [
@@ -151,8 +152,8 @@ GOLDEN_PROMPTS: List[Dict[str, Any]] = [
             "SELECT store_branch, tender_type, "
             "SUM(subtotal_amount) AS gross_subtotal, "
             "SUM(discount) AS total_discount, "
-            "SUM(subtotal_amount - discount + tax_amount) AS net_revenue "
-            "FROM `{project_id}.{dataset_id}.pos_transactions_gold` "
+            "SUM(net_revenue) AS net_revenue "
+            "FROM `{project_id}.{dataset_id}.v_cymbal_retail_semantic` "
             "GROUP BY store_branch, tender_type ORDER BY net_revenue DESC;"
         ),
         "sample_rows": [
@@ -166,10 +167,9 @@ GOLDEN_PROMPTS: List[Dict[str, Any]] = [
         "title": "결품 예상 커버 시간(Cover Hours) 6시간 이하 긴급 보충 품목 탐지",
         "user_prompt": "현재 진열 재고(shelf_qty)와 창고 재고(backroom_qty) 합계를 시간당 판매 속도로 나눴을 때, 결품 예상 커버 시간(est_cover_hours)이 6시간 이하인 긴급 보충 대상 지점과 품목(item_sku)을 알려 줘.",
         "expected_sql": (
-            "SELECT store_branch, item_sku, category, shelf_qty, backroom_qty, total_units_sold_intraday, "
-            "ROUND(SAFE_DIVIDE((shelf_qty + backroom_qty), (total_units_sold_intraday / 12.0)), 1) AS est_cover_hours "
-            "FROM `{project_id}.{dataset_id}.gold_inventory_reconciliation_ledger` "
-            "WHERE SAFE_DIVIDE((shelf_qty + backroom_qty), (total_units_sold_intraday / 12.0)) <= 6.0 "
+            "SELECT DISTINCT store_branch, item_sku, category, shelf_qty, backroom_qty, total_units_sold_intraday, est_cover_hours "
+            "FROM `{project_id}.{dataset_id}.v_cymbal_retail_semantic` "
+            "WHERE est_cover_hours <= 6.0 "
             "ORDER BY est_cover_hours ASC;"
         ),
         "sample_rows": [
@@ -182,8 +182,8 @@ GOLDEN_PROMPTS: List[Dict[str, Any]] = [
         "title": "캐셔 프로모션 임의 할인 남용(cashier_promo_abuse) 이상 거래 진단",
         "user_prompt": "이상 거래 경보 테이블(pos_anomaly_alerts)에서 프로모션 남용(cashier_promo_abuse) 경보가 발생한 지점과 담당 캐셔 ID, 심각도(severity)를 보여 줘.",
         "expected_sql": (
-            "SELECT store_branch, cashier_id, alert_type, severity, promo_override_rate "
-            "FROM `{project_id}.{dataset_id}.pos_anomaly_alerts` "
+            "SELECT DISTINCT store_branch, cashier_id, alert_type, severity, promo_override_rate "
+            "FROM `{project_id}.{dataset_id}.v_cymbal_retail_semantic` "
             "WHERE alert_type = 'cashier_promo_abuse' "
             "ORDER BY promo_override_rate DESC;"
         ),
@@ -320,7 +320,7 @@ VALUES
             "9. Data Agent 즉시 실습용 통합 시맨틱 뷰 생성 (v_cymbal_retail_semantic)",
             f"""
 CREATE OR REPLACE VIEW `{project_id}.{dataset_id}.v_cymbal_retail_semantic`
-OPTIONS(description="BigQuery Data Agent 단독 및 GE App 연동 실습용 시맨틱 골드 뷰. 순매출(net_revenue) 및 결품 커버 시간(est_cover_hours) 공식 내장.") AS
+OPTIONS(description="BigQuery Data Agent 단독 및 GE App 연동 실습용 시맨틱 골드 뷰. 순매출(net_revenue), 결품 커버 시간(est_cover_hours), 이상 거래 경보(alert_type) 내장.") AS
 SELECT
     p.transaction_id,
     p.sale_date,
@@ -335,10 +335,17 @@ SELECT
     i.shelf_qty,
     i.backroom_qty,
     i.total_units_sold_intraday,
-    ROUND(SAFE_DIVIDE((i.shelf_qty + i.backroom_qty), (i.total_units_sold_intraday / 12.0)), 1) AS est_cover_hours
+    ROUND(SAFE_DIVIDE((i.shelf_qty + i.backroom_qty), (i.total_units_sold_intraday / 12.0)), 1) AS est_cover_hours,
+    a.alert_id,
+    a.cashier_id,
+    a.alert_type,
+    a.severity,
+    a.promo_override_rate
 FROM `{project_id}.{dataset_id}.pos_transactions_gold` p
 LEFT JOIN `{project_id}.{dataset_id}.gold_inventory_reconciliation_ledger` i
-  ON p.store_branch = i.store_branch;
+  ON p.store_branch = i.store_branch
+LEFT JOIN `{project_id}.{dataset_id}.pos_anomaly_alerts` a
+  ON p.store_branch = a.store_branch;
 """,
         ),
     ]
@@ -392,16 +399,16 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
     print("            반드시 Google Cloud 콘솔 UI(BigQuery Studio)에서 아래 순서로 클릭하여 진행한다.")
     print("-" * 88)
     print(" [콘솔 UI 클릭 순서 (소요 시간: 5분)]")
-    print("  1) Google Cloud 콘솔 > BigQuery 좌측 탐색 바에서 [Agents (에이전트 / Agent Catalog)] 메뉴 클릭")
-    print("  2) 상단 [+ Create Data Agent (데이터 에이전트 만들기)] 버튼 클릭")
-    print(f"  3) Agent Name(이름)에 `{agent_name}` 입력")
-    print(f"  4) [Select data sources (데이터 소스 선택)]에서 `{project_id}.{dataset_id}` 내 `v_cymbal_retail_semantic` 뷰(또는 원천 테이블)를 체크")
-    print("  5) [Instructions (지침)] 입력란에 아래 텍스트를 그대로 복사하여 붙여넣기:")
+    print("  1) Google Cloud 콘솔 > BigQuery > Studio 화면 상단 [Create new] 영역에서 [AI and knowledge] 드롭다운 > [Agent] 클릭")
+    print("     (또는 좌측 탐색 바에서 [Agents] 아이콘 클릭 후 상단 [+ Create Data Agent] 클릭)")
+    print(f"  2) Agent name(이름)에 `{agent_name}` (또는 자유로운 실습명) 입력")
+    print(f"  3) [Knowledge sources] > [Add source] 클릭 후 `{project_id}.{dataset_id}` 내 `v_cymbal_retail_semantic` 뷰(또는 원천 테이블 전체)를 체크")
+    print("  4) [Instructions (지침)] 입력란에 아래 텍스트를 그대로 복사하여 붙여넣기:")
     print("-" * 88)
     print(sys_inst.strip())
     print("-" * 88)
-    print("  6) [Verified Queries (검증된 쿼리)] 탭에서 아래 대표 질문-SQL 2쌍을 추가 후 [Save (저장)] 클릭:")
-    for idx, p in enumerate(GOLDEN_PROMPTS[:2], start=1):
+    print("  5) [Verified queries (검증된 쿼리)] 영역에서 [Add query]를 클릭하여 아래 대표 질문-SQL 3쌍을 추가 후 상단 [Save] 클릭:")
+    for idx, p in enumerate(GOLDEN_PROMPTS, start=1):
         sql_clean = p["expected_sql"].format(project_id=project_id, dataset_id=dataset_id)
         print(f"\n     [Verified Query #{idx}]")
         print(f"      * Question : {p['user_prompt']}")
