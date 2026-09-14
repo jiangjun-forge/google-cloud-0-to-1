@@ -28,6 +28,7 @@ All contents, designs, and code examples are subject to change, modification, or
 .
 ├── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
 │   ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
+│   ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
 │   ├── cloud-nat-port-exhaustion-guard/        # Cloud NAT 동적 포트 할당(DPA) 확장 지연 및 사일런트 패킷 드롭 진단
 │   ├── cloud-run-cud-optimizer/                # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
 │   ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단

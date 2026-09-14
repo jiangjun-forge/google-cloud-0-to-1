@@ -416,13 +416,25 @@ def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location
         return
 
     print(f"총 {len(tables)}개 테이블 메타데이터 분석 시작...", flush=True)
+    mock_lookup = {m["table_id"]: m for m in get_mock_audit_data()["tables"]}
+
     table_records = []
     for idx, t_item in enumerate(tables, 1):
         print(f"  [{idx}/{len(tables)}] 테이블 '{t_item.table_id}' 스키마 및 설명 분석 중...", flush=True)
         t = client.get_table(t_item.reference)
-        has_desc = bool(t.description and len(t.description.strip()) > 5)
+        has_desc = bool(t.description and len(t.description.strip()) > 10)
         total_cols = len(t.schema)
         described_cols = sum(1 for field in t.schema if field.description and len(field.description.strip()) > 5)
+
+        matched_mock = mock_lookup.get(t.table_id, {})
+        sug_t_desc = matched_mock.get("suggested_table_desc") or f"Standard analytics table for {t.table_id} under {dataset_id}."
+        mock_col_map = matched_mock.get("suggested_col_descs", {})
+        sug_c_descs = {
+            f.name: mock_col_map.get(f.name, f"Standard business field for {f.name} (Type: {f.field_type})")
+            for f in t.schema
+            if not f.description
+        }
+        sug_formula = matched_mock.get("glossary_formula") or f"Standard metrics for {t.table_id}"
 
         table_records.append({
             "table_id": t.table_id,
@@ -433,9 +445,9 @@ def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location
             "profile_scanned": False,
             "glossary_bound": False,
             "sample_missing_cols": [field.name for field in t.schema if not field.description][:5],
-            "suggested_table_desc": f"Standard analytics table for {t.table_id} under {dataset_id}.",
-            "suggested_col_descs": {f.name: f"Value field for {f.name} (Type: {f.field_type})" for f in t.schema if not f.description},
-            "glossary_formula": f"Standard metrics for {t.table_id}",
+            "suggested_table_desc": sug_t_desc,
+            "suggested_col_descs": sug_c_descs,
+            "glossary_formula": sug_formula,
         })
 
     audit_data = {"dataset": dataset_id, "tables": table_records}
@@ -448,13 +460,16 @@ def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location
 
         if apply:
             print("\n[BigQuery 스키마 메타데이터 패치 적용]")
+            rec_map = {r["table_id"]: r for r in table_records}
             for t_item in tables:
                 t = client.get_table(t_item.reference)
+                rec = rec_map.get(t.table_id, {})
                 updated = False
-                if not t.description:
-                    t.description = f"Standard analytics table for {t.table_id} under {dataset_id}."
+                if not t.description or len(t.description.strip()) <= 10:
+                    t.description = rec.get("suggested_table_desc", f"Standard analytics table for {t.table_id}.")
                     updated = True
 
+                col_desc_map = rec.get("suggested_col_descs", {})
                 new_schema = []
                 for field in t.schema:
                     if not field.description:
@@ -462,7 +477,7 @@ def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location
                             name=field.name,
                             field_type=field.field_type,
                             mode=field.mode,
-                            description=f"Standard business field for {field.name} in {t.table_id}.",
+                            description=col_desc_map.get(field.name, f"Standard business field for {field.name}."),
                             fields=field.fields,
                         )
                         new_schema.append(new_field)
@@ -473,8 +488,8 @@ def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location
                 if updated:
                     t.schema = new_schema
                     client.update_table(t, ["description", "schema"])
-                    print(f"  - 테이블 '{t.table_id}' 스키마 설명 패치 완료.")
-            print("모든 테이블의 메타데이터 보강이 완료되었다.")
+                    print(f"  - 테이블 '{t.table_id}' 스키마 및 컬럼 설명 패치 완료.")
+            print("모든 테이블의 시맨틱 메타데이터 보강이 완료되었다.")
 
 
 def main() -> None:
