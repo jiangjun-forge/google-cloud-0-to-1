@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 가이드 (Standalone & Optional GE App)
+# BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 (Standalone & Optional GE App)
 
-45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 BigQuery 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agent Hub에서 단독(Standalone)으로 Data Agent를 생성 및 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 실무 시나리오를 즉시 시연할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-09-14)
+45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 BigQuery 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 대화형 분석 에이전트인 Conversational Analytics Data Agent를 단독(Standalone)으로 생성 및 멀티턴 대화 질의를 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 전사 대화 포털 시나리오를 즉시 시연할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-09-14)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#GenAI`, `#Governance`, `#Performance`  
@@ -42,10 +42,10 @@ flowchart TD
     B --> C["pos_transactions_gold, gold_inventory_reconciliation_ledger 등 4개 테이블 + 실데이터 적재"]
     C --> D["v_cymbal_retail_semantic 시맨틱 뷰 생성 (순매출, 결품 커버 시간 공식 내장)"]
     D --> E["Step 2 [CLI -> UI 재료 출력]: System Instructions 및 Verified Queries 출력 (--agent-config)"]
-    E --> F["Step 2 후반 [콘솔 UI 전용]: BigQuery Studio > Agent Hub에서 단독(Standalone) Data Agent 생성"]
-    F --> G["Agent Hub 대화창에서 골든 프롬프트 3선 자연어 질의 실습"]
+    E --> F["Step 2 후반 [콘솔 UI 전용]: BigQuery Studio > Agents에서 단독(Standalone) Data Agent 생성"]
+    F --> G["Data Agent 대화창에서 골든 프롬프트 3선 자연어 질의 실습"]
     G --> H{"선택 사항: Gemini Enterprise App 연동 여부 (--register-ge-app)"}
-    H -- "예 (Optional)" --> I["Agent Hub [Publish] 클릭 -> Gemini Enterprise App 선택 및 활성화"]
+    H -- "예 (Optional)" --> I["Data Agent [Publish] 클릭 -> Gemini Enterprise App 선택 및 활성화"]
     H -- "아니오 (Standalone 완주)" --> J["실습 종료 후 리소스 원클릭 정리 (--teardown)"]
     I --> J
 ```
@@ -60,7 +60,7 @@ flowchart TD
 | :--- | :--- | :--- |
 | `roles/bigquery.dataEditor` | `bigquery.datasets.create`, `bigquery.tables.create` | `--setup-demo` 실행 시 `cymbal_gold` 4개 테이블, 실데이터, 시맨틱 뷰 생성 |
 | `roles/bigquery.jobUser` | `bigquery.jobs.create` | BigQuery 쿼리 실행 및 Data Agent 시맨틱 뷰 조회 |
-| `roles/geminidataanalytics.dataAgentCreator` | `geminidataanalytics.dataAgents.create` | BigQuery Studio > Agent Hub에서 BigQuery Data Agent 생성 및 관리 (UI 전용) |
+| `roles/geminidataanalytics.dataAgentCreator` | `geminidataanalytics.dataAgents.create` | BigQuery Studio > Agents (Agent Catalog)에서 BigQuery Data Agent 생성 및 관리 (UI 전용) |
 | `roles/discoveryengine.admin` | `discoveryengine.engines.update`, `discoveryengine.agents.create` | `[선택 사항]` 생성된 Data Agent를 Gemini Enterprise App에 게시 및 활성화할 경우에만 필요 |
 
 ---
@@ -90,15 +90,15 @@ cd google-cloud-0-to-1/samples/bigquery-data-agent-starter
 ./run.sh --setup-demo
 ```
 
-### 4.3 Step 2 (05~25분, 콘솔 UI 전용): BigQuery Studio > Agent Hub 단독(Standalone) 에이전트 생성
+### 4.3 Step 2 (05~25분, 콘솔 UI 전용): BigQuery Studio > Agents (Agent Catalog) 단독(Standalone) 에이전트 생성
 BigQuery Data Agent 생성 및 테이블/뷰 연결은 `gcloud` CLI 명령어가 지원되지 않으므로 콘솔 UI에서 진행한다. 먼저 아래 명령어를 실행하여 콘솔 UI에 복사하여 붙여넣을 **System Instructions**와 **Verified Queries**를 화면에 출력한다:
 
 ```bash
-# BigQuery Studio > Agent Hub 입력용 System Instructions 및 Verified Queries 출력
+# BigQuery Studio > Agents 입력용 System Instructions 및 Verified Queries 출력
 ./run.sh --agent-config
 ```
 - **콘솔 UI 클릭 순서**:
-  1. Google Cloud 콘솔 > BigQuery > Studio 좌측 탐색 바에서 **Agent Hub (에이전트 허브)** 아이콘을 클릭한다.
+  1. Google Cloud 콘솔 > BigQuery 좌측 탐색 바에서 **Agents (에이전트 / Agent Catalog)** 메뉴를 클릭한다.
   2. 상단 **[+ Create Data Agent (데이터 에이전트 만들기)]** 버튼을 클릭한다.
   3. 에이전트 이름에 `cymbal-retail-data-agent`를 입력한다.
   4. **[Select data sources (데이터 소스 선택)]**에서 `cymbal_gold.v_cymbal_retail_semantic` 뷰(또는 4개 원천 테이블)를 체크한다.
@@ -115,7 +115,7 @@ BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸
 ./run.sh --register-ge-app --app-id <대상_GE_APP_ID>
 ```
 - **콘솔 UI 클릭 순서**:
-  1. **BigQuery Studio > Agent Hub**에서 방금 저장한 `cymbal-retail-data-agent` 우측 상단의 **[Publish (게시)]** 버튼을 클릭한다.
+  1. **BigQuery Studio > Agents**에서 방금 저장한 `cymbal-retail-data-agent` 우측 상단의 **[Publish (게시)]** 버튼을 클릭한다.
   2. 게시 대상 채널에서 **[Gemini Enterprise]**를 체크하고 대상 App ID를 선택한 뒤 **[Publish]**를 클릭한다.
   3. Google Cloud 콘솔 > **AI Applications (또는 Gemini Enterprise)** 메뉴로 이동하여 대상 앱의 좌측 **[Agents (에이전트)]** 탭에서 상태 토글이 **[Enabled (활성)]**인지 확인한다.
   4. 참조 문서: Gemini Enterprise 에이전트 연동 가이드 ( https://cloud.google.com/generative-ai-app-builder/docs/agent-builder )

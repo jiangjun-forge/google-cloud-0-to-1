@@ -18,7 +18,7 @@
 BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional GE App).
 
 45분 핸즈온 워크숍 내에 참석자(고객)가 CLI 명령어 한 줄로 BigQuery 스몰셋 데이터셋(cymbal_gold)과
-실데이터를 자동 구축하고, BigQuery Studio Agent Hub에서 단독(Standalone)으로 Data Agent를 생성 및
+실데이터를 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 단독(Standalone)으로 Data Agent를 생성 및
 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 실무 시나리오를
 시연할 수 있도록 설계된 스타터 키트다.
 """
@@ -375,10 +375,10 @@ LEFT JOIN `{project_id}.{dataset_id}.gold_inventory_reconciliation_ledger` i
 
 
 # ==============================================================================
-# 4. [UI 전용 조작 가이드] BigQuery Studio Agent Hub 단독 생성 및 GE App 선택 연동
+# 4. [UI 전용 조작 가이드] BigQuery Studio Agents 단독 생성 및 GE App 선택 연동
 # ==============================================================================
 def export_data_agent_config(cfg: Dict[str, Any]) -> None:
-    """BigQuery Studio > Agent Hub (콘솔 UI 전용)에서 복사/붙여넣기할 System Instructions와 Verified Queries를 출력한다."""
+    """BigQuery Studio > Agents (콘솔 UI 전용)에서 복사/붙여넣기할 System Instructions와 Verified Queries를 출력한다."""
     project_id = cfg["project_id"]
     dataset_id = cfg["dataset_id"]
     agent_name = cfg["data_agent_name"]
@@ -386,13 +386,13 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
     sys_inst = SYSTEM_INSTRUCTIONS_TEMPLATE.format(project_id=project_id, dataset_id=dataset_id)
 
     print("=" * 88)
-    print(f" [Step 2: 콘솔 UI 전용 구간] BigQuery Studio > Agent Hub 단독(Standalone) 에이전트 생성 가이드")
+    print(f" [Step 2: 콘솔 UI 전용 구간] BigQuery Studio > Agents 단독(Standalone) 에이전트 생성 가이드")
     print("=" * 88)
     print(" [중요 안내] BigQuery Data Agent 생성 및 테이블 바인딩은 CLI(gcloud) 명령어가 지원되지 않으며,")
     print("            반드시 Google Cloud 콘솔 UI(BigQuery Studio)에서 아래 순서로 클릭하여 진행한다.")
     print("-" * 88)
     print(" [콘솔 UI 클릭 순서 (소요 시간: 5분)]")
-    print("  1) Google Cloud 콘솔 > BigQuery > Studio 좌측 탐색 바에서 [Agent Hub (에이전트 허브)] 아이콘 클릭")
+    print("  1) Google Cloud 콘솔 > BigQuery 좌측 탐색 바에서 [Agents (에이전트 / Agent Catalog)] 메뉴 클릭")
     print("  2) 상단 [+ Create Data Agent (데이터 에이전트 만들기)] 버튼 클릭")
     print(f"  3) Agent Name(이름)에 `{agent_name}` 입력")
     print(f"  4) [Select data sources (데이터 소스 선택)]에서 `{project_id}.{dataset_id}` 내 `v_cymbal_retail_semantic` 뷰(또는 원천 테이블)를 체크")
@@ -410,7 +410,7 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
 
 
 def register_agent_to_ge_app(cfg: Dict[str, Any]) -> None:
-    """[선택 사항] BigQuery Studio Agent Hub에서 생성한 Data Agent를 Gemini Enterprise App에 게시하는 UI 절차를 안내한다."""
+    """[선택 사항] BigQuery Studio Agents에서 생성한 Data Agent를 Gemini Enterprise App에 게시하는 UI 절차를 안내한다."""
     ge_app_id = cfg["ge_app_id"]
     agent_name = cfg["data_agent_name"]
 
@@ -420,8 +420,8 @@ def register_agent_to_ge_app(cfg: Dict[str, Any]) -> None:
     print(" [안내] BigQuery Studio 내에서 단독(Standalone)으로 에이전트를 사용할 경우 본 단계는 생략 가능하다.")
     print("       생성한 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 UI 절차를 수행한다.")
     print("-" * 88)
-    print(" [Phase A: BigQuery Studio > Agent Hub에서 Gemini Enterprise로 게시 (Publish)]")
-    print(f"  1) BigQuery Studio > 좌측 [Agent Hub] > 방금 저장한 [{agent_name}] 클릭")
+    print(" [Phase A: BigQuery Studio > Agents에서 Gemini Enterprise로 게시 (Publish)]")
+    print(f"  1) BigQuery Studio > 좌측 [Agents] > 방금 저장한 [{agent_name}] 클릭")
     print("  2) 에이전트 상세 화면 우측 상단의 [Publish (게시)] 버튼 클릭")
     print("  3) 게시 대상 채널에서 [Gemini Enterprise] 체크박스 선택")
     print(f"  4) 드롭다운 메뉴에서 대상 Gemini Enterprise App [{ge_app_id}] 선택 후 [Publish] 버튼 클릭")
@@ -453,12 +453,12 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
 
     print("\n [45분 핸즈온 워크숍 역할 분담 타임라인 (CLI 자동화 vs 콘솔 UI 전용 조작)]")
     print("  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (./run.sh --setup-demo)")
-    print("  * 05~10분 [CLI -> UI]  : Agent Hub에 붙여넣을 System Instructions 및 Verified Queries 출력 (./run.sh --agent-config)")
-    print("  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agent Hub에서 단독(Standalone) Data Agent 생성 및 질의 테스트")
+    print("  * 05~10분 [CLI -> UI]  : Agents에 붙여넣을 System Instructions 및 Verified Queries 출력 (./run.sh --agent-config)")
+    print("  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agents에서 단독(Standalone) Data Agent 생성 및 질의 테스트")
     print("  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 활성화 (./run.sh --register-ge-app)")
     print("-" * 88)
 
-    print("\n [실습 검증용 골든 프롬프트 3선 (Agent Hub 대화창 또는 GE App 공용)]")
+    print("\n [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 GE App 공용)]")
     for p in GOLDEN_PROMPTS:
         sql_formatted = p["expected_sql"].format(project_id=project_id, dataset_id=dataset_id)
         print(f"\n  [{p['id']}] {p['title']}")
@@ -532,7 +532,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--agent-config",
         action="store_true",
-        help="[UI 입력용 재료 출력] BigQuery Studio > Agent Hub에서 복사/붙여넣기할 System Instructions 및 Verified Queries 출력",
+        help="[UI 입력용 재료 출력] BigQuery Studio > Agents에서 복사/붙여넣기할 System Instructions 및 Verified Queries 출력",
     )
     parser.add_argument(
         "--register-ge-app",

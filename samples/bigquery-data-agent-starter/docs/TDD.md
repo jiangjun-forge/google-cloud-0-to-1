@@ -24,7 +24,7 @@ All contents, designs, and code examples are subject to change, modification, or
 1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 컨트롤러(`diagnose.py`)와 환경 변수 및 가상 환경을 자동 감지하는 배시 래퍼(`run.sh`) 결합.
 2. **계층형 캐스케이드 설정 탐색(Cascade Fallback)**: CLI 인자 > `.env` > `gcloud config` > 대화형 번호 선택기(`interactive_select`) > 사내 권장 기본값(`asia-northeast3`) 순으로 무중단 설정 확정.
 3. **독립 완결성(Zero Dependency)**: 외부 모듈이나 다른 샘플에 대한 코드 의존성 없이 100% 자체 완결적으로 동작.
-4. **Standalone 기본 / GE App 선택형 구조**: BigQuery Studio 내 Agent Hub 단독 실습을 기본으로 하고, Gemini Enterprise App 연동(`--register-ge-app`)은 선택적 확장 단계로 구성.
+4. **Standalone 기본 / GE App 선택형 구조**: BigQuery Studio 내 Agents (Agent Catalog) 단독 실습을 기본으로 하고, Gemini Enterprise App 연동(`--register-ge-app`)은 선택적 확장 단계로 구성.
 
 ---
 
@@ -43,7 +43,7 @@ flowchart TD
         SemanticView["v_cymbal_retail_semantic (순매출, 결품 커버 시간 뷰)"]
     end
 
-    subgraph Agent_Hub["BigQuery Studio Agent Hub (Standalone 기본)"]
+    subgraph Agent_Catalog["BigQuery Studio Agents (Standalone 기본)"]
         BQAgent["cymbal-retail-data-agent (System Instructions 바인딩)"]
     end
 
@@ -70,7 +70,7 @@ flowchart TD
 | **FR-01** | `resolve_config` | CLI 인자, `.env`, `gcloud config get-value project`를 순차 탐색하고, 미지정 시 `sys.stdin.isatty()` 기반 번호 선택기를 제공하여야 한다. |
 | **FR-02** | `setup_smallset_demo` | `cymbal_gold` 데이터셋 내에 4개 테이블(`pos_transactions_gold`, `gold_inventory_reconciliation_ledger`, `pos_anomaly_alerts`, `historical_transactional_data`) DDL과 샘플 데이터 `INSERT INTO`, `v_cymbal_retail_semantic` 뷰 SQL을 BigQuery API로 실행하여야 한다. |
 | **FR-03** | `export_data_agent_config` | 순매출 및 결품 커버 시간 공식이 명시된 System Instructions와 Verified Queries를 출력하여야 한다. |
-| **FR-04** | `register_agent_to_ge_app` | Agent Hub에서 Gemini Enterprise로 게시하는 UI 단계를 선택 사항(Optional)으로 안내하여야 한다. |
+| **FR-04** | `register_agent_to_ge_app` | BigQuery Studio Agents에서 Gemini Enterprise로 게시하는 UI 단계를 선택 사항(Optional)으로 안내하여야 한다. |
 | **FR-05** | `print_workshop_guide_and_prompts` | 45분 워크숍 타임라인과 골든 프롬프트 3선의 자연어 질문, 기대 SQL, 샘플 응답 행을 출력하여야 한다. |
 | **FR-06** | `teardown_demo_environment` | `--teardown` 실행 시 `client.delete_dataset(..., delete_contents=True)`를 호출하여 실습 리소스를 안전하게 제거하여야 한다. |
 

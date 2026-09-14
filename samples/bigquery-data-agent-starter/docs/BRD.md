@@ -46,8 +46,8 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **BR-01** | 스몰셋 데이터셋 자동 구성 | `--setup-demo` 실행 시 `cymbal_gold` 데이터셋 내에 `pos_transactions_gold`, `gold_inventory_reconciliation_ledger`, `pos_anomaly_alerts`, `historical_transactional_data` 4개 테이블과 실데이터를 자동 생성하여야 한다. |
 | **BR-02** | 시맨틱 골드 뷰 생성 | 순매출(`subtotal_amount - discount + tax_amount`)과 결품 커버 시간(`SAFE_DIVIDE((shelf_qty + backroom_qty), (total_units_sold_intraday / 12.0))`)이 내장된 시맨틱 뷰(`v_cymbal_retail_semantic`)를 자동 생성하여야 한다. |
-| **BR-03** | 단독 에이전트 지침 도출 | `--agent-config` 실행 시 BigQuery Studio > Agent Hub에 바로 붙여넣을 수 있는 System Instructions와 Verified Queries를 출력하여야 한다. |
-| **BR-04** | 선택적 GE App 연동 | `--register-ge-app` 실행 시 Agent Hub에서 Gemini Enterprise App으로 게시하는 콘솔 UI 절차를 선택 사항(Optional)으로 명확히 안내하여야 한다. |
+| **BR-03** | 단독 에이전트 지침 도출 | `--agent-config` 실행 시 BigQuery Studio > Agents (Agent Catalog)에 바로 붙여넣을 수 있는 System Instructions와 Verified Queries를 출력하여야 한다. |
+| **BR-04** | 선택적 GE App 연동 | `--register-ge-app` 실행 시 Agents에서 Gemini Enterprise App으로 게시하는 콘솔 UI 절차를 선택 사항(Optional)으로 명확히 안내하여야 한다. |
 | **BR-05** | 골든 프롬프트 3선 검증 | 지점별 순매출, 결품 위험 품목, 이상 거래 탐지 등 비즈니스 시나리오를 검증할 수 있는 대표 프롬프트를 제공하여야 한다. |
 | **BR-06** | 원클릭 리소스 정리 | `--teardown` 실행 시 실습에 사용된 `cymbal_gold` 데이터셋과 하위 테이블/뷰를 일괄 삭제하여 과금을 방지하여야 한다. |
 
