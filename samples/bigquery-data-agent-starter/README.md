@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 가이드 (Standalone & Optional GE App)
 
-45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 BigQuery 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agent Hub에서 단독(Standalone)으로 Data Agent를 생성 및 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하거나 `bigquery-data-agent-semantic-enricher`와 연계하여 메타데이터 보강 전후(Before/After)의 정확도 차이를 즉시 시연할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-09-14)
+45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 BigQuery 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agent Hub에서 단독(Standalone)으로 Data Agent를 생성 및 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 실무 시나리오를 즉시 시연할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-09-14)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#GenAI`, `#Governance`, `#Performance`  
@@ -30,12 +30,11 @@ All contents, designs, and code examples are subject to change, modification, or
 
 - [ ] 45분 내외의 짧은 핸즈온 세션 동안 참석자들이 BigQuery 데이터 준비부터 BigQuery Data Agent 생성 및 자연어 질의응답까지 막힘 없이 완주해야 하는 경우
 - [ ] Gemini Enterprise App에 올리지 않고 BigQuery Studio 내에서 단독(Standalone)으로 Data Agent를 쓰는 고객과, Gemini Enterprise App에 게시(Publish)하려는 고객 모두를 하나의 워크숍 키트로 지원해야 하는 경우
-- [ ] 워크숍 중 시간이 남을 때, 메타데이터 설명이 비어 있는 원천 테이블(Before)로 Data Agent를 돌렸을 때의 환각과 `bigquery-data-agent-semantic-enricher`로 메타데이터를 보강(After)한 뒤 돌렸을 때의 정확도 향상을 실시간 비교 시연하고자 하는 경우
 - [ ] 별도의 GCP 과금이나 권한 부여 전, 가상 실행(`--dry-run`)으로 전체 SQL DDL/DML과 에이전트 시스템 지침을 사전 검토하고자 하는 경우
 
 ---
 
-## 2. 45분 핸즈온 실습 및 Before/After 연계 흐름
+## 2. 45분 핸즈온 실습 흐름
 
 ```mermaid
 flowchart TD
@@ -45,13 +44,10 @@ flowchart TD
     D --> E["Step 2 [CLI -> UI 재료 출력]: System Instructions 및 Verified Queries 출력 (--agent-config)"]
     E --> F["Step 2 후반 [콘솔 UI 전용]: BigQuery Studio > Agent Hub에서 단독(Standalone) Data Agent 생성"]
     F --> G["Agent Hub 대화창에서 골든 프롬프트 3선 자연어 질의 실습"]
-    G --> H{"선택 1: Gemini Enterprise App 연동 여부 (--register-ge-app)"}
+    G --> H{"선택 사항: Gemini Enterprise App 연동 여부 (--register-ge-app)"}
     H -- "예 (Optional)" --> I["Agent Hub [Publish] 클릭 -> Gemini Enterprise App 선택 및 활성화"]
-    H -- "아니오 (Standalone 유지)" --> J{"선택 2: 시맨틱 보강 Before/After 비교 시연 여부"}
+    H -- "아니오 (Standalone 완주)" --> J["실습 종료 후 리소스 원클릭 정리 (--teardown)"]
     I --> J
-    J -- "예 (시간 여유 시)" --> K["../bigquery-data-agent-semantic-enricher 실행하여 스키마 설명 자동 보강 후 정확도 비교"]
-    J -- "종료" --> L["실습 종료 후 리소스 원클릭 정리 (--teardown)"]
-    K --> L
 ```
 
 ---
@@ -126,32 +122,7 @@ BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸
 
 ---
 
-## 5. 심화 시연 가이드: `bigquery-data-agent-semantic-enricher` 연계 Before/After 정확도 비교
-
-워크숍 시간이 남을 경우, 본 스타터(`bigquery-data-agent-starter`)와 바로 옆 샘플인 `bigquery-data-agent-semantic-enricher`를 독립적으로 연계하여 **시맨틱 메타데이터 보강 전후(Before/After)의 극적인 정확도 차이**를 고객에게 시연할 수 있다:
-
-1. **Before (보강 전 원천 테이블 상태에서 질문)**:
-   - 본 스타터의 `--setup-demo`는 `cymbal_gold` 내 4개 원천 테이블(`pos_transactions_gold`, `gold_inventory_reconciliation_ledger`, `pos_anomaly_alerts`, `historical_transactional_data`)을 의도적으로 **컬럼 설명이 누락된 상태**로 생성한다.
-   - BigQuery Data Agent에 시맨틱 뷰 대신 원천 테이블만 연결하여 순매출이나 결품 커버 시간을 질문하면, 에이전트가 `subtotal_amount`와 `total`을 혼동하거나 수식을 날조하는 한계를 직접 확인할 수 있다.
-
-2. **Enrichment (시맨틱 메타데이터 자동 진단 및 스키마 패치)**:
-   - 터미널에서 옆 폴더인 `bigquery-data-agent-semantic-enricher`로 이동하여 아래 명령을 실행한다 (두 샘플 간 코드 의존성 없이 `cymbal_gold` 데이터셋 스키마를 기준으로 독립 동작):
-   ```bash
-   cd ../bigquery-data-agent-semantic-enricher
-
-   # 1. 현재 cymbal_gold 데이터셋의 낮은 준비도 점수(FAIL) 진단 확인
-   ./run.sh -d cymbal_gold
-
-   # 2. 누락된 테이블/컬럼 설명 및 비즈니스 공식을 실제 BigQuery 스키마에 자동 패치
-   ./run.sh -d cymbal_gold --enrich --apply
-   ```
-
-3. **After (메타데이터 패치 후 재질문)**:
-   - 스키마 패치 직후 다시 `./run.sh -d cymbal_gold`를 실행하여 준비도 점수가 `PASS`로 상승한 것을 확인하고, BigQuery Data Agent 대화창에서 동일한 질문을 다시 던져 원천 테이블만으로도 정확한 SQL 수식이 도출되는 것을 시연한다.
-
----
-
-## 6. 실습 검증용 골든 프롬프트 3선
+## 5. 실습 검증용 골든 프롬프트 3선
 
 - **골든 프롬프트 1 (지점 및 결제 수단별 순매출 비교)**:
   ```text
@@ -168,7 +139,7 @@ BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸
 
 ---
 
-## 7. 자원 정리 (Teardown)
+## 6. 자원 정리 (Teardown)
 
 45분 핸즈온 실습이 끝난 후 불필요한 클라우드 리소스 과금을 예방하기 위해 아래 명령어로 스몰셋 데이터셋을 즉시 정리한다:
 

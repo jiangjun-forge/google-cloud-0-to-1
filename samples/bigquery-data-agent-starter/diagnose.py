@@ -19,9 +19,8 @@ BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional GE App
 
 45분 핸즈온 워크숍 내에 참석자(고객)가 CLI 명령어 한 줄로 BigQuery 스몰셋 데이터셋(cymbal_gold)과
 실데이터를 자동 구축하고, BigQuery Studio Agent Hub에서 단독(Standalone)으로 Data Agent를 생성 및
-실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하거나
-bigquery-data-agent-semantic-enricher와 연계하여 메타데이터 보강 전후(Before/After) 정확도를
-비교 시연할 수 있도록 설계된 스타터 키트다.
+실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 실무 시나리오를
+시연할 수 있도록 설계된 스타터 키트다.
 """
 
 import argparse
@@ -102,6 +101,18 @@ def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
     dataset_id = cli_args.dataset or os.environ.get("DATASET_ID", "").strip() or "cymbal_gold"
     ge_app_id = cli_args.app_id or os.environ.get("GE_APP_ID", "").strip() or "omni-retail-ge-app"
     data_agent_name = cli_args.agent_name or os.environ.get("DATA_AGENT_NAME", "").strip() or "cymbal-retail-data-agent"
+
+    # 대상 데이터셋이 BigQuery에 이미 존재하는 경우 실제 리전 위치로 자동 동기화
+    if not cli_args.dry_run and not cli_args.location and not os.environ.get("LOCATION"):
+        try:
+            from google.cloud import bigquery  # type: ignore
+            bq_probe = bigquery.Client(project=project_id)
+            existing_ds = bq_probe.get_dataset(f"{project_id}.{dataset_id}")
+            if existing_ds.location and existing_ds.location != location:
+                print(f"[자동 감지] 기존 데이터셋({dataset_id})의 리전({existing_ds.location})을 자동 감지하여 적용한다.")
+                location = existing_ds.location
+        except Exception:
+            pass
 
     return {
         "project_id": project_id,
@@ -188,10 +199,7 @@ GOLDEN_PROMPTS: List[Dict[str, Any]] = [
 # 3. [CLI 자동화 구간] 스몰셋 데이터셋(cymbal_gold) + 4개 테이블 + 실데이터 구축 (--setup-demo)
 # ==============================================================================
 def setup_smallset_demo(cfg: Dict[str, Any]) -> None:
-    """
-    실제 BigQuery에 cymbal_gold 데이터셋과 4개 스몰셋 테이블 및 실데이터를 원클릭 구축한다.
-    (bigquery-data-agent-semantic-enricher와 호환되도록 의도적으로 보강 전(Raw) 상태의 스키마로 생성)
-    """
+    """실제 BigQuery에 cymbal_gold 데이터셋과 4개 스몰셋 테이블 및 실데이터를 원클릭 구축한다."""
     project_id = cfg["project_id"]
     dataset_id = cfg["dataset_id"]
     location = cfg["location"]
@@ -200,7 +208,7 @@ def setup_smallset_demo(cfg: Dict[str, Any]) -> None:
     print(" [Step 1: CLI 자동화 구간] 45분 워크숍용 BigQuery 스몰셋 데이터셋(cymbal_gold) 구축")
     print(f"  - 대상 프로젝트 : {project_id}")
     print(f"  - 대상 데이터셋 : {dataset_id} (리전: {location})")
-    print("  - 특징         : bigquery-data-agent-semantic-enricher와 100% 호환되는 4개 테이블 + 실데이터 적재")
+    print("  - 특징         : 4개 원천 테이블 + 실데이터 적재 + 즉시 실습용 시맨틱 뷰 생성")
     print("=" * 88)
 
     ddl_and_dml_statements = [
@@ -350,7 +358,7 @@ LEFT JOIN `{project_id}.{dataset_id}.gold_inventory_reconciliation_ledger` i
         client = bigquery.Client(project=project_id, location=location)
         dataset_ref = bigquery.Dataset(f"{project_id}.{dataset_id}")
         dataset_ref.location = location
-        dataset_ref.description = "BigQuery Data Agent 45-min Workshop Dataset (Compatible with Semantic Enricher)"
+        dataset_ref.description = "BigQuery Data Agent 45-min Workshop Dataset"
         client.create_dataset(dataset_ref, exists_ok=True)
         print(f"  -> [성공] BigQuery 데이터셋 확인/생성 완료: {project_id}.{dataset_id}")
 
@@ -387,10 +395,7 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
     print("  1) Google Cloud 콘솔 > BigQuery > Studio 좌측 탐색 바에서 [Agent Hub (에이전트 허브)] 아이콘 클릭")
     print("  2) 상단 [+ Create Data Agent (데이터 에이전트 만들기)] 버튼 클릭")
     print(f"  3) Agent Name(이름)에 `{agent_name}` 입력")
-    print(f"  4) [Select data sources (데이터 소스 선택)]에서 `{project_id}.{dataset_id}` 내 테이블/뷰 선택:")
-    print("     - [방법 A - 시맨틱 뷰 연결] : `v_cymbal_retail_semantic` 체크 시 즉시 고정확도 답변 생성")
-    print("     - [방법 B - Before/After 비교]: 원천 테이블 4개(`pos_transactions_gold` 등)만 체크 후 질문해 본 뒤,")
-    print("       `../bigquery-data-agent-semantic-enricher` 실행 전후의 SQL 정확도 차이를 극적으로 시연 가능!")
+    print(f"  4) [Select data sources (데이터 소스 선택)]에서 `{project_id}.{dataset_id}` 내 `v_cymbal_retail_semantic` 뷰(또는 원천 테이블)를 체크")
     print("  5) [Instructions (지침)] 입력란에 아래 텍스트를 그대로 복사하여 붙여넣기:")
     print("-" * 88)
     print(sys_inst.strip())
@@ -449,9 +454,8 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     print("\n [45분 핸즈온 워크숍 역할 분담 타임라인 (CLI 자동화 vs 콘솔 UI 전용 조작)]")
     print("  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (./run.sh --setup-demo)")
     print("  * 05~10분 [CLI -> UI]  : Agent Hub에 붙여넣을 System Instructions 및 Verified Queries 출력 (./run.sh --agent-config)")
-    print("  * 10~25분 [콘솔 UI 전용]: BigQuery Studio > Agent Hub에서 단독(Standalone) Data Agent 생성 및 질의 테스트")
-    print("  * 25~35분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 활성화 (./run.sh --register-ge-app)")
-    print("  * 35~45분 [심화/연계]  : 시간이 남을 경우 bigquery-data-agent-semantic-enricher와 연계하여 보강 전후 정확도 비교 시연")
+    print("  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agent Hub에서 단독(Standalone) Data Agent 생성 및 질의 테스트")
+    print("  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 활성화 (./run.sh --register-ge-app)")
     print("-" * 88)
 
     print("\n [실습 검증용 골든 프롬프트 3선 (Agent Hub 대화창 또는 GE App 공용)]")
@@ -463,14 +467,6 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
         print(f"    - 실데이터 응답 결과  :")
         for row in p["sample_rows"]:
             print(f"        {json.dumps(row, ensure_ascii=False)}")
-
-    print("\n" + "-" * 88)
-    print(" [심화 시연 팁: bigquery-data-agent-semantic-enricher 연계 Before/After 정확도 비교]")
-    print("  1) 본 스타터(--setup-demo)는 cymbal_gold의 원천 테이블 4개를 의도적으로 '메타데이터 보강 전(Unenriched)' 상태로 생성한다.")
-    print("  2) 원천 테이블만 연결해 Data Agent에 질문하면 컬럼 설명 부재로 순매출이나 결품 커버 시간을 정확히 계산하지 못한다.")
-    print("  3) 이때 옆 폴더인 `../bigquery-data-agent-semantic-enricher`로 이동하여 아래 명령을 실행한다:")
-    print(f"     $ cd ../bigquery-data-agent-semantic-enricher && ./run.sh -d {dataset_id} --enrich --apply")
-    print("  4) 4개 테이블의 스키마 설명과 공식이 자동 패치된 직후 다시 질문하면 정확도가 극적으로 향상되는 것을 시연할 수 있다!")
 
     if custom_query:
         print("\n" + "-" * 88)
