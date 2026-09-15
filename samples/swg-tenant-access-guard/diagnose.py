@@ -87,7 +87,7 @@ def detect_org_id(cli_org: str, is_dry_run: bool = False) -> str:
                 name = item[1] if len(item) > 1 else ""
                 print(f"  [{idx}] {org_id} ({name})")
             print(f"  [{len(orgs) + 1}] 직접 입력 (Custom Input)")
-            choice = input(f"선택할 번호를 입력하세요 [1-{len(orgs) + 1}] (Enter 시 1번): ").strip()
+            choice = input(f"선택할 번호 입력 [1-{len(orgs) + 1}] (Enter 시 1번): ").strip()
             if not choice or choice == "1":
                 return orgs[0][0]
             if choice.isdigit() and 1 <= int(choice) <= len(orgs):

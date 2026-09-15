@@ -146,7 +146,7 @@ client = genai.Client(api_key="YOUR_API_KEY")
 # 2. 콘텐츠 생성 호출
 response = client.models.generate_content(
     model="gemini-2.5-flash",
-    contents="안녕하세요, 최신 SDK 적용 테스트입니다."
+    contents="최신 SDK 적용 테스트용 프롬프트다."
 )
 print(response.text)
 """)

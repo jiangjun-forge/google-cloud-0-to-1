@@ -35,17 +35,17 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-pro
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
   projects = [p.strip() for p in stdout.splitlines() if p.strip()] if code == 0 and stdout else []
   if projects:
-    print("\n[?] 대상 GCP 프로젝트가 지정되지 않았습니다. 현재 접근 가능한 프로젝트 목록:")
+    print("\n[?] 대상 GCP 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
     for idx, p in enumerate(projects, 1):
       print(f"  [{idx}] {p}")
     print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
-    choice = input(f"선택할 번호를 입력하세요 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
+    choice = input(f"선택할 번호 입력 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
     if not choice or choice == "1":
       return projects[0]
     if choice.isdigit() and 1 <= int(choice) <= len(projects):
       return projects[int(choice) - 1]
     if choice == str(len(projects) + 1):
-      custom = input("프로젝트 ID를 직접 입력하세요: ").strip()
+      custom = input("프로젝트 ID 직접 입력: ").strip()
       if custom:
         return custom
 
@@ -105,7 +105,7 @@ def execute_logging(project_id: str, dataset_id: str, location: str, model_id: s
   print("  - 표본 추출 비율: 100% (sampling_rate: 1.0)")
 
   if skip_inference:
-    print("\n[안내] --skip-inference 플래그가 설정되어 테스트 추론 호출을 건너뜁니다.")
+    print("\n[안내] --skip-inference 플래그가 설정되어 테스트 추론 호출을 건너뛴다.")
     return
 
   print("\n[안내] google-genai 최신 SDK를 통해 테스트 추론을 1회 호출한다 (최대 10초 대기)...")
@@ -117,7 +117,7 @@ def execute_logging(project_id: str, dataset_id: str, location: str, model_id: s
     def _call_model():
       return genai_client.models.generate_content(
           model=model_id,
-          contents="구글 클라우드 BigQuery 연동 로깅 테스트 프롬프트입니다."
+          contents="구글 클라우드 BigQuery 연동 로깅 테스트 프롬프트다."
       )
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
@@ -126,8 +126,8 @@ def execute_logging(project_id: str, dataset_id: str, location: str, model_id: s
       print("\n[제미나이 호출 성공]")
       print(f"응답 요약: {response.text[:120]}...\n")
   except concurrent.futures.TimeoutError:
-    print("\n[경고] Vertex AI 엔드포인트 응답 대기 시간이 10초를 초과하여 테스트 추론을 안전하게 건너뜁니다.")
-    print("  (네트워크 지연 또는 Vertex AI 첫 호출 웜업 지연일 수 있습니다.)")
+    print("\n[경고] Vertex AI 엔드포인트 응답 대기 시간이 10초를 초과하여 테스트 추론을 안전하게 건너뛴다.")
+    print("  (네트워크 지연 또는 Vertex AI 첫 호출 웜업 지연일 수 있다.)")
   except Exception as e:
     print(f"[경고] 제미나이 호출 중 오류 발생: {e}")
 

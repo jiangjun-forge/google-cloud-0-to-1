@@ -64,7 +64,7 @@ def interactive_select(prompt_msg: str, candidates: List[str], default_idx: int 
         marker = " (기본값)" if (idx - 1) == default_idx else ""
         print(f"  [{idx}] {val}{marker}")
     try:
-        choice = input(f"번호를 선택하시오 [Enter 입력 시 {default_idx + 1}번 자동 선택]: ").strip()
+        choice = input(f"선택할 번호를 입력한다 [Enter 입력 시 {default_idx + 1}번 자동 선택]: ").strip()
         if not choice:
             return candidates[default_idx]
         selected = int(choice) - 1
@@ -375,10 +375,10 @@ LEFT JOIN `{project_id}.{dataset_id}.pos_anomaly_alerts` a
             job.result()
             print(f"     [성공] {title} 반영 완료.")
 
-        print("\n[완료] 45분 워크숍용 BigQuery 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 1개가 정상 구축되었다!")
+        print("\n[완료] 45분 워크숍용 BigQuery 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 1개가 정상 구축되었다.")
     except Exception as exc:
         print(f"\n[경고] BigQuery 스몰셋 구축 중 오류가 발생하였다: {exc}")
-        print("       자격 증명(gcloud auth application-default login) 또는 IAM 권한을 확인하시오.")
+        print("       자격 증명(gcloud auth application-default login) 또는 IAM 권한을 확인한다.")
 
 
 # ==============================================================================
@@ -407,7 +407,7 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
     print("-" * 88)
     print(sys_inst.strip())
     print("-" * 88)
-    print("  5) [Verified queries (검증된 쿼리)] 영역에서 [Add query]를 클릭하여 아래 대표 질문-SQL 3쌍을 추가 후 상단 [Save] 클릭:")
+    print("  5) [Verified queries (검증된 쿼리)] 영역에서 [Add query]를 클릭하여 아래 대표 질문-SQL 3쌍을 추가 후 상단 [Save]를 클릭한다:")
     for idx, p in enumerate(GOLDEN_PROMPTS, start=1):
         sql_clean = p["expected_sql"].format(project_id=project_id, dataset_id=dataset_id)
         print(f"\n     [Verified Query #{idx}]")
@@ -437,7 +437,7 @@ def register_agent_to_ge_app(cfg: Dict[str, Any]) -> None:
     print("  1) Google Cloud 콘솔 > [AI Applications (또는 Gemini Enterprise)] 메뉴로 이동")
     print(f"  2) 대상 앱 [{ge_app_id}] 클릭 > 좌측 메뉴에서 [Agents (에이전트)] 탭 클릭")
     print(f"  3) 목록에 게시된 [{agent_name}]의 상태 토글이 [Enabled (활성)]로 켜져 있는지 확인")
-    print(f"  4) 좌측 메뉴 [Preview (미리보기)] 또는 웹 앱 URL로 접속하여 `@{agent_name}` 호출 테스트!")
+    print(f"  4) 좌측 메뉴 [Preview (미리보기)] 또는 웹 앱 URL로 접속하여 `@{agent_name}` 호출 테스트를 수행한다.")
     print("=" * 88)
 
 

@@ -27,7 +27,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 1. 문제 증상 체크리스트
 - 금융감독원 '혁신 금융 서비스 지정' 또는 국내 개인 정보 보호법 준수를 위해 생성형 AI 데이터 처리를 서울 리전(`asia-northeast3`) 내에서만 완결해야 한다.
 - Model Armor 콘솔에서 프롬프트 인젝션(Prompt Injection) 및 악성 URL 차단 필터를 활성화했으나, 서울 리전 로컬 엔진 부재로 인해 실제 검사가 바이패스되거나 해외 리전으로 데이터가 유출될 위험이 존재한다.
-- Model Armor는 서울 리전에서 SDP(Sensitive Data Protection)만 정식 지원하므로, 인젝션 방어 및 안전성 필터는 별도의 로컬 가드레일 계층으로 분리해야 함을 사전에 인지하지 못했다.
+- 서울 리전에서 Model Armor가 Sensitive Data Protection(SDP)만 정식 지원하므로, 인젝션 방어 및 안전성 필터 동작을 위해 별도의 로컬 가드레일 계층을 수립하여 보완해야 하는 경우다.
 - SDP 템플릿 설정 시 주민등록번호(`KOREA_RRN`), 여권번호(`KOREA_PASSPORT`), 운전면허번호, 외국인등록번호, 사업자등록번호 등 한국 전용 민감 정보(Korea-specific InfoTypes)가 누락되어 비식별화 처리가 누락된다.
 
 ---

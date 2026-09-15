@@ -26,7 +26,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 이 가이드가 필요한 상황
 
-- 사내 엔터프라이즈 제미나이 앱이나 Vertex AI 기반 서비스가 일반 컨슈머 웹앱(`gemini.google.com`) 대비 수백 ms 이상 느리다는 성능 불만이 제기되는 경우
+- 사내 엔터프라이즈 제미나이 앱이나 Vertex AI 기반 서비스가 일반 컨슈머 웹앱(`gemini.google.com`) 대비 지연 시간이 발생하는 원인을 정밀 분석하고 개선하고자 하는 경우
 - 지연 시간의 원인이 모델 자체의 추론 속도 문제인지, 보안 가드레일(Model Armor)의 동기 검사 오버헤드인지 객관적인 데이터로 입증해야 하는 경우
 - 구글 검색 그라운딩(Search Grounding) 또는 사내 지식 검색(RAG) 도입으로 인해 추가되는 지연 시간을 구간별(Hop-by-hop)로 정량화해야 하는 경우
 - 첫 번째 토큰 도달 시간(TTFT: Time To First Token)과 출력 스트리밍 전송 속도(TPS)를 분리 측정하여 UI/UX 렌더링 병목을 진단해야 하는 경우

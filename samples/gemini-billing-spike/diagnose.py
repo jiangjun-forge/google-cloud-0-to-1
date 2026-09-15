@@ -19,10 +19,10 @@ import urllib.parse
 import urllib.request
 
 
-def get_gcp_project_id(cli_project: str | None = None, is_dry_run: bool = False, fallback_demo: str = "demo-project") -> str | None:
-  """우선순위에 따라 활성 GCP 프로젝트 ID를 결정합니다."""
-  if cli_project:
-    return cli_project
+def get_target_project(args_project: str | None) -> str:
+  """우선순위에 따라 활성 GCP 프로젝트 ID를 결정한다."""
+  if args_project:
+    return args_project
   for env_var in ("GOOGLE_CLOUD_PROJECT", "PROJECT_ID", "CLOUDSDK_CORE_PROJECT"):
     val = os.getenv(env_var)
     if val:
@@ -52,17 +52,17 @@ def get_gcp_project_id(cli_project: str | None = None, is_dry_run: bool = False,
     )
     projects = [p.strip() for p in res.stdout.splitlines() if p.strip()]
     if projects:
-      print("\n[?] 대상 GCP 프로젝트가 지정되지 않았습니다. 현재 접근 가능한 프로젝트 목록:")
+      print("\n[?] 대상 GCP 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
       for idx, p in enumerate(projects, 1):
         print(f"  [{idx}] {p}")
       print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
-      choice = input(f"선택할 번호를 입력하세요 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
+      choice = input(f"선택할 번호 입력 [1-{len(projects) + 1}] (Enter 시 1번): ").strip()
       if not choice or choice == "1":
         return projects[0]
       if choice.isdigit() and 1 <= int(choice) <= len(projects):
         return projects[int(choice) - 1]
       if choice == str(len(projects) + 1):
-        custom = input("프로젝트 ID를 직접 입력하세요: ").strip()
+        custom = input("프로젝트 ID 직접 입력: ").strip()
         if custom:
           return custom
   except Exception:
@@ -72,7 +72,7 @@ def get_gcp_project_id(cli_project: str | None = None, is_dry_run: bool = False,
 
 
 def get_access_token() -> str | None:
-  """Google ADC(Application Default Credentials)를 통해 인증 토큰을 발급받습니다."""
+  """Google ADC(Application Default Credentials)를 통해 인증 토큰을 발급받는다."""
   try:
     import google.auth
     import google.auth.transport.requests
@@ -101,7 +101,7 @@ def get_access_token() -> str | None:
 
 
 def fetch_monitoring_metrics(project_id: str, days: int, access_token: str) -> dict:
-  """Cloud Monitoring REST API를 호출하여 시계열 메트릭을 수집합니다."""
+  """Cloud Monitoring REST API를 호출하여 시계열 메트릭을 수집한다."""
   now = datetime.datetime.now(datetime.timezone.utc)
   start_time = (now - datetime.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
   end_time = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -113,31 +113,30 @@ def fetch_monitoring_metrics(project_id: str, days: int, access_token: str) -> d
   )
 
   url = f"https://monitoring.googleapis.com/v3/projects/{project_id}/timeSeries"
-  params = {
+  params = urllib.parse.urlencode({
       "filter": metric_filter,
       "interval.startTime": start_time,
       "interval.endTime": end_time,
-  }
-  full_url = f"{url}?{urllib.parse.urlencode(params)}"
+  })
 
   req = urllib.request.Request(
-      full_url,
+      f"{url}?{params}",
       headers={"Authorization": f"Bearer {access_token}"},
   )
+
   try:
-    with urllib.request.urlopen(req) as resp:
-      return json.loads(resp.read().decode("utf-8"))
+    with urllib.request.urlopen(req, timeout=15) as response:
+      return json.loads(response.read().decode("utf-8"))
   except urllib.error.HTTPError as e:
-    err_body = e.read().decode("utf-8", errors="replace")
-    print(f"[오류] Cloud Monitoring API 호출 실패 (HTTP {e.code}): {err_body}", file=sys.stderr)
+    print(f"[오류] Cloud Monitoring API 요청 실패 (HTTP {e.code}): {e.read().decode('utf-8')}", file=sys.stderr)
     sys.exit(1)
-  except Exception as e:
+  except urllib.error.URLError as e:
     print(f"[오류] 데이터 요청 중 네트워크 예외 발생: {e}", file=sys.stderr)
     sys.exit(1)
 
 
 def parse_and_report(project_id: str, days: int, data: dict):
-  """수집된 메트릭 데이터를 자격 증명, 서비스, 메서드별로 집계하고 가이드를 출력합니다."""
+  """수집된 메트릭 데이터를 자격 증명, 서비스, 메서드별로 집계하고 가이드를 출력한다."""
   time_series = data.get("timeSeries", [])
   print("=" * 72)
   print("[진단 결과] 제미나이(Gemini) 사용량 및 비용 급증 원인 분석 리포트")
@@ -228,7 +227,7 @@ def parse_and_report(project_id: str, days: int, data: dict):
 
 
 def get_mock_metrics() -> dict:
-  """단위 테스트 및 데모 체험을 위한 가상 메트릭 데이터를 반환합니다."""
+  """단위 테스트 및 데모 체험을 위한 가상 메트릭 데이터를 반환한다."""
   return {
       "timeSeries": [
           {
