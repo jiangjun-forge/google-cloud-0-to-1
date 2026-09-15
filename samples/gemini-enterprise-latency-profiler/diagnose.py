@@ -450,21 +450,21 @@ def print_waterfall(profile: Dict[str, Any]) -> None:
     perceived_ratio = ge_ms / api_ttft if api_ttft > 0 else 1.0
     e2e_ratio = ge_ms / api_total if api_total > 0 else 1.0
 
-    print("[2] 엔드유저 체감 지연(TTFT) 및 완결 E2E 맞비교 (고객이 수 배 느리다고 느끼는 핵심 원인):")
+    print("[2] 엔드유저 초기 응답 지연(TTFT) 및 완결 E2E 소요 시간 비교 분석:")
     print("=" * 92)
-    print(f"  * Vertex AI Gemini API 첫 글자 노출 (TTFT)  : {api_ttft:>8.1f} ms (즉시 스트리밍 반응)")
-    print(f"  * Vertex AI Gemini API 전체 응답 완료 시간   : {api_total:>8.1f} ms")
-    print(f"  * Gemini Enterprise App 완결 E2E 소요 시간   : {ge_ms:>8.1f} ms (보안 가드레일 + RAG 요약)")
+    print(f"  * Vertex AI Gemini API 첫 토큰 수신 (TTFT) : {api_ttft:>8.1f} ms (스트리밍 즉시 수신)")
+    print(f"  * Vertex AI Gemini API 전체 응답 완료 시간  : {api_total:>8.1f} ms")
+    print(f"  * Gemini Enterprise App 완결 E2E 소요 시간  : {ge_ms:>8.1f} ms (보안 가드레일 + 사내 RAG)")
     print("-" * 92)
-    print(f"  * 1) 첫 글자 체감 지연 격차 : GE App이 약 {perceived_ratio:.1f}배 더 오랜 대기 시간 발생!")
-    print(f"       (이유: Model Armor 사전 검사와 사내 인덱스 탐색이 끝날 때까지 화면이 멈춰있기 때문)")
-    print(f"  * 2) 전체 E2E 완료 시간 격차 : GE App이 약 {e2e_ratio:.1f}배 소요 (+{ge_ms - api_total:.1f} ms)")
+    print(f"  * 1) 첫 토큰 수신 시점 차이 : GE App 파이프라인에서 약 {perceived_ratio:.1f}배 추가 시간 소요")
+    print(f"       (선행 조건: Model Armor 인스펙션 및 사내 인덱스 검색 완료 후 토큰 생성 착수)")
+    print(f"  * 2) 전체 E2E 완료 시간 차이 : GE App 파이프라인에서 약 {e2e_ratio:.1f}배 소요 (+{ge_ms - api_total:.1f} ms)")
     if comp.get("api_sample"):
       print(f"  * Vertex AI API 생성 샘플: \"{comp['api_sample'][:70]}...\"")
     print("=" * 92)
     print()
 
-  print("신뢰 스택 세부 진단 및 고객 안내 권고안:")
+  print("신뢰 스택 세부 진단 및 권고안:")
   print("=" * 92)
   for h in hops:
     ratio = (h["latency_ms"] / total_latency) * 100 if total_latency > 0 else 0
@@ -474,17 +474,17 @@ def print_waterfall(profile: Dict[str, Any]) -> None:
     print()
 
   print("=" * 92)
-  print("종합 요약 및 고객 설득 가이드:")
-  print("1. [체감 지연의 착시 (TTFT vs E2E)]:")
-  print("   - 일반 API는 사용자가 질문하자마자 0.5~1초 만에 첫 글자가 타이핑되므로 사용자가 '즉시 응답한다'고 느낀다.")
-  print("   - 반면 GE App은 Model Armor(약 0.7초)와 사내 데이터스토어 인덱스 검색(약 1.5~2초)이 모두 완료된 후에야")
-  print("     화면에 첫 글자가 노출되므로, 엔드유저는 3~4초 동안 로딩 스피너만 보게 되어 체감상 '수 배 느리다'고 인식한다.")
-  print("2. [사내 문서 RAG 및 사후 보안 스캔의 개입]:")
-  print("   - 단순 인덱스 검색만 하는 것이 아니라, 수집된 사내 문서를 컨텍스트에 주입해 완결된 답변을 작성하고")
-  print("     답변 내 사내 기밀 유출 여부(Model Armor Egress)까지 동기 검사하므로 실제 총 소요 시간은 수 초에 달한다.")
+  print("종합 분석 및 아키텍처 해석:")
+  print("1. [초기 토큰 수신 지연(TTFT) 차이 분석]:")
+  print("   - Vertex AI 순수 API는 사전 필터 없이 스트리밍이 즉시 시작되어 초기 토큰 도달이 빠르다.")
+  print("   - GE App은 Model Armor 사전 검증(약 0.7초)과 사내 데이터스토어 인덱스 검색(약 1.5~2초)이")
+  print("     동기식으로 선행 완료된 이후에 생성을 개시하므로 초기 토큰 수신까지 대기 시간이 발생한다.")
+  print("2. [사내 RAG 및 사후 보안 검증 파이프라인]:")
+  print("   - 검색된 문서를 프롬프트 문맥에 주입하여 답변을 요약하고, 생성된 답변에 대한 사후 민감정보")
+  print("     검사(Model Armor Egress)가 추가로 실행되므로 전체 파이프라인 소요 시간이 늘어난다.")
   print("3. [결론]:")
-  print("   - 고객이 느끼는 레이턴시 격차는 정상적인 현상이며, 사내 지식 환각 방지와 기업 데이터 보안을 위한")
-  print("     다계층 엔터프라이즈 신뢰 스택(Trust Stack)의 불가피한 트레이드오프임을 명쾌하게 설득할 수 있다.")
+  print("   - 관측된 지연 시간의 차이는 모델 자체의 추론 지연이 아니라 사내 지식 기반 환각 방지(Grounding)와")
+  print("     엔터프라이즈 보안 거버넌스(Model Armor) 계층의 동기 실행에 따른 구조적 파이프라인 차이다.")
   print("=" * 92)
 
 
