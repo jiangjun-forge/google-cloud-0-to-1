@@ -44,7 +44,7 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── gemini-enterprise-domain-in-use-resolver/# 도메인 선점 충돌 진단 및 Cloud Identity 배포
 │   ├── gemini-enterprise-firewall-fqdn-checker/# 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
 │   ├── gemini-enterprise-overage-guard/        # 일일 풀링 쿼터 초과 쓰로틀링 방어 및 Spend Cap 과금 가드
-│   ├── gemini-enterprise-trust-stack-latency-profiler/# 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
+│   ├── gemini-enterprise-latency-profiler/            # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
 │   ├── gemini-enterprise-usage-by-account/     # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
 │   ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
 │   ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
