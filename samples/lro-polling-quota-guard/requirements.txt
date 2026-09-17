@@ -1,5 +1,7 @@
 google-api-core>=2.15.0
 google-auth>=2.25.0
+google-cloud-documentai>=2.24.0
 google-cloud-monitoring>=2.16.0
 google-cloud-speech>=2.24.0
+google-cloud-videointelligence>=2.13.0
 python-dotenv>=1.0.0

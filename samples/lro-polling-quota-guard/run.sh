@@ -2,7 +2,7 @@
 # Copyright 2026 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 #
-# stt-lro-quota-guard 실행 래퍼 스크립트
+# lro-polling-quota-guard 실행 래퍼 스크립트
 
 set -euo pipefail
 

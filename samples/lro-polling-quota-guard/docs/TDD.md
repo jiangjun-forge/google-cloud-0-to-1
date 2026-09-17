@@ -1,7 +1,7 @@
-# 기술 상세 설계서 (TDD): stt-lro-quota-guard
+# 기술 상세 설계서 (TDD): lro-polling-quota-guard
 
 ## 1. 아키텍처 개요 및 설계 원칙
-본 시스템은 Speech-to-Text V2 LRO 비동기 작업 처리 시 클라이언트 SDK의 내부 폴링 주기가 유발하는 쿼터 초과 현상을 분석하는 단일 파이썬 진단 도구(`diagnose.py`)와 배시 래퍼(`run.sh`)로 구성된다.
+본 시스템은 Google Cloud LRO 비동기 작업 처리 시 클라이언트 SDK(`google-api-core`)의 내부 폴링 주기가 유발하는 쿼터 초과 현상을 분석하는 단일 파이썬 진단 도구(`diagnose.py`)와 배시 래퍼(`run.sh`)로 구성된다.
 
 ---
 
@@ -9,10 +9,10 @@
 
 ### FR-01: 동시성 기반 LRO 폴링 트래픽 모델링
 - 동시 작업 수 $N$에 대해 기본 SDK 폴링 호출량 $R_{default} = N \times 17 \text{ RPM}$ 및 최적화 폴링 호출량 $R_{opt} = N \times 2.5 \text{ RPM}$을 계산한다.
-- 리전 기본 할당량 $Q_{limit} = 150 \text{ RPM}$ 대비 소진율을 산출하여 100% 이상 시 `CRITICAL_RISK`, 70% 이상 시 `WARNING_RISK`, 미만 시 `SAFE`로 판정한다.
+- 서비스별 할당량 $Q_{limit}$ 대비 소진율을 산출하여 100% 이상 시 `CRITICAL_RISK`, 70% 이상 시 `WARNING_RISK`, 미만 시 `SAFE`로 판정한다.
 
 ### FR-02: 진단 리포트 및 RCA 출력
-- `speech.googleapis.com/batch_recognize_requests`와 `speech.googleapis.com/operation_requests`를 구분한 매트릭스 표를 출력한다.
+- 주 작업 요청 쿼터 토큰과 `operation_requests` 쿼터 토큰을 구분한 매트릭스 표를 출력한다.
 - 429 오류의 근본 원인을 설명하는 RCA 텍스트를 구성한다.
 
 ### FR-03: SDK 커스텀 Polling 코드 스니펫 자동 생성

@@ -54,11 +54,11 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── kms-key-rotation-outage-guard/          # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
 │   ├── korea-fsi-regulatory-perimeter-guard/   # 혁신 금융 서비스 논리적 망 분리, 5년 Bucket Lock 및 AI 규제 진단
 │   ├── korea-nct-gen-ai-compliance-checker/    # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
+│   ├── lro-polling-quota-guard/                # LRO 비동기 작업 폴링 쿼터 고갈 및 429 에러 진단
 │   ├── model-armor-regional-compliance-guard/  # 서울 리전 Model Armor 기능 제약 진단 및 하이브리드 가드레일 처방
 │   ├── org-policy-resolver/                    # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
 │   ├── service-account-leak-investigator/      # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
 │   ├── storage-transfer-secure-uploader/       # 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증
-│   ├── stt-lro-quota-guard/                    # Speech-to-Text V2 LRO 폴링 쿼터 고갈 및 429 에러 진단
 │   ├── swg-tenant-access-guard/                # 사내 관문 SWG 헤더 주입 및 Context-Aware Access 인가 진단
 │   └── vertex-search-grounding-validator/      # RAG 데이터 저장소 색인 누락 및 그라운딩 정합성 진단
 ├── notebooks/                                  # 레거시 실습 노트북 (2026-09-30 까지만 유지)
