@@ -1,0 +1,1 @@
+# 이 도구는 파이썬 3 표준 라이브러리(argparse, json, os, pathlib, re, sys)만 사용하므로 외부 패키지 설치가 불필요하다.

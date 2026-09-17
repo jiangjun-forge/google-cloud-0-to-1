@@ -1,0 +1,3 @@
+google-api-python-client>=2.140.0
+google-auth>=2.34.0
+google-cloud-logging>=3.11.0
