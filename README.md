@@ -58,6 +58,7 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── org-policy-resolver/                    # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
 │   ├── service-account-leak-investigator/      # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
 │   ├── storage-transfer-secure-uploader/       # 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증
+│   ├── stt-lro-quota-guard/                    # Speech-to-Text V2 LRO 폴링 쿼터 고갈 및 429 에러 진단
 │   ├── swg-tenant-access-guard/                # 사내 관문 SWG 헤더 주입 및 Context-Aware Access 인가 진단
 │   └── vertex-search-grounding-validator/      # RAG 데이터 저장소 색인 누락 및 그라운딩 정합성 진단
 ├── notebooks/                                  # 레거시 실습 노트북 (2026-09-30 까지만 유지)
