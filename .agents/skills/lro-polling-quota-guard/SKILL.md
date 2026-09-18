@@ -37,13 +37,14 @@ flowchart TD
 3. 실행에 필요한 최소 IAM 권한(`roles/monitoring.viewer`, `roles/serviceusage.serviceUsageViewer`) 충족 여부를 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
-실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:
+실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력하고 `report.md`를 자동 생성한다:
 ```bash
 cd samples/lro-polling-quota-guard
-./run.sh --dry-run
-./run.sh --service document-ai --dry-run
+python diagnose.py --dry-run
+python diagnose.py --service document-ai --dry-run
 ```
 - 화면에 출력된 진단 결과와 계산 공식, 정상/주의/위험 판단 기준을 사용자에게 간결하게 브리핑한다.
+- 자동 생성된 `report.md` 파일 구조를 안내한다.
 
 ### Step 1.3 장애 해결 및 자가 치유 시연 (Self-healing Showcase)
 실제 실행 중 발생할 수 있는 주요 예외 상황과 해결 방법을 실시간으로 중계한다:
@@ -64,15 +65,15 @@ cat requirements.txt
 
 ### Step 2.2 진단 도구 실행
 ```bash
-./run.sh
+python diagnose.py
 ```
 - 특정 서비스나 프로젝트, 동시 배치 작업 수를 지정하여 검사할 경우:
   ```bash
-  ./run.sh -s document-ai -p <대상_프로젝트_ID> -c 20
+  python diagnose.py -s document-ai -p <대상_프로젝트_ID> -c 20
   ```
 
 ### Step 2.3 진단 리포트 확인 및 조치 가이드 적용
-- 터미널에 출력된 진단 표(`[정상]`, `[주의]`, `[위험]`)를 확인한다.
+- 터미널에 출력된 진단 표(`[정상]`, `[주의]`, `[위험]`)와 갱신된 `report.md`를 확인한다.
 - `[위험]` 항목이 발생한 경우, 리포트 하단에 제시된 SDK 커스텀 Polling 코드 스니펫 및 Google Cloud 콘솔 Quotas 상향 링크를 통해 문제를 해결한다.
 
 ---

@@ -59,24 +59,24 @@ flowchart TD
 
 ## 5. 1분 퀵스타트
 
-### 가상 모의 실행 (Dry-run)
-실제 GCP API 호출 없이 동시 작업 수에 따른 서비스별 LRO 폴링 쿼터 고갈 위험도를 시뮬레이션한다:
+### 가상 모의 실행 (Dry-run) - 예습
+실제 GCP API 호출 없이 동시 작업 수에 따른 서비스별 LRO 폴링 쿼터 고갈 위험도를 시뮬레이션한다. 실행 시 터미널 화면 출력과 함께 `report.md` 파일이 자동 생성된다:
 ```bash
 # 기본 서비스(Speech-to-Text) 모의 진단
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # Document AI 서비스 모의 진단
-./run.sh --service document-ai --dry-run
+python diagnose.py --service document-ai --dry-run
 ```
 
-### 사내 실측 진단 실행
-현재 활성화된 프로젝트와 예상 동시성(Concurrency)을 입력하여 진단한다:
+### 사내 실측 진단 실행 - 실습 및 복습
+현재 활성화된 프로젝트와 예상 동시성(Concurrency)을 입력하여 진단한다. 진단 결과는 `report.md`에 자동으로 덮어써져 사내 공유 및 복습에 즉시 활용할 수 있다:
 ```bash
 # 기본 활성 프로젝트 및 동시성 15건 점검
-./run.sh -c 15
+python diagnose.py -c 15
 
 # 특정 서비스, 프로젝트, 리전 지정
-./run.sh -s document-ai -p <대상_프로젝트_ID> -l us-central1 -c 20
+python diagnose.py -s document-ai -p <대상_프로젝트_ID> -l us-central1 -c 20
 ```
 
 ---

@@ -1,7 +1,7 @@
 # 기술 상세 설계서 (TDD): lro-polling-quota-guard
 
 ## 1. 아키텍처 개요 및 설계 원칙
-본 시스템은 Google Cloud LRO 비동기 작업 처리 시 클라이언트 SDK(`google-api-core`)의 내부 폴링 주기가 유발하는 쿼터 초과 현상을 분석하는 단일 파이썬 진단 도구(`diagnose.py`)와 배시 래퍼(`run.sh`)로 구성된다.
+본 시스템은 Google Cloud LRO 비동기 작업 처리 시 클라이언트 SDK(`google-api-core`)의 내부 폴링 주기가 유발하는 쿼터 초과 현상을 분석하는 단일 파이썬 진단 도구(`diagnose.py`)로 구성되며, 터미널 출력과 함께 마크다운 리포트(`report.md`)를 자동 생성한다.
 
 ---
 
@@ -18,12 +18,15 @@
 ### FR-03: SDK 커스텀 Polling 코드 스니펫 자동 생성
 - `google.api_core.polling.DEFAULT_POLLING.with_delay(initial=15.0, maximum=30.0, multiplier=1.5)` 적용 코드를 화면에 출력한다.
 
+### FR-04: 마크다운 진단 리포트 (report.md) 자동 생성 및 덮어쓰기
+- 진단 실행 시 터미널 출력과 동일한 평가 지표 및 코드 처방전을 담은 `report.md` 파일을 자동 기록/갱신하여 사내 문서 공유 및 복습을 지원한다.
+
 ---
 
 ## 3. 비기능 요구 사항 (Non-Functional Requirements)
 
-### NFR-01: 무버퍼링 실시간 터미널 출력
-- `run.sh`에서 `export PYTHONUNBUFFERED=1`을 선언하고 파이썬 프로세스를 직결 실행하여 지연 없이 결과를 스트리밍한다.
+### NFR-01: 크로스 플랫폼 순수 파이썬 직접 실행
+- 쉘 래퍼 종속성 없이 `python diagnose.py` 단일 명령어로 크로스 플랫폼(Linux, macOS, Windows)에서 직접 실행된다.
 
 ### NFR-02: 가상 실행 모드 (--dry-run)
 - 실제 클라우드 API 호출이나 권한 요구 없이 모의 계산 데이터를 통해 결과를 즉시 검증할 수 있어야 한다.
