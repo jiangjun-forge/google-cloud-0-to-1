@@ -483,10 +483,10 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     print("-" * 88)
 
     print("\n [45분 핸즈온 워크숍 역할 분담 타임라인 (CLI 자동화 vs 콘솔 UI 전용 조작)]")
-    print("  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (./run.sh --setup-demo)")
-    print("  * 05~10분 [CLI -> UI]  : Agents에 붙여넣을 System Instructions 및 Verified Queries 출력 (./run.sh --agent-config)")
+    print("  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)")
+    print("  * 05~10분 [CLI -> UI]  : Agents에 붙여넣을 System Instructions 및 Verified Queries 출력 (python diagnose.py --agent-config)")
     print("  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agents에서 단독(Standalone) Data Agent 생성 및 질의 테스트")
-    print("  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 활성화 (./run.sh --register-ge-app)")
+    print("  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 활성화 (python diagnose.py --register-ge-app)")
     print("-" * 88)
 
     print("\n [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 GE App 공용)]")
