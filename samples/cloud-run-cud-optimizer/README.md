@@ -64,13 +64,13 @@ flowchart TD
 ### (1) 가상 모의 진단 (`--dry-run`)
 실제 Billing 호출 없이 과소 약정 갭 분석 및 절감액 리포트를 사전 검증한다:
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### (2) 운영 환경 진단
 환경 변수 또는 CLI 인자를 지정하여 실행한다:
 ```bash
-./run.sh --billing-account-id 012345-6789AB-CDEF01 --project-id demo-project --lookback-days 90 --safety-margin 0.85
+python diagnose.py --billing-account-id 012345-6789AB-CDEF01 --project-id demo-project --lookback-days 90 --safety-margin 0.85
 ```
 
 ---

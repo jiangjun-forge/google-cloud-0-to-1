@@ -66,7 +66,7 @@ graph TD
 실제 GCP API 호출이나 과금 없이 1,000건의 표본을 바탕으로 전체 차원 일괄 비교를 즉시 시뮬레이션할 수 있다:
 
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 특정 차원들만 지정 비교 (2개 이상)
@@ -75,10 +75,10 @@ graph TD
 
 ```bash
 # 768차원과 256차원 2개만 집중 비교
-./run.sh --dry-run -d 768,256
+python diagnose.py --dry-run -d 768,256
 
 # 768, 512, 128차원 3개 비교
-./run.sh --dry-run -d 768,512,128
+python diagnose.py --dry-run -d 768,512,128
 ```
 
 ### 사내 실데이터 파일 연동 실행
@@ -87,17 +87,17 @@ graph TD
 
 ```bash
 # 사내 실데이터 CSV 파일(query, target 컬럼) 연동 및 1,000건 표본 제한
-./run.sh --dry-run --data-path=/path/to/dataset.csv --sample-count=1000
+python diagnose.py --dry-run --data-path=/path/to/dataset.csv --sample-count=1000
 
 # 사내 실데이터 JSONL 연동 및 특정 차원들 비교
-./run.sh --dry-run --data-path=/path/to/dataset.jsonl -d 768,512,128
+python diagnose.py --dry-run --data-path=/path/to/dataset.jsonl -d 768,512,128
 ```
 
 ### 실제 환경 API 호출 실행
 
 ```bash
 # 활성 GCP 프로젝트 대상 실제 Vertex AI 임베딩 API 호출
-./run.sh --sample-count=1000 -d 768,512,256
+python diagnose.py --sample-count=1000 -d 768,512,256
 ```
 
 ---

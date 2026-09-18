@@ -21,7 +21,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 45분 핸즈온 워크숍 참석자가 BigQuery 스몰셋 데이터셋(`cymbal_gold`) 구축부터 BigQuery Data Agent 단독(Standalone) 생성, 선택적 Gemini Enterprise App 연동 및 골든 프롬프트 3선 검증까지 수행할 수 있도록 지원하는 **경량 워크숍 프로비저닝 및 연동 가이드 엔진**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 컨트롤러(`diagnose.py`)와 환경 변수 및 가상 환경을 자동 감지하는 배시 래퍼(`run.sh`) 결합.
+1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 컨트롤러(`diagnose.py`)와 환경 변수 및 가상 환경을 자동 감지하는 배시 래퍼(`diagnose.py`) 결합.
 2. **계층형 캐스케이드 설정 탐색(Cascade Fallback)**: CLI 인자 > `.env` > `gcloud config` > 대화형 번호 선택기(`interactive_select`) > 사내 권장 기본값(`asia-northeast3`) 순으로 무중단 설정 확정.
 3. **독립 완결성(Zero Dependency)**: 외부 모듈이나 다른 샘플에 대한 코드 의존성 없이 100% 자체 완결적으로 동작.
 4. **Standalone 기본 / GE App 선택형 구조**: BigQuery Studio 내 Agents (Agent Catalog) 단독 실습을 기본으로 하고, Gemini Enterprise App 연동(`--register-ge-app`)은 선택적 확장 단계로 구성.
@@ -34,7 +34,7 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
         User["워크숍 참석자 / 데이터 아키텍트"]
-        RunSh["run.sh (환경 감지 및 래퍼)"]
+        RunSh["diagnose.py (환경 감지 및 래퍼)"]
         DiagnosePy["diagnose.py (워크숍 프로비저닝 컨트롤러)"]
     end
 
@@ -80,6 +80,6 @@ flowchart TD
 
 | 요구 사항 ID | 분류 | 세부 설계 및 검증 방법 |
 | :--- | :--- | :--- |
-| **NFR-01** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `./run.sh --dry-run` 명령만으로 45분 타임라인, SQL DDL/DML, 골든 프롬프트 3선을 1초 내에 출력한다. |
+| **NFR-01** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python diagnose.py --dry-run` 명령만으로 45분 타임라인, SQL DDL/DML, 골든 프롬프트 3선을 1초 내에 출력한다. |
 | **NFR-02** | 보안 및 PII 배제 | 모든 소스 코드와 DDL, 샘플 데이터에는 특정 기업 고유 명칭이나 개인 식별 정보를 일절 포함하지 않으며 표준 엔터프라이즈 가명(`cymbal_gold`)만을 사용한다. |
 | **NFR-03** | 코드 독립성 | 타 샘플이나 모듈을 참조하지 않고 100% 자체 완결적으로 실행된다. |

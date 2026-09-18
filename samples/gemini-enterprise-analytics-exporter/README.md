@@ -36,7 +36,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (run.sh)"] --> FetchMetrics["사용자별 채택 지표 추출 (Agentspace User-Level Metrics)"]
+    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchMetrics["사용자별 채택 지표 추출 (Agentspace User-Level Metrics)"]
     FetchMetrics --> ClassifyUsers["활동 등급 분류 (High, Moderate, Low, Dormant)"]
     
     ClassifyUsers --> CheckInactivity{"30일 이상 미사용 여부"}
@@ -66,23 +66,23 @@ flowchart TD
 ### 가상 검증 실행 (--dry-run)
 실제 API 권한 없이 모의 기업 사용자 데이터(부서별 10개 계정)를 바탕으로 유휴 라이선스 탐지, 부서별 채택률, 월간 누수 비용 산출을 즉시 검증한다.
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 진단 및 회수 명단 추출
 30일 이상 미사용 계정을 기본 기준으로 진단한다.
 ```bash
-./run.sh --project="your-project-id"
+python diagnose.py --project="your-project-id"
 ```
 
 미사용 유휴 판정 기준을 60일로 조정할 경우:
 ```bash
-./run.sh --threshold-days=60
+python diagnose.py --threshold-days=60
 ```
 
 타 시스템 연동용 JSON 출력:
 ```bash
-./run.sh --dry-run --json
+python diagnose.py --dry-run --json
 ```
 
 ---

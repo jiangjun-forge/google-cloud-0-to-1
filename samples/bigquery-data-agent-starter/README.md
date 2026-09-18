@@ -38,7 +38,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["실습 시작 (diagnose.py / run.sh)"] --> B["Step 1 [CLI 자동화]: cymbal_gold 4개 테이블 및 실데이터 구축 (--setup-demo)"]
+    A["실습 시작 (diagnose.py / diagnose.py)"] --> B["Step 1 [CLI 자동화]: cymbal_gold 4개 테이블 및 실데이터 구축 (--setup-demo)"]
     B --> C["pos_transactions_gold, gold_inventory_reconciliation_ledger 등 4개 테이블 + 실데이터 적재"]
     C --> D["v_cymbal_retail_semantic 시맨틱 뷰 생성 (순매출, 결품 커버 시간 공식 내장)"]
     D --> E["Step 2 [CLI -> UI 재료 출력]: System Instructions 및 Verified Queries 출력 (--agent-config)"]
@@ -72,10 +72,10 @@ flowchart TD
 
 ```bash
 # 전체 45분 워크숍 가이드 및 골든 프롬프트 3선 시뮬레이션
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 스몰셋 테이블 생성 DDL 및 샘플 데이터 INSERT SQL 사전 확인
-./run.sh --dry-run --setup-demo
+python diagnose.py --dry-run --setup-demo
 ```
 
 ### 4.2 Step 1 (00~05분, CLI 자동화): 스몰셋 데이터셋(`cymbal_gold`) 원클릭 구축
@@ -87,7 +87,7 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/bigquery-data-agent-starter
 
 # 2. cymbal_gold 데이터셋 + 4개 테이블 + 실데이터 + 시맨틱 뷰 원클릭 구축
-./run.sh --setup-demo
+python diagnose.py --setup-demo
 ```
 
 ### 4.3 Step 2 (05~25분, 콘솔 UI 전용): BigQuery Studio > Agents (Agent Catalog) 단독(Standalone) 에이전트 생성
@@ -95,7 +95,7 @@ BigQuery Data Agent 생성 및 테이블/뷰 연결은 `gcloud` CLI 명령어가
 
 ```bash
 # BigQuery Studio > Agents 입력용 System Instructions 및 Verified Queries 출력
-./run.sh --agent-config
+python diagnose.py --agent-config
 ```
 - **콘솔 UI 클릭 순서**:
   1. Google Cloud 콘솔 > BigQuery 좌측 탐색 바에서 **Agents (에이전트 / Agent Catalog)** 메뉴를 클릭한다.
@@ -112,7 +112,7 @@ BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸
 
 ```bash
 # [선택 사항] Gemini Enterprise App 게시 및 활성화 콘솔 UI 절차 출력
-./run.sh --register-ge-app --app-id <대상_GE_APP_ID>
+python diagnose.py --register-ge-app --app-id <대상_GE_APP_ID>
 ```
 - **콘솔 UI 클릭 순서**:
   1. **BigQuery Studio > Agents**에서 방금 저장한 `cymbal-retail-data-agent` 우측 상단의 **[Publish (게시)]** 버튼을 클릭한다.
@@ -145,5 +145,5 @@ BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸
 
 ```bash
 # 생성된 실습 데이터셋(cymbal_gold) 및 하위 테이블/뷰 일괄 삭제
-./run.sh --teardown
+python diagnose.py --teardown
 ```

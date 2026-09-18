@@ -36,7 +36,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    Start["프로브 실행 (run.sh)"] --> LoadProfiles["APAC 인접 대안 리전 프로필 로드 (도쿄, 오사카, 대만, 싱가포르)"]
+    Start["프로브 실행 (diagnose.py)"] --> LoadProfiles["APAC 인접 대안 리전 프로필 로드 (도쿄, 오사카, 대만, 싱가포르)"]
     LoadProfiles --> ParallelProbe["리전별 엔드포인트 대상 TCP 3-Way Handshake RTT 병렬 측정"]
     
     ParallelProbe --> FilterTargetGPU{"타깃 GPU 모델 매칭 여부 (A100/H100/L4/G4)"}
@@ -67,23 +67,23 @@ flowchart TD
 ### 가상 검증 실행 (--dry-run)
 실제 네트워크 호출 없이 서울 기준 사전 검증된 실측 벤치마크 데이터를 바탕으로 순위 추천 로직을 즉시 확인한다.
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 특정 GPU 모델 기준 실시간 레이턴시 프로브
 H100 가속기 지원 리전만 필터링하여 서울 발 실시간 네트워크 레이턴시를 측정하고 추천 순위를 도출한다.
 ```bash
-./run.sh --gpu-type="H100"
+python diagnose.py --gpu-type="H100"
 ```
 
 최대 허용 지연 시간을 60ms로 엄격하게 제한할 경우:
 ```bash
-./run.sh --threshold-ms=60.0 --gpu-type="L4"
+python diagnose.py --threshold-ms=60.0 --gpu-type="L4"
 ```
 
 타 배포 파이프라인 연동을 위한 JSON 출력:
 ```bash
-./run.sh --dry-run --json
+python diagnose.py --dry-run --json
 ```
 
 ---

@@ -64,17 +64,17 @@ graph TD
 실제 GCP API 호출이나 권한 없이도 모의 전송 사전 점검을 즉시 시뮬레이션할 수 있다:
 
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 실행
 
 ```bash
 # 기본 환경 변수 기준 실행
-./run.sh
+python diagnose.py
 
 # 특정 버킷, 에이전트 풀 및 대역폭 제한(50MB/s) 지정 실행
-./run.sh --project=my-secure-project --bucket=secure-media-archive --agent-pool=secure-posix-pool --bandwidth-limit=50
+python diagnose.py --project=my-secure-project --bucket=secure-media-archive --agent-pool=secure-posix-pool --bandwidth-limit=50
 ```
 
 ---

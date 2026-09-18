@@ -37,7 +37,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (run.sh)"] --> LoadTargets["필수 Exact FQDN 목록 로드 (코어 API, 인증, 정적 자산, 미디어)"]
+    Start["진단 스크립트 실행 (diagnose.py)"] --> LoadTargets["필수 Exact FQDN 목록 로드 (코어 API, 인증, 정적 자산, 미디어)"]
     LoadTargets --> ConcurrentProbe["병렬 DNS 해석 및 TCP 443 TLS 핸드셰이크 수행"]
     
     ConcurrentProbe --> CheckDNS{"DNS 해석 성공 여부"}
@@ -72,23 +72,23 @@ flowchart TD
 ### 가상 검증 실행 (--dry-run)
 기업 방화벽 차단 시나리오(`discoveryengine.clients6.google.com` 차단 및 DNS 실패)를 시뮬레이션하여 진단 보고서와 처방 출력을 즉시 확인한다.
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 사내망 환경 전수 진단
 현재 실행 중인 네트워크 환경에서 모든 필수 FQDN에 대한 실시간 DNS 및 TCP 443 연결성을 진단한다.
 ```bash
-./run.sh
+python diagnose.py
 ```
 
 특정 카테고리(예: Core API)만 선별 진단할 경우:
 ```bash
-./run.sh --category="Core API"
+python diagnose.py --category="Core API"
 ```
 
 타 보안 관제 시스템 및 자동화 도구와 연동하기 위해 JSON으로 출력할 경우:
 ```bash
-./run.sh --json
+python diagnose.py --json
 ```
 
 ---

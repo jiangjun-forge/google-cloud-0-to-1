@@ -36,7 +36,7 @@ Gemini Enterprise 환경에서 외부 공개 에이전트 마켓플레이스 접
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (run.sh)"] --> FetchGovernance["Gemini Enterprise 앱 및 WIF 풀 설정 조회"]
+    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchGovernance["Gemini Enterprise 앱 및 WIF 풀 설정 조회"]
     FetchGovernance --> CheckMarketplace{"공개 마켓플레이스 활성 여부"}
     
     CheckMarketplace -->|"활성화됨"| CriticalMP["[심각] 서드파티 데이터 유출 위험: 마켓플레이스 차단 처방"]
@@ -69,18 +69,18 @@ flowchart TD
 ### 가상 검증 실행 (--dry-run)
 실제 API 호출 없이 가상 시뮬레이션 데이터를 바탕으로 거버넌스 정책 위반 및 SSO 결함을 즉시 확인한다.
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 진단
 기본 활성 프로젝트의 지정 Gemini Enterprise 앱 설정을 점검한다.
 ```bash
-./run.sh --project="your-project-id" --app-id="default-enterprise-agent-app"
+python diagnose.py --project="your-project-id" --app-id="default-enterprise-agent-app"
 ```
 
 결과를 JSON 포맷으로 수집할 경우:
 ```bash
-./run.sh --dry-run --json
+python diagnose.py --dry-run --json
 ```
 
 ---

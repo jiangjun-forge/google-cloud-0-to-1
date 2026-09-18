@@ -66,17 +66,17 @@ graph TD
 실제 GCP API 호출이나 권한 없이도 모의 침해 시나리오를 즉시 시뮬레이션할 수 있다:
 
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 실행
 
 ```bash
 # 기본 활성 프로젝트 및 기본 서비스 계정 대상 실행
-./run.sh
+python diagnose.py
 
 # 특정 프로젝트 및 특정 유출 의심 계정 지정 실행
-./run.sh --project=my-prod-project --service-accounts="sa1@my-prod-project.iam.gserviceaccount.com,sa2@my-prod-project.iam.gserviceaccount.com" --days=14
+python diagnose.py --project=my-prod-project --service-accounts="sa1@my-prod-project.iam.gserviceaccount.com,sa2@my-prod-project.iam.gserviceaccount.com" --days=14
 ```
 
 ---

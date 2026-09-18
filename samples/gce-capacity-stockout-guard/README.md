@@ -68,17 +68,17 @@ graph TD
 실제 GCP API 호출이나 권한 없이 가상의 N4/N2 용량 고갈 시나리오와 CUD 정합성을 즉시 시뮬레이션할 수 있다:
 
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 특정 리전 및 머신 패밀리 지정 진단
 
 ```bash
 # us-central1 리전의 N4, N2 머신 패밀리 대상 최근 14일간 로그 진단
-./run.sh --region=us-central1 --machine-families=n4,n2 --days=14
+python diagnose.py --region=us-central1 --machine-families=n4,n2 --days=14
 
 # 특정 프로젝트 대상 실행
-./run.sh -p my-production-project -r us-central1 -m n4,c4,n2
+python diagnose.py -p my-production-project -r us-central1 -m n4,c4,n2
 ```
 
 ---

@@ -60,7 +60,7 @@ flowchart TD
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:
 ```bash
 cd samples/bigquery-data-agent-starter
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 - 화면에 출력된 진단 결과와 계산 공식, 정상/주의/위험 판단 기준을 사용자에게 간결하게 브리핑한다.
 
@@ -84,11 +84,11 @@ cat requirements.txt
 
 ### Step 2.2 진단 도구 실행
 ```bash
-./run.sh
+python diagnose.py
 ```
 - 특정 프로젝트나 리소스를 지정하여 검사할 경우:
   ```bash
-  ./run.sh -p <대상_프로젝트_ID>
+  python diagnose.py -p <대상_프로젝트_ID>
   ```
 
 ### Step 2.3 진단 리포트 확인 및 조치 가이드 적용
@@ -109,6 +109,6 @@ cat requirements.txt
 > 실습으로 구축된 데이터셋 및 자원은 사용자가 직접 Google Cloud 콘솔이나 UI에서 결과를 확인하고 계속 테스트해 볼 수 있도록 **절대로 에이전트가 임의로 자동 삭제하지 않는다**.
 > 사용자가 자원 보존을 마치고 명시적으로 정리를 요청할 때에만 아래 명령어를 안내하거나 확인 후 실행한다:
 ```bash
-cd samples/bigquery-data-agent-starter && ./run.sh --teardown
+cd samples/bigquery-data-agent-starter && python diagnose.py --teardown
 ```
 

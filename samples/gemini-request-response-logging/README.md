@@ -78,10 +78,10 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/gemini-request-response-logging
 
 # 2. 사전 가상 체험 또는 데모 모드 (BigQuery 호출 없이 시뮬레이션 및 표준 SQL 확인)
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 3. 실제 프로젝트 대상 로깅 설정 및 테스트 호출 실행
-./run.sh -p your-project-id -d gcp_logs
+python diagnose.py -p your-project-id -d gcp_logs
 ```
 
 ### 방법 2: 로컬 환경 (Local Python)
@@ -91,10 +91,10 @@ cd google-cloud-0-to-1/samples/gemini-request-response-logging
 pip install -r requirements.txt
 
 # 가상 실행
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 
 # 실제 실행
-python3 diagnose.py --project your-project-id --dataset gcp_logs
+python diagnose.py --project your-project-id --dataset gcp_logs
 ```
 
 ---

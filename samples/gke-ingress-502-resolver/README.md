@@ -73,17 +73,17 @@ cp .env.example .env
 ### 단계 2: 모의 데이터 가상 실행 (Dry-Run)
 실제 클러스터나 GCP API 호출 없이 내장된 가상 인프라 데이터로 4단계 원인 역추적 체인을 확인한다:
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 단계 3: 실제 사내 GKE 클러스터 실시간 진단
 ```bash
-./run.sh
+python diagnose.py
 ```
 
 특정 클러스터와 네임스페이스를 명시적으로 점검할 수도 있다:
 ```bash
-./run.sh --cluster gke-prod-asia-northeast3 --location asia-northeast3 --namespace production
+python diagnose.py --cluster gke-prod-asia-northeast3 --location asia-northeast3 --namespace production
 ```
 
 ---

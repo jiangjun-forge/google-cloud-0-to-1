@@ -37,7 +37,7 @@ GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (run.sh)"] --> FetchServices["GKE LoadBalancer 및 Ingress 서비스 매니페스트 조회"]
+    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchServices["GKE LoadBalancer 및 Ingress 서비스 매니페스트 조회"]
     FetchServices --> CheckExtPolicy{"externalTrafficPolicy 검사"}
     
     CheckExtPolicy -->|"Cluster"| CriticalSNAT["[심각] 2-Hop SNAT 위험 판정: Node IP 노출 및 Client IP 유실 경고"]
@@ -74,23 +74,23 @@ flowchart TD
 ### 가상 검증 실행 (--dry-run)
 실제 클러스터 API 호출 없이 시뮬레이션 데이터를 바탕으로 SNAT 및 부하 불균형 위험을 즉시 진단한다.
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 진단
 기본 활성 프로젝트의 지정 클러스터 내 모든 LoadBalancer 서비스를 진단한다.
 ```bash
-./run.sh --project="your-project-id" --cluster="prod-core-cluster" --location="asia-northeast3"
+python diagnose.py --project="your-project-id" --cluster="prod-core-cluster" --location="asia-northeast3"
 ```
 
 특정 네임스페이스만 필터링하여 진단할 경우:
 ```bash
-./run.sh --namespace="ingress-gateway"
+python diagnose.py --namespace="ingress-gateway"
 ```
 
 결과를 JSON 포맷으로 수집하여 CI/CD 파이프라인과 연동할 경우:
 ```bash
-./run.sh --dry-run --json
+python diagnose.py --dry-run --json
 ```
 
 ---

@@ -36,7 +36,7 @@ Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (run.sh)"] --> FetchMetadata["양측 프로젝트 메타데이터 및 서비스 에이전트 식별"]
+    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchMetadata["양측 프로젝트 메타데이터 및 서비스 에이전트 식별"]
     FetchMetadata --> CheckOrg{"동일 조직 여부 검사"}
     
     CheckOrg -->|"서로 다른 조직 (Cross-Org)"| CheckDomainPolicy{"도메인 제한 공유(Domain Restricted Sharing) 정책 검사"}
@@ -72,18 +72,18 @@ flowchart TD
 ### 가상 검증 실행 (--dry-run)
 실제 GCP API 호출 없이 Cross-Org 시뮬레이션 데이터를 바탕으로 정책 충돌을 즉시 확인한다.
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 진단
 두 프로젝트 간 연동 상태를 점검한다.
 ```bash
-./run.sh --ge-project="ge-app-prod" --agent-project="custom-agent-ml-prod" --engine-id="8492049182740192841"
+python diagnose.py --ge-project="ge-app-prod" --agent-project="custom-agent-ml-prod" --engine-id="8492049182740192841"
 ```
 
 결과를 JSON 포맷으로 수집할 경우:
 ```bash
-./run.sh --dry-run --json
+python diagnose.py --dry-run --json
 ```
 
 ---

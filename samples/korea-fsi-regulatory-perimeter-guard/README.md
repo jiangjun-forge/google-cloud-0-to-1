@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (diagnose.py / run.sh)"] --> B["1. 논리적 망 분리 & 웹 검색 격리 검사 (감독규정 제15조)"]
+    A["진단 시작 (diagnose.py / diagnose.py)"] --> B["1. 논리적 망 분리 & 웹 검색 격리 검사 (감독규정 제15조)"]
     B --> C["2. 접근 통제: 서비스 계정 키 발급 차단 검사 (감독규정 제13조)"]
     C --> D["3. 스토리지 5년 불변 보존 & CMEK 검사 (법 제22조, 감독규정 제14조)"]
     D --> E["4. Vertex AI 데이터 접근 감사 로그 검사 (법 제22조, 감독규정 제63조)"]
@@ -84,10 +84,10 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/korea-fsi-regulatory-perimeter-guard
 
 # 모의 가상 데이터 기반 스모크 테스트 (--dry-run)
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 실제 사내 프로젝트 대상 보안 경계 전수 진단
-./run.sh --project=example-fsi-corp --location=asia-northeast3
+python diagnose.py --project=example-fsi-corp --location=asia-northeast3
 ```
 
 ### 옵션 B: 로컬 파이썬 가상 환경에서 실행
@@ -99,7 +99,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 진단 실행
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 ```
 
 ---

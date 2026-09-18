@@ -21,7 +21,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부·한국산업기술보호협회 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 명시된 **7대 핵심 기술적 통제(Technical Controls)**를 Google Cloud 환경에서 자동 감사하고 복구 명령어를 처방하는 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **투트랙(Two-track) 실행 모델**: 독립 실행형 파이썬 스크립트(`diagnose.py`)와 Cloud Shell 및 터미널 환경 자동 감지 래퍼(`run.sh`)의 결합을 통해 무설치 단일 명령 실행을 지원한다.
+1. **투트랙(Two-track) 실행 모델**: 독립 실행형 파이썬 스크립트(`diagnose.py`)와 Cloud Shell 및 터미널 환경 자동 감지 래퍼(`diagnose.py`)의 결합을 통해 무설치 단일 명령 실행을 지원한다.
 2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 리소스의 설정 상태만 조회(`describe`, `list`, `get`)하며, 클라우드 인프라 자원을 임의로 생성, 변경, 삭제하지 않아 운영 환경에 영향을 주지 않고 안전하다.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증 정보나 관리자 IAM 권한이 없는 데모 또는 개발 환경에서도 결정론적(Deterministic) 가상 진단 데이터를 제공하여 사전 기능 검증을 보장한다.
 4. **선언적 처방(Prescriptive Remediation)**: 결격 항목(FAIL/WARN) 발생 시 산자부 안내서 기준에 부합하는 정규 `gcloud` 복구 명령어를 즉시 매핑하여 관리자의 즉각적인 조치를 지원한다.
@@ -34,7 +34,7 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
         User["사용자 / 보안 관리자 / 감사관"]
-        RunSh["run.sh (실행 환경 감지 및 가상 환경 구성)"]
+        RunSh["diagnose.py (실행 환경 감지 및 가상 환경 구성)"]
         DiagnosePy["diagnose.py (진단 메인 컨트롤러)"]
     end
 

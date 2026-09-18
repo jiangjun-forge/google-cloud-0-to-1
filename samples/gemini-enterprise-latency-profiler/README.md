@@ -38,7 +38,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["프로파일러 실행 (diagnose.py / run.sh)"] --> B["네트워크 전송 계층 프로파일링 (DNS, TCP, TLS)"]
+    A["프로파일러 실행 (diagnose.py / diagnose.py)"] --> B["네트워크 전송 계층 프로파일링 (DNS, TCP, TLS)"]
     B --> C["Model Armor 가드레일 인스펙션 실측"]
     C --> D["Vertex AI 첫 토큰 도달 시간 (TTFT) 실측"]
     D --> E["출력 스트리밍 완료 시간 및 토큰 속도 계측"]
@@ -73,10 +73,10 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/gemini-enterprise-latency-profiler
 
 # 모의 가상 데이터 기반 스모크 테스트 (--dry-run)
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 실제 사내 프로젝트 대상 엔드포인트 실측
-./run.sh --project=example-corp --location=asia-northeast3 --model=gemini-2.5-flash
+python diagnose.py --project=example-corp --location=asia-northeast3 --model=gemini-2.5-flash
 ```
 
 ### 옵션 B: 로컬 파이썬 가상 환경에서 실행
@@ -88,7 +88,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 프로파일러 실행
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 ```
 
 ---

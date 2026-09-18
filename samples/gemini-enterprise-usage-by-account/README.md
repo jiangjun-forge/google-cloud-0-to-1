@@ -81,10 +81,10 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/gemini-enterprise-usage-by-account
 
 # 2. 사전 가상 체험 또는 데모 모드 (권한 없이 즉시 시뮬레이션)
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 3. 실제 프로젝트 대상 로그 싱크 구성 및 분석
-./run.sh -p your-project-id -d 14
+python diagnose.py -p your-project-id -d 14
 ```
 
 ### 방법 2: 로컬 환경 (Local Python)
@@ -94,10 +94,10 @@ cd google-cloud-0-to-1/samples/gemini-enterprise-usage-by-account
 pip install -r requirements.txt
 
 # 가상 실행
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 
 # 실제 실행
-python3 diagnose.py --project your-project-id --dataset gcp_logs --days 7
+python diagnose.py --project your-project-id --dataset gcp_logs --days 7
 ```
 
 ---

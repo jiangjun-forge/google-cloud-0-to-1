@@ -67,13 +67,13 @@ flowchart TD
 ### (1) 가상 모의 진단 (`--dry-run`)
 실제 트래픽 유발 없이 피크 발송량 대비 429 실패율 및 복원력 처방을 사전 검증한다:
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### (2) 운영 환경 진단
 환경 변수 또는 CLI 인자를 지정하여 실행한다:
 ```bash
-./run.sh --project-id demo-project --peak-msg-per-min 750000 --quota-limit-per-min 600000
+python diagnose.py --project-id demo-project --peak-msg-per-min 750000 --quota-limit-per-min 600000
 ```
 
 ---

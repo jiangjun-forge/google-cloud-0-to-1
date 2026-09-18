@@ -36,7 +36,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (run.sh)"] --> FetchTemplate["Model Armor 템플릿 및 리전 메타데이터 조회"]
+    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchTemplate["Model Armor 템플릿 및 리전 메타데이터 조회"]
     FetchTemplate --> CheckLocation{"템플릿 배포 리전 검사"}
     
     CheckLocation -->|"해외 리전 (us/eu)"| CriticalResidency["[심각] 데이터 국외 이전(Data Boundary) 규제 위반 경고: 서울 리전 이전 안내"]
@@ -73,23 +73,23 @@ flowchart TD
 ### 가상 검증 실행 (--dry-run)
 실제 GCP API 호출 없이 사전 정의된 시뮬레이션 데이터를 바탕으로 리전 제약 결함을 즉시 진단한다.
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 진단
 기본 활성 프로젝트의 서울 리전 Model Armor 템플릿을 점검한다.
 ```bash
-./run.sh --location="asia-northeast3"
+python diagnose.py --location="asia-northeast3"
 ```
 
 특정 템플릿을 지정하여 진단할 경우:
 ```bash
-./run.sh --template="ma-template-seoul-finance"
+python diagnose.py --template="ma-template-seoul-finance"
 ```
 
 결과를 JSON 포맷으로 수집하여 컴플라이언스 감사 시스템과 연동할 경우:
 ```bash
-./run.sh --dry-run --json
+python diagnose.py --dry-run --json
 ```
 
 ---

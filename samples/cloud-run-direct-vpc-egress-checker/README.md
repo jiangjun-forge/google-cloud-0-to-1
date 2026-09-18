@@ -68,20 +68,20 @@ graph TD
 실제 GCP API 호출이나 권한 없이도 모의 아키텍처 환경을 즉시 시뮬레이션할 수 있다:
 
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 실행
 
 ```bash
 # 기본 활성 프로젝트 및 기본 리전(asia-northeast3) 대상 실행
-./run.sh
+python diagnose.py
 
 # 특정 프로젝트 및 특정 리전 지정 실행
-./run.sh --project=my-prod-project --region=asia-northeast3
+python diagnose.py --project=my-prod-project --region=asia-northeast3
 
 # 특정 서비스 단독 점검
-./run.sh --project=my-prod-project --region=asia-northeast3 --service=order-api-prod
+python diagnose.py --project=my-prod-project --region=asia-northeast3 --service=order-api-prod
 ```
 
 ---

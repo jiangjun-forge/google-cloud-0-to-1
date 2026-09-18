@@ -40,7 +40,7 @@ BigQuery Data Agent(Gemini in BigQuery, 자연어 기반 SQL 생성 도구, NL2S
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (diagnose.py / run.sh)"] --> B["1. BigQuery 스키마 및 테이블/컬럼 설명 조회"]
+    A["진단 시작 (diagnose.py / diagnose.py)"] --> B["1. BigQuery 스키마 및 테이블/컬럼 설명 조회"]
     B --> C["2. Dataplex 데이터 프로파일 통계 수집 여부 점검"]
     C --> D["3. Knowledge Catalog 비즈니스 용어집(Glossary) 연동 확인"]
     D --> E["4. Data Agent NL2SQL 준비도 점수 산출 (0~100점)"]
@@ -74,10 +74,10 @@ flowchart TD
 
 ```bash
 # 1. 시뮬레이션 진단 리포트 출력
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 
 # 2. 지능형 메타데이터 보강 계획 및 용어집 YAML 생성 확인
-python3 diagnose.py --dry-run --enrich
+python diagnose.py --dry-run --enrich
 ```
 
 ### 4.2 실제 환경 실행 (Cloud Shell 및 로컬 터미널)
@@ -92,13 +92,13 @@ cp .env.example .env
 # vi .env (PROJECT_ID, DATASET_ID 입력)
 
 # 3. 데이터셋 준비도 진단 실행
-./run.sh --project=$PROJECT_ID --dataset=$DATASET_ID
+python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID
 
 # 4. 시맨틱 메타데이터 지능형 보강 계획 수립 및 템플릿 생성
-./run.sh --project=$PROJECT_ID --dataset=$DATASET_ID --enrich
+python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich
 
 # 5. 생성된 메타데이터를 실제 BigQuery 테이블 스키마에 영구 반영
-./run.sh --project=$PROJECT_ID --dataset=$DATASET_ID --enrich --apply
+python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich --apply
 ```
 
 ---

@@ -37,7 +37,7 @@ Compute Engine GPU 및 특수 머신 타입 Future Reservation(FR) 신청 현황
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (run.sh)"] --> FetchFR["Compute Engine Future Reservation 목록 조회"]
+    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchFR["Compute Engine Future Reservation 목록 조회"]
     FetchFR --> CheckStatus{"예약 상태 검사"}
     
     CheckStatus -->|"상태가 DRAFTING"| CriticalDraft["[심각] 제출 미완료 판정: 콘솔 Submit 또는 CLI submit 명령어 처방"]
@@ -75,23 +75,23 @@ flowchart TD
 ### 가상 검증 실행 (--dry-run)
 실제 GCP 환경 호출 없이 사전 정의된 시뮬레이션 데이터를 바탕으로 결함 탐지 로직을 즉시 검증한다.
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 진단
 기본 활성 프로젝트의 모든 영역 Future Reservation을 조회하고 정책 위반 사항을 진단한다.
 ```bash
-./run.sh
+python diagnose.py
 ```
 
 특정 프로젝트 및 특정 영역을 지정하여 진단할 경우:
 ```bash
-./run.sh --project="your-project-id" --zone="us-south1-a"
+python diagnose.py --project="your-project-id" --zone="us-south1-a"
 ```
 
 결과를 JSON 포맷으로 수집하여 타 시스템과 연동할 경우:
 ```bash
-./run.sh --dry-run --json
+python diagnose.py --dry-run --json
 ```
 
 ---

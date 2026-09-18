@@ -65,13 +65,13 @@ flowchart TD
 ### (1) 가상 모의 진단 (`--dry-run`)
 실제 프록시 호출 없이 권장 헤더 인코딩 및 CAA 정책 체크리스트를 사전 검증한다:
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### (2) 운영 환경 진단
 환경 변수 또는 CLI 인자를 지정하여 실행한다:
 ```bash
-./run.sh --org-id 123456789012 --domain example-corp.com --group-email gcp-authorized-users@example-corp.com
+python diagnose.py --org-id 123456789012 --domain example-corp.com --group-email gcp-authorized-users@example-corp.com
 ```
 
 ---

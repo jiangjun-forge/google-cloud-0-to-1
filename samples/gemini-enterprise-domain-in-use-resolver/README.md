@@ -64,17 +64,17 @@ graph TD
 실제 DNS 조회나 API 권한 없이도 모의 도메인 충돌 및 라이선스 최적화 시나리오를 즉시 시뮬레이션할 수 있다:
 
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 실행
 
 ```bash
 # 기본 환경 변수 도메인 기준 진단
-./run.sh
+python diagnose.py
 
 # 특정 기업 도메인 지정 실행
-./run.sh --domain=example-corp.com
+python diagnose.py --domain=example-corp.com
 ```
 
 ---

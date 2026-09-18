@@ -36,7 +36,7 @@ GCP 클라우드 환경에서 발생하는 403 권한 거부(Permission Denied) 
 
 ```mermaid
 flowchart TD
-    Start(["서비스 구동 중 403 Permission Denied 발생"]) --> RunTool["진단 도구 실행<br/><code>./run.sh -p my-project</code>"]
+    Start(["서비스 구동 중 403 Permission Denied 발생"]) --> RunTool["진단 도구 실행<br/><code>python diagnose.py -p my-project</code>"]
     
     RunTool --> QueryAudit["Cloud Logging 데이터 액세스 감사 로그 조회<br/>(cloudaudit.googleapis.com/data_access)"]
     QueryAudit --> ParseEvents["실패 이벤트 추출<br/>- 실패 계정<br/>- 서비스명<br/>- 메서드명<br/>- 에러 메시지"]
@@ -82,20 +82,20 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/iam-permission-resolver
 
 # 2. 사전 가상 체험 또는 데모 모드 (권한 없이 가상 시뮬레이션)
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 3. 실제 프로젝트 대상 최근 14일 감사 로그 진단 실행
-./run.sh -p your-project-id -d 14
+python diagnose.py -p your-project-id -d 14
 ```
 
 ### 방법 2: 로컬 환경 (Local Python)
 
 ```bash
 # 가상 실행
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 
 # 실제 실행
-python3 diagnose.py --project your-project-id --days 7 --limit 5
+python diagnose.py --project your-project-id --days 7 --limit 5
 ```
 
 ---

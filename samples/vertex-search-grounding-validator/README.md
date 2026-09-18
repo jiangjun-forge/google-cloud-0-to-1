@@ -71,20 +71,20 @@ graph TD
 실제 GCP API 호출이나 권한 없이도 모의 RAG 파이프라인 시나리오를 즉시 시뮬레이션할 수 있다:
 
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 실행
 
 ```bash
 # 기본 프로젝트 및 글로벌 위치 기준 전체 데이터 저장소 점검
-./run.sh
+python diagnose.py
 
 # 특정 프로젝트 및 특정 데이터 저장소 지정 실행
-./run.sh --project=my-prod-project --location=global --datastore=enterprise-knowledge-ds
+python diagnose.py --project=my-prod-project --location=global --datastore=enterprise-knowledge-ds
 
 # 특정 버킷 및 테스트 프로브 질의어 지정 실행
-./run.sh --project=my-prod-project --location=global --datastore=enterprise-knowledge-ds --bucket=my-enterprise-docs --query="2026 보안 가이드라인"
+python diagnose.py --project=my-prod-project --location=global --datastore=enterprise-knowledge-ds --bucket=my-enterprise-docs --query="2026 보안 가이드라인"
 ```
 
 ---

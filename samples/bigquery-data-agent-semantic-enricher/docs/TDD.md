@@ -21,7 +21,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 BigQuery Data Agent 및 NL2SQL 파이프라인의 정확도를 좌우하는 시맨틱 레이어(테이블/컬럼 설명, 데이터 프로파일 통계, 비즈니스 공식)의 충실도를 정량 진단하고, 누락된 메타데이터를 지능적으로 보강(Enrichment)하는 **경량 진단 및 보강 엔진**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 스크립트(`diagnose.py`)와 가상 환경 및 의존성을 자동 관리하는 래퍼 스크립트(`run.sh`)의 결합.
+1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 스크립트(`diagnose.py`)와 가상 환경 및 의존성을 자동 관리하는 래퍼 스크립트(`diagnose.py`)의 결합.
 2. **비파괴적 읽기 전용 진단(Non-Destructive Read-Only Scan)**: 기본 모드에서는 오직 메타데이터 조회(`get_dataset`, `list_tables`, `get_table`)만 수행하여 운영 데이터베이스에 무영향.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증이나 데이터셋 없이도 모의 리테일 데이터셋을 바탕으로 진단 점수 및 보강 전후 차이를 신속하게 시뮬레이션.
 4. **선언적 용어집 템플릿 생성(Declarative Glossary Export)**: Dataplex Knowledge Catalog에 즉시 반영 가능한 표준 비즈니스 용어집 YAML 정의 파일을 자동 도출.
@@ -34,7 +34,7 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
         User["데이터 엔지니어 / AI 아키텍트"]
-        RunSh["run.sh (환경 감지 및 venv 세팅)"]
+        RunSh["diagnose.py (환경 감지 및 venv 세팅)"]
         DiagnosePy["diagnose.py (진단/보강 메인 컨트롤러)"]
     end
 

@@ -36,7 +36,7 @@ GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정�
 
 ```mermaid
 flowchart TD
-    Start(["자원 생성 또는 변경 시 조직 정책 위반 발생"]) --> RunTool["진단 도구 실행<br/><code>./run.sh -p my-project</code>"]
+    Start(["자원 생성 또는 변경 시 조직 정책 위반 발생"]) --> RunTool["진단 도구 실행<br/><code>python diagnose.py -p my-project</code>"]
     
     RunTool --> QueryAudit["Cloud Logging 활동 감사 로그 조회<br/>(cloudaudit.googleapis.com/activity, code 9)"]
     QueryAudit --> ParseEvents["위반 이벤트 및 메시지 파싱"]
@@ -84,20 +84,20 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/org-policy-resolver
 
 # 2. 사전 가상 체험 또는 데모 모드 (권한 없이 가상 시뮬레이션)
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 3. 실제 프로젝트 대상 최근 14일 조직 정책 위반 로그 진단 실행
-./run.sh -p your-project-id -d 14
+python diagnose.py -p your-project-id -d 14
 ```
 
 ### 방법 2: 로컬 환경 (Local Python)
 
 ```bash
 # 가상 실행
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 
 # 실제 실행
-python3 diagnose.py --project your-project-id --days 7 --limit 5
+python diagnose.py --project your-project-id --days 7 --limit 5
 ```
 
 ---

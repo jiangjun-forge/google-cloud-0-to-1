@@ -68,20 +68,20 @@ graph TD
 실제 GCP API 호출이나 권한 없이도 모의 암호화 키 순환 시나리오를 즉시 시뮬레이션할 수 있다:
 
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 실행
 
 ```bash
 # 기본 환경 변수 기반 실행
-./run.sh
+python diagnose.py
 
 # 특정 프로젝트 및 특정 키 링/키 이름 지정 실행
-./run.sh --project=my-prod-project --location=asia-northeast3 --keyring=prod-keyring --key-name=customer-data-key
+python diagnose.py --project=my-prod-project --location=asia-northeast3 --keyring=prod-keyring --key-name=customer-data-key
 
 # 특정 Cloud Storage 버킷 지정 객체 전수 점검
-./run.sh --project=my-prod-project --location=asia-northeast3 --keyring=prod-keyring --key-name=customer-data-key --bucket=my-customer-archive
+python diagnose.py --project=my-prod-project --location=asia-northeast3 --keyring=prod-keyring --key-name=customer-data-key --bucket=my-customer-archive
 ```
 
 ---

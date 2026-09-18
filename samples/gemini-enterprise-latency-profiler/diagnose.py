@@ -161,6 +161,12 @@ def get_mock_profile(project_id: str, location: str, model_id: str) -> Dict[str,
                 "optimization": "사용자 화면에 스트리밍 청크(Chunk)를 즉각 렌더링하여 엔드유저 체감 지연(Perceived Latency) 최소화",
             },
         ],
+        "comparison": {
+            "ge_total_ms": 1754.0,
+            "api_ttft_ms": 380.0,
+            "api_total_ms": 862.3,
+            "api_sample": "사내 보안 가이드라인에 따른 정보 보안 및 접근 통제 규정 요약입니다...",
+        },
     }
 
 
@@ -508,8 +514,9 @@ def main() -> None:
     profile["prompt"] = args.prompt
     profile["comparison"] = {
       "ge_total_ms": 1754.0,
-      "gemini_total_ms": 728.1,
-      "gemini_sample": "사내 보안 가이드라인은 회사의 정보 자산과 시스템을 안전하게 보호하기 위한 지침입니다.",
+      "api_ttft_ms": 380.0,
+      "api_total_ms": 728.1,
+      "api_sample": "사내 보안 가이드라인은 회사의 정보 자산과 시스템을 안전하게 보호하기 위한 지침입니다.",
     }
   else:
     project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_active_project(is_dry_run=args.dry_run)

@@ -44,7 +44,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 graph TD
-    A["진단 시작 (diagnose.py / run.sh)"] --> B["1. 서울 리전 Data Boundary 조직 정책 점검 (법 제11조)"]
+    A["진단 시작 (diagnose.py / diagnose.py)"] --> B["1. 서울 리전 Data Boundary 조직 정책 점검 (법 제11조)"]
     B --> C["2. RAG 벡터 인덱스 사외 적재 차단 IAM Deny 검사 (법 제10조)"]
     C --> D["3. Cloud KMS CMEK 이중 암호화 상태 조회 (안내서 암호화 의무)"]
     D --> E["4. Vertex AI 서울 리전 엔드포인트 격리 검증 (안내서 국내 위치)"]
@@ -84,17 +84,17 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/korea-nct-gen-ai-compliance-checker
 
 # 모의 실행
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 실제 환경 실행
 
 ```bash
 # 기본 활성 프로젝트 대상 서울 리전 기준 진단
-./run.sh
+python diagnose.py
 
 # 특정 프로젝트 및 특정 리전 지정 실행
-./run.sh --project=my-nct-project --region=asia-northeast3
+python diagnose.py --project=my-nct-project --region=asia-northeast3
 ```
 
 ---

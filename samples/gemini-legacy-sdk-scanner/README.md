@@ -36,7 +36,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    Start(["코드베이스 스캔 시작"]) --> RunTool["진단 도구 실행<br/><code>./run.sh -p ./src</code>"]
+    Start(["코드베이스 스캔 시작"]) --> RunTool["진단 도구 실행<br/><code>python diagnose.py -p ./src</code>"]
     
     RunTool --> ScanFiles["파일 정적 탐색<br/>(.py, .sh, .ipynb)"]
     ScanFiles --> MatchPatterns{"구형 SDK 호출 탐색<br/>- google.generativeai<br/>- vertexai.generative_models<br/>- genai.configure"}
@@ -80,20 +80,20 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/gemini-legacy-sdk-scanner
 
 # 2. 사전 가상 체험 또는 데모 모드 (모의 데이터로 결과 리포트 확인)
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 3. 실제 애플리케이션 소스 코드 경로 진단 (예: ../my-app)
-./run.sh -p /path/to/your/project
+python diagnose.py -p /path/to/your/project
 ```
 
 ### 방법 2: 로컬 환경 (Local Python)
 
 ```bash
 # 실행 권한 부여 및 진단 실행
-python3 diagnose.py --path /path/to/your/project
+python diagnose.py --path /path/to/your/project
 
 # 가상 데모 실행
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 ```
 
 ---

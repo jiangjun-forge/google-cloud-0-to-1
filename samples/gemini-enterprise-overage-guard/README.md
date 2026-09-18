@@ -66,13 +66,13 @@ flowchart TD
 ### (1) 가상 모의 진단 (`--dry-run`)
 실제 API 호출 없이 에디션별 오버리지 위험 판정 및 Spend Cap 처방을 사전 검증한다:
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### (2) 운영 환경 진단
 환경 변수 또는 CLI 인자를 지정하여 실행한다:
 ```bash
-./run.sh --project-id demo-project --billing-account-id 012345-6789AB-CDEF01 --spend-cap-usd 1000 --alert-threshold 80
+python diagnose.py --project-id demo-project --billing-account-id 012345-6789AB-CDEF01 --spend-cap-usd 1000 --alert-threshold 80
 ```
 
 ---

@@ -60,7 +60,7 @@ flowchart TD
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:
 ```bash
 cd samples/bigquery-data-agent-semantic-enricher
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 - 화면에 출력된 진단 결과와 계산 공식, 정상/주의/위험 판단 기준을 사용자에게 간결하게 브리핑한다.
 
@@ -84,11 +84,11 @@ cat requirements.txt
 
 ### Step 2.2 진단 도구 실행
 ```bash
-./run.sh
+python diagnose.py
 ```
 - 특정 프로젝트나 리소스를 지정하여 검사할 경우:
   ```bash
-  ./run.sh -p <대상_프로젝트_ID>
+  python diagnose.py -p <대상_프로젝트_ID>
   ```
 
 ### Step 2.3 진단 리포트 확인 및 조치 가이드 적용

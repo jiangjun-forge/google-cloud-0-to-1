@@ -86,20 +86,20 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/gemini-quota-cost-alert
 
 # 2. 사전 가상 체험 또는 데모 모드 (GCP 호출 및 권한 없이 가상 시뮬레이션)
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 3. 실제 프로젝트 점검 및 모의 이벤트 발행 테스트
-./run.sh -p your-project-id
+python diagnose.py -p your-project-id
 ```
 
 ### 방법 2: 로컬 환경 (Local Python)
 
 ```bash
 # 가상 실행
-python3 diagnose.py --dry-run
+python diagnose.py --dry-run
 
 # 실제 실행
-python3 diagnose.py --project your-project-id --topic gemini-cost-alerts
+python diagnose.py --project your-project-id --topic gemini-cost-alerts
 ```
 
 ---

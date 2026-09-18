@@ -13,7 +13,7 @@ All contents, designs, and code examples are subject to change, modification, or
 # 기술 상세 설계서 (TDD): Gemini Enterprise Cross-Org 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-cross-org-agent-resolver`)
 
 ## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 파이썬 표준 CLI(`diagnose.py`)와 원클릭 배시 실행 래퍼(`run.sh`)를 결합한 투트랙(Two-track) 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+본 도구는 파이썬 표준 CLI(`diagnose.py`)와 원클릭 배시 실행 래퍼(`diagnose.py`)를 결합한 투트랙(Two-track) 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
 
 ---
 

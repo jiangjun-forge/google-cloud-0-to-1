@@ -74,17 +74,17 @@ cp .env.example .env
 ### 단계 2: 모의 데이터 가상 실행 (Dry-Run)
 실제 구글 클라우드 리소스 호출 없이 내장된 가상 인프라 데이터로 정상 동작을 확인한다:
 ```bash
-./run.sh --dry-run
+python diagnose.py --dry-run
 ```
 
 ### 단계 3: 실제 사내 인프라 실시간 진단
 ```bash
-./run.sh
+python diagnose.py
 ```
 
 특정 리전이나 라우터를 명시적으로 점검할 수도 있다:
 ```bash
-./run.sh --region asia-northeast3 --router cr-prod-asia-northeast3 --nat nat-gw-prod-main --days 14
+python diagnose.py --region asia-northeast3 --router cr-prod-asia-northeast3 --nat nat-gw-prod-main --days 14
 ```
 
 ---

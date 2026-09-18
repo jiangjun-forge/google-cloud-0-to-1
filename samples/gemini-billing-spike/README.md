@@ -38,7 +38,7 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     Start(["Gemini API 비용 및 호출 급증 발생"]) --> Q1{"데이터 액세스<br/>감사 로그가 켜져 있는가?"}
     
-    Q1 -- "아니오 (대부분의 경우)" --> RunTool["진단 도구 실행 (Cloud Shell 1줄 복붙)<br/><code>./run.sh</code>"]
+    Q1 -- "아니오 (대부분의 경우)" --> RunTool["진단 도구 실행 (Cloud Shell 1줄 복붙)<br/><code>python diagnose.py</code>"]
     Q1 -- "예" --> AuditCheck["Cloud Logging 로그 탐색기 조회"]
     
     RunTool --> FetchMetrics["Cloud Monitoring 플랫폼 지표 조회<br/>(serviceruntime request_count)"]
@@ -93,13 +93,13 @@ git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
 cd google-cloud-0-to-1/samples/gemini-billing-spike
 
 # 2. 진단 실행 (현재 gcloud 기본 활성 프로젝트 자동 감지)
-./run.sh
+python diagnose.py
 
 # 사전 가상 체험 또는 데모 모드 (GCP 호출 및 권한 없이 즉시 테스트):
-./run.sh --dry-run
+python diagnose.py --dry-run
 
 # 특정 프로젝트와 기간(예: 최근 30일)을 지정하려면:
-./run.sh -p your-project-id -d 30
+python diagnose.py -p your-project-id -d 30
 ```
 
 ### 방법 2: 로컬 환경 (Local Python)
