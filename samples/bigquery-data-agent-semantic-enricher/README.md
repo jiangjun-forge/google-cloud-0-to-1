@@ -69,7 +69,15 @@ flowchart TD
 
 ## 4. 퀵스타트
 
-### 4.1 가상 실행 모드 (Dry-run 스모크 테스트)
+### 4.1 실습 환경 준비 (저장소 클론 및 디렉터리 이동)
+Cloud Shell 또는 로컬 터미널에서 저장소를 클론하고 실습 샘플 디렉터리로 이동한다:
+
+```bash
+git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
+cd google-cloud-0-to-1/samples/bigquery-data-agent-semantic-enricher
+```
+
+### 4.2 가상 실행 모드 (Dry-run 스모크 테스트)
 실제 GCP 인증이나 프로젝트 권한이 없는 환경에서도 모의 데이터셋을 통해 신속하게 진단 및 보강 시뮬레이션을 체험할 수 있다:
 
 ```bash
@@ -80,24 +88,20 @@ python diagnose.py --dry-run
 python diagnose.py --dry-run --enrich
 ```
 
-### 4.2 실제 환경 실행 (Cloud Shell 및 로컬 터미널)
+### 4.3 실제 환경 실행 (Cloud Shell 및 로컬 터미널)
 
 ```bash
-# 1. 원본 저장소 클론 및 디렉터리 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/bigquery-data-agent-semantic-enricher
-
-# 2. 환경 변수 파일 복사 및 설정
+# 1. 환경 변수 파일 복사 및 설정
 cp .env.example .env
 # vi .env (PROJECT_ID, DATASET_ID 입력)
 
-# 3. 데이터셋 준비도 진단 실행
+# 2. 데이터셋 준비도 진단 실행
 python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID
 
-# 4. 시맨틱 메타데이터 지능형 보강 계획 수립 및 템플릿 생성
+# 3. 시맨틱 메타데이터 지능형 보강 계획 수립 및 템플릿 생성
 python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich
 
-# 5. 생성된 메타데이터를 실제 BigQuery 테이블 스키마에 영구 반영
+# 4. 생성된 메타데이터를 실제 BigQuery 테이블 스키마에 영구 반영
 python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich --apply
 ```
 

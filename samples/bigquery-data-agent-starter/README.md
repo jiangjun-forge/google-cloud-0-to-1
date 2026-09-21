@@ -67,7 +67,15 @@ flowchart TD
 
 ## 4. 45분 타임어택 핸즈온 실습 단계별 가이드
 
-### 4.1 사전 가상 검증 모드 (Dry-run 스모크 테스트)
+### 4.1 실습 환경 준비 (저장소 클론 및 디렉터리 이동)
+Cloud Shell 또는 로컬 터미널에서 저장소를 클론하고 실습 샘플 디렉터리로 이동한다:
+
+```bash
+git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
+cd google-cloud-0-to-1/samples/bigquery-data-agent-starter
+```
+
+### 4.2 사전 가상 검증 모드 (Dry-run 스모크 테스트)
 실제 GCP API 호출 없이 45분 실습 전체 흐름과 자동 생성될 SQL, UI 붙여넣기용 지침을 1초 만에 미리 확인할 수 있다:
 
 ```bash
@@ -78,19 +86,15 @@ python diagnose.py --dry-run
 python diagnose.py --dry-run --setup-demo
 ```
 
-### 4.2 Step 1 (00~05분, CLI 자동화): 스몰셋 데이터셋(`cymbal_gold`) 원클릭 구축
-Cloud Shell 또는 터미널에서 아래 명령어를 실행하면 BigQuery 데이터셋(`cymbal_gold`), 4개 스몰셋 테이블(`pos_transactions_gold`, `gold_inventory_reconciliation_ledger`, `pos_anomaly_alerts`, `historical_transactional_data`), 실제 샘플 데이터, 시맨틱 뷰(`v_cymbal_retail_semantic`)가 10초 내에 자동으로 구축된다:
+### 4.3 Step 1 (00~05분, CLI 자동화): 스몰셋 데이터셋(`cymbal_gold`) 원클릭 구축
+아래 명령어를 실행하면 BigQuery 데이터셋(`cymbal_gold`), 4개 스몰셋 테이블(`pos_transactions_gold`, `gold_inventory_reconciliation_ledger`, `pos_anomaly_alerts`, `historical_transactional_data`), 실제 샘플 데이터, 시맨틱 뷰(`v_cymbal_retail_semantic`)가 10초 내에 자동으로 구축된다:
 
 ```bash
-# 1. 저장소 클론 및 샘플 디렉터리 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/bigquery-data-agent-starter
-
-# 2. cymbal_gold 데이터셋 + 4개 테이블 + 실데이터 + 시맨틱 뷰 원클릭 구축
+# cymbal_gold 데이터셋 + 4개 테이블 + 실데이터 + 시맨틱 뷰 원클릭 구축
 python diagnose.py --setup-demo
 ```
 
-### 4.3 Step 2 (05~25분, 콘솔 UI 전용): BigQuery Studio > Agents (Agent Catalog) 단독(Standalone) 에이전트 생성
+### 4.4 Step 2 (05~25분, 콘솔 UI 전용): BigQuery Studio > Agents (Agent Catalog) 단독(Standalone) 에이전트 생성
 BigQuery Data Agent 생성 및 테이블/뷰 연결은 `gcloud` CLI 명령어가 지원되지 않으므로 콘솔 UI에서 진행한다. 먼저 아래 명령어를 실행하여 콘솔 UI에 복사하여 붙여넣을 **System Instructions**와 **Verified Queries**를 화면에 출력한다:
 
 ```bash
@@ -107,7 +111,7 @@ python diagnose.py --agent-config
   7. 우측 대화창에서 즉시 단독(Standalone)으로 아래 **골든 프롬프트 3선**을 입력하여 자연어 SQL 생성 및 응답을 검증한다.
   8. 참조 문서: BigQuery Conversational Analytics 가이드 ( https://cloud.google.com/bigquery/docs/conversational-analytics )
 
-### 4.4 Step 3 (선택 사항 / Optional): Gemini Enterprise App에 Data Agent 게시 및 활성화
+### 4.5 Step 3 (선택 사항 / Optional): Gemini Enterprise App에 Data Agent 게시 및 활성화
 BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸 수 있다. 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 명령어로 UI 절차를 확인하고 진행하라:
 
 ```bash
