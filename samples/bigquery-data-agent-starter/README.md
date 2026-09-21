@@ -122,7 +122,6 @@ python diagnose.py --register-ge-app --app-id <대상_GE_APP_ID>
   1. **BigQuery Studio > Agents**에서 방금 저장한 `cymbal-retail-data-agent` 우측 상단의 **[Publish (게시)]** 버튼을 클릭한다.
   2. 게시 대상 채널에서 **[Gemini Enterprise]**를 체크하고 대상 App ID를 선택한 뒤 **[Publish]**를 클릭한다.
   3. Google Cloud 콘솔 > **AI Applications (또는 Gemini Enterprise)** 메뉴로 이동하여 대상 앱의 좌측 **[Agents (에이전트)]** 탭에서 상태 토글이 **[Enabled (활성)]**인지 확인한다.
-  4. 참조 문서: Gemini Enterprise 에이전트 연동 가이드 ( https://cloud.google.com/generative-ai-app-builder/docs/agent-builder )
 
 ---
 
