@@ -441,27 +441,27 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
 
 
 def register_agent_to_ge_app(cfg: Dict[str, Any]) -> None:
-    """[선택 사항] BigQuery Studio Agents에서 생성한 Data Agent를 Gemini Enterprise App에 게시하는 UI 절차를 안내한다."""
+    """[선택 사항] BigQuery Studio Agents에서 생성한 Data Agent를 Gemini Enterprise App에 게시 및 연동하는 UI 절차를 안내한다."""
     ge_app_id = cfg["ge_app_id"]
     agent_name = cfg["data_agent_name"]
 
     print("=" * 88)
-    print(f" [Step 3: 선택 사항 (Optional)] BigQuery Data Agent -> Gemini Enterprise App ({ge_app_id}) 게시")
+    print(f" [Step 3: 선택 사항 (Optional)] BigQuery Data Agent -> Gemini Enterprise App ({ge_app_id}) 게시 및 연동")
     print("=" * 88)
     print(" [안내] BigQuery Studio 내에서 단독(Standalone)으로 에이전트를 사용할 경우 본 단계는 생략 가능하다.")
-    print("       생성한 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 UI 절차를 수행한다.")
+    print("       생성한 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 최신 UI 절차를 수행한다.")
     print("-" * 88)
     print(" [Phase A: BigQuery Studio > Agents에서 Gemini Enterprise로 게시 (Publish)]")
-    print(f"  1) BigQuery Studio > 좌측 [Agents] > 방금 저장한 [{agent_name}] 클릭")
+    print(f"  1) BigQuery Studio > 좌측 메뉴 [Agents (또는 Agent Platform)] > 방금 저장한 [{agent_name}] 상세 페이지 진입")
     print("  2) 에이전트 상세 화면 우측 상단의 [Publish (게시)] 버튼 클릭")
-    print("  3) 게시 대상 채널에서 [Gemini Enterprise] 체크박스 선택")
-    print(f"  4) 드롭다운 메뉴에서 대상 Gemini Enterprise App [{ge_app_id}] 선택 후 [Publish] 버튼 클릭")
+    print("  3) 배포 채널에서 [Gemini Enterprise] 선택 후 [Publish]를 클릭하여 Agent Catalog에 등록 완료")
     print("-" * 88)
-    print(" [Phase B: Gemini Enterprise (AI Applications) 콘솔에서 에이전트 활성화 확인]")
-    print("  1) Google Cloud 콘솔 > [AI Applications (또는 Gemini Enterprise)] 메뉴로 이동")
-    print(f"  2) 대상 앱 [{ge_app_id}] 클릭 > 좌측 메뉴에서 [Agents (에이전트)] 탭 클릭")
-    print(f"  3) 목록에 게시된 [{agent_name}]의 상태 토글이 [Enabled (활성)]로 켜져 있는지 확인")
-    print(f"  4) 좌측 메뉴 [Preview (미리보기)] 또는 웹 앱 URL로 접속하여 `@{agent_name}` 호출 테스트를 수행한다.")
+    print(" [Phase B: Gemini Enterprise 웹 앱 콘솔에서 에이전트 추가(+ Add agent) 및 활성화]")
+    print("  1) Google Cloud 콘솔 탐색 메뉴 > [Gemini Enterprise (또는 Agent Platform > Applications)] 메뉴로 이동")
+    print(f"  2) 대상 웹 앱 [{ge_app_id}] 클릭 > 좌측 메뉴에서 [Agents (에이전트)] 탭 클릭")
+    print(f"  3) 상단 [+ Add agent (에이전트 추가)] 버튼 클릭 > Agent Catalog 목록에서 [{agent_name}] 선택 후 [Add] 클릭")
+    print(f"  4) 등록된 에이전트의 상태 토글이 [Enabled (활성)]로 켜져 있는지 확인")
+    print(f"  5) 좌측 메뉴 [Preview (미리보기)] 또는 웹 앱 URL 대화창에서 `@{agent_name}` 호출 또는 골든 프롬프트 질의 테스트를 수행한다.")
     print("=" * 88)
 
 
@@ -486,7 +486,7 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     print("  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)")
     print("  * 05~10분 [CLI -> UI]  : Agents에 붙여넣을 System Instructions 및 Verified Queries 출력 (python diagnose.py --agent-config)")
     print("  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agents에서 단독(Standalone) Data Agent 생성 및 질의 테스트")
-    print("  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 활성화 (python diagnose.py --register-ge-app)")
+    print("  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 추가 연동 (python diagnose.py --register-ge-app)")
     print("-" * 88)
 
     print("\n [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 GE App 공용)]")

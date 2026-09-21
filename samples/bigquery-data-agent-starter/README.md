@@ -112,16 +112,24 @@ python diagnose.py --agent-config
   8. 참조 문서: BigQuery Conversational Analytics 가이드 ( https://cloud.google.com/bigquery/docs/conversational-analytics )
 
 ### 4.5 Step 3 (선택 사항 / Optional): Gemini Enterprise App에 Data Agent 게시 및 활성화
-BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸 수 있다. 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 명령어로 UI 절차를 확인하고 진행하라:
+BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸 수 있다. 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 명령어로 최신 UI 절차를 확인하고 진행하라:
 
 ```bash
 # [선택 사항] Gemini Enterprise App 게시 및 활성화 콘솔 UI 절차 출력
 python diagnose.py --register-ge-app --app-id <대상_GE_APP_ID>
 ```
-- **콘솔 UI 클릭 순서**:
-  1. **BigQuery Studio > Agents**에서 방금 저장한 `cymbal-retail-data-agent` 우측 상단의 **[Publish (게시)]** 버튼을 클릭한다.
-  2. 게시 대상 채널에서 **[Gemini Enterprise]**를 체크하고 대상 App ID를 선택한 뒤 **[Publish]**를 클릭한다.
-  3. Google Cloud 콘솔 > **AI Applications (또는 Gemini Enterprise)** 메뉴로 이동하여 대상 앱의 좌측 **[Agents (에이전트)]** 탭에서 상태 토글이 **[Enabled (활성)]**인지 확인한다.
+- **콘솔 UI 최신 연동 절차**:
+  1. **BigQuery Studio > Agents (또는 Agent Platform)**:
+     - 좌측 메뉴에서 **Agents**로 이동하여 생성한 `cymbal-retail-data-agent` 상세 페이지로 진입한다.
+     - 우측 상단 **[Publish (게시)]** 버튼을 클릭하고, 배포 채널에서 **[Gemini Enterprise]**를 선택하여 게시(Publish)한다.
+  2. **Gemini Enterprise (구 AI Applications) 콘솔에서 에이전트 등록 및 활성화**:
+     - Google Cloud 콘솔 탐색 메뉴에서 **Gemini Enterprise** (또는 **Agent Platform > Applications**)로 이동하여 대상 웹 앱을 선택한다.
+     - 앱 상세 화면 좌측 메뉴에서 **[Agents (에이전트)]** 탭으로 이동한 뒤, 상단 **[+ Add agent (에이전트 추가)]** 버튼을 클릭한다.
+     - Agent Catalog / Agent Registry 목록에서 방금 게시된 `cymbal-retail-data-agent`를 선택하고 **[Add (추가)]**를 누른다.
+     - 등록된 에이전트의 상태 토글이 **[Enabled (활성)]**인지 확인한다.
+  3. **대화창 호출 검증**:
+     - 좌측 **[Preview (미리보기)]** 또는 발행된 Gemini Enterprise 웹 앱 대화창에서 `cymbal-retail-data-agent`를 멘션하거나 자연어로 골든 프롬프트를 질문하여 정상 연동을 검증한다.
+  4. 참조 문서: BigQuery 데이터 에이전트 생성 및 공유 가이드 ( https://cloud.google.com/bigquery/docs/conversational-analytics )
 
 ---
 
