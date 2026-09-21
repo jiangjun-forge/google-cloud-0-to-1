@@ -441,27 +441,28 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
 
 
 def register_agent_to_ge_app(cfg: Dict[str, Any]) -> None:
-    """[선택 사항] BigQuery Studio Agents에서 생성한 Data Agent를 Gemini Enterprise App에 게시 및 연동하는 UI 절차를 안내한다."""
+    """[선택 사항] BigQuery Studio Agents에서 생성한 Data Agent를 Gemini Enterprise App에 A2A 방식으로 등록 및 연동하는 UI 절차를 안내한다."""
     ge_app_id = cfg["ge_app_id"]
     agent_name = cfg["data_agent_name"]
 
     print("=" * 88)
-    print(f" [Step 3: 선택 사항 (Optional)] BigQuery Data Agent -> Gemini Enterprise App ({ge_app_id}) 게시 및 연동")
+    print(f" [Step 3: 선택 사항 (Optional)] BigQuery Data Agent -> Gemini Enterprise App ({ge_app_id}) A2A 연동")
     print("=" * 88)
     print(" [안내] BigQuery Studio 내에서 단독(Standalone)으로 에이전트를 사용할 경우 본 단계는 생략 가능하다.")
-    print("       생성한 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 최신 UI 절차를 수행한다.")
+    print("       생성한 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 A2A UI 절차를 수행한다.")
     print("-" * 88)
-    print(" [Phase A: BigQuery Studio > Agents에서 Gemini Enterprise로 게시 (Publish)]")
-    print(f"  1) BigQuery Studio > 좌측 메뉴 [Agents (또는 Agent Platform)] > 방금 저장한 [{agent_name}] 상세 페이지 진입")
-    print("  2) 에이전트 상세 화면 우측 상단의 [Publish (게시)] 버튼 클릭")
-    print("  3) 배포 채널에서 [Gemini Enterprise] 선택 후 [Publish]를 클릭하여 Agent Catalog에 등록 완료")
+    print(" [Phase A: BigQuery Studio > Agents에서 Agent Card (A2A JSON) 확인 및 복사]")
+    print(f"  1) BigQuery Studio > 좌측 메뉴 [Agents (에이전트 / Agent Platform)] > [{agent_name}] 상세 페이지 진입")
+    print("  2) 에이전트 상세 화면에서 [Publish (게시)]를 완료한 후 제공되는 [Agent Card (A2A JSON)] 텍스트 복사")
+    print("     (엔드포인트 URL, 지원 도구/스키마, 인증 요구 사항이 담긴 A2A 프로토콜 표준 메타데이터)")
     print("-" * 88)
-    print(" [Phase B: Gemini Enterprise 웹 앱 콘솔에서 에이전트 추가(+ Add agent) 및 활성화]")
-    print("  1) Google Cloud 콘솔 탐색 메뉴 > [Gemini Enterprise (또는 Agent Platform > Applications)] 메뉴로 이동")
-    print(f"  2) 대상 웹 앱 [{ge_app_id}] 클릭 > 좌측 메뉴에서 [Agents (에이전트)] 탭 클릭")
-    print(f"  3) 상단 [+ Add agent (에이전트 추가)] 버튼 클릭 > Agent Catalog 목록에서 [{agent_name}] 선택 후 [Add] 클릭")
-    print(f"  4) 등록된 에이전트의 상태 토글이 [Enabled (활성)]로 켜져 있는지 확인")
-    print(f"  5) 좌측 메뉴 [Preview (미리보기)] 또는 웹 앱 URL 대화창에서 `@{agent_name}` 호출 또는 골든 프롬프트 질의 테스트를 수행한다.")
+    print(" [Phase B: Gemini Enterprise 관리 콘솔에서 'Custom agent via A2A'로 에이전트 등록]")
+    print("  1) Google Cloud 콘솔 탐색 메뉴 > [Gemini Enterprise (또는 Agent Platform > Applications)] 메뉴 이동")
+    print(f"  2) 대상 웹 앱 [{ge_app_id}] 클릭 > 좌측 관리 메뉴에서 [Agents (에이전트)] 탭 클릭")
+    print("  3) 상단 [+ Add agent (에이전트 추가)] 클릭 > 'Choose an agent type' 화면에서 [Custom agent via A2A]의 [Add] 선택")
+    print(f"  4) 복사해 둔 Agent Card JSON을 입력란에 붙여넣고 인증(Authentication) 설정 확인 후 [Register / Save] 클릭")
+    print(f"  5) 등록 완료 후 에이전트 목록에서 [{agent_name}]의 상태 토글이 [Enabled (활성)]로 켜져 있는지 확인")
+    print(f"  6) 좌측 메뉴 [Preview (미리보기)] 또는 웹 앱 URL 대화창에서 `@{agent_name}` 호출 또는 골든 프롬프트 질의 테스트를 수행한다.")
     print("=" * 88)
 
 

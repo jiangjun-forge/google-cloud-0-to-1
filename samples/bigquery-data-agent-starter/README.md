@@ -111,25 +111,26 @@ python diagnose.py --agent-config
   7. 우측 대화창에서 즉시 단독(Standalone)으로 아래 **골든 프롬프트 3선**을 입력하여 자연어 SQL 생성 및 응답을 검증한다.
   8. 참조 문서: BigQuery Conversational Analytics 가이드 ( https://cloud.google.com/bigquery/docs/conversational-analytics )
 
-### 4.5 Step 3 (선택 사항 / Optional): Gemini Enterprise App에 Data Agent 게시 및 활성화
+### 4.5 Step 3 (선택 사항 / Optional): Gemini Enterprise App에 Data Agent 게시 및 A2A 연동
 BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸 수 있다. 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 명령어로 최신 UI 절차를 확인하고 진행하라:
 
 ```bash
-# [선택 사항] Gemini Enterprise App 게시 및 활성화 콘솔 UI 절차 출력
+# [선택 사항] Gemini Enterprise App 게시 및 A2A 연동 콘솔 UI 절차 출력
 python diagnose.py --register-ge-app --app-id <대상_GE_APP_ID>
 ```
-- **콘솔 UI 최신 연동 절차**:
-  1. **BigQuery Studio > Agents (또는 Agent Platform)**:
-     - 좌측 메뉴에서 **Agents**로 이동하여 생성한 `cymbal-retail-data-agent` 상세 페이지로 진입한다.
-     - 우측 상단 **[Publish (게시)]** 버튼을 클릭하고, 배포 채널에서 **[Gemini Enterprise]**를 선택하여 게시(Publish)한다.
-  2. **Gemini Enterprise (구 AI Applications) 콘솔에서 에이전트 등록 및 활성화**:
-     - Google Cloud 콘솔 탐색 메뉴에서 **Gemini Enterprise** (또는 **Agent Platform > Applications**)로 이동하여 대상 웹 앱을 선택한다.
-     - 앱 상세 화면 좌측 메뉴에서 **[Agents (에이전트)]** 탭으로 이동한 뒤, 상단 **[+ Add agent (에이전트 추가)]** 버튼을 클릭한다.
-     - Agent Catalog / Agent Registry 목록에서 방금 게시된 `cymbal-retail-data-agent`를 선택하고 **[Add (추가)]**를 누른다.
-     - 등록된 에이전트의 상태 토글이 **[Enabled (활성)]**인지 확인한다.
+- **콘솔 UI 최신 연동 절차 (A2A 프로토콜 기반)**:
+  1. **BigQuery Studio > Agents (Agent Card JSON 복사)**:
+     - 좌측 메뉴에서 **Agents (에이전트 / Agent Platform)**로 이동하여 생성한 `cymbal-retail-data-agent` 상세 페이지로 진입한다.
+     - 상단 또는 설정 메뉴에서 **[Publish (게시)]**를 완료한 후 제공되는 **Agent Card (A2A JSON 명세)** 텍스트를 복사한다. (에이전트 엔드포인트, 기능 명세 및 인증 스키마 포함)
+  2. **Gemini Enterprise 관리 콘솔에서 A2A 커스텀 에이전트 등록**:
+     - Google Cloud 콘솔 탐색 메뉴에서 **Gemini Enterprise** (또는 **Agent Platform > Applications**)로 이동하여 대상 웹 앱(`omni-retail-ge-app`)을 선택한다.
+     - 앱 관리 화면 좌측 메뉴에서 **[Agents (에이전트)]** 탭으로 이동한 뒤, 상단 **[+ Add agent (에이전트 추가)]** 버튼을 클릭한다.
+     - "Choose an agent type" 화면에서 **[Custom agent via A2A (A2A 기반 맞춤 에이전트)]** 항목의 **[Add (추가)]** 버튼을 선택한다.
+     - 입력창에 방금 복사한 **Agent Card JSON**을 붙여넣고, 필요한 인증 옵션을 확인한 후 **[Save / Register]**를 클릭한다.
+     - 등록 완료 후 목록에서 에이전트의 상태 토글이 **[Enabled (활성)]**인지 확인한다.
   3. **대화창 호출 검증**:
      - 좌측 **[Preview (미리보기)]** 또는 발행된 Gemini Enterprise 웹 앱 대화창에서 `cymbal-retail-data-agent`를 멘션하거나 자연어로 골든 프롬프트를 질문하여 정상 연동을 검증한다.
-  4. 참조 문서: BigQuery 데이터 에이전트 생성 및 공유 가이드 ( https://cloud.google.com/bigquery/docs/conversational-analytics )
+  4. 참조 문서: BigQuery 데이터 에이전트 및 Gemini Enterprise A2A 에이전트 연동 가이드 ( https://cloud.google.com/bigquery/docs/conversational-analytics )
 
 ---
 
