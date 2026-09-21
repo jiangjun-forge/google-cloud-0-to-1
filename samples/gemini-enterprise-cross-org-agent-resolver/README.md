@@ -91,7 +91,7 @@ python diagnose.py --dry-run --json
 ## 5. 결과 확인 후 즉각 조치 가이드
 - Vertex AI Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
 - 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )
-- Gemini Enterprise 제품 개요 ( https://cloud.google.com/gemini/docs/enterprise/overview )
+- Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )
 
 ### 1. Agent Engine 프로젝트에 GE 서비스 에이전트 권한 부여
 ```bash

@@ -96,8 +96,8 @@ python diagnose.py --dry-run --json
 ---
 
 ## 5. 결과 확인 후 즉각 조치 가이드
-- GKE 내부 부하 분산기 소스 IP 보존 가이드 ( https://cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balance )
-- GKE 가중치 로드 밸런싱 구성 안내 ( https://cloud.google.com/kubernetes-engine/docs/how-to/weighted-load-balancing )
+- GKE 내부 부하 분산기 소스 IP 보존 가이드 ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing )
+- GKE 가중치 로드 밸런싱 구성 안내 ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress )
 - Kubernetes Service 소스 IP 보존 개념 ( https://kubernetes.io/docs/tutorials/services/source-ip/ )
 
 ### 1. externalTrafficPolicy: Local 전환 및 패치

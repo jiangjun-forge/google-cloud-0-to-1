@@ -86,7 +86,7 @@ python diagnose.py --dry-run --json
 ---
 
 ## 5. 결과 확인 후 즉각 조치 가이드
-- Gemini Enterprise 스킬 및 에이전트 관리 가이드 ( https://cloud.google.com/gemini/docs/enterprise/manage-skills )
+- Gemini Enterprise 스킬 및 에이전트 관리 가이드 ( https://docs.cloud.google.com/gemini/enterprise/docs/manage-skills )
 - Google Cloud Workforce Identity Federation 구성 가이드 ( https://cloud.google.com/iam/docs/workforce-identity-federation )
 - Google Cloud 콘솔 Workforce Identity 풀 ( https://console.cloud.google.com/iam-admin/workforce-pools )
 

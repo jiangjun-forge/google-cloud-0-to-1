@@ -96,7 +96,7 @@ python diagnose.py --dry-run --json
 
 ## 5. 결과 확인 후 즉각 조치 가이드
 - Model Armor 제품 개요 및 리전 가용성 안내 ( https://cloud.google.com/security/products/model-armor )
-- Model Armor 템플릿 구성 공식 가이드 ( https://cloud.google.com/sensitive-data-protection/docs/model-armor-overview )
+- Model Armor 템플릿 구성 공식 가이드 ( https://docs.cloud.google.com/model-armor/overview )
 - Sensitive Data Protection 글로벌 및 로컬 리전 위치 ( https://cloud.google.com/sensitive-data-protection/docs/locations )
 
 ### 1. Model Armor 서울 리전 SDP 전용 템플릿 생성
