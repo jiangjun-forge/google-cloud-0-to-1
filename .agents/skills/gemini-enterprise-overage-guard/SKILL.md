@@ -17,15 +17,15 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-enterprise-overage-guard
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-overage-guard: Gemini Enterprise App 도입 환경에서 신규 오버리지 빌링(Overage Billing) 체계에 따른 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험과 무제한 오버리지 과금 누수(비용...
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-overage-guard: Gemini Enterprise 도입 환경에서 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 방어뿐만 아니라, 임직원이 Google AI Studio에서 회사 결제 계정으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 차단하고 계열사 중간 관리자 권한 거버넌스를 진단하는 도구다.
 ---
 
-# Gemini Enterprise Overage 빌링 방어 및 일일 쿼터 쓰로틀링 가드 (Autopilot & Hands-on Guide)
+# Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 가드 (Autopilot & Hands-on Guide)
 
 본 스킬은 고객사 엔지니어와 실무자가 `gemini-enterprise-overage-guard` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
-**Audience**: `#Architect`, `#FinOps`  
-**Concern**: `#Billing`, `#Resilience`  
+**Audience**: `#Architect`, `#FinOps`, `#SecOps`  
+**Concern**: `#Billing`, `#Compliance`, `#Resilience`  
 **Service**: `#AgentPlatform`, `#CloudBilling`
 
 ---

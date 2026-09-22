@@ -1,62 +1,48 @@
-# 진단 및 분석 리포트: gemini-enterprise-overage-guard
+# Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 진단 리포트
 
-- **생성 모드**: 모의 실행 (Dry-run)
+- **진단 일시**: (실행 결과 자동 생성)
 - **대상 프로젝트**: `sample-project-id`
-- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+- **Cloud Billing 계정**: `012345-6789AB-CDEF01`
+- **진단 모드**: `모의 실행 (Dry-run)`
 
 ---
 
-## 1. 진단 실행 콘솔 출력 결과
+## 1. 비의도적 유료 과금 방지 4대 기술적 가드레일 진단
 
-```text
-============================================================================
- [Gemini Enterprise Overage 빌링 및 쿼터 쓰로틀링 진단 리포트]
-============================================================================
-진단 대상 프로젝트 ID   : sample-project-id
-Cloud Billing 계정 ID   : 012345-6789AB-CDEF01
-권장 월간 지출 상한(Cap): $1,000.00
-예산 알림 임계치        : 80%
-----------------------------------------------------------------------------
-
-[에디션별 오버리지 및 일일 쿼터 현황]
-* Gemini Enterprise Plus
-  - 오버리지 빌링 설정: ON (활성화)
-  - 일일 쿼터 소진율  : 78.5%
-  - 진단 판정         : [OVERAGE_RUNAWAY_RISK]
-  - 세부 분석         : 오버리지 빌링이 활성화되어 있어 쿼터 소진 후에도 업무는 지속되나, Spend Cap 부재 시 통제되지 않은 초과 토큰 비용이 발생할 수 있다.
-* Gemini Enterprise Standard
-  - 오버리지 빌링 설정: OFF (비활성화)
-  - 일일 쿼터 소진율  : 94.2%
-  - 진단 판정         : [THROTTLING_OUTAGE_RISK]
-  - 세부 분석         : 오버리지 빌링이 비활성화(OFF) 상태이며 현재 일일 쿼터의 94%가 소진되었다. 100% 도달 시 당일 자정까지 전사 프롬프트 요청이 차단된다.
-
-[항목별 상세 진단 결과]
-1. [WARNING] PLUS_TIER_OVERAGE_RUNAWAY
-   내용: Plus 에디션의 오버리지 빌링이 활성화되어 있으나 Cloud Billing 월간 지출 한도(Spend Cap)가 설정되어 있지 않다.
-2. [CRITICAL] STANDARD_TIER_DAILY_THROTTLING
-   내용: Standard 에디션의 일일 풀링 쿼터 소진율이 94%에 도달하여 수 시간 내 전사 서비스 쓰로틀링(업무 중단) 발생 위험이 임박했다.
-3. [INFO] INDIVIDUAL_LIMIT_UNSUPPORTED
-   내용: 현재 Gemini Enterprise 콘솔은 사용자나 그룹별 개별 지출 한도 부여를 지원하지 않으므로 프로젝트/빌링 계정 단위 글로벌 Spend Cap으로 제어해야 한다.
-4. [INFO] STORAGE_INDEX_SEPARATE_BILLING
-   내용: 데이터스토어 인덱싱 및 스토리지 초과 사용량은 오버리지 토글 설정과 무관하게 계약 조건에 따라 별도 과금된다.
-
-[단계별 긴급 대응 및 거버넌스 가이드]
-1. Standard 티어 업무 중단 긴급 방어:
-   - Gemini Enterprise 관리 콘솔에서 Standard 티어의 오버리지 빌링을 수동 활성화(ON)하여 쿼터 소진 시 즉각적인 쓰로틀링을 차단한다.
-2. Cloud Billing Spend Cap(월 지출 한도) 즉시 설정:
-   - 결제 콘솔에서 월간 오버리지 상한($1,000.00)을 설정하여 예기치 못한 비용 급증을 효과적으로 예방한다.
-3. 실시간 예산 경보(Budget Alerts 80%) 연동:
-   - Pub/Sub 및 인프라 담당자 이메일 알림을 등록하여 임계치 초과 시 FinOps 팀에 즉각 노티되도록 조치한다.
-============================================================================
-```
+| 통제 영역 | 상태 | 통제 항목 | 세부 상태 및 조치 가이드 |
+| :--- | :--- | :--- | :--- |
+| **Gemini Enterprise Overage** | `[PASS]` | 관리 콘솔 Overage 차단 (Toggle OFF) | Standard 에디션 Overage가 기본 OFF로 유지되어 일일 쿼터 초과 시 추가 과금 없이 당일 사용만 제한된다.<br>**처방**: `Gemini Enterprise 관리 콘솔 > 구독/라이선스 > Overage Settings에서 Toggle OFF 상태를 유지한다.` |
+| **Google AI Studio 차단** | `[FAIL]` | API 키 생성 차단 조직 정책 (constraints/gcp.restrictServiceUsage) | apikeys.googleapis.com 제한 조직 정책이 미적용되어, 일반 사용자가 AI Studio에서 회사 결제 계정 프로젝트를 선택해 API 키를 발급할 수 있는 위험이 존재한다.<br>**처방**: `gcloud resource-manager org-policies enable-enforce constraints/gcp.restrictServiceUsage --project=sample-project-id (apikeys.googleapis.com 차단)` |
+| **Google AI Studio 백엔드** | `[WARN]` | Generative Language API 비활성화 및 제한 | generativelanguage.googleapis.com 활성화 상태가 모니터링되지 않고 있어, AI Studio 유료 호출 경로가 열려 있을 수 있다.<br>**처방**: `gcloud services disable generativelanguage.googleapis.com --project=sample-project-id --force` |
+| **계열사 위임 관리자 거버넌스** | `[WARN]` | 결제 계정 관리자/사용자(Billing Admin/User) 분리 | 계열사 IT 관리자 계정에 roles/billing.user 권한이 부여되어 있어 임의 프로젝트에 결제 계정을 연결할 위험이 있다.<br>**처방**: `계열사 관리자에게는 roles/billing.user 대신 OU 맞춤 관리자 역할 및 사전 프로비저닝된 프로젝트 내 roles/viewer 권한만 선별 부여한다.` |
 
 ---
 
-## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+## 2. 에디션별 오버리지 및 일일 쿼터 현황
 
-실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
-실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+| 에디션 | 오버리지 빌링 설정 | 일일 쿼터 소진율 | 진단 판정 | 분석 내용 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Gemini Enterprise Plus** | ON (활성화) | 78.5% | `[OVERAGE_RUNAWAY_RISK]` | 오버리지 빌링이 활성화되어 있어 쿼터 소진 후에도 업무는 지속되나, Spend Cap 부재 시 통제되지 않은 초과 토큰 비용이 발생할 수 있다. |
+| **Gemini Enterprise Standard** | OFF (비활성화) | 94.2% | `[THROTTLING_OUTAGE_RISK]` | 오버리지 빌링이 비활성화(OFF) 상태이며 현재 일일 쿼터의 94%가 소진되었다. 100% 도달 시 당일 자정까지 전사 프롬프트 요청이 차단된다. |
 
+---
+
+## 3. 실무자 즉각 조치 가이드 및 코드 처방전
+
+### 1단계: Gemini Enterprise 관리 콘솔 내 Overage 차단 (필수)
+- Gemini Enterprise Admin Console > 구독 및 라이선스 > Overage Settings > Toggle OFF 유지
+- 결과: 일일 쿼터를 모두 소진한 경우 당일 추가 질의만 일시 제한되며, 추가 요금이 청구되지 않는다.
+
+### 2단계: 조직 정책 기반 Google AI Studio API 키 발급 차단 (필수)
 ```bash
-python diagnose.py
+gcloud resource-manager org-policies enable-enforce constraints/gcp.restrictServiceUsage --project=sample-project-id
 ```
+
+### 3단계: Generative Language API 비활성화 (권장)
+```bash
+gcloud services disable generativelanguage.googleapis.com --project=sample-project-id --force
+```
+
+### 4단계: 계열사 IT 관리자 결제 권한(Billing RBAC) 회수 및 최소 권한 적용
+- 최고 관리자(Super Admin) 권한 부여를 금지하고, 계열사 조직 단위(OU)에 한정된 맞춤 역할을 생성하여 사용자/그룹 관리 권한만 위임한다.
+- Google Cloud 콘솔에서 `roles/billing.admin` 및 `roles/billing.user` 권한을 계열사 관리자에게 부여하지 않는다.

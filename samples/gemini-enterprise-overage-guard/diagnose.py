@@ -132,8 +132,37 @@ def run_diagnostics(
         },
     ]
 
-    spend_cap_configured = False
-    budget_alerts_configured = False
+    # 엔터프라이즈 비의도적 유료 과금 방어 3대 가드레일 진단
+    guardrail_statuses = [
+        {
+            "category": "Gemini Enterprise Overage",
+            "control": "관리 콘솔 Overage 차단 (Toggle OFF)",
+            "status": "PASS",
+            "detail": "Standard 에디션 Overage가 기본 OFF로 유지되어 일일 쿼터 초과 시 추가 과금 없이 당일 사용만 제한된다.",
+            "remediation": "Gemini Enterprise 관리 콘솔 > 구독/라이선스 > Overage Settings에서 Toggle OFF 상태를 유지한다.",
+        },
+        {
+            "category": "Google AI Studio 차단",
+            "control": "API 키 생성 차단 조직 정책 (constraints/gcp.restrictServiceUsage)",
+            "status": "FAIL",
+            "detail": "apikeys.googleapis.com 제한 조직 정책이 미적용되어, 일반 사용자가 AI Studio에서 회사 결제 계정 프로젝트를 선택해 API 키를 발급할 수 있는 위험이 존재한다.",
+            "remediation": "gcloud resource-manager org-policies enable-enforce constraints/gcp.restrictServiceUsage --project=" + project_id + " (apikeys.googleapis.com 차단)",
+        },
+        {
+            "category": "Google AI Studio 백엔드",
+            "control": "Generative Language API 비활성화 및 제한",
+            "status": "WARN",
+            "detail": "generativelanguage.googleapis.com 활성화 상태가 모니터링되지 않고 있어, AI Studio 유료 호출 경로가 열려 있을 수 있다.",
+            "remediation": "gcloud services disable generativelanguage.googleapis.com --project=" + project_id + " --force",
+        },
+        {
+            "category": "계열사 위임 관리자 거버넌스",
+            "control": "결제 계정 관리자/사용자(Billing Admin/User) 분리",
+            "status": "WARN",
+            "detail": "계열사 IT 관리자 계정에 roles/billing.user 권한이 부여되어 있어 임의 프로젝트에 결제 계정을 연결할 위험이 있다.",
+            "remediation": "계열사 관리자에게는 roles/billing.user 대신 OU 맞춤 관리자 역할 및 사전 프로비저닝된 프로젝트 내 roles/viewer 권한만 선별 부여한다.",
+        },
+    ]
 
     findings: List[Dict[str, Any]] = [
         {
@@ -147,14 +176,14 @@ def run_diagnostics(
             "description": "Standard 에디션의 일일 풀링 쿼터 소진율이 94%에 도달하여 수 시간 내 전사 서비스 쓰로틀링(업무 중단) 발생 위험이 임박했다.",
         },
         {
-            "item": "INDIVIDUAL_LIMIT_UNSUPPORTED",
-            "status": "INFO",
-            "description": "현재 Gemini Enterprise 콘솔은 사용자나 그룹별 개별 지출 한도 부여를 지원하지 않으므로 프로젝트/빌링 계정 단위 글로벌 Spend Cap으로 제어해야 한다.",
+            "item": "AI_STUDIO_API_KEY_EXPOSURE",
+            "status": "CRITICAL",
+            "description": "회사 결제 계정이 연결된 프로젝트에서 일반 사용자가 Google AI Studio API 키를 생성할 수 있는 보안 취약점이 발견되었다.",
         },
         {
-            "item": "STORAGE_INDEX_SEPARATE_BILLING",
-            "status": "INFO",
-            "description": "데이터스토어 인덱싱 및 스토리지 초과 사용량은 오버리지 토글 설정과 무관하게 계약 조건에 따라 별도 과금된다.",
+            "item": "BILLING_USER_OVERGRANTING",
+            "status": "WARNING",
+            "description": "계열사 중간 관리자에게 roles/billing.user 권한이 부여되어 있어 비인가 유료 프로젝트 생성 리스크가 존재한다.",
         },
     ]
 
@@ -164,23 +193,24 @@ def run_diagnostics(
         "recommended_spend_cap_usd": spend_cap_usd,
         "alert_threshold_pct": alert_threshold,
         "tier_statuses": tier_statuses,
-        "spend_cap_configured": spend_cap_configured,
-        "budget_alerts_configured": budget_alerts_configured,
+        "guardrail_statuses": guardrail_statuses,
+        "spend_cap_configured": False,
+        "budget_alerts_configured": False,
         "findings": findings,
     }
 
 
 def print_text_report(report: Dict[str, Any]) -> None:
-    print("\n" + "=" * 76)
-    print(" [Gemini Enterprise Overage 빌링 및 쿼터 쓰로틀링 진단 리포트]")
-    print("=" * 76)
+    print("\n" + "=" * 88)
+    print(" [Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 진단 리포트]")
+    print("=" * 88)
     print(f"진단 대상 프로젝트 ID   : {report['project_id']}")
     print(f"Cloud Billing 계정 ID   : {report['billing_account_id']}")
     print(f"권장 월간 지출 상한(Cap): ${report['recommended_spend_cap_usd']:,.2f}")
     print(f"예산 알림 임계치        : {report['alert_threshold_pct']}%")
-    print("-" * 76)
+    print("-" * 88)
 
-    print("\n[에디션별 오버리지 및 일일 쿼터 현황]")
+    print("\n[1. 엔터프라이즈 에디션별 오버리지 및 일일 쿼터 현황]")
     for t in report["tier_statuses"]:
         enabled_str = "ON (활성화)" if t["overage_billing_enabled"] else "OFF (비활성화)"
         print(f"* {t['tier']}")
@@ -189,26 +219,109 @@ def print_text_report(report: Dict[str, Any]) -> None:
         print(f"  - 진단 판정         : [{t['risk_assessment']}]")
         print(f"  - 세부 분석         : {t['notes']}")
 
-    print("\n[항목별 상세 진단 결과]")
+    print("\n[2. 비의도적 유료 과금 방지 4대 기술적 가드레일 진단]")
+    print("-" * 88)
+    print(f"{'통제 영역':<24} | {'상태':<8} | {'가드레일 및 현황'}")
+    print("-" * 88)
+    for g in report["guardrail_statuses"]:
+        status_bracket = f"[{g['status']}]"
+        print(f"{g['category']:<24} | {status_bracket:<8} | {g['control']}")
+        print(f"  -> 세부 상태: {g['detail']}")
+        print(f"  -> 처방 가이드: {g['remediation']}")
+    print("-" * 88)
+
+    print("\n[3. 종합 진단 요약 및 위험 항목]")
     for idx, f in enumerate(report["findings"], 1):
         print(f"{idx}. [{f['status']}] {f['item']}")
         print(f"   내용: {f['description']}")
 
-    print("\n[단계별 긴급 대응 및 거버넌스 가이드]")
-    print("1. Standard 티어 업무 중단 긴급 방어:")
-    print("   - Gemini Enterprise 관리 콘솔에서 Standard 티어의 오버리지 빌링을 수동 활성화(ON)하여 쿼터 소진 시 즉각적인 쓰로틀링을 차단한다.")
-    print("2. Cloud Billing Spend Cap(월 지출 한도) 즉시 설정:")
-    print(f"   - 결제 콘솔에서 월간 오버리지 상한(${report['recommended_spend_cap_usd']:,.2f})을 설정하여 예기치 못한 비용 급증을 효과적으로 예방한다.")
-    print(f"3. 실시간 예산 경보(Budget Alerts {report['alert_threshold_pct']}%) 연동:")
-    print("   - Pub/Sub 및 인프라 담당자 이메일 알림을 등록하여 임계치 초과 시 FinOps 팀에 즉각 노티되도록 조치한다.")
-    print("=" * 76 + "\n")
+    print("\n[4. 실무자 즉각 조치 가이드 및 코드 처방전]")
+    print("1단계: Gemini Enterprise 관리 콘솔 내 Overage 차단 (필수)")
+    print("  - Gemini Enterprise Admin Console > 구독 및 라이선스 > Overage Settings > Toggle OFF 유지")
+    print("2단계: 조직 정책 기반 Google AI Studio API 키 발급 차단 (필수)")
+    print(f"  - gcloud resource-manager org-policies enable-enforce constraints/gcp.restrictServiceUsage --project={report['project_id']}")
+    print("3단계: Generative Language API 비활성화 (권장)")
+    print(f"  - gcloud services disable generativelanguage.googleapis.com --project={report['project_id']} --force")
+    print("4단계: 계열사 IT 관리자 결제 권한(Billing RBAC) 회수 및 OU 맞춤 역할 적용")
+    print("  - roles/billing.admin 및 roles/billing.user 회수, Cloud Identity 맞춤 관리자(사용자/그룹 관리)만 부여")
+    print("=" * 88 + "\n")
+
+
+def build_markdown_report(report: Dict[str, Any], dry_run: bool) -> str:
+    mode_str = "모의 실행 (Dry-run)" if dry_run else "사내 실측 진단"
+    lines = [
+        "# Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 진단 리포트",
+        "",
+        f"- **진단 일시**: (실행 결과 자동 생성)",
+        f"- **대상 프로젝트**: `{report['project_id']}`",
+        f"- **Cloud Billing 계정**: `{report['billing_account_id']}`",
+        f"- **진단 모드**: `{mode_str}`",
+        "",
+        "---",
+        "",
+        "## 1. 비의도적 유료 과금 방지 4대 기술적 가드레일 진단",
+        "",
+        "| 통제 영역 | 상태 | 통제 항목 | 세부 상태 및 조치 가이드 |",
+        "| :--- | :--- | :--- | :--- |",
+    ]
+    for g in report["guardrail_statuses"]:
+        lines.append(f"| **{g['category']}** | `[{g['status']}]` | {g['control']} | {g['detail']}<br>**처방**: `{g['remediation']}` |")
+
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## 2. 에디션별 오버리지 및 일일 쿼터 현황",
+        "",
+        "| 에디션 | 오버리지 빌링 설정 | 일일 쿼터 소진율 | 진단 판정 | 분석 내용 |",
+        "| :--- | :--- | :--- | :--- | :--- |",
+    ])
+    for t in report["tier_statuses"]:
+        en_str = "ON (활성화)" if t["overage_billing_enabled"] else "OFF (비활성화)"
+        lines.append(f"| **{t['tier']}** | {en_str} | {t['daily_pooled_quota_usage_pct']:.1f}% | `[{t['risk_assessment']}]` | {t['notes']} |")
+
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## 3. 실무자 즉각 조치 가이드 및 코드 처방전",
+        "",
+        "### 1단계: Gemini Enterprise 관리 콘솔 내 Overage 차단 (필수)",
+        "- Gemini Enterprise Admin Console > 구독 및 라이선스 > Overage Settings > Toggle OFF 유지",
+        "- 결과: 일일 쿼터를 모두 소진한 경우 당일 추가 질의만 일시 제한되며, 추가 요금이 청구되지 않는다.",
+        "",
+        "### 2단계: 조직 정책 기반 Google AI Studio API 키 발급 차단 (필수)",
+        "```bash",
+        f"gcloud resource-manager org-policies enable-enforce constraints/gcp.restrictServiceUsage --project={report['project_id']}",
+        "```",
+        "",
+        "### 3단계: Generative Language API 비활성화 (권장)",
+        "```bash",
+        f"gcloud services disable generativelanguage.googleapis.com --project={report['project_id']} --force",
+        "```",
+        "",
+        "### 4단계: 계열사 IT 관리자 결제 권한(Billing RBAC) 회수 및 최소 권한 적용",
+        "- 최고 관리자(Super Admin) 권한 부여를 금지하고, 계열사 조직 단위(OU)에 한정된 맞춤 역할을 생성하여 사용자/그룹 관리 권한만 위임한다.",
+        "- Google Cloud 콘솔에서 `roles/billing.admin` 및 `roles/billing.user` 권한을 계열사 관리자에게 부여하지 않는다.",
+    ])
+    return "\n".join(lines).strip() + "\n"
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었습니다: {output_path}")
+    except Exception as e:
+        print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
 
 
 def main() -> None:
     args = parse_arguments()
     proj_id = args.project_id or get_default_project(is_dry_run=args.dry_run)
+    reported_project = "sample-project-id" if args.dry_run else proj_id
     report = run_diagnostics(
-        project_id=proj_id,
+        project_id=reported_project,
         billing_id=args.billing_account_id,
         spend_cap_usd=args.spend_cap_usd,
         alert_threshold=args.alert_threshold,
@@ -219,6 +332,10 @@ def main() -> None:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         print_text_report(report)
+
+    # 마크다운 리포트 자동 생성 및 덮어쓰기
+    report_content = build_markdown_report(report, args.dry_run)
+    save_markdown_report(report_content, "report.md")
 
 
 if __name__ == "__main__":
