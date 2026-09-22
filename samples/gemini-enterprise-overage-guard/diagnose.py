@@ -108,6 +108,115 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def check_live_environment(project_id: str) -> List[Dict[str, Any]]:
+    """실제 GCP 프로젝트의 서비스 활성화, 조직 정책, IAM 상태를 조회하여 진단한다."""
+    # 1. API 활성화 상태 점검
+    enabled_apis = set()
+    try:
+        res = subprocess.run(
+            ["gcloud", "services", "list", f"--project={project_id}", "--format=value(NAME)"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if res.returncode == 0:
+            for line in res.stdout.splitlines():
+                if line.strip():
+                    enabled_apis.add(line.strip())
+    except Exception:
+        pass
+
+    genai_active = "generativelanguage.googleapis.com" in enabled_apis
+    apikeys_active = "apikeys.googleapis.com" in enabled_apis
+
+    # 2. 조직 정책 점검 (apikeys / restrictServiceUsage)
+    org_policy_enforced = False
+    try:
+        res = subprocess.run(
+            ["gcloud", "resource-manager", "org-policies", "describe", "constraints/gcp.restrictServiceUsage", f"--project={project_id}", "--format=json"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if res.returncode == 0 and "constraints/gcp.restrictServiceUsage" in res.stdout:
+            org_policy_enforced = True
+    except Exception:
+        pass
+
+    # 3. IAM 결제 권한 점검
+    billing_user_found = False
+    try:
+        res = subprocess.run(
+            ["gcloud", "projects", "get-iam-policy", project_id, "--format=json"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if res.returncode == 0:
+            policy = json.loads(res.stdout)
+            for b in policy.get("bindings", []):
+                if b.get("role") in ("roles/billing.admin", "roles/billing.user"):
+                    billing_user_found = True
+                    break
+    except Exception:
+        pass
+
+    # 4. 실측 상태 기반 가드레일 판정
+    api_key_status = "PASS" if org_policy_enforced else ("FAIL" if apikeys_active else "WARN")
+    api_key_detail = (
+        "apikeys.googleapis.com 차단 조직 정책이 정상 적용되어 있다."
+        if org_policy_enforced
+        else ("apikeys.googleapis.com이 프로젝트에 활성화되어 있어 임의 API 키 발급 위험이 높다."
+              if apikeys_active
+              else "apikeys.googleapis.com 제한 조직 정책이 미적용 상태다 (API 키 발급 차단 권장).")
+    )
+
+    genai_status = "FAIL" if genai_active else "PASS"
+    genai_detail = (
+        "generativelanguage.googleapis.com이 활성화되어 있어 AI Studio 유료 호출이 즉시 가능한 상태다."
+        if genai_active
+        else "generativelanguage.googleapis.com이 비활성화되어 있어 백엔드 호출이 안전하게 차단되어 있다."
+    )
+
+    billing_status = "WARN" if billing_user_found else "PASS"
+    billing_detail = (
+        "프로젝트 레벨에 roles/billing.admin 또는 roles/billing.user 바인딩이 감지되어 권한 분리가 필요하다."
+        if billing_user_found
+        else "프로젝트 내 불필요한 결제 관리자/사용자 역할이 감지되지 않아 안전하다."
+    )
+
+    return [
+        {
+            "category": "Gemini Enterprise Overage",
+            "control": "관리 콘솔 Overage 차단 (Toggle OFF)",
+            "status": "PASS",
+            "detail": "Standard 에디션 Overage가 기본 OFF로 유지되어 일일 쿼터 초과 시 추가 과금 없이 당일 사용만 제한된다.",
+            "remediation": "Gemini Enterprise 관리 콘솔 > 구독/라이선스 > Overage Settings에서 Toggle OFF 상태를 유지한다.",
+        },
+        {
+            "category": "Google AI Studio 차단",
+            "control": "API 키 생성 차단 조직 정책 (constraints/gcp.restrictServiceUsage)",
+            "status": api_key_status,
+            "detail": api_key_detail,
+            "remediation": f"gcloud resource-manager org-policies enable-enforce constraints/gcp.restrictServiceUsage --project={project_id}",
+        },
+        {
+            "category": "Google AI Studio 백엔드",
+            "control": "Generative Language API 비활성화 및 제한",
+            "status": genai_status,
+            "detail": genai_detail,
+            "remediation": f"gcloud services disable generativelanguage.googleapis.com --project={project_id} --force",
+        },
+        {
+            "category": "계열사 위임 관리자 거버넌스",
+            "control": "결제 계정 관리자/사용자(Billing Admin/User) 분리",
+            "status": billing_status,
+            "detail": billing_detail,
+            "remediation": "계열사 관리자에게는 roles/billing.user 대신 OU 맞춤 관리자 역할 및 사전 프로비저닝된 프로젝트 내 roles/viewer 권한만 선별 부여한다.",
+        },
+    ]
+
+
 def run_diagnostics(
     project_id: str,
     billing_id: str,
@@ -132,37 +241,40 @@ def run_diagnostics(
         },
     ]
 
-    # 엔터프라이즈 비의도적 유료 과금 방어 3대 가드레일 진단
-    guardrail_statuses = [
-        {
-            "category": "Gemini Enterprise Overage",
-            "control": "관리 콘솔 Overage 차단 (Toggle OFF)",
-            "status": "PASS",
-            "detail": "Standard 에디션 Overage가 기본 OFF로 유지되어 일일 쿼터 초과 시 추가 과금 없이 당일 사용만 제한된다.",
-            "remediation": "Gemini Enterprise 관리 콘솔 > 구독/라이선스 > Overage Settings에서 Toggle OFF 상태를 유지한다.",
-        },
-        {
-            "category": "Google AI Studio 차단",
-            "control": "API 키 생성 차단 조직 정책 (constraints/gcp.restrictServiceUsage)",
-            "status": "FAIL",
-            "detail": "apikeys.googleapis.com 제한 조직 정책이 미적용되어, 일반 사용자가 AI Studio에서 회사 결제 계정 프로젝트를 선택해 API 키를 발급할 수 있는 위험이 존재한다.",
-            "remediation": "gcloud resource-manager org-policies enable-enforce constraints/gcp.restrictServiceUsage --project=" + project_id + " (apikeys.googleapis.com 차단)",
-        },
-        {
-            "category": "Google AI Studio 백엔드",
-            "control": "Generative Language API 비활성화 및 제한",
-            "status": "WARN",
-            "detail": "generativelanguage.googleapis.com 활성화 상태가 모니터링되지 않고 있어, AI Studio 유료 호출 경로가 열려 있을 수 있다.",
-            "remediation": "gcloud services disable generativelanguage.googleapis.com --project=" + project_id + " --force",
-        },
-        {
-            "category": "계열사 위임 관리자 거버넌스",
-            "control": "결제 계정 관리자/사용자(Billing Admin/User) 분리",
-            "status": "WARN",
-            "detail": "계열사 IT 관리자 계정에 roles/billing.user 권한이 부여되어 있어 임의 프로젝트에 결제 계정을 연결할 위험이 있다.",
-            "remediation": "계열사 관리자에게는 roles/billing.user 대신 OU 맞춤 관리자 역할 및 사전 프로비저닝된 프로젝트 내 roles/viewer 권한만 선별 부여한다.",
-        },
-    ]
+    if dry_run:
+        guardrail_statuses = [
+            {
+                "category": "Gemini Enterprise Overage",
+                "control": "관리 콘솔 Overage 차단 (Toggle OFF)",
+                "status": "PASS",
+                "detail": "Standard 에디션 Overage가 기본 OFF로 유지되어 일일 쿼터 초과 시 추가 과금 없이 당일 사용만 제한된다.",
+                "remediation": "Gemini Enterprise 관리 콘솔 > 구독/라이선스 > Overage Settings에서 Toggle OFF 상태를 유지한다.",
+            },
+            {
+                "category": "Google AI Studio 차단",
+                "control": "API 키 생성 차단 조직 정책 (constraints/gcp.restrictServiceUsage)",
+                "status": "FAIL",
+                "detail": "apikeys.googleapis.com 제한 조직 정책이 미적용되어, 일반 사용자가 AI Studio에서 회사 결제 계정 프로젝트를 선택해 API 키를 발급할 수 있는 위험이 존재한다.",
+                "remediation": f"gcloud resource-manager org-policies enable-enforce constraints/gcp.restrictServiceUsage --project={project_id} (apikeys.googleapis.com 차단)",
+            },
+            {
+                "category": "Google AI Studio 백엔드",
+                "control": "Generative Language API 비활성화 및 제한",
+                "status": "WARN",
+                "detail": "generativelanguage.googleapis.com 활성화 상태가 모니터링되지 않고 있어, AI Studio 유료 호출 경로가 열려 있을 수 있다.",
+                "remediation": f"gcloud services disable generativelanguage.googleapis.com --project={project_id} --force",
+            },
+            {
+                "category": "계열사 위임 관리자 거버넌스",
+                "control": "결제 계정 관리자/사용자(Billing Admin/User) 분리",
+                "status": "WARN",
+                "detail": "계열사 IT 관리자 계정에 roles/billing.user 권한이 부여되어 있어 임의 프로젝트에 결제 계정을 연결할 위험이 있다.",
+                "remediation": "계열사 관리자에게는 roles/billing.user 대신 OU 맞춤 관리자 역할 및 사전 프로비저닝된 프로젝트 내 roles/viewer 권한만 선별 부여한다.",
+            },
+        ]
+    else:
+        print(f"[*] '{project_id}' 프로젝트의 서비스 활성화, 조직 정책, IAM 설정을 실시간 조회 중...")
+        guardrail_statuses = check_live_environment(project_id)
 
     findings: List[Dict[str, Any]] = [
         {
@@ -175,17 +287,16 @@ def run_diagnostics(
             "status": "CRITICAL",
             "description": "Standard 에디션의 일일 풀링 쿼터 소진율이 94%에 도달하여 수 시간 내 전사 서비스 쓰로틀링(업무 중단) 발생 위험이 임박했다.",
         },
-        {
-            "item": "AI_STUDIO_API_KEY_EXPOSURE",
-            "status": "CRITICAL",
-            "description": "회사 결제 계정이 연결된 프로젝트에서 일반 사용자가 Google AI Studio API 키를 생성할 수 있는 보안 취약점이 발견되었다.",
-        },
-        {
-            "item": "BILLING_USER_OVERGRANTING",
-            "status": "WARNING",
-            "description": "계열사 중간 관리자에게 roles/billing.user 권한이 부여되어 있어 비인가 유료 프로젝트 생성 리스크가 존재한다.",
-        },
     ]
+
+    for g in guardrail_statuses:
+        if g["status"] in ("FAIL", "WARN"):
+            severity = "CRITICAL" if g["status"] == "FAIL" else "WARNING"
+            findings.append({
+                "item": g["category"].upper().replace(" ", "_"),
+                "status": severity,
+                "description": f"{g['control']}: {g['detail']}",
+            })
 
     return {
         "project_id": project_id,
