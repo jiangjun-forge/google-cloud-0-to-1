@@ -71,8 +71,8 @@ python diagnose.py --dry-run
 # 기본 활성 프로젝트 점검 (일일 500만 토큰 기준)
 python diagnose.py
 
-# 특정 프로젝트 및 커스텀 캡(일일 800만 토큰, 요청 1,500회) 지정
-python diagnose.py --project-id=my-dev-project --cap-tokens=8000000 --cap-requests=1500
+# 특정 프로젝트 및 커스텀 캡(일일 750만 토큰, 요청 1,500회) 지정
+python diagnose.py --project-id=my-dev-project --cap-tokens=7500000 --cap-requests=1500
 ```
 
 ---

@@ -81,9 +81,9 @@ cat requirements.txt
 ```bash
 python diagnose.py
 ```
-- 특정 프로젝트나 커스텀 캡(토큰 80만 개)을 지정하여 검사할 경우:
+- 특정 프로젝트나 커스텀 캡(토큰 750만 개)을 지정하여 검사할 경우:
   ```bash
-  python diagnose.py --project-id=<대상_프로젝트_ID> --cap-tokens=800000
+  python diagnose.py --project-id=<대상_프로젝트_ID> --cap-tokens=7500000
   ```
 
 ### Step 2.3 진단 리포트 확인 및 조치 가이드 적용
