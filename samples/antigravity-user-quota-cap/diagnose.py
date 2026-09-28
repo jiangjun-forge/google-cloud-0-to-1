@@ -302,8 +302,8 @@ def print_text_report(
     print("\n" + "=" * 96)
     print("[4. 엔터프라이즈 운영 자동화(Batch Job) 연계 안내]")
     print("  * 본 진단기는 개발자별 사용량을 신속히 파악하고 헤비 유저를 식별하는 읽기 전용 가이드다.")
-    print("  * 실제 프로덕션 환경에서 15분 주기 Cloud Run Job으로 자동 차단 및 복구를 수행하려면,")
-    print("    검증된 오픈소스 도구인 agy-admin-cli ( https://github.com/terrychahn/agy-admin-cli ) 배포를 권장한다.")
+    print("  * 실제 프로덕션 환경에서 주기적인 자동 차단 및 복구를 수행하려면, Cloud Scheduler와 Cloud Run Job")
+    print("    또는 Cloud Functions를 연동하여 본 진단 로직을 정기 스케줄링하는 파이프라인 구성을 권장한다.")
     print("=" * 96 + "\n")
 
 
@@ -381,8 +381,7 @@ def build_markdown_report(
         "",
         "### 3단계: 엔터프라이즈 운영 자동화(Batch Job) 연계",
         "- 본 도구는 읽기 전용 진단 및 현황 보고를 지원한다.",
-        "- 프로덕션 환경에서 15분 주기 자동 차단 및 복구 배치를 스케줄링하려면 검증된 오픈소스 유틸리티 `agy-admin-cli` 배포를 권장한다:",
-        "- Antigravity 관리 유틸리티 레포지토리 ( https://github.com/terrychahn/agy-admin-cli )",
+        "- 프로덕션 환경에서 주기적인 자동 차단 및 복구를 수행하려면 Cloud Scheduler와 Cloud Run Job 또는 Cloud Functions를 연동하여 정기 배치 파이프라인으로 확장할 수 있다.",
     ])
 
     return "\n".join(lines).strip() + "\n"

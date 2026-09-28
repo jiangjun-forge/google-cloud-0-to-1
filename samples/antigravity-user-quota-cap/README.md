@@ -39,7 +39,7 @@ flowchart TD
     D -->|초과 발견| F{"IAM 통제성 분류 (Enforceability)"}
     F -->|직접 user: 바인딩| G["ENFORCEABLE_ALLOWED: 마커 역할(CustomAntigravityCapBlocked) 적용 처방"]
     F -->|그룹/상속 권한| H["NOT_ENFORCEABLE: 사내 그룹 관리 콘솔 수동 조치 가이드 제시"]
-    G --> I["report.md 자동 생성 및 운영 배치 도구(agy-admin-cli) 연계 안내"]
+    G --> I["report.md 자동 생성 및 조치 처방 안내"]
     H --> I
     E --> I
 ```
@@ -97,8 +97,7 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
 `NOT_ENFORCEABLE`로 분류된 사용자는 프로젝트 레벨의 개별 바인딩을 변경해도 그룹 권한으로 인해 접근이 유지된다. 사내 Google Workspace / Cloud Identity 관리 콘솔에서 해당 개발자를 개발팀 그룹에서 일시 제외 조치한다.
 
 ### 3단계: 엔터프라이즈 운영 자동화(Batch Job) 연계 안내
-본 진단기는 읽기 전용 분석 도구다. 15분 주기 Cloud Run Job으로 자동 캡 차단 및 매일 자정 복구를 영구 스케줄링하려면 검증된 오픈소스 유틸리티 배포를 권장한다:
-- Antigravity 관리 유틸리티 레포지토리 ( https://github.com/terrychahn/agy-admin-cli )
+본 진단기는 읽기 전용 분석 도구다. 15분 주기 자동 캡 차단 및 매일 자정 복구를 영구 스케줄링하려면 Cloud Scheduler와 Cloud Run Job 또는 Cloud Functions를 연동하여 정기 배치 파이프라인으로 구성 및 배포할 수 있다.
 
 ---
 

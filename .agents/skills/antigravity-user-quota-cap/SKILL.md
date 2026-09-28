@@ -34,7 +34,7 @@ flowchart TD
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
     C -->|README 가이드에 따라 직접 입력| D["실제 Cloud Logging 로그 분석 및 결과 검증"]
     D --> E["Stage 3: 복습 (Deep-dive & Cleanup)"]
-    E -->|결과 비교 및 아키텍처 분석| F["통제 처방전 검토 및 자동화 배치(agy-admin-cli) 연계"]
+    E -->|결과 비교 및 아키텍처 분석| F["통제 처방전 검토 및 자동화 배치 아키텍처 분석"]
 ```
 
 ---
