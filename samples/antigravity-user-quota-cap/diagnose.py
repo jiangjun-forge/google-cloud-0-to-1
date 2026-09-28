@@ -180,9 +180,54 @@ def get_mock_usage_data(cap_tokens: int, cap_requests: int) -> List[Dict[str, An
     return results
 
 
-def collect_live_usage(project_id: str, cap_tokens: int, cap_requests: int) -> List[Dict[str, Any]]:
+def check_preflight_requirements(project_id: str) -> Tuple[bool, List[str]]:
+    """필수 API 활성화 및 Cloud Logging 인퍼런스 로그 수신 상태를 사전 점검한다."""
+    issues = []
+    required_services = ["logging.googleapis.com", "businessaicode.googleapis.com"]
+
+    try:
+        res = subprocess.run(
+            ["gcloud", "services", "list", f"--project={project_id}", "--format=value(config.name)"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if res.returncode == 0:
+            enabled_services = set(res.stdout.split())
+            for s in required_services:
+                if s not in enabled_services:
+                    issues.append(f"필수 API 비활성화: '{s}' 가 활성화되어 있지 않다.")
+        else:
+            issues.append(f"API 활성화 목록 조회 실패: {res.stderr.strip() or '권한 부족'}")
+    except Exception as e:
+        issues.append(f"API 상태 점검 중 오류 발생: {e}")
+
+    return (len(issues) == 0, issues)
+
+
+def collect_live_usage(project_id: str, cap_tokens: int, cap_requests: int) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """실제 Cloud Logging에서 businessaicode 인퍼런스 로그를 조회하여 사용자별 통계를 산출한다."""
-    # Cloud Logging 필터 쿼리
+    diag_status = {
+        "api_ready": True,
+        "api_issues": [],
+        "log_entries_count": 0,
+        "used_mock_fallback": False,
+        "guidance": [],
+    }
+
+    # 1. 사전 필수 API 점검
+    is_ready, api_issues = check_preflight_requirements(project_id)
+    if not is_ready:
+        diag_status["api_ready"] = False
+        diag_status["api_issues"] = api_issues
+        diag_status["used_mock_fallback"] = True
+        diag_status["guidance"].append(
+            f"필수 API 활성화 필요: 아래 명령어로 API를 먼저 활성화해야 한다:\n"
+            f"  gcloud services enable logging.googleapis.com businessaicode.googleapis.com --project={project_id}"
+        )
+        return get_mock_usage_data(cap_tokens, cap_requests), diag_status
+
+    # 2. Cloud Logging 필터 쿼리
     log_filter = (
         'logName="projects/' + project_id + '/logs/businessaicode.googleapis.com%2Finference_response" '
         'timestamp >= "2026-09-01T00:00:00Z"'
@@ -195,9 +240,19 @@ def collect_live_usage(project_id: str, cap_tokens: int, cap_requests: int) -> L
         "--limit=100",
     ]
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
         if res.returncode == 0 and res.stdout.strip():
             entries = json.loads(res.stdout)
+            diag_status["log_entries_count"] = len(entries)
+            if not entries:
+                diag_status["used_mock_fallback"] = True
+                diag_status["guidance"].append(
+                    "Cloud Logging에 Antigravity 인퍼런스 로그가 0건이다.\n"
+                    "  1) Google Workspace 또는 Gemini Enterprise 관리 콘솔에서 '개발자 도구 활동 로깅(Metadata Logging)'이 켜져 있는지 확인한다.\n"
+                    "  2) 개발자가 IDE(VS Code, IntelliJ) 또는 Antigravity CLI에서 실제 코드 생성 및 채팅을 1회 이상 수행했는지 확인한다."
+                )
+                return get_mock_usage_data(cap_tokens, cap_requests), diag_status
+
             user_stats: Dict[str, Dict[str, Any]] = {}
             for entry in entries:
                 payload = entry.get("jsonPayload", {})
@@ -233,12 +288,20 @@ def collect_live_usage(project_id: str, cap_tokens: int, cap_requests: int) -> L
                     s["exceeded_reason"] = "CAP_EXCEEDED"
                     s["control_type"] = "AUTOMATED_CAP_ACTION_REQUIRED"
                 results.append(s)
-            return sorted(results, key=lambda x: x["total_tokens"], reverse=True)
-    except Exception:
-        pass
+            sorted_results = sorted(results, key=lambda x: x["total_tokens"], reverse=True)
+            return sorted_results, diag_status
+        else:
+            diag_status["used_mock_fallback"] = True
+            diag_status["guidance"].append(
+                f"Cloud Logging 조회 실패 (코드 {res.returncode}): {res.stderr.strip() or '로그 없음'}\n"
+                f"  'roles/logging.viewer' 권한이 부여되어 있는지 확인한다."
+            )
+    except Exception as e:
+        diag_status["used_mock_fallback"] = True
+        diag_status["guidance"].append(f"로그 수집 중 예외 발생: {e}")
 
     # 실측 로그가 부재하거나 조회 실패 시 안전하게 가상 모의 데이터로 폴백
-    return get_mock_usage_data(cap_tokens, cap_requests)
+    return get_mock_usage_data(cap_tokens, cap_requests), diag_status
 
 
 def print_text_report(
@@ -248,6 +311,7 @@ def print_text_report(
     cap_requests: int,
     dry_run: bool,
     users: List[Dict[str, Any]],
+    diag_status: Dict[str, Any] = None,
 ) -> None:
     mode_str = "모의 실행 (Dry-run)" if dry_run else "사내 실측 진단"
     total_users = len(users)
@@ -267,6 +331,28 @@ def print_text_report(
     print(f"요청 상한 임계치(Cap): {cap_requests:,} 회")
     print(f"진단 모드           : {mode_str}")
     print("-" * 96)
+
+    # 사전 환경 및 로그 준비 상태 안내
+    if diag_status and not dry_run:
+        print("\n[0. 사전 환경 검증 및 로깅 준비 상태 (Preflight Check)]")
+        if diag_status.get("api_ready"):
+            print("  * 필수 API 활성화 상태 : [정상] logging.googleapis.com, businessaicode.googleapis.com")
+        else:
+            print("  * 필수 API 활성화 상태 : [주의/미흡] 비활성화된 API가 감지됨")
+            for issue in diag_status.get("api_issues", []):
+                print(f"    - {issue}")
+
+        if diag_status.get("log_entries_count", 0) > 0:
+            print(f"  * Cloud Logging 상태   : [정상] 실측 인퍼런스 로그 {diag_status['log_entries_count']}건 수집 완료")
+        else:
+            print("  * Cloud Logging 상태   : [안내] 실측 로그 0건 (모의 데이터로 안전하게 대체 진단)")
+
+        if diag_status.get("guidance"):
+            print("  * 실무자 조치 안내     :")
+            for g in diag_status["guidance"]:
+                for line in g.splitlines():
+                    print(f"    {line}")
+        print("-" * 96)
 
     print(f"\n[1. 전사 Antigravity 사용량 및 쿼터 캡 요약 지표]")
     print(f"  * 활성 개발자 수     : {total_users}명")
@@ -315,6 +401,7 @@ def build_markdown_report(
     cap_requests: int,
     dry_run: bool,
     users: List[Dict[str, Any]],
+    diag_status: Dict[str, Any] = None,
 ) -> str:
     mode_str = "모의 실행 (Dry-run)" if dry_run else "사내 실측 진단"
     total_users = len(users)
@@ -334,6 +421,23 @@ def build_markdown_report(
         "",
         "---",
         "",
+    ]
+
+    if diag_status and not dry_run:
+        lines.extend([
+            "## 0. 사전 환경 검증 및 로깅 준비 상태 (Preflight Check)",
+            "",
+            f"- **필수 API 활성화**: {'`정상 (Enabled)`' if diag_status.get('api_ready') else '`주의 (Disabled 감지)`'}",
+            f"- **Cloud Logging 실측 로그**: `{diag_status.get('log_entries_count', 0)}건 수집`",
+        ])
+        if diag_status.get("guidance"):
+            lines.append("- **실무자 조치 안내**:")
+            for g in diag_status["guidance"]:
+                for sub in g.splitlines():
+                    lines.append(f"  - {sub.strip()}")
+        lines.extend(["", "---", ""])
+
+    lines.extend([
         "## 1. 전사 Antigravity 사용량 및 쿼터 캡 요약 지표",
         "",
         f"- **활성 개발자 수**: {total_users}명",
@@ -349,7 +453,7 @@ def build_markdown_report(
         "",
         "| 사용자 계정 (Principal) | 소속 부서 | 요청수 | 총 토큰량 | 주 사용 클라이언트 | 판정 상태 | 통제성 분류 |",
         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
-    ]
+    ])
 
     for u in users:
         stat_label = "**[초과/차단대상]**" if u["cap_exceeded"] else "[정상]"
@@ -401,12 +505,13 @@ def main() -> None:
     args = parse_arguments()
     proj_id = args.project_id or get_default_project(is_dry_run=args.dry_run)
     reported_project = "sample-project-id" if args.dry_run else proj_id
+    diag_status = {}
 
     if args.dry_run:
         users = get_mock_usage_data(args.cap_tokens, args.cap_requests)
     else:
-        print(f"[*] '{reported_project}' 프로젝트의 Cloud Logging(businessaicode) 인퍼런스 로그를 조회 중...")
-        users = collect_live_usage(reported_project, args.cap_tokens, args.cap_requests)
+        print(f"[*] '{reported_project}' 프로젝트의 환경 검증 및 Cloud Logging 인퍼런스 로그를 조회 중...")
+        users, diag_status = collect_live_usage(reported_project, args.cap_tokens, args.cap_requests)
 
     if args.json_output:
         summary = {
@@ -414,6 +519,7 @@ def main() -> None:
             "period": args.period,
             "cap_tokens": args.cap_tokens,
             "cap_requests": args.cap_requests,
+            "diag_status": diag_status,
             "users": users,
         }
         print(json.dumps(summary, indent=2, ensure_ascii=False))
@@ -425,6 +531,7 @@ def main() -> None:
             cap_requests=args.cap_requests,
             dry_run=args.dry_run,
             users=users,
+            diag_status=diag_status,
         )
 
     # 마크다운 리포트 자동 생성 및 덮어쓰기
@@ -435,6 +542,7 @@ def main() -> None:
         cap_requests=args.cap_requests,
         dry_run=args.dry_run,
         users=users,
+        diag_status=diag_status,
     )
     save_markdown_report(report_content, "report.md")
 

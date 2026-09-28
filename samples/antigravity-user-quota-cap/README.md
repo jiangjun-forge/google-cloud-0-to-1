@@ -48,11 +48,23 @@ flowchart TD
 
 ## 3. 사전 준비 사항 및 필요 권한
 
-본 도구는 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
+### (1) 필수 API 활성화 및 관리 콘솔 설정
+본 도구가 Cloud Logging을 통해 Antigravity 인퍼런스 지표를 실측하려면 아래 API와 관리 콘솔 로깅 설정이 선행되어야 한다 (스크립트 실행 시 미흡 항목 자동 탐지 및 조치 명령어 안내):
+
+1. **필수 API 활성화**:
+   ```bash
+   gcloud services enable logging.googleapis.com businessaicode.googleapis.com
+   ```
+2. **관리 콘솔 개발자 도구 활동 로깅(Metadata Logging)**:
+   - Google Workspace / Gemini Enterprise 관리 콘솔(`admin.google.com`) > 생성형 AI / 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 Cloud Logging으로 토큰 및 사용자 정보가 적재된다.
+
+### (2) 진단 실행 계정 최소 IAM 권한
+본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
 
 | 역할 (Role) | 설명 |
 | :--- | :--- |
 | `roles/logging.viewer` | Cloud Logging 인퍼런스 로그(`businessaicode.googleapis.com`) 조회 권한 |
+| `roles/serviceusage.serviceUsageViewer` | 필수 API 활성화 상태 사전 점검 권한 |
 | `roles/resourcemanager.viewer` | 프로젝트 IAM 정책 및 사용자 바인딩 상태 확인 권한 |
 
 ---
