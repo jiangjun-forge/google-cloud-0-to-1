@@ -3,7 +3,7 @@
 - **진단 일시**: (실행 결과 자동 생성)
 - **대상 프로젝트**: `sample-project-id`
 - **집계 주기**: `daily` (UTC 기준)
-- **토큰 상한 임계치(Cap)**: `500,000 토큰`
+- **토큰 상한 임계치(Cap)**: `5,000,000 토큰`
 - **요청 상한 임계치(Cap)**: `1,000 회`
 - **진단 모드**: `모의 실행 (Dry-run)`
 
@@ -12,7 +12,7 @@
 ## 1. 전사 Antigravity 사용량 및 쿼터 캡 요약 지표
 
 - **활성 개발자 수**: 5명
-- **총 토큰 소모량**: 2,260,000 토큰
+- **총 토큰 소모량**: 22,600,000 토큰
 - **총 API 요청 수**: 4,280회
 - **쿼터 캡 초과 계정**: 3명 (전체의 60.0%)
   - **직접 통제 가능(IAM)**: 2명 (자동 차단/마커 역할 적용 가능)
@@ -24,11 +24,11 @@
 
 | 사용자 계정 (Principal) | 소속 부서 | 요청수 | 총 토큰량 | 주 사용 클라이언트 | 판정 상태 | 통제성 분류 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `dev-lead@example.com` | Platform Core | 1,420회 | 730,000 T | VS Code | **[초과/차단대상]** | `ENFORCEABLE_ALLOWED` |
-| `senior-eng@example.com` | Backend Service | 980회 | 520,000 T | JetBrains IntelliJ | **[초과/차단대상]** | `ENFORCEABLE_ALLOWED` |
-| `arch-lead@example.com` | Architecture Office | 1,150회 | 620,000 T | Antigravity CLI | **[초과/차단대상]** | `NOT_ENFORCEABLE` |
-| `frontend-dev@example.com` | Web Frontend | 510회 | 280,000 T | VS Code | [정상] | `ENFORCEABLE_ALLOWED` |
-| `junior-eng@example.com` | Mobile App | 220회 | 110,000 T | Android Studio | [정상] | `ENFORCEABLE_ALLOWED` |
+| `dev-lead@example.com` | Platform Core | 1,420회 | 7,300,000 T | VS Code | **[초과/차단대상]** | `ENFORCEABLE_ALLOWED` |
+| `senior-eng@example.com` | Backend Service | 980회 | 5,200,000 T | JetBrains IntelliJ | **[초과/차단대상]** | `ENFORCEABLE_ALLOWED` |
+| `arch-lead@example.com` | Architecture Office | 1,150회 | 6,200,000 T | Antigravity CLI | **[초과/차단대상]** | `NOT_ENFORCEABLE` |
+| `frontend-dev@example.com` | Web Frontend | 510회 | 2,800,000 T | VS Code | [정상] | `ENFORCEABLE_ALLOWED` |
+| `junior-eng@example.com` | Mobile App | 220회 | 1,100,000 T | Android Studio | [정상] | `ENFORCEABLE_ALLOWED` |
 
 ---
 

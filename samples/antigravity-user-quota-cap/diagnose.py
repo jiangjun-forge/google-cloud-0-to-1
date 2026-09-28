@@ -63,7 +63,7 @@ def parse_arguments() -> argparse.Namespace:
     )
     proj_env = os.getenv("PROJECT_ID")
     period_env = os.getenv("CAP_PERIOD") or "daily"
-    tokens_env = os.getenv("CAP_TOKENS") or "500000"
+    tokens_env = os.getenv("CAP_TOKENS") or "5000000"
     reqs_env = os.getenv("CAP_REQUESTS") or "1000"
 
     parser.add_argument(
@@ -84,7 +84,7 @@ def parse_arguments() -> argparse.Namespace:
         dest="cap_tokens",
         type=int,
         default=int(tokens_env),
-        help="사용자당 토큰 캡 임계치 (기본값: 500000)",
+        help="사용자당 토큰 캡 임계치 (기본값: 5000000)",
     )
     parser.add_argument(
         "--cap-requests",
@@ -110,73 +110,74 @@ def parse_arguments() -> argparse.Namespace:
 
 def get_mock_usage_data(cap_tokens: int, cap_requests: int) -> List[Dict[str, Any]]:
     """가상 시뮬레이션용 개발자 사용량 및 IAM 바인딩 데이터 반환."""
-    return [
+    raw_users = [
         {
             "user_email": "dev-lead@example.com",
             "department": "Platform Core",
             "request_count": 1420,
-            "prompt_tokens": 420000,
-            "candidate_tokens": 310000,
-            "total_tokens": 730000,
+            "prompt_tokens": 4200000,
+            "candidate_tokens": 3100000,
+            "total_tokens": 7300000,
             "primary_client": "VS Code",
             "iam_status": "ENFORCEABLE_ALLOWED",
-            "cap_exceeded": True,
-            "exceeded_reason": "TOKEN_CAP_EXCEEDED",
-            "control_type": "AUTOMATED_CAP_ACTION_REQUIRED",
         },
         {
             "user_email": "senior-eng@example.com",
             "department": "Backend Service",
             "request_count": 980,
-            "prompt_tokens": 280000,
-            "candidate_tokens": 240000,
-            "total_tokens": 520000,
+            "prompt_tokens": 2800000,
+            "candidate_tokens": 2400000,
+            "total_tokens": 5200000,
             "primary_client": "JetBrains IntelliJ",
             "iam_status": "ENFORCEABLE_ALLOWED",
-            "cap_exceeded": True,
-            "exceeded_reason": "TOKEN_CAP_EXCEEDED",
-            "control_type": "AUTOMATED_CAP_ACTION_REQUIRED",
         },
         {
             "user_email": "arch-lead@example.com",
             "department": "Architecture Office",
             "request_count": 1150,
-            "prompt_tokens": 350000,
-            "candidate_tokens": 270000,
-            "total_tokens": 620000,
+            "prompt_tokens": 3500000,
+            "candidate_tokens": 2700000,
+            "total_tokens": 6200000,
             "primary_client": "Antigravity CLI",
             "iam_status": "NOT_ENFORCEABLE",
-            "cap_exceeded": True,
-            "exceeded_reason": "TOKEN_AND_REQUEST_CAP_EXCEEDED",
-            "control_type": "MANUAL_ACTION_REQUIRED (INHERITED_OR_GROUP)",
         },
         {
             "user_email": "frontend-dev@example.com",
             "department": "Web Frontend",
             "request_count": 510,
-            "prompt_tokens": 160000,
-            "candidate_tokens": 120000,
-            "total_tokens": 280000,
+            "prompt_tokens": 1600000,
+            "candidate_tokens": 1200000,
+            "total_tokens": 2800000,
             "primary_client": "VS Code",
             "iam_status": "ENFORCEABLE_ALLOWED",
-            "cap_exceeded": False,
-            "exceeded_reason": "NONE",
-            "control_type": "NORMAL_USAGE",
         },
         {
             "user_email": "junior-eng@example.com",
             "department": "Mobile App",
             "request_count": 220,
-            "prompt_tokens": 65000,
-            "candidate_tokens": 45000,
-            "total_tokens": 110000,
+            "prompt_tokens": 650000,
+            "candidate_tokens": 450000,
+            "total_tokens": 1100000,
             "primary_client": "Android Studio",
             "iam_status": "ENFORCEABLE_ALLOWED",
-            "cap_exceeded": False,
-            "exceeded_reason": "NONE",
-            "control_type": "NORMAL_USAGE",
         },
     ]
+
+    results = []
+    for u in raw_users:
+        exceeded = u["total_tokens"] > cap_tokens or u["request_count"] > cap_requests
+        if exceeded:
+            reason = "TOKEN_AND_REQUEST_CAP_EXCEEDED" if (u["total_tokens"] > cap_tokens and u["request_count"] > cap_requests) else ("TOKEN_CAP_EXCEEDED" if u["total_tokens"] > cap_tokens else "REQUEST_CAP_EXCEEDED")
+            ctrl = "AUTOMATED_CAP_ACTION_REQUIRED" if u["iam_status"] == "ENFORCEABLE_ALLOWED" else "MANUAL_ACTION_REQUIRED (INHERITED_OR_GROUP)"
+        else:
+            reason = "NONE"
+            ctrl = "NORMAL_USAGE"
+
+        u["cap_exceeded"] = exceeded
+        u["exceeded_reason"] = reason
+        u["control_type"] = ctrl
+        results.append(u)
+    return results
 
 
 def collect_live_usage(project_id: str, cap_tokens: int, cap_requests: int) -> List[Dict[str, Any]]:

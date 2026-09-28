@@ -25,7 +25,7 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램)를 전사 도입�
 - Cloud Logging의 `businessaicode.googleapis.com/inference_response` 원천 로그를 분석하여 개발자 계정(`user:`)별 총 토큰(Prompt + Candidate), 요청 수, 사용 클라이언트(VS Code, JetBrains, CLI) 현황을 산출해야 한다.
 
 ### BR-02: 일일/주간 쿼터 캡(Cap) 초과자 식별 및 위험도 판정
-- 관리자가 지정한 기간별 토큰 캡(예: 1일 500,000 토큰)을 기준으로 초과 사용자를 즉시 식별하고, 전체 사용자 대비 통제 가능 비율(Coverage Ratio)을 도출해야 한다.
+- 관리자가 지정한 기간별 토큰 캡(예: 1일 5,000,000 토큰)을 기준으로 초과 사용자를 즉시 식별하고, 전체 사용자 대비 통제 가능 비율(Coverage Ratio)을 도출해야 한다.
 
 ### BR-03: 안전한 읽기 전용 진단 및 마커 역할 기반 처방 제시
 - 고객 운영 환경에 비인가 쓰기 작업을 가하지 않는 안전한 읽기 전용 스캔을 원칙으로 하되, 캡 초과자에 대해 프로젝트 IAM 레벨에서 제한 마커 역할(`CustomAntigravityCapBlocked`)을 적용하거나 복구할 수 있는 구체적인 처방 명령어를 제공해야 한다.

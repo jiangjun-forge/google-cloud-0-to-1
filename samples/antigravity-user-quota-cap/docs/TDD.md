@@ -24,7 +24,7 @@ All contents, designs, and code examples are subject to change, modification, or
 - 로그 페이로드(`jsonPayload`)에서 호출자 ID(`principalEmail`), 입력 토큰(`promptTokenCount`), 출력 토큰(`candidatesTokenCount`), 클라이언트 타입(`clientInfo`)을 추출하여 사용자별로 합산한다.
 
 ### FR-02: 쿼터 캡(Cap) 임계치 평가 및 통제성 분류
-- 지정된 캡 기준(기본값: 일일 500,000 토큰)을 초과한 사용자를 식별한다.
+- 지정된 캡 기준(기본값: 일일 5,000,000 토큰)을 초과한 사용자를 식별한다.
 - 사용자별 IAM 바인딩 상태를 분석하여 통제 가능 여부를 분류한다:
   - `ENFORCEABLE_ALLOWED`: 직접 `user:` 바인딩으로 기본 역할(`roles/discoveryengine.agentspaceUser`)을 보유하여 마커 역할로 차단 가능한 대상
   - `NOT_ENFORCEABLE`: 구글 그룹(`group:`), 도메인(`domain:`), 상속 권한, 상위 관리자 역할 보유자로 직접 차단이 불가하여 수동 검토가 필요한 대상

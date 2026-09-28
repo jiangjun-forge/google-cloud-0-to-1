@@ -23,7 +23,7 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 Clou
 ## 1. 이 가이드가 필요한 상황 (증상 체크리스트)
 - [ ] 전사 개발자에게 Google Antigravity를 배포했으나, 특정 헤비 유저가 과도하게 토큰을 소비하여 전체 풀링 쿼터가 조기 소진된다.
 - [ ] Google Cloud 콘솔에서 프로젝트 총량만 보이고, 개발자 개인별 토큰(Prompt / Candidate) 소모량 현황을 파악하기 어렵다.
-- [ ] 개발자별로 일일 쿼터 상한(예: 50만 토큰)을 설정하고, 초과자를 식별하여 접근을 안전하게 일시 제어하고자 한다.
+- [ ] 개발자별로 일일 쿼터 상한(예: 500만 토큰)을 설정하고, 초과자를 식별하여 접근을 안전하게 일시 제어하고자 한다.
 - [ ] 구글 그룹(`group:`)이나 상위 조직 권한으로 부여된 사용자와 개별 바인딩(`user:`) 사용자를 구분하여 통제 가능 여부를 사전에 파악하고 싶다.
 
 ---
@@ -34,7 +34,7 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 Clou
 flowchart TD
     A["진단 시작 (python diagnose.py)"] --> B["Cloud Logging에서 businessaicode 인퍼런스 로그 수집"]
     B --> C["개발자 계정별 토큰 및 요청 수 집계"]
-    C --> D{"쿼터 캡(예: 500,000 토큰) 초과 여부"}
+    C --> D{"쿼터 캡(예: 5,000,000 토큰) 초과 여부"}
     D -->|초과 없음| E["정상 사용 (Normal Usage) 판정"]
     D -->|초과 발견| F{"IAM 통제성 분류 (Enforceability)"}
     F -->|직접 user: 바인딩| G["ENFORCEABLE_ALLOWED: 마커 역할(CustomAntigravityCapBlocked) 적용 처방"]
@@ -66,13 +66,13 @@ python diagnose.py --dry-run
 ```
 
 ### 사내 실측 진단 실행 - 실습 및 복습
-현재 활성화된 프로젝트의 실데이터를 기반으로 일일 토큰 캡(500,000 토큰) 초과자를 진단한다. 진단 결과는 `report.md`에 자동으로 덮어써진다:
+현재 활성화된 프로젝트의 실데이터를 기반으로 일일 토큰 캡(5,000,000 토큰) 초과자를 진단한다. 진단 결과는 `report.md`에 자동으로 덮어써진다:
 ```bash
-# 기본 활성 프로젝트 점검 (일일 50만 토큰 기준)
+# 기본 활성 프로젝트 점검 (일일 500만 토큰 기준)
 python diagnose.py
 
-# 특정 프로젝트 및 커스텀 캡(일일 80만 토큰, 요청 1,500회) 지정
-python diagnose.py --project-id=my-dev-project --cap-tokens=800000 --cap-requests=1500
+# 특정 프로젝트 및 커스텀 캡(일일 800만 토큰, 요청 1,500회) 지정
+python diagnose.py --project-id=my-dev-project --cap-tokens=8000000 --cap-requests=1500
 ```
 
 ---
