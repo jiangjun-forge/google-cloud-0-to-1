@@ -24,6 +24,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ```text
 .
 ├── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
+│   ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
 │   ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
 │   ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
 │   ├── cloud-nat-port-exhaustion-guard/        # Cloud NAT 동적 포트 할당(DPA) 확장 지연 및 사일런트 패킷 드롭 진단
