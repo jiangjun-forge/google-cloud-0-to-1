@@ -23,7 +23,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```text
 .
-├── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
+└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플
 │   ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
 │   ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
 │   ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
@@ -63,8 +63,6 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── storage-transfer-secure-uploader/       # 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증
 │   ├── swg-tenant-access-guard/                # 사내 관문 SWG 헤더 주입 및 Context-Aware Access 인가 진단
 │   └── vertex-search-grounding-validator/      # RAG 데이터 저장소 색인 누락 및 그라운딩 정합성 진단
-├── notebooks/                                  # 레거시 실습 노트북 (2026-09-30 까지만 유지)
-└── scripts/                                    # 레거시 진단 스크립트 (2026-09-30 까지만 유지)
 ```
 
 ---
