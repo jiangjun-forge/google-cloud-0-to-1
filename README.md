@@ -23,49 +23,48 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```text
 .
-├── samples/                                        # 주요 시나리오별 진단 및 실습 샘플
-│   ├── antigravity-user-quota-cap/                 # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
-│   ├── bigquery-data-agent-semantic-enricher/      # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
-│   ├── bigquery-data-agent-starter/                # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
-│   ├── cloud-nat-port-exhaustion-guard/            # Cloud NAT 동적 포트 할당(DPA) 확장 지연 및 사일런트 패킷 드롭 진단
-│   ├── cloud-run-cud-optimizer/                    # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
-│   ├── cloud-run-direct-vpc-egress-checker/        # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
-│   ├── embedding-dimension-tradeoff-analyzer/      # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
-│   ├── fcm-push-quota-guard/                       # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
-│   ├── gce-capacity-stockout-guard/                # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
-│   ├── gce-future-reservation-checker/             # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
-│   ├── gce-instance-flexibility-planner/           # GCE & GKE 인스턴스 유연성 및 CCC/MIG 스톡아웃 방어 설계
-│   ├── gce-region-latency-probe/                   # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
-│   ├── gemini-billing-spike/                       # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
-│   ├── gemini-enterprise-governance-guard/         # 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단
-│   ├── gemini-enterprise-analytics-exporter/       # 사용자 채택률 및 유휴 라이선스 회수 분석
-│   ├── gemini-enterprise-cross-org-agent-resolver/ # Cross-Org 커스텀 에이전트 연동 권한 및 조직 정책 진단
-│   ├── gemini-enterprise-domain-in-use-resolver/   # 도메인 선점 충돌 진단 및 Cloud Identity 배포
-│   ├── gemini-enterprise-fqdn-checker/             # 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
-│   ├── gemini-enterprise-overage-guard/            # Overage 과금 방어, AI Studio API 키 차단 및 Billing RBAC 가드
-│   ├── gemini-enterprise-latency-profiler/         # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
-│   ├── gemini-enterprise-usage-by-account/         # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
-│   ├── gemini-legacy-sdk-scanner/                  # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
-│   ├── gemini-quota-cost-alert/                    # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
-│   ├── gemini-request-response-logging/            # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재 및 토큰 분석
-│   ├── gemini-resilience-checker/                  # 429 장애 극복 복원력 패턴(백오프, 지터, 폴백) 진단
-│   ├── gemini-vpc-sc-denial-resolver/              # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
-│   ├── gke-ingress-502-resolver/                   # GKE Ingress/Gateway 502 Bad Gateway 4대 원인 체인 역추적
-│   ├── gke-source-ip-snat-guard/                   # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
-│   ├── iam-permission-resolver/                    # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
-│   ├── kms-key-rotation-outage-guard/              # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
-│   ├── korea-fsi-regulatory-perimeter-guard/       # 혁신 금융 서비스 논리적 망 분리, 5년 Bucket Lock 및 AI 규제 진단
-│   ├── korea-nct-gen-ai-compliance-checker/        # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
-│   ├── lro-polling-quota-guard/                    # LRO 비동기 작업 폴링 쿼터 고갈 및 429 에러 진단
-│   ├── model-armor-regional-compliance-guard/      # 서울 리전 Model Armor 기능 제약 진단 및 하이브리드 가드레일 처방
-│   ├── org-policy-resolver/                        # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
-│   ├── service-account-leak-investigator/          # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
-│   ├── storage-transfer-secure-uploader/           # 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증
-│   ├── swg-tenant-access-guard/                    # 사내 관문 SWG 헤더 주입 및 Context-Aware Access 인가 진단
-│   └── vertex-search-grounding-validator/          # RAG 데이터 저장소 색인 누락 및 그라운딩 정합성 진단
-├── AGENTS.md                                       # 워크스페이스 거버넌스 및 CE 에이전트 개발 지침
 ├── LICENSE                                         # Apache-2.0 오픈소스 라이선스
-└── README.md                                       # 프로젝트 전체 개요 및 아키텍처 안내서
+├── README.md                                       # 프로젝트 전체 개요 및 아키텍처 안내서
+└── samples/                                        # 주요 시나리오별 진단 및 실습 샘플
+    ├── antigravity-user-quota-cap/                 # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
+    ├── bigquery-data-agent-semantic-enricher/      # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
+    ├── bigquery-data-agent-starter/                # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
+    ├── cloud-nat-port-exhaustion-guard/            # Cloud NAT 동적 포트 할당(DPA) 확장 지연 및 사일런트 패킷 드롭 진단
+    ├── cloud-run-cud-optimizer/                    # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
+    ├── cloud-run-direct-vpc-egress-checker/        # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
+    ├── embedding-dimension-tradeoff-analyzer/      # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
+    ├── fcm-push-quota-guard/                       # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
+    ├── gce-capacity-stockout-guard/                # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
+    ├── gce-future-reservation-checker/             # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
+    ├── gce-instance-flexibility-planner/           # GCE & GKE 인스턴스 유연성 및 CCC/MIG 스톡아웃 방어 설계
+    ├── gce-region-latency-probe/                   # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
+    ├── gemini-billing-spike/                       # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
+    ├── gemini-enterprise-analytics-exporter/       # 사용자 채택률 및 유휴 라이선스 회수 분석
+    ├── gemini-enterprise-cross-org-agent-resolver/ # Cross-Org 커스텀 에이전트 연동 권한 및 조직 정책 진단
+    ├── gemini-enterprise-domain-in-use-resolver/   # 도메인 선점 충돌 진단 및 Cloud Identity 배포
+    ├── gemini-enterprise-fqdn-checker/             # 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
+    ├── gemini-enterprise-governance-guard/         # 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단
+    ├── gemini-enterprise-latency-profiler/         # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
+    ├── gemini-enterprise-overage-guard/            # Overage 과금 방어, AI Studio API 키 차단 및 Billing RBAC 가드
+    ├── gemini-enterprise-usage-by-account/         # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
+    ├── gemini-legacy-sdk-scanner/                  # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
+    ├── gemini-quota-cost-alert/                    # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
+    ├── gemini-request-response-logging/            # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재 및 토큰 분석
+    ├── gemini-resilience-checker/                  # 429 장애 극복 복원력 패턴(백오프, 지터, 폴백) 진단
+    ├── gemini-vpc-sc-denial-resolver/              # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
+    ├── gke-ingress-502-resolver/                   # GKE Ingress/Gateway 502 Bad Gateway 4대 원인 체인 역추적
+    ├── gke-source-ip-snat-guard/                   # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
+    ├── iam-permission-resolver/                    # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
+    ├── kms-key-rotation-outage-guard/              # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
+    ├── korea-fsi-regulatory-perimeter-guard/       # 혁신 금융 서비스 논리적 망 분리, 5년 Bucket Lock 및 AI 규제 진단
+    ├── korea-nct-gen-ai-compliance-checker/        # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
+    ├── lro-polling-quota-guard/                    # LRO 비동기 작업 폴링 쿼터 고갈 및 429 에러 진단
+    ├── model-armor-regional-compliance-guard/      # 서울 리전 Model Armor 기능 제약 진단 및 하이브리드 가드레일 처방
+    ├── org-policy-resolver/                        # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
+    ├── service-account-leak-investigator/          # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
+    ├── storage-transfer-secure-uploader/           # 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증
+    ├── swg-tenant-access-guard/                    # 사내 관문 SWG 헤더 주입 및 Context-Aware Access 인가 진단
+    └── vertex-search-grounding-validator/          # RAG 데이터 저장소 색인 누락 및 그라운딩 정합성 진단
 ```
 
 ---
