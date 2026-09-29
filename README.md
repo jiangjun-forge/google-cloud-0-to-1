@@ -34,10 +34,9 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── cloud-run-direct-vpc-egress-checker/        # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
     ├── embedding-dimension-tradeoff-analyzer/      # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
     ├── fcm-push-quota-guard/                       # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
-    ├── gce-capacity-stockout-guard/                # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
-    ├── gce-future-reservation-checker/             # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
     ├── gce-instance-flexibility-planner/           # GCE & GKE 인스턴스 유연성 및 CCC/MIG 스톡아웃 방어 설계
     ├── gce-region-latency-probe/                   # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
+    ├── gce-reservation-guard/                      # CUD 약정 대비 물리적 Reservation 확보율 및 Future Reservation 진단
     ├── gemini-billing-spike/                       # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
     ├── gemini-enterprise-analytics-exporter/       # 사용자 채택률 및 유휴 라이선스 회수 분석
     ├── gemini-enterprise-cross-org-agent-resolver/ # Cross-Org 커스텀 에이전트 연동 권한 및 조직 정책 진단
@@ -56,10 +55,10 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gke-source-ip-snat-guard/                   # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
     ├── iam-permission-resolver/                    # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
     ├── kms-key-rotation-outage-guard/              # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
-    ├── korea-fsi-regulatory-perimeter-guard/       # 혁신 금융 서비스 논리적 망 분리, 5년 Bucket Lock 및 AI 규제 진단
-    ├── korea-nct-gen-ai-compliance-checker/        # 국가 핵심 기술 서울 리전 Data Boundary 및 IAM Deny 점검
+    ├── korea-model-armor-guard/                    # 서울 리전 Model Armor 기능 제약 진단 및 온소일 살균 처방
+    ├── korea-nct-compliance-checker/               # 국가 핵심 기술 서울 리전 Data Boundary 및 7대 통제 점검
+    ├── korea-regulatory-perimeter-guard/           # 금융 분야 망 분리 개선 및 9대 핵심 기술적 통제 전수 진단
     ├── lro-polling-quota-guard/                    # LRO 비동기 작업 폴링 쿼터 고갈 및 429 에러 진단
-    ├── model-armor-regional-compliance-guard/      # 서울 리전 Model Armor 기능 제약 진단 및 하이브리드 가드레일 처방
     ├── org-policy-resolver/                        # 조직 정책 제약 조건 위반 역추적 및 정책 비활성화 처방
     ├── service-account-leak-investigator/          # 침해 의심 서비스 계정 감사 로그 역추적 및 WIF 전환 진단
     ├── storage-transfer-secure-uploader/           # 온프렘 대용량 영상 STS 전송 및 KMS/VPC-SC 보안 검증

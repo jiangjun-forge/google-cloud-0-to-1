@@ -15,18 +15,18 @@ All contents, designs, and code examples are subject to change, modification, or
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
 ---
-name: gce-future-reservation-checker
+name: korea-model-armor-guard
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gce-future-reservation-checker: Compute Engine GPU 및 특수 머신 타입 Future Reservation(FR) 신청 현황을 전수 점검하여 콘솔 제출 누락(DRAFTING 잔류), 프로젝트 식별자 불일치, CUD 연계...
+  Autopilot, hands-on diagnostics, and self-healing for korea-model-armor-guard: 대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전을 진단하고 온소일 살균 처방을 제공하는 도구다.
 ---
 
-# Compute Engine GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단기 (`gce-future-reservation-checker`) (Autopilot & Hands-on Guide)
+# 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 (`korea-model-armor-guard`) (Autopilot & Hands-on Guide)
 
-본 스킬은 고객사 엔지니어와 실무자가 `gce-future-reservation-checker` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 엔지니어와 실무자가 `korea-model-armor-guard` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
-**Audience**: `#Architect`, `#Developer`  
-**Concern**: `#Billing`, `#Resilience`  
-**Service**: `#ComputeEngine`
+**Audience**: `#Architect`, `#Compliance`, `#SecOps`  
+**Concern**: `#Compliance`, `#Resilience`, `#Security`  
+**Service**: `#GeminiAPI`, `#ModelArmor`, `#SensitiveDataProtection`
 
 ---
 
@@ -53,20 +53,20 @@ flowchart TD
    gcloud config get-value project
    gcloud config get-value compute/region
    ```
-2. `samples/gce-future-reservation-checker/.env.example`을 참조하여 `samples/gce-future-reservation-checker/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
-3. 실행에 필요한 최소 IAM 권한(`roles/compute.viewer`) 충족 여부를 안내한다.
+2. `samples/model-armor-regional-compliance-guard/.env.example`을 참조하여 `samples/model-armor-regional-compliance-guard/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
+3. 실행에 필요한 최소 IAM 권한(`roles/dlp.reader, roles/modelarmor.viewer`) 충족 여부를 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:
 ```bash
-cd samples/gce-future-reservation-checker
+cd samples/model-armor-regional-compliance-guard
 python diagnose.py --dry-run
 ```
 - 화면에 출력된 진단 결과와 계산 공식, 정상/주의/위험 판단 기준을 사용자에게 간결하게 브리핑한다.
 
 ### Step 1.3 장애 해결 및 자가 치유 시연 (Self-healing Showcase)
 실제 실행 중 발생할 수 있는 주요 예외 상황과 해결 방법을 실시간으로 중계한다:
-- **IAM 권한 부족 (`403 Forbidden`)**: 최소 필요 역할(`roles/compute.viewer`) 부여 가이드 제공
+- **IAM 권한 부족 (`403 Forbidden`)**: 최소 필요 역할(`roles/dlp.reader, roles/modelarmor.viewer`) 부여 가이드 제공
 - **리소스 부재 또는 설정 누락**: 콘솔 조치 경로 및 파라미터 자동 탐지 과정 설명
 - **비대화형 환경 방어**: `sys.stdin.isatty()` 분기에 따라 CI/CD 및 백그라운드 태스크에서 멈춤 없이 기본값으로 안전하게 동작함을 시연
 
@@ -78,7 +78,7 @@ python diagnose.py --dry-run
 
 ### Step 2.1 저장소 이동 및 의존성 확인
 ```bash
-cd samples/gce-future-reservation-checker
+cd samples/model-armor-regional-compliance-guard
 cat requirements.txt
 ```
 

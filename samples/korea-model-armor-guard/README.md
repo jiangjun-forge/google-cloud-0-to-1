@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 (`model-armor-regional-compliance-guard`)
+# 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 (`korea-model-armor-guard`)
 
-대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전 규제 위반 위험을 1분 만에 자동 진단하고, 한국형 개인 정보(Korea-specific InfoTypes) 및 로컬 하이브리드 가드레일 파이프라인 처방을 제공하는 도구다. (As of 2026-09-09)
+대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전 규제 위반 위험을 1분 만에 자동 진단하고, 한국형 개인 정보(Korea-specific InfoTypes) 및 로컬 하이브리드 가드레일 파이프라인 처방을 제공하는 도구다. (As of 2026-09-30)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#Resilience`, `#Security`  
@@ -114,8 +114,31 @@ gcloud dlp inspect-templates create \
     --info-types=KOREA_RRN,KOREA_PASSPORT,KOREA_DRIVERS_LICENSE_NUMBER,KOREA_ARN,KOREA_BRN,KOREA_NHI_NUMBER
 ```
 
-### 3. 하이브리드 로컬 가드레일 권고 아키텍처
-서울 리전의 Model Armor가 지원하지 않는 프롬프트 인젝션 및 악성 URL 검사는 애플리케이션 수신단에서 로컬 경량 검사 엔진(Regex 패턴 검사기 또는 사내 호스팅 오픈 소스 가드레일 모듈)을 1차 통과시킨 후, Model Armor의 서울 SDP 엔드포인트를 호출하는 투트랙(Two-track) 방어선을 구축한다.
+### 3. 하이브리드 로컬 가드레일(On-soil Sanitization) 권고 아키텍처
+서울 리전의 Model Armor가 지원하지 않는 프롬프트 인젝션 및 악성 URL 검사는 애플리케이션 수신단에서 로컬 경량 검사 엔진을 1차 통과시킨 후, Model Armor의 서울 SDP 엔드포인트를 호출하는 투트랙(Two-track) 방어선을 구축한다.
+
+사내 Python 애플리케이션에 직접 임베딩할 수 있는 서울 리전 온소일(On-soil) 1차 프롬프트 살균 예시:
+```python
+import re
+
+# 대한민국 고유 민감 정보 및 프롬프트 인젝션 로컬 검증 패턴 (On-soil Regex)
+KOREA_LOCAL_FILTERS = {
+    "RRN": re.compile(r"\b\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])-[1-8]\d{6}\b"),
+    "PHONE": re.compile(r"\b01[016789]-(?:\d{3}|\d{4})-\d{4}\b"),
+    "INJECTION": re.compile(r"(?i)(ignore previous instructions|system prompt|jailbreak|탈옥|이전 지시 무시)"),
+}
+
+def sanitize_on_soil(prompt: str) -> tuple[str, bool]:
+    has_violation = False
+    if KOREA_LOCAL_FILTERS["INJECTION"].search(prompt):
+        return "[BLOCKED_BY_ON_SOIL_GUARD]", True
+    sanitized = prompt
+    for name, pattern in KOREA_LOCAL_FILTERS.items():
+        if name != "INJECTION" and pattern.search(sanitized):
+            has_violation = True
+            sanitized = pattern.sub(f"[{name}_MASKED]", sanitized)
+    return sanitized, has_violation
+```
 
 ---
 

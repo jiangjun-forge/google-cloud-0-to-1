@@ -15,18 +15,18 @@ All contents, designs, and code examples are subject to change, modification, or
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
 ---
-name: korea-nct-gen-ai-compliance-checker
+name: korea-regulatory-perimeter-guard
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for korea-nct-gen-ai-compliance-checker: 대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT)...
+  Autopilot, hands-on diagnostics, and self-healing for korea-regulatory-perimeter-guard: 대한민국 금융 분야 망 분리 개선 로드맵 및 전자금융감독규정에 따라 퍼블릭 클라우드 인프라가 책임져야 하는 9대 핵심 기술적 통제를 종합 진단하는 도구다.
 ---
 
-# 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기 (Autopilot & Hands-on Guide)
+# 규제 준수 보안 경계 진단 가이드 (`korea-regulatory-perimeter-guard`) (Autopilot & Hands-on Guide)
 
-본 스킬은 고객사 엔지니어와 실무자가 `korea-nct-gen-ai-compliance-checker` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 엔지니어와 실무자가 `korea-regulatory-perimeter-guard` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`  
-**Service**: `#CloudIAM`, `#CloudKMS`, `#CloudStorage`, `#ResourceManager`, `#VertexAI`
+**Service**: `#CloudKMS`, `#CloudStorage`, `#ModelArmor`, `#ResourceManager`, `#SensitiveDataProtection`, `#VertexAI`, `#VPCServiceControls`
 
 ---
 
@@ -53,20 +53,20 @@ flowchart TD
    gcloud config get-value project
    gcloud config get-value compute/region
    ```
-2. `samples/korea-nct-gen-ai-compliance-checker/.env.example`을 참조하여 `samples/korea-nct-gen-ai-compliance-checker/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
-3. 실행에 필요한 최소 IAM 권한(`roles/accessapproval.viewer, roles/cloudkms.viewer, roles/iam.securityReviewer, roles/logging.viewer, roles/orgpolicy.policyViewer`) 충족 여부를 안내한다.
+2. `samples/korea-fsi-regulatory-perimeter-guard/.env.example`을 참조하여 `samples/korea-fsi-regulatory-perimeter-guard/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
+3. 실행에 필요한 최소 IAM 권한(`roles/accesscontextmanager.reader, roles/compute.viewer, roles/dlp.inspectTemplatesReader, roles/logging.viewer, roles/orgpolicy.policyViewer, roles/storage.admin`) 충족 여부를 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:
 ```bash
-cd samples/korea-nct-gen-ai-compliance-checker
+cd samples/korea-fsi-regulatory-perimeter-guard
 python diagnose.py --dry-run
 ```
 - 화면에 출력된 진단 결과와 계산 공식, 정상/주의/위험 판단 기준을 사용자에게 간결하게 브리핑한다.
 
 ### Step 1.3 장애 해결 및 자가 치유 시연 (Self-healing Showcase)
 실제 실행 중 발생할 수 있는 주요 예외 상황과 해결 방법을 실시간으로 중계한다:
-- **IAM 권한 부족 (`403 Forbidden`)**: 최소 필요 역할(`roles/accessapproval.viewer, roles/cloudkms.viewer, roles/iam.securityReviewer, roles/logging.viewer, roles/orgpolicy.policyViewer`) 부여 가이드 제공
+- **IAM 권한 부족 (`403 Forbidden`)**: 최소 필요 역할(`roles/accesscontextmanager.reader, roles/compute.viewer, roles/dlp.inspectTemplatesReader, roles/logging.viewer, roles/orgpolicy.policyViewer, roles/storage.admin`) 부여 가이드 제공
 - **리소스 부재 또는 설정 누락**: 콘솔 조치 경로 및 파라미터 자동 탐지 과정 설명
 - **비대화형 환경 방어**: `sys.stdin.isatty()` 분기에 따라 CI/CD 및 백그라운드 태스크에서 멈춤 없이 기본값으로 안전하게 동작함을 시연
 
@@ -78,7 +78,7 @@ python diagnose.py --dry-run
 
 ### Step 2.1 저장소 이동 및 의존성 확인
 ```bash
-cd samples/korea-nct-gen-ai-compliance-checker
+cd samples/korea-fsi-regulatory-perimeter-guard
 cat requirements.txt
 ```
 
