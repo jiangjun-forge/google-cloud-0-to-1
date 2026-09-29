@@ -34,6 +34,7 @@ All contents, designs, and code examples are subject to change, modification, or
 │   ├── fcm-push-quota-guard/                   # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
 │   ├── gce-capacity-stockout-guard/            # 리전 용량 고갈 장애 방어 및 CUD/Reservation 정합성 진단
 │   ├── gce-future-reservation-checker/         # GPU 및 특수 인스턴스 Future Reservation 사전 예약 진단
+│   ├── gce-instance-flexibility-planner/       # GCE & GKE 인스턴스 유연성 및 CCC/MIG 스톡아웃 방어 설계
 │   ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
 │   ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
 │   ├── gemini-enterprise-governance-guard/     # 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단
