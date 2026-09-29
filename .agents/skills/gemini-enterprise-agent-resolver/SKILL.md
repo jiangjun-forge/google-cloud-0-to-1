@@ -15,14 +15,14 @@ All contents, designs, and code examples are subject to change, modification, or
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
 ---
-name: gemini-enterprise-cross-org-agent-resolver
+name: gemini-enterprise-agent-resolver
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-cross-org-agent-resolver: Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책(Domain...
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-agent-resolver: Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트/조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책, IAM 권한, VPC-SC 격리를 진단하는 도구다.
 ---
 
-# Gemini Enterprise Cross-Org 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-cross-org-agent-resolver`) (Autopilot & Hands-on Guide)
+# Gemini Enterprise 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-agent-resolver`) (Autopilot & Hands-on Guide)
 
-본 스킬은 고객사 엔지니어와 실무자가 `gemini-enterprise-cross-org-agent-resolver` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 엔지니어와 실무자가 `gemini-enterprise-agent-resolver` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Resilience`, `#Security`  

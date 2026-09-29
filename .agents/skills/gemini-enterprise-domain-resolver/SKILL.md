@@ -15,14 +15,14 @@ All contents, designs, and code examples are subject to change, modification, or
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
 ---
-name: gemini-enterprise-domain-in-use-resolver
+name: gemini-enterprise-domain-resolver
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-domain-in-use-resolver: Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의해 선점되어 발생하는 도메인 충돌(domain_in_use)을 진단하고, Google Workspace ...
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-domain-resolver: Gemini Enterprise 도입 시 사내 도메인 선점 충돌을 진단하고 Cloud Identity Free 계정 기반의 테넌트 배포를 지원하는 도구다.
 ---
 
-# Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 진단기 (Autopilot & Hands-on Guide)
+# Gemini Enterprise 도메인 충돌 해결 및 테넌트 개설 진단기 (`gemini-enterprise-domain-resolver`) (Autopilot & Hands-on Guide)
 
-본 스킬은 고객사 엔지니어와 실무자가 `gemini-enterprise-domain-in-use-resolver` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 엔지니어와 실무자가 `gemini-enterprise-domain-resolver` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`  
