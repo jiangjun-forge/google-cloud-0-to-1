@@ -64,7 +64,7 @@ CHECKLIST_ITEMS = [
         "title": "대한민국 서울 리전(asia-northeast3) 내 데이터 국소화",
         "question": "프롬프트 처리 및 저장 데이터가 대한민국 국경 내(서울 리전)에 머무르며 해외로 유출되지 않는가?",
         "check_type": "GCP_AUDIT_RESIDENCY",
-        "policy_attestation": "Vertex AI 및 Gemini Enterprise는 서울 리전(asia-northeast3) 엔드포인트를 제공하여 데이터 국외 이전을 방지한다 ( https://cloud.google.com/about/locations ).",
+        "policy_attestation": "저장 데이터(At-Rest)는 서울 리전(asia-northeast3) 내 100% 보관되나, 모델 추론(Processing)은 글로벌 분산 인프라 특성상 국외 처리될 수 있다. 전송 암호화, 인메모리 휘발 및 사전 마스킹(SDP)을 통한 보완 소명이 필요하다 ( https://cloud.google.com/about/locations ).",
         "legal_basis": "국가핵심기술보호법, 금융위 망 분리 개선 로드맵",
     },
     {
@@ -165,7 +165,7 @@ CHECKLIST_ITEMS = [
         "title": "실시간 프롬프트 인젝션 및 탈옥(Jailbreak) 차단 가드레일",
         "question": "시스템 프롬프트를 탈취하거나 안전 정책을 무력화하려는 악의적 프롬프트 인젝션 시도를 실시간 방어하는가?",
         "check_type": "GCP_AUDIT_MODEL_ARMOR",
-        "policy_attestation": "Model Armor 템플릿 및 사내 온소일(On-soil) 가드레일 파이프라인을 연동하여 인젝션 프롬프트를 1차 차단한다 ( https://cloud.google.com/security/products/model-armor ).",
+        "policy_attestation": "Model Armor의 서울 리전(asia-northeast3) 환경은 SDP 연동을 지원하며, 프롬프트 인젝션 및 악성 URL 검사는 글로벌 엔진 또는 사내 로컬 하이브리드 가드레일 계층으로 상호 보완해야 한다 ( https://cloud.google.com/security/products/model-armor ).",
         "legal_basis": "OWASP Top 10 for LLM (LLM01: Prompt Injection)",
     },
     {
@@ -278,7 +278,7 @@ def evaluate_checklist_items(project_id: str, region: str, dry_run: bool) -> Lis
 
     # 모의 실행 데이터 맵 (dry-run)
     mock_status_map = {
-        "SEC-05": {"status": "PASS", "evidence": f"Vertex AI 서울 리전 엔드포인트({region}-aiplatform.googleapis.com) 사용 확인"},
+        "SEC-05": {"status": "PARTIAL", "evidence": f"저장 데이터(At-Rest)는 서울({region}) 보관되나, 모델 추론(Processing)은 글로벌 분산 인프라 경유 가능 (전송 암호화 및 사전 마스킹 보완 소명)"},
         "SEC-06": {"status": "PASS", "evidence": f"조직 정책 {region} 국소화 적용 완료 (constraints/gcp.resourceLocations)"},
         "SEC-07": {"status": "PASS", "evidence": f"Cloud KMS CMEK 키({region}/keyRings/ai-ring/cryptoKeys/ai-key) 정상 바인딩"},
         "SEC-08": {"status": "PASS", "evidence": "TLS 1.2+ 강제 암호화 스위트 적용 완료 (Cloud Armor/SSL Policy)"},
@@ -288,7 +288,7 @@ def evaluate_checklist_items(project_id: str, region: str, dry_run: bool) -> Lis
         "SEC-12": {"status": "PASS", "evidence": "aiplatform.googleapis.com 대상 DATA_READ, DATA_WRITE 감사 로그 활성화 확인"},
         "SEC-13": {"status": "PASS", "evidence": "Cloud Storage 버킷 불변 잠금(Bucket Lock, 157680000초 / 5년) 적용 확인"},
         "SEC-14": {"status": "PASS", "evidence": "BigQuery 로그 싱크(projects/example-corp-ai/datasets/gemini_audit_logs) 실시간 적재 중"},
-        "SEC-15": {"status": "PASS", "evidence": "Model Armor 템플릿(ma-seoul-guard) 활성화 및 인젝션 1차 방어 파이프라인 가동"},
+        "SEC-15": {"status": "PARTIAL", "evidence": "서울 리전 Model Armor는 SDP만 직접 지원; 프롬프트 인젝션 및 악성 URL 검사는 로컬 하이브리드 파이프라인으로 상호 보완 필요"},
         "SEC-16": {"status": "PASS", "evidence": "Sensitive Data Protection 한국 6대 인포타입(KOREA_RRN 등) 검사 템플릿 연동 확인"},
         "SEC-17": {"status": "PASS", "evidence": "Access Approval 및 Access Transparency 정상 활성화 (구글 엔지니어 접근 사전 승인 강제)"},
     }
@@ -318,8 +318,11 @@ def evaluate_checklist_items(project_id: str, region: str, dry_run: bool) -> Lis
         else:
             # 실시간 GCP 감사 로직 매핑
             if c_type == "GCP_AUDIT_RESIDENCY":
-                item_res["status"] = "PASS"
-                item_res["evidence"] = f"지정 리전({region}) 엔드포인트 격리 기준 부합"
+                item_res["status"] = "PARTIAL"
+                item_res["evidence"] = f"저장 데이터는 서울({region}) 국소화 충족; 모델 인퍼런스 연산 처리는 글로벌 분산 인프라 경유 가능 (전송 구간 암호화 및 사전 마스킹 소명)"
+            elif c_type == "GCP_AUDIT_MODEL_ARMOR":
+                item_res["status"] = "PARTIAL"
+                item_res["evidence"] = f"서울({region}) 환경은 Model Armor SDP 필터 충족; 프롬프트 인젝션 및 악성 URL 검사는 로컬 하이브리드 가드레일 계층으로 보완 필요"
             elif c_type in ["GCP_AUDIT_ORG_POLICY", "GCP_AUDIT_SA_KEY", "GCP_AUDIT_DOMAIN_POLICY"]:
                 constraint = item.get("target_constraint")
                 policies = audit_cache.get("org_policies", [])
@@ -343,6 +346,7 @@ def print_text_report(project_id: str, region: str, dry_run: bool, items: List[D
     mode_str = "모의 실행 (Dry-run)" if dry_run else "사내 실측 진단"
     total_cnt = len(items)
     pass_cnt = sum(1 for i in items if i["status"] == "PASS")
+    partial_cnt = sum(1 for i in items if i["status"] == "PARTIAL")
     warn_cnt = sum(1 for i in items if i["status"] == "WARN")
     fail_cnt = sum(1 for i in items if i["status"] == "FAIL")
 
@@ -352,16 +356,16 @@ def print_text_report(project_id: str, region: str, dry_run: bool, items: List[D
     print(f"대상 프로젝트 ID    : {project_id}")
     print(f"점검 대상 리전      : {region}")
     print(f"진단 모드           : {mode_str}")
-    print(f"종합 심의 결과      : 총 {total_cnt}개 항목 중 PASS: {pass_cnt}건, WARN: {warn_cnt}건, FAIL: {fail_cnt}건")
+    print(f"종합 심의 결과      : 총 {total_cnt}개 항목 중 PASS: {pass_cnt}건, PARTIAL(조건부 충족): {partial_cnt}건, WARN: {warn_cnt}건, FAIL: {fail_cnt}건")
     print("-" * 104)
 
     print("\n[항목별 기술적 보안 통제 및 규제 소명 현황]")
     print("-" * 104)
-    print(f"{'ID':<8} | {'분류':<12} | {'상태':<8} | {'보안 요구사항 및 점검 결과'}")
+    print(f"{'ID':<8} | {'분류':<12} | {'상태':<10} | {'보안 요구사항 및 점검 결과'}")
     print("-" * 104)
     for i in items:
         stat_label = f"[{i['status']}]"
-        print(f"{i['id']:<8} | {i['category']:<12} | {stat_label:<8} | {i['title']}")
+        print(f"{i['id']:<8} | {i['category']:<12} | {stat_label:<10} | {i['title']}")
         print(f"         * 보안팀 질문 : {i['question']}")
         print(f"         * 실측 증적   : {i['evidence']}")
         print(f"         * 공식 소명   : {i['policy_attestation']}")
@@ -378,6 +382,7 @@ def build_markdown_report(project_id: str, region: str, dry_run: bool, items: Li
     mode_str = "모의 실행 (Dry-run)" if dry_run else "사내 실측 진단"
     total_cnt = len(items)
     pass_cnt = sum(1 for i in items if i["status"] == "PASS")
+    partial_cnt = sum(1 for i in items if i["status"] == "PARTIAL")
     warn_cnt = sum(1 for i in items if i["status"] == "WARN")
     fail_cnt = sum(1 for i in items if i["status"] == "FAIL")
 
@@ -388,7 +393,7 @@ def build_markdown_report(project_id: str, region: str, dry_run: bool, items: Li
         f"- **대상 프로젝트**: `{project_id}`",
         f"- **기준 리전**: `{region}`",
         f"- **진단 모드**: `{mode_str}`",
-        f"- **종합 평가**: 총 {total_cnt}개 항목 중 **적합(PASS) {pass_cnt}건**, **주의(WARN) {warn_cnt}건**, **부적합(FAIL) {fail_cnt}건**",
+        f"- **종합 평가**: 총 {total_cnt}개 항목 중 **적합(PASS) {pass_cnt}건**, **조건부 충족(PARTIAL) {partial_cnt}건**, **주의(WARN) {warn_cnt}건**, **부적합(FAIL) {fail_cnt}건**",
         "",
         "> **[고지 사항]** 본 보고서는 구글 클라우드 공식 보안 약관(CDPA), 글로벌 공인 인증서(ISO 42001, ISO 27001 등) 및 사내 GCP 프로젝트의 실제 기술적 보안 설정을 실시간 대조하여 생성된 **공식 보안성 심의 소명 증적 문서**다.",
         "",
@@ -416,15 +421,24 @@ def build_markdown_report(project_id: str, region: str, dry_run: bool, items: Li
         "- **인적 검토 원천 배제**: Enterprise 라이선스 환경에서는 구글 내부 인력이나 제3자 평가자의 프롬프트 열람(Human Review)이 시스템적으로 전면 차단된다.",
         "- **공식 AI 경영시스템 인증**: 글로벌 최고 권위의 인공지능 경영시스템 인증인 `ISO/IEC 42001`을 정식 획득하여 신뢰성을 입증했다.",
         "",
-        "### (2) 데이터 거주성 및 암호화 통제 (Residency & Encryption)",
-        f"- **대한민국 서울 리전 국소화**: 모든 AI 추론 및 데이터 처리가 대한민국 서울 리전(`{region}`) 내에서 완결되어 해외 이전을 방지한다.",
-        "- **고객 관리 암호화 키(CMEK)**: Cloud KMS 키링을 연동하여 고객이 암호화 키의 라이프사이클을 100% 통제하며, 위급 시 키 비활성화를 통해 데이터 접근을 즉시 차단할 수 있다.",
+        "### (2) 데이터 거주성 및 추론 경계 통제 (Residency & Processing Boundary)",
+        f"- **저장 데이터 서울 리전 국소화**: 고객 프롬프트, 튜닝 데이터 및 BigQuery/GCS 적재 데이터는 대한민국 서울 리전(`{region}`) 내에 100% 저장된다.",
+        "- **추론 처리(Processing) 국외 이전 보완 소명**: Gemini 글로벌 분산 추론 인프라 특성상 연산 처리가 일시적으로 해외를 경유할 수 있으나, 전송 구간 엔드투엔드 TLS 1.3 암호화, 인메모리 연산 후 즉시 소거(No Storage), No-Training 및 No Human Review 보장을 결합하여 규제 요건을 충족한다.",
+        "- **사전 마스킹 연계**: 고유식별정보나 민감 데이터는 Model Armor / Sensitive Data Protection(SDP)을 통해 사내망 또는 서울 리전 내에서 사전 마스킹한 후 모델을 호출하도록 구성한다.",
         "",
-        "### (3) 네트워크 경계 격리 및 접근 제어 (VPC-SC & IAM)",
+        "### (3) 암호화 및 키 관리 (Encryption & Key Management)",
+        "- **고객 관리 암호화 키(CMEK)**: Cloud KMS 키링을 연동하여 고객이 암호화 키의 라이프사이클을 100% 통제하며, 위급 시 키 비활성화를 통해 데이터 접근을 즉시 차단할 수 있다.",
+        "- **전송 구간 암호화**: 최신 TLS 암호화 프로토콜을 강제하여 도청 및 중간자 공격을 방어한다.",
+        "",
+        "### (4) 네트워크 경계 격리 및 접근 제어 (VPC-SC & IAM)",
         "- **VPC Service Controls**: 서비스 경계를 적용하여 외부 인터넷 통신을 차단하고 승인된 사내 전용망에서만 프라이빗 API 호출을 허용한다.",
         "- **자격 증명 유출 방어**: 정적 서비스 계정 키 생성을 차단(`disableServiceAccountKeyCreation`)하고 Workload Identity Federation을 강제한다.",
         "",
-        "### (4) 실시간 감사 로깅 및 불변 보존 (Audit & Immutability)",
+        "### (5) AI 안전 가드레일 및 서울 리전 보완 (Guardrails & Model Armor)",
+        "- **Model Armor 리전 특성**: 서울 리전(`asia-northeast3`)의 Model Armor는 Sensitive Data Protection(SDP)을 통한 민감정보 마스킹을 직접 지원한다.",
+        "- **프롬프트 인젝션 및 안전성 보완**: 프롬프트 인젝션 및 악성 URL 검사는 글로벌 Model Armor 엔드포인트 또는 사내 로컬 하이브리드 가드레일 파이프라인(`korea-model-armor-guard`)을 연계하여 1차 차단 체계를 구축한다.",
+        "",
+        "### (6) 실시간 감사 로깅 및 불변 보존 (Audit & Immutability)",
         "- **감사 추적성 확보**: Cloud Audit Logs를 통해 모든 입출력 이벤트를 기록하고 BigQuery 스트리밍 적재 파이프라인을 구축한다.",
         "- **5년 불변 잠금(Bucket Lock)**: 전자금융감독규정에 따라 감사 데이터 저장 버킷에 5년 WORM 보존 정책을 적용하여 위변조를 방어한다.",
         "",

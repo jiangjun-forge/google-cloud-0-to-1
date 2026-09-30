@@ -39,7 +39,7 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     A["진단 시작 (python diagnose.py)"] --> B["사내 GCP 프로젝트의 실제 보안 인프라 감사 (VPC-SC, CMEK, 로깅, 정책)"]
     B --> C["구글 공식 보안 약관(CDPA), 무학습(No-Training) 및 공인 인증(ISO 42001) 결합"]
-    C --> D["20대 핵심 보안 심의 체크리스트 항목별 PASS / WARN 판정 및 실측 증적 매핑"]
+    C --> D["20대 핵심 보안 심의 체크리스트 항목별 PASS / PARTIAL / WARN 판정 및 실측 증적 매핑"]
     D --> E["report.md 완제품 'AI 보안성 심의 소명서' 자동 생성"]
     E --> F["사내 정보보호팀 / CISO 및 금융당국 심의 서류로 즉시 제출"]
 ```
