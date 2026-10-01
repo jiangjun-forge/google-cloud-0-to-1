@@ -200,14 +200,14 @@ CLUSTER BY department, activity_tier;
 """
 
 
-def print_summary(evaluated: list[dict], threshold_days: int, dataset: str, table: str):
+def print_summary(evaluated: list[dict], threshold_days: int, dataset: str, table: str, seat_cost: float = 30.0):
   """분석 결과와 부서별 채택률, 회수 권고 목록을 콘솔에 출력한다."""
   total_seats = len(evaluated)
   dormant_users = [u for u in evaluated if u["reclaim_candidate"]]
   dormant_count = len(dormant_users)
   active_count = total_seats - dormant_count
   adoption_rate = (active_count / total_seats * 100) if total_seats > 0 else 0
-  monthly_waste_usd = dormant_count * 30  # 인당 월 $30 기준 추정
+  monthly_waste_usd = dormant_count * seat_cost
 
   print("\n" + "=" * 105)
   print(f"{'사용자 이메일':<30} {'소속 부서':<22} {'활성일(30d)':<12} {'프롬프트':<10} {'등급':<10} {'회수 대상'}")
@@ -245,7 +245,10 @@ def print_summary(evaluated: list[dict], threshold_days: int, dataset: str, tabl
   print(f"* 전체 배포 좌석: {total_seats}개")
   print(f"* 실제 활성 좌석: {active_count}개 (실질 채택률: {adoption_rate:.1f}%)")
   print(f"* 미사용 유휴 좌석: {dormant_count}개 (회수 권고 대상)")
-  print(f"* 추정 월간 비용 누수: ${monthly_waste_usd:,} / 월 (연간 환산 약 ${monthly_waste_usd * 12:,})")
+  if seat_cost > 0:
+    print(f"* 추정 월간 비용 누수: 약 ${monthly_waste_usd:,} / 월 (좌석당 ${seat_cost:,}/월 기준, 공식 요금: https://cloud.google.com/gemini/enterprise/pricing )")
+  else:
+    print("* 추정 월간 비용 누수: 사내 계약 라이선스 단가 기준 ( https://cloud.google.com/gemini/enterprise/pricing )")
 
   print("\n[유휴 라이선스 회수 권고 조치]")
   for d in dormant_users:
@@ -261,6 +264,13 @@ def main():
   )
   parser.add_argument("--project", help="대상 GCP 프로젝트 ID")
   threshold_env = os.getenv("INACTIVITY_DAYS_THRESHOLD")
+  seat_cost_env = os.getenv("SEAT_COST_USD")
+  parser.add_argument(
+      "--seat-cost",
+      type=float,
+      default=float(seat_cost_env) if seat_cost_env else 30.0,
+      help="라이선스 1좌석당 월간 단가 USD (기본값: 30.0, 공식 요금 페이지 참조)",
+  )
   parser.add_argument(
       "--dataset",
       default=os.getenv("BQ_DATASET") or "gemini_analytics",
@@ -297,13 +307,15 @@ def main():
         "dataset": args.dataset,
         "table": args.table,
         "threshold_days": args.threshold_days,
+        "seat_cost_usd": args.seat_cost,
         "total_seats": len(evaluated),
         "reclaim_candidates_count": len([u for u in evaluated if u["reclaim_candidate"]]),
+        "estimated_monthly_waste_usd": len([u for u in evaluated if u["reclaim_candidate"]]) * args.seat_cost,
         "users": evaluated,
     }
     print(json.dumps(output, indent=2, ensure_ascii=False))
   else:
-    print_summary(evaluated, args.threshold_days, args.dataset, args.table)
+    print_summary(evaluated, args.threshold_days, args.dataset, args.table, args.seat_cost)
 
 
 if __name__ == "__main__":

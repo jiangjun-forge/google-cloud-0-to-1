@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 그러나 현행 쿠버네티스 서비스 메시(Istio Full-mesh) 기반의 다계층 중계 구조는 다음과 같은 심각한 비즈니스 및 기술적 한계를 유발한다:
 1. **지연 시간(TTFT) 증가 및 사용자 경험 저하**: 최상위 라우팅 허브를 거쳐 중간 메시 프록시를 2~3홉 경유하면서 홉당 지연 시간과 지터(Jitter)가 누적되어 대화형 인공 지능의 첫 토큰 생성 시간(Time to First Token)이 악화된다.
-2. **이중 데이터 전송(Egress) 및 클라우드 라이선스 비용 누수**: 타 클라우드 GPU 워커 노드에 대한 GKE Fleet 관리 라이선스(vCPU당 월 $73) 과금 및 클러스터 간 불필요한 크로스 리전 메시 트래픽으로 인한 네트워크 전송 비용이 발생한다.
+2. **이중 데이터 전송(Egress) 및 클라우드 라이선스 비용 누수**: 타 클라우드 GPU 워커 노드에 대한 GKE Enterprise 관리 라이선스 과금( https://cloud.google.com/anthos/pricing ) 및 클러스터 간 불필요한 크로스 리전 메시 트래픽으로 인한 네트워크 전송 비용이 발생한다.
 3. **제어 평면(Istiod) 메모리 고갈(OOM) 및 라우팅 불균형**: 수십 개 클러스터의 엔드포인트를 실시간 동기화하는 메시 컨트롤 플레인의 부하로 인해 장애 전파 위험이 존재하며, 특정 클러스터에 부하가 몰려 GPU가 유휴 상태로 낭비되거나 요청이 드롭된다.
 
 따라서 구글 클라우드의 글로벌 애니캐스트(Anycast) 기반 L7 트래픽 제어 평면(Global External Application Load Balancer 및 Hybrid/Internet NEG)과 GKE Inference Gateway 구성을 실시간 진단하고, 1홉 플랫 직결 아키텍처로의 전환 처방을 제공하는 진단 도구가 필수적이다.

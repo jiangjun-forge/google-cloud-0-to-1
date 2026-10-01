@@ -56,8 +56,8 @@ DIAGNOSTIC_CHECKS = [
     {
         "id": "CHK-05",
         "category": "라이선스 최적화",
-        "title": "하이브리드/인터넷 NEG를 통한 타 클라우드 $0 라이선스 직결",
-        "description": "타사 클라우드(EKS, AKS 등) GPU 클러스터를 GKE Fleet(vCPU당 월 $73) 과금 없이 Hybrid/Internet NEG로 직결 수용하고 있는가?",
+        "title": "하이브리드/인터넷 NEG를 통한 타 클라우드 추가 라이선스 비용 없는 직결",
+        "description": "타사 클라우드(EKS, AKS 등) GPU 클러스터를 GKE Enterprise 멀티 클라우드 vCPU 라이선스 과금 없이 Hybrid/Internet NEG로 직결 수용하고 있는가? ( https://cloud.google.com/anthos/pricing )",
     },
     {
         "id": "CHK-06",
@@ -162,7 +162,7 @@ def evaluate_inference_gateway(project_id: str, url_map_name: str, dry_run: bool
         },
         "CHK-05": {
             "status": "PASS",
-            "evidence": "이종 타 클라우드 클러스터가 Internet/Hybrid NEG로 등록되어 GKE Fleet vCPU 라이선스 과금 전면 회피 ($0)",
+            "evidence": "이종 타 클라우드 클러스터가 Internet/Hybrid NEG로 등록되어 GKE Enterprise 멀티 클라우드 vCPU 라이선스 과금 전면 회피 (라이선스 프리)",
             "remediation": "추가 조치 불필요",
         },
         "CHK-06": {
@@ -266,7 +266,7 @@ def print_text_report(data: Dict[str, Any], dry_run: bool) -> None:
     print("\n" + "=" * 104)
     print("[실무자 요약: As-Is(Istio 풀 메시) 대비 To-Be(Anycast 직결) 효과]")
     print("  * 네트워크 지연 시간(TTFT) : 다계층 중계 홉 제거로 20~30ms 이상 지연 시간 단축")
-    print("  * 클라우드 라이선스 비용   : 타 클라우드 GPU 워커 노드에 대한 GKE Fleet vCPU 과금 전면 회피 ($0)")
+    print("  * 클라우드 라이선스 비용   : 타 클라우드 GPU 워커 노드에 대한 GKE Enterprise 관리 라이선스 과금 전면 회피")
     print("  * 세부 진단 보고서가 report.md에 자동 저장되었습니다.")
     print("=" * 104 + "\n")
 
@@ -314,7 +314,7 @@ def build_markdown_report(data: Dict[str, Any], dry_run: bool) -> str:
         "| **네트워크 구조** | 최상위 허브 클러스터를 거쳐 다수 분산 클러스터 중계 | Global External ALB 중심 1:1 플랫 직결 (스타형) |",
         "| **통신 홉 및 지연** | 2~3홉 프록시 중계 (헤어피닝 지연 시간 발생) | 단 1홉 Anycast 직결 (지연 시간 20~30ms 단축) |",
         "| **제어 평면 부하** | 수십 개 클러스터 엔드포인트 동기화로 Istiod OOM 발생 | 각 클러스터는 로컬 인그레스만 관리, 동기화 부하 0 |",
-        "| **라이선스 비용** | 타 클라우드 GKE Fleet 등록 시 vCPU당 월 $73 과금 | Hybrid / Internet NEG 활용으로 라이선스 비용 $0 |",
+        "| **라이선스 비용** | 타 클라우드 GKE Enterprise 등록 시 vCPU 관리 라이선스 과금 ( https://cloud.google.com/anthos/pricing ) | Hybrid / Internet NEG 활용으로 추가 관리 라이선스 비용 없음 |",
         "| **지능형 부하 분산** | 정적 가중치 분배 한계 (메모리 포화 인지 불가) | 실시간 **KV-cache 사용률(임계치 40% 도달 시 자동 넘침)** 및 `LEAST_REQUEST` 기반 지능형 라우팅 |",
         "| **장애 격리** | 상위 허브 장애 시 전면 마비 | 헬스 체크 및 서킷 브레이커 기반 비정상 클러스터 즉시 우회 |",
         "",
