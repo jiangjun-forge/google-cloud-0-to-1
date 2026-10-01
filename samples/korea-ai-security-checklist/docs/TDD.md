@@ -20,7 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 기능 요구 사항 (Functional Requirements)
 
 ### FR-01: 20대 핵심 보안 체크리스트 카탈로그 내장
-- AI 거버넌스(4문항), 데이터 주권(2문항), 암호화(2문항), 네트워크/접근통제(3문항), 감사로깅/보존(3문항), AI안전/개인정보(2문항), 공급망/라이프사이클(4문항) 등 총 20개 문항을 정규화한다.
+- AI 거버넌스(4문항), 데이터 주권(2문항), 암호화(2문항), 네트워크/접근통제(3문항), 감사로깅/보존(3문항), AI안전/개인정보(2문항), 공급망/라이프사이클(4문항) 등 총 20개 문항을 정규화한다. 상세 체크리스트 정의 및 법적 소명 매핑은 [CHECKLIST.md](CHECKLIST.md)를 표준 단일 진실 공급원(SSOT)으로 삼는다.
 
 ### FR-02: 실시간 GCP 리소스 보안 감사
 - `gcloud resource-manager org-policies list` 명령을 통해 핵심 보안 조직 정책 적용 여부를 실측 확인한다.

@@ -22,7 +22,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 비즈니스 요구 사항 목록
 
 ### BR-01: 20대 핵심 보안 심의 카탈로그 표준화
-- 국내 개인정보보호위원회 「AI 프라이버시 리스크 관리 모델」, KISA AI 보안 요구사항 및 금융보안원 가이드라인을 분석하여 공통 20대 핵심 질의(SEC-01 ~ SEC-20)를 정규화해야 한다.
+- 국내 개인정보보호위원회 「AI 프라이버시 리스크 관리 모델」, KISA AI 보안 요구사항 및 금융보안원 가이드라인을 분석하여 공통 20대 핵심 질의(SEC-01 ~ SEC-20)를 정규화한다. 세부 문항 카탈로그 및 법적 근거는 [CHECKLIST.md](CHECKLIST.md)를 참조한다.
 
 ### BR-02: 구글 공식 보안 약관 및 국제 인증 소명 결합
 - 고객 데이터의 모델 재학습 원천 배제(CDPA), 인적 검토 배제(No Human Review), ISO/IEC 42001 및 ISO 27001/17/18 인증에 관한 공식 URL과 법적 소명 문구를 자동으로 매핑해야 한다.
