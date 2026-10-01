@@ -130,6 +130,10 @@ gcloud compute instance-groups managed create [MIG_NAME] \
 - 전 리전, 전 머신 패밀리에 교차 적용되는 금액 기반 Flex CUD(Flexible Committed Use Discounts)를 결합하여 인프라 유연성과 FinOps 할인을 동시 보장한다.
 - 지속 사용 할인(CUD) 공식 문서 ( https://cloud.google.com/docs/cuds )
 
+### 5단계: (선택 사항) Fluid Compute 크로스 리전 네트워킹 구성
+- 가속기(GPU/TPU) 품귀로 인해 단일 리전에서 전체 연산 용량을 확보하지 못할 경우, 구글 전용 글로벌 프라이빗 백본 기반의 Cross-Region VPC 및 Dynamic Routing을 활용하여 분산 리전 간 레이턴시를 최소화하는 유동적 컴퓨팅(Fluid Compute) 네트워킹을 결합한다.
+- Fluid Compute 네트워킹 공식 가이드 ( https://cloud.google.com/blog/topics/developers-practitioners/how-google-cloud-networking-supports-your-fluid-compute-choices-for-ai-workloads )
+
 ---
 
 ## 6. 자원 정리 가이드 (Teardown)

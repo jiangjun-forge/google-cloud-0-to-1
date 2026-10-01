@@ -160,6 +160,11 @@ def generate_with_fallback(client, prompt):
     return generate_with_retry(client, "gemini-2.5-flash", prompt)
 ```
 
+### 3. 클라우드 장애(Incident) 대응 모범 사례 결합
+- 리전 또는 플랫폼 단위의 대규모 인시던트 발생 시, 애플리케이션 레벨의 무한 재시도는 오히려 인프라에 트래픽 쓰나미(Thundering Herd)를 유발할 수 있다.
+- 구글 Personalized Service Health 대시보드 연동 및 서킷 브레이커(Circuit Breaker)를 결합하여 장애 확산을 차단하는 인시던트 대응 모범 사례를 준수한다.
+- 클라우드 인시던트 핸들링 모범 사례 가이드 ( https://cloud.google.com/blog/topics/developers-practitioners/cloud-reliability-incident-handling-best-practices )
+
 ---
 
 ## 자원 정리 (Teardown) 안내
