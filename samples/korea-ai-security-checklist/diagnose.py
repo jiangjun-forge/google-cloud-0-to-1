@@ -482,9 +482,8 @@ def main() -> None:
         print(json.dumps(summary, indent=2, ensure_ascii=False))
     else:
         print_text_report(reported_project, args.region, args.dry_run, items)
-
-    report_content = build_markdown_report(reported_project, args.region, args.dry_run, items)
-    save_markdown_report(report_content, "report.md")
+        report_content = build_markdown_report(reported_project, args.region, args.dry_run, items)
+        save_markdown_report(report_content, "report.md")
 
 
 if __name__ == "__main__":

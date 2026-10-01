@@ -159,8 +159,9 @@ def evaluate_inference_gateway(project_id: str, url_map_name: str, dry_run: bool
         return {
             "project_id": project_id,
             "url_map_name": url_map_name or "ai-inference-gw-mock",
-            "cluster_count": "10+개",
-            "total_gpus": "1,000+장",
+            "cluster_count": 10,
+            "total_gpus": 1000,
+            "capacity_summary": "10+ clusters, 1,000+ GPUs",
             "checks": results,
         }
 
@@ -194,7 +195,8 @@ def evaluate_inference_gateway(project_id: str, url_map_name: str, dry_run: bool
         "project_id": project_id,
         "url_map_name": detected_url_map or "미지정 (Not Found)",
         "cluster_count": 1 if detected_url_map else 0,
-        "total_gpus": "실측 환경 연동",
+        "total_gpus": 0,
+        "capacity_summary": "실측 환경 연동",
         "checks": results,
     }
 
@@ -335,9 +337,8 @@ def main() -> None:
         print(json.dumps(eval_data, ensure_ascii=False, indent=2))
     else:
         print_text_report(eval_data, args.dry_run)
-
-    report_md = build_markdown_report(eval_data, args.dry_run)
-    save_markdown_report(report_md)
+        report_md = build_markdown_report(eval_data, args.dry_run)
+        save_markdown_report(report_md)
 
 
 if __name__ == "__main__":
