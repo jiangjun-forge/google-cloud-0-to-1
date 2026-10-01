@@ -24,10 +24,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ```text
 .
 ├── .agents/                                    # Antigravity(agy) 및 Jetski AI 에이전트 실습 스킬
-│   └── skills/                                 # 39개 시나리오별 Autopilot 및 핸즈온 가이드
+│   └── skills/                                 # 40개 시나리오별 Autopilot 및 핸즈온 가이드
 ├── LICENSE                                     # Apache-2.0 오픈소스 라이선스
 ├── README.md                                   # 프로젝트 전체 개요 및 아키텍처 안내서
-└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (39개)
+└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (40개)
     ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
     ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
     ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
@@ -54,6 +54,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gemini-resilience-checker/              # 429 장애 극복 복원력 패턴(백오프, 지터, 폴백) 진단
     ├── gemini-vpc-sc-denial-resolver/          # VPC-SC 보안 경계 위반 감사 로그 역추적 및 처방
     ├── gke-ingress-502-resolver/               # GKE Ingress/Gateway 502 Bad Gateway 4대 원인 체인 역추적
+    ├── gke-multi-cluster-inference-gateway/    # 멀티 클러스터 GPU L7 Anycast 직결 및 라우팅 병목 진단
     ├── gke-source-ip-snat-guard/               # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
     ├── iam-permission-resolver/                # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
     ├── kms-key-rotation-outage-guard/          # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방

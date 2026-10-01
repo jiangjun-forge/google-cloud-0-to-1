@@ -26,7 +26,7 @@ CHECKLIST_ITEMS = [
         "title": "고객 데이터의 파운데이션 모델 재학습 원천 배제",
         "question": "입력된 프롬프트, 첨부 파일 및 모델 응답이 구글의 기초 모델(LLM) 학습에 재활용되는가?",
         "check_type": "ATTESTATION_POLICY",
-        "policy_attestation": "Google Cloud 생성형 AI 서비스 약관(CDPA)상 고객의 입력 및 출력 데이터는 모델 학습에 절대 활용되지 않는다 ( https://cloud.google.com/terms/data-processing-addendum ).",
+        "policy_attestation": "Google Cloud 생성형 AI 서비스 약관(CDPA) 및 Secure AI 백서에 따라 고객 입력/출력 데이터는 모델 학습에 절대 활용되지 않는다 ( https://cloud.google.com/terms/data-processing-addendum , https://services.google.com/fh/files/misc/secure_ai_secure_data.pdf ).",
         "legal_basis": "개인정보보호위원회 AI 프라이버시 리스크 관리 모델, K-ISMS",
     },
     {
