@@ -246,9 +246,9 @@ def print_summary(evaluated: list[dict], threshold_days: int, dataset: str, tabl
   print(f"* 실제 활성 좌석: {active_count}개 (실질 채택률: {adoption_rate:.1f}%)")
   print(f"* 미사용 유휴 좌석: {dormant_count}개 (회수 권고 대상)")
   if seat_cost > 0:
-    print(f"* 추정 월간 비용 누수: 약 ${monthly_waste_usd:,} / 월 (좌석당 ${seat_cost:,}/월 기준, 공식 요금: https://cloud.google.com/gemini/enterprise/pricing )")
+    print(f"* 추정 월간 비용 누수: 약 ${monthly_waste_usd:,} / 월 (좌석당 ${seat_cost:,}/월 기준, 공식 요금: https://cloud.google.com/gemini-enterprise/pricing )")
   else:
-    print("* 추정 월간 비용 누수: 사내 계약 라이선스 단가 기준 ( https://cloud.google.com/gemini/enterprise/pricing )")
+    print("* 추정 월간 비용 누수: 사내 계약 라이선스 단가 기준 ( https://cloud.google.com/gemini-enterprise/pricing )")
 
   print("\n[유휴 라이선스 회수 권고 조치]")
   for d in dormant_users:
