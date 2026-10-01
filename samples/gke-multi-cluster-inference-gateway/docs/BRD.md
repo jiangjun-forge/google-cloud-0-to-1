@@ -30,7 +30,7 @@ All contents, designs, and code examples are subject to change, modification, or
 - 사내 운영 환경의 로드 밸런서(Global External ALB), URL Map, 백엔드 서비스 및 NEG(Network Endpoint Group) 구성을 조회하여 다계층 프록시 중계 병목 유무를 식별해야 한다.
 
 ### BR-02: GPU 인퍼런스 가중치 및 지능형 부하 분산 점검
-- 17개 이상의 분산 클러스터 백엔드 간에 가중치 기반 라우팅(Weight-based Routing), 최소 요청 분배(LEAST_REQUEST), 타임아웃 및 이상치 탐지(Outlier Detection / Circuit Breaker)가 적절히 구성되었는지 검증해야 한다.
+- 분산 클러스터 백엔드 간에 가중치 기반 라우팅(Weight-based Routing), 실시간 KV-cache 점유율(임계치 40% 도달 시 자동 오버플로), 최소 요청 분배(LEAST_REQUEST), 타임아웃 및 이상치 탐지(Outlier Detection / Circuit Breaker)가 적절히 구성되었는지 검증해야 한다.
 
 ### BR-03: 지연 시간 단축 및 라이선스 비용 절감 수치 소명
 - Istio 3홉 중계 대비 Anycast 1홉 플랫 직결 시의 예상 RTT 지연 개선 효과와 GKE Fleet 라이선스 회피 효과를 비교 리포트로 산출해야 한다.

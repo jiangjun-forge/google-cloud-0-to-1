@@ -25,6 +25,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### FR-02: 백엔드 서비스 및 로드 밸런싱 알고리즘 검사
 - 각 GPU 백엔드 서비스의 `localityLbPolicy`가 `LEAST_REQUEST`(최소 활성 요청 기반 동적 분배)로 구성되었는지 점검한다.
+- 긴 컨텍스트 및 에이전트 워크로드의 VRAM 고갈을 방지하기 위해 GKE Inference Gateway의 실시간 KV-cache 사용률 신호(임계치 40% 도달 시 건강한 타 리전 클러스터로 자동 넘침/Spillover) 연동 여부를 점검한다.
 - 긴 스트리밍 LLM 추론 연결을 지원하기 위한 백엔드 타임아웃(`timeoutSec` >= 600초) 설정 여부를 확인한다.
 
 ### FR-03: 서킷 브레이커 및 이상치 탐지(Outlier Detection) 감사

@@ -38,8 +38,8 @@ DIAGNOSTIC_CHECKS = [
     {
         "id": "CHK-02",
         "category": "부하 분산 정책",
-        "title": "LLM 인퍼런스 최적 로드 밸런싱 (LEAST_REQUEST)",
-        "description": "단순 라운드로빈이 아닌 활성 처리 요청 수 기반(LEAST_REQUEST)으로 가용 GPU가 있는 클러스터로 트래픽을 동적 라우팅하는가?",
+        "title": "KV 캐시 인지 지능형 라우팅 및 최소 요청 분배 (LEAST_REQUEST & KV-Cache)",
+        "description": "단순 라운드로빈이 아닌 실시간 KV-cache 점유율(임계치 40% 초과 시 자동 오버플로) 및 활성 요청 수 기반으로 가용 GPU가 있는 클러스터로 동적 라우팅하는가?",
     },
     {
         "id": "CHK-03",
@@ -120,16 +120,16 @@ def evaluate_inference_gateway(project_id: str, url_map_name: str, dry_run: bool
     """멀티 클러스터 인퍼런스 게이트웨이 구성을 감사하고 진단 결과를 반환한다."""
     results = []
 
-    # 모의 실행 데이터 맵 (dry-run: 17개 분산 GPU 클러스터 가상 환경)
+    # 모의 실행 데이터 맵 (dry-run: 다중 리전 분산 GPU 클러스터 가상 환경)
     mock_evaluations = {
         "CHK-01": {
             "status": "PASS",
-            "evidence": "Global External ALB URL Map(ai-inference-gw)에서 17개 분산 클러스터 백엔드 서비스로 Anycast 1홉 플랫 직결 확인",
+            "evidence": "Global External ALB URL Map(ai-inference-gw)에서 분산 클러스터 백엔드 서비스로 Anycast 1홉 플랫 직결 확인",
             "remediation": "추가 조치 불필요 (현재 아키텍처 양호)",
         },
         "CHK-02": {
             "status": "PASS",
-            "evidence": "모든 GPU 인퍼런스 백엔드 서비스의 localityLbPolicy가 LEAST_REQUEST(최소 활성 요청 동적 분배)로 설정됨",
+            "evidence": "Inference Gateway의 KV-cache 사용률 신호(임계치 40% 도달 시 건강한 타 리전 클러스터로 자동 넘침/Spillover) 및 LEAST_REQUEST 부하 분산 연동 확인",
             "remediation": "추가 조치 불필요",
         },
         "CHK-03": {
@@ -144,7 +144,7 @@ def evaluate_inference_gateway(project_id: str, url_map_name: str, dry_run: bool
         },
         "CHK-05": {
             "status": "PASS",
-            "evidence": "타 클라우드 10개 클러스터가 Internet/Hybrid NEG로 등록되어 GKE Fleet vCPU 라이선스 과금 전면 회피 ($0)",
+            "evidence": "이종 타 클라우드 클러스터가 Internet/Hybrid NEG로 등록되어 GKE Fleet vCPU 라이선스 과금 전면 회피 ($0)",
             "remediation": "추가 조치 불필요",
         },
     }
@@ -159,8 +159,8 @@ def evaluate_inference_gateway(project_id: str, url_map_name: str, dry_run: bool
         return {
             "project_id": project_id,
             "url_map_name": url_map_name or "ai-inference-gw-mock",
-            "cluster_count": 17,
-            "total_gpus": "2,200+장",
+            "cluster_count": "10+개",
+            "total_gpus": "1,000+장",
             "checks": results,
         }
 
@@ -274,13 +274,13 @@ def build_markdown_report(data: Dict[str, Any], dry_run: bool) -> str:
         "",
         "## 2. As-Is vs To-Be 아키텍처 비교 분석",
         "",
-        "| 비교 항목 | 현행 (As-Is: 다계층 Istio 풀 메시 중계) | 제안 (To-Be: 글로벌 L7 Anycast 플랫 직결) |",
+        "| 비교 항목 | 현행 (As-Is: 다계층 Istio 풀 메시 중계) | 제안 (To-Be: 글로벌 L7 Anycast 플랫 직결 + Inference Gateway) |",
         "| :--- | :--- | :--- |",
-        "| **네트워크 구조** | 최상위 허브 클러스터를 거쳐 17개 하위 클러스터 중계 | Global External ALB 중심 1:1 플랫 직결 (스타형) |",
-        "| **통신 홉 및 지연** | 2~3홉 프록시 중계 (헤어피닝 지연 시간 발생) | 단 1홉 Anycast 직결 (지연 시간 최소화) |",
-        "| **제어 평면 부하** | 17개 클러스터 엔드포인트 동기화로 Istiod OOM 발생 | 각 클러스터는 로컬 인그레스만 관리, 동기화 부하 0 |",
+        "| **네트워크 구조** | 최상위 허브 클러스터를 거쳐 다수 분산 클러스터 중계 | Global External ALB 중심 1:1 플랫 직결 (스타형) |",
+        "| **통신 홉 및 지연** | 2~3홉 프록시 중계 (헤어피닝 지연 시간 발생) | 단 1홉 Anycast 직결 (지연 시간 20~30ms 단축) |",
+        "| **제어 평면 부하** | 수십 개 클러스터 엔드포인트 동기화로 Istiod OOM 발생 | 각 클러스터는 로컬 인그레스만 관리, 동기화 부하 0 |",
         "| **라이선스 비용** | 타 클라우드 GKE Fleet 등록 시 vCPU당 월 $73 과금 | Hybrid / Internet NEG 활용으로 라이선스 비용 $0 |",
-        "| **지능형 부하 분산** | 정적 가중치 분배 한계 | `LEAST_REQUEST` 기반 여유 GPU 클러스터로 동적 라우팅 |",
+        "| **지능형 부하 분산** | 정적 가중치 분배 한계 (메모리 포화 인지 불가) | 실시간 **KV-cache 사용률(임계치 40% 도달 시 자동 넘침)** 및 `LEAST_REQUEST` 기반 지능형 라우팅 |",
         "| **장애 격리** | 상위 허브 장애 시 전면 마비 | 헬스 체크 및 서킷 브레이커 기반 비정상 클러스터 즉시 우회 |",
         "",
         "---",
@@ -326,7 +326,7 @@ def save_markdown_report(report_md: str, output_path: str = "report.md") -> None
 
 def main() -> None:
     args = parse_arguments()
-    project_id = args.project or get_default_project(args.dry_run)
+    project_id = args.project or ("example-ai-corp" if args.dry_run else get_default_project(args.dry_run))
     url_map_name = args.url_map
 
     eval_data = evaluate_inference_gateway(project_id, url_map_name, args.dry_run)

@@ -40,7 +40,7 @@ description: >-
 
 ## 2. 점검 핵심 항목 (5대 지표)
 - **CHK-01**: 다계층 메시 중계 배제 및 Anycast 1홉 플랫 직결 여부
-- **CHK-02**: LLM 인퍼런스 최적 부하 분산 (`localityLbPolicy: LEAST_REQUEST`)
+- **CHK-02**: 실시간 KV-cache 사용률 신호(임계치 40% 도달 시 자동 오버플로) 및 `LEAST_REQUEST` 지능형 부하 분산
 - **CHK-03**: 스트리밍 응답 보장을 위한 백엔드 타임아웃 (`timeoutSec >= 600s`)
 - **CHK-04**: 서킷 브레이커 및 이상치 탐지 (`outlierDetection`)
 - **CHK-05**: 하이브리드/인터넷 NEG를 통한 타 클라우드 $0 라이선스 직결
