@@ -38,9 +38,12 @@ description: >-
 
 ---
 
-## 2. 점검 핵심 항목 (5대 지표)
+## 2. 점검 핵심 항목 (8대 지표)
 - **CHK-01**: 다계층 메시 중계 배제 및 Anycast 1홉 플랫 직결 여부
 - **CHK-02**: 실시간 KV-cache 사용률 신호(임계치 40% 도달 시 자동 오버플로) 및 `LEAST_REQUEST` 지능형 부하 분산
 - **CHK-03**: 스트리밍 응답 보장을 위한 백엔드 타임아웃 (`timeoutSec >= 600s`)
 - **CHK-04**: 서킷 브레이커 및 이상치 탐지 (`outlierDetection`)
 - **CHK-05**: 하이브리드/인터넷 NEG를 통한 타 클라우드 $0 라이선스 직결
+- **CHK-06**: 관리형 GKE Inference Gateway의 동일 VPC 제약 준수 여부
+- **CHK-07**: 백엔드 서비스당 최대 50개 NEG 할당 쿼터 한계 방어
+- **CHK-08**: Model Armor 미지원에 따른 Cloud Armor L7 WAF 보완 결합 여부

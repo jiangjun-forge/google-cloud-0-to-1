@@ -27,7 +27,7 @@ except ImportError:
     pass
 
 
-# 멀티 클러스터 인퍼런스 라우팅 핵심 점검 5대 항목
+# 멀티 클러스터 인퍼런스 라우팅 핵심 점검 8대 항목 (공식 제약 조건 결합)
 DIAGNOSTIC_CHECKS = [
     {
         "id": "CHK-01",
@@ -58,6 +58,24 @@ DIAGNOSTIC_CHECKS = [
         "category": "라이선스 최적화",
         "title": "하이브리드/인터넷 NEG를 통한 타 클라우드 $0 라이선스 직결",
         "description": "타사 클라우드(EKS, AKS 등) GPU 클러스터를 GKE Fleet(vCPU당 월 $73) 과금 없이 Hybrid/Internet NEG로 직결 수용하고 있는가?",
+    },
+    {
+        "id": "CHK-06",
+        "category": "네트워크 경계 제약",
+        "title": "관리형 GKE Inference Gateway의 단일 VPC 요건 준수",
+        "description": "관리형 GKE Inference Gateway 컨트롤러 사용 시 모든 타깃 클러스터가 동일 VPC에 위치하는가? (Cross-VPC 및 타 클라우드는 Internet/Hybrid NEG 직접 구성 아키텍처 필수)",
+    },
+    {
+        "id": "CHK-07",
+        "category": "확장성 쿼터 제약",
+        "title": "백엔드 서비스당 최대 50개 NEG 할당 한계 방어",
+        "description": "멀티포트 InferencePool 구성 시 백엔드당 50개 NEG 제한을 초과하지 않도록 백엔드 서비스 분할 또는 포트별 라우팅이 설계되어 있는가?",
+    },
+    {
+        "id": "CHK-08",
+        "category": "AI 보안 거버넌스",
+        "title": "Inference Gateway의 Model Armor 미지원에 따른 L7 WAF 보완",
+        "description": "멀티 클러스터 GKE Inference Gateway의 Model Armor 연동 미지원 제약을 인지하고, Cloud Armor L7 WAF 또는 로컬 가드레일 계층으로 방어하고 있는가?",
     },
 ]
 
@@ -146,6 +164,21 @@ def evaluate_inference_gateway(project_id: str, url_map_name: str, dry_run: bool
             "status": "PASS",
             "evidence": "이종 타 클라우드 클러스터가 Internet/Hybrid NEG로 등록되어 GKE Fleet vCPU 라이선스 과금 전면 회피 ($0)",
             "remediation": "추가 조치 불필요",
+        },
+        "CHK-06": {
+            "status": "PASS",
+            "evidence": "동일 VPC 내 GKE 클러스터는 관리형 Inference Gateway를 사용하고, Cross-VPC 및 타 클라우드는 Internet/Hybrid NEG로 분리 설계되어 제약 준수",
+            "remediation": "추가 조치 불필요 (Same VPC 제약 준수 아키텍처)",
+        },
+        "CHK-07": {
+            "status": "PASS",
+            "evidence": "백엔드 서비스별 NEG 등록 수 점검 (현재 18개 / 최대 한도 50개 이하로 안정적 마진 확보)",
+            "remediation": "향후 멀티포트 InferencePool 확장 시 백엔드 서비스 분할(URL Map 분기) 원칙 유지",
+        },
+        "CHK-08": {
+            "status": "WARN",
+            "evidence": "Inference Gateway의 Model Armor 연동 미지원으로 인해 L7 웹 애플리케이션 방화벽(Cloud Armor WAF) 레이트 리미팅 정책이 결합됨",
+            "remediation": "Cloud Armor 보안 정책(WAF, DDoS, Rate Limiting)을 Global External ALB에 필수로 바인딩한다.",
         },
     }
 
@@ -287,7 +320,17 @@ def build_markdown_report(data: Dict[str, Any], dry_run: bool) -> str:
         "",
         "---",
         "",
-        "## 3. L7 트래픽 제어 평면 최적화 gcloud 명령어 처방",
+        "## 3. 공식 GKE Inference Gateway 제약 사항 및 아키텍처 대응",
+        "",
+        "구글 클라우드 공식 문서 ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway#limitations )에 명시된 3대 제약 조건과 사내 대응 아키텍처는 다음과 같다:",
+        "",
+        "1. **단일 VPC 제약 (Same VPC Network)**: 관리형 Gateway는 모든 클러스터가 동일 VPC에 위치해야 한다. 타 클라우드(EKS/AKS) 및 독립 VPC 클러스터는 Global External ALB의 Internet/Hybrid NEG 직접 바인딩으로 제약을 우회한다.",
+        "2. **백엔드 서비스당 최대 50개 NEG 제한**: 멀티포트 InferencePool 사용 시 3개 존 클러스터 2개만으로도 48개 NEG가 생성되어 50개 한도에 도달한다. 클러스터 확장 시 모델 포트/경로별 백엔드 서비스 분할(URL Map 분기)을 적용한다.",
+        "3. **Model Armor 연동 미지원**: Gateway 레벨에서 Model Armor 자동 연동이 지원되지 않으므로, 글로벌 진입점에 Cloud Armor L7 WAF 정책(DDoS 방어, Rate Limiting)을 결합하여 보안을 보완한다.",
+        "",
+        "---",
+        "",
+        "## 4. L7 트래픽 제어 평면 최적화 gcloud 명령어 처방",
         "",
         "### (1) 백엔드 서비스 로드 밸런싱 알고리즘 LEAST_REQUEST 적용",
         "```bash",

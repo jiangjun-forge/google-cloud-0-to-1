@@ -66,7 +66,7 @@ gcloud services enable compute.googleapis.com container.googleapis.com
 ## 4. 원클릭 실행 가이드
 
 ### 단계 1: 가상 실행 모드로 1초 만에 사전 검증 (Dry-run)
-실제 GCP 호출 없이 17개 분산 GPU 클러스터 환경을 가정한 모의 실행 결과를 즉시 확인한다:
+실제 GCP 호출 없이 다수 분산 GPU 클러스터 환경을 가정한 모의 실행 결과를 즉시 확인한다:
 ```bash
 python3 diagnose.py --dry-run
 ```
@@ -83,5 +83,21 @@ python3 diagnose.py -p <PROJECT_ID>
 
 ---
 
-## 6. 자원 정리 (Teardown) 안내
+## 6. 공식 제약 사항 및 아키텍처 트레이드오프 (Limitations)
+
+구글 클라우드 공식 문서 ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway#limitations )에 명시된 3대 공식 제약 사항과 사내 대응 아키텍처는 다음과 같다:
+
+1. **단일 VPC 제약 (Same VPC Network)**:
+   - 관리형 GKE Inference Gateway는 모든 타깃 클러스터가 동일 VPC에 속해야 하며 Cross-VPC를 직접 지원하지 않는다.
+   - 타사 클라우드(EKS/AKS) 및 독립 VPC 클러스터는 관리형 Gateway 컨트롤러 대신 **Global External ALB의 Internet NEG / Hybrid NEG**로 직접 연동하여 제약을 완벽히 우회한다.
+2. **백엔드 서비스당 최대 50개 NEG 제한 (50 NEGs per Backend Service)**:
+   - 멀티포트 InferencePool 사용 시 3개 존 클러스터 2개만으로도 48개 NEG가 생성되어 50개 한도에 도달한다.
+   - 클러스터 확장 시 단일 백엔드 서비스 집계를 피하고, **모델 포트별/경로별 백엔드 서비스 분할(URL Map 분기)** 구조를 적용한다.
+3. **Model Armor 연동 미지원**:
+   - 현재 GKE Inference Gateway 계층에서는 Model Armor 자동 연동이 지원되지 않는다.
+   - 글로벌 진입점에 **Google Cloud Armor L7 WAF 정책(DDoS 방어, Rate Limiting, IP 평판)**을 결합하여 보안을 보완한다.
+
+---
+
+## 7. 자원 정리 (Teardown) 안내
 본 도구는 읽기 전용 진단 스크립트로 클라우드 리소스를 생성하거나 변경하지 않으므로 별도의 자원 정리가 필요하지 않다.

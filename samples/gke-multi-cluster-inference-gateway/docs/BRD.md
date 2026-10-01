@@ -37,3 +37,6 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### BR-04: CISO 및 인프라 아키텍트용 원클릭 완제품 리포트 생성
 - 진단 즉시 사내 인프라 아키텍처 리뷰 및 개선 기안서로 활용할 수 있도록 표준 마크다운 리포트(`report.md`)와 최적화 `gcloud` 처방 스크립트를 자동 생성해야 한다.
+
+### BR-05: 공식 GKE Inference Gateway 3대 제약 준수 및 우회 처방
+- 구글 공식 문서에 명시된 3대 제약(동일 VPC 제약, 백엔드 서비스당 최대 50개 NEG 한계, Model Armor 미지원)을 감사하고, 멀티 클라우드 수용 시 Internet/Hybrid NEG 분리 및 Cloud Armor WAF 결합 아키텍처를 처방해야 한다.

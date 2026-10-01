@@ -37,6 +37,9 @@ All contents, designs, and code examples are subject to change, modification, or
 ### FR-05: 원클릭 완제품 리포트(report.md) 및 복구 처방 생성
 - 아키텍처 전환 전/후 지연 시간(TTFT) 및 라이선스 비용 비교 조견표를 포함한 표준 마크다운 리포트(`report.md`)와 실행 가능한 `gcloud` 최적화 명령어를 자동 생성한다.
 
+### FR-06: 공식 3대 제약 조건 감사 (Same VPC, 50 NEG Limit, Model Armor)
+- 동일 VPC 요건(`CHK-06`), 백엔드 서비스당 최대 50개 NEG 제한(`CHK-07`), Model Armor 미지원에 따른 Cloud Armor WAF 보완책(`CHK-08`)을 정밀 감사한다.
+
 ---
 
 ## 3. 비기능 요구 사항 (Non-Functional Requirements)
