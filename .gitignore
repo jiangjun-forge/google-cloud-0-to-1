@@ -230,6 +230,7 @@ Thumbs.db
 # Local Agent Memory and Skills (Jeki & Jangjun Private)
 AGENTS.md
 _agents/
+.agents/AGENTS.md
 
 # Local Test and Feedback Folders
 feedback-loop/
