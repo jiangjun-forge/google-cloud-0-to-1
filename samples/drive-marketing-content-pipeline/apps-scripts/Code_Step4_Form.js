@@ -87,7 +87,7 @@ function createAndLinkGoogleForm() {
       .setHelpText("제품 착용 컷, 언박싱 사진에 대한 의견이나 이미지 파일 링크를 입력하십시오.")
       .setRequired(false);
 
-    // 4. 목적지 스프레드시트에 자동 바인딩 (설문지 응답 1 탭 자동 생성)
+    // 4. 목적지 구글 시트에 자동 바인딩 (설문지 응답 1 탭 자동 생성)
     form.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
 
     // 5. 구글 폼 파일을 캠페인 루트 폴더로 안전하게 이동

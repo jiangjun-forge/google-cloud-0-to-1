@@ -13,7 +13,7 @@ All contents, designs, and code examples are subject to change, modification, or
 # 기술 상세 설계서 (TDD): 구글 드라이브 마케팅 콘텐츠 파이프라인 (`drive-marketing-content-pipeline`)
 
 ## 1. 시스템 아키텍처 및 동작 원리
-본 솔루션은 Google Cloud 프로젝트 및 로컬 파이썬 런타임 환경, 별도 API Key 관리에 의존하지 않는 100% 서버리스 웹 네이티브(Web-Native) 무키(Keyless) 아키텍처로 설계되었다. 사용자의 구글 스프레드시트(Google Sheets)에 바인딩된 Apps Script 엔진을 컨트롤 타워로 삼아, 구글 드라이브(Drive), 구글 독스(Docs), 구글 폼(Forms) 및 Gemini REST API를 구글 계정 OAuth 2.0 세션 기반으로 유기적으로 조율한다.
+본 솔루션은 Google Cloud 프로젝트 및 로컬 파이썬 런타임 환경, 별도 API Key 관리에 의존하지 않는 100% 서버리스 웹 네이티브(Web-Native) 무키(Keyless) 아키텍처로 설계되었다. 사용자의 구글 시트(Google Sheets)에 바인딩된 Apps Script 엔진을 컨트롤 타워로 삼아, 구글 드라이브(Drive), 구글 독스(Docs), 구글 폼(Forms) 및 Gemini REST API를 구글 계정 OAuth 2.0 세션 기반으로 유기적으로 조율한다.
 
 ### 핵심 구성 요소 및 연동 체계
 1. **Google Apps Script 런타임**:
@@ -30,7 +30,7 @@ All contents, designs, and code examples are subject to change, modification, or
    - QuickChart REST API (`https://quickchart.io/chart`): 128d 임베딩 기반 PCA 2축 투영 좌표를 2D t-SNE 버블 산점도 차트 이미지(`feedback_clusters_map.png`)로 실시간 렌더링
    - Hugging Face Datasets Server REST API (`https://datasets-server.huggingface.co/rows`): 공개 데이터셋으로부터 타깃 인구통계 페르소나 데이터 직접 인출 및 표준 정규화
 4. **마케터 제어 인터페이스**:
-   - 스프레드시트 내 `실행 대시보드` 탭을 통한 실시간 진행 상태 모니터링 및 산출물 하이퍼링크 즉시 제공
+   - 구글 시트 내 `실행 대시보드` 탭을 통한 실시간 진행 상태 모니터링 및 산출물 하이퍼링크 즉시 제공
    - 브라우저 모달 대화 상자를 통한 인간 참여형(Human-in-the-loop) 마케팅 콘텐츠 보정 지침 입력 및 즉각 반영
 
 ---
@@ -39,7 +39,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
-| **FR-01** | **BR-01** | **Zero-GCP 런타임 및 무키(Keyless) OAuth 2.0 자동 인증** | 별도의 API Key 발급 절차 없이, 구글 스프레드시트에 로그인된 현재 계정의 OAuth 2.0 Access Token(`ScriptApp.getOAuthToken()`)을 `Authorization: Bearer <token>` 헤더로 자동 주입하여 비개발자 마케터의 진입 장벽을 완전히 제거하고 보안성을 보장한다. |
+| **FR-01** | **BR-01** | **Zero-GCP 런타임 및 무키(Keyless) OAuth 2.0 자동 인증** | 별도의 API Key 발급 절차 없이, 구글 시트에 로그인된 현재 계정의 OAuth 2.0 Access Token(`ScriptApp.getOAuthToken()`)을 `Authorization: Bearer <token>` 헤더로 자동 주입하여 비개발자 마케터의 진입 장벽을 완전히 제거하고 보안성을 보장한다. |
 | **FR-02** | **BR-01, BR-03** | **구글 드라이브 작업 폴더 및 리소스 자동 시딩** | Step 1 실행 시 캠페인 루트 폴더(`cp-ignite/`), `input/`, `output/` 트리를 생성하고, 스크립트 내장 데이터를 기반으로 25인 마스터 페르소나(`input/ai_personas.json`), 마케터 아이디어 초안(`input/아이디어 메모`), 비디오 VoC 샘플(`input/fb-01/feedback_sample.mp4`)을 Base64로부터 자동 복원 시딩한다. |
 | **FR-03** | **BR-02** | **명세 주도 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 자동 도출** | Step 2에서 자연어 아이디어를 구글 독스 `PLAN` 및 `SPEC`으로 변환하여 캠페인 배경, 타깃 USP, 채널별 양산 명세(배너 16:9, 포스터 9:16, SNS 1:1, 모바일 숏폼 9:16)를 확정한다. 마케터가 `SPEC` 문서를 수정한 내용은 후속 단계에 즉시 반영된다. |
 | **FR-04** | **BR-02** | **멀티 채널 마케팅 콘텐츠(카피, 이미지, 세로 숏폼 영상) 자동 양산** | Step 3에서 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)에 따라 광고 카피 구글 독스(`campaign_content`), 3개 종횡비 이미지(`00_banner_16x9.png`, `00_poster_9x16.png`, `00_sns_1x1.png`), 그리고 세로 9:16 모바일 숏폼 영상(`00_shorts.mp4`)을 콘텐츠 폴더에 자동 생성한다. |
