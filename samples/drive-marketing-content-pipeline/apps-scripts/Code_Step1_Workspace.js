@@ -36,7 +36,20 @@ function createWorkspaceFolderTree() {
       saveGoogleDoc(inputFolder, "아이디어 메모", starterIdea);
     }
 
-    // 3. 구글 시트 실행 대시보드 표 초기화 및 Step 0 완료 기록
+    // 3. 현재 구글 시트를 캠페인 폴더 직하위로 자동 이동하여 캠페인 전용 컨트롤 타워로 패키징
+    try {
+      var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+      var sheetFile = DriveApp.getFileById(activeSpreadsheet.getId());
+      sheetFile.moveTo(campaign);
+      var currentTitle = activeSpreadsheet.getName();
+      if (!currentTitle || currentTitle === "제목 없는 스프레드시트" || currentTitle === "마케팅 콘텐츠 파이프라인") {
+        activeSpreadsheet.rename("[마케팅 컨트롤 타워] " + campaignCode);
+      }
+    } catch (sheetMoveErr) {
+      Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
+    }
+
+    // 4. 구글 시트 실행 대시보드 표 초기화 및 Step 1 완료 기록
     initDashboardSheet();
     recordStepResultToSheet("Step 1", "작업 공간 초기화", "완료", campaign.getUrl(), "구글 드라이브 폴더 (" + campaignCode + ")");
 
