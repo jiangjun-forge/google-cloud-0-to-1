@@ -87,7 +87,19 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent";
 
   var mimeType = mediaBlob.getContentType();
-  var base64Data = Utilities.base64Encode(mediaBlob.getBytes());
+  var bytes = mediaBlob.getBytes();
+  var sizeInMb = bytes.length / (1024 * 1024);
+
+  // Apps Script 런타임 제약 사전 방어 (페이로드 50MB 한계 및 6분 타임아웃 방지)
+  if (sizeInMb > 35) {
+    throw new Error(
+      "미디어 파일 크기(" + sizeInMb.toFixed(1) + "MB)가 Apps Script 단일 페이로드 한계(Base64 인코딩 기준 실질 35MB)를 초과합니다. " +
+      "안정적인 실행을 위해 15~30초 이내(30MB 이하)의 숏폼 영상을 권장하며, " +
+      "장시간 고객 인터뷰나 대용량 영상 분석을 위한 Google Cloud 환경으로의 이관은 Google Cloud에 연락하여 전문 컨설팅을 받으십시오."
+    );
+  }
+
+  var base64Data = Utilities.base64Encode(bytes);
 
   var payload = {
     contents: [{

@@ -44,10 +44,10 @@ All contents, designs, and code examples are subject to change, modification, or
 | **FR-03** | **BR-02** | **명세 주도 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 자동 도출** | Step 2에서 자연어 아이디어를 구글 독스 `PLAN` 및 `SPEC`으로 변환하여 캠페인 배경, 타깃 USP, 채널별 양산 명세(배너 16:9, 포스터 9:16, SNS 1:1, 모바일 숏폼 9:16)를 확정한다. 마케터가 `SPEC` 문서를 수정한 내용은 후속 단계에 즉시 반영된다. |
 | **FR-04** | **BR-02** | **멀티 채널 마케팅 콘텐츠(카피, 이미지, 세로 숏폼 영상) 자동 양산** | Step 3에서 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)에 따라 광고 카피 구글 독스(`campaign_content`), 3개 종횡비 이미지(`00_banner_16x9.png`, `00_poster_9x16.png`, `00_sns_1x1.png`), 그리고 세로 9:16 모바일 숏폼 영상(`00_shorts.mp4`)을 콘텐츠 폴더에 자동 생성한다. |
 | **FR-05** | **BR-03** | **타깃 AI 페르소나 패널 맞춤 재설정** | 커스텀 메뉴를 통해 마케터가 특정 타깃 기준을 자연어로 입력하면 Gemini가 7대 핵심 필드(`id, name, age, gender, category, occupation, perspective`)로 정규화된 25인 패널을 즉시 합성하고, `hf:repo` 입력 시 Hugging Face REST API를 통해 실데이터를 추출하여 캠페인 전용 `input/ai_personas.json`을 갱신한다. |
-| **FR-06** | **BR-04** | **구글 폼 자동 생성 및 모바일 QR 코드 바인딩** | Step 4에서 설문 문항(정량 평점, 정성 피드백, 미디어 파일 업로드)을 포함한 구글 폼을 동적 생성하고, 구글 시트 내 응답 탭 연결 및 QuickChart API 기반 모바일 접속용 QR 코드를 폼 상단에 자동 삽입한다. |
-| **FR-07** | **BR-04** | **Gemini VLM 비디오 VoC 분석 및 128d 임베딩 기반 다중 포인트 t-SNE 지형도 렌더링** | Step 5/Step 8에서 `feedback_sample.mp4`를 Gemini VLM에 전송하여 분석하고, SPEC에 고정 설문 제약이 없는 한 '열린 피드백(Open-ended Feedback)' 원칙에 따라 25인 페르소나로부터 1인당 2~4개의 세부 의견 포인트(총 50~80개+)를 추출한 뒤, 한국어 특화 `text-multilingual-embedding-002` 모델을 통해 128차원 MRL 임베딩 및 PCA 2축 투영을 거쳐 QuickChart 다면 여론 지형도(`feedback_clusters_map.png`)를 생성하여 종합 평가 독스(`feedback_summary`)에 자동 삽입한다. |
+| **FR-06** | **BR-04** | **Google Forms 자동 생성 및 모바일 QR 코드 바인딩** | Step 4에서 설문 문항(정량 평점, 정성 피드백, 미디어 파일 업로드)을 포함한 Google Forms를 동적 생성하고, Google Sheets 내 응답 탭 연결 및 QuickChart API 기반 모바일 접속용 QR 코드를 폼 상단에 자동 삽입한다. |
+| **FR-07** | **BR-04, BR-07** | **Gemini VLM 비디오 VoC 분석 및 128d 임베딩 기반 다중 포인트 t-SNE 지형도 렌더링** | Step 5/Step 8에서 `feedback_sample.mp4`를 Gemini VLM에 전송하여 분석하고(15~30초 숏폼 규격), SPEC에 고정 설문 제약이 없는 한 '열린 피드백(Open-ended Feedback)' 원칙에 따라 25인 페르소나로부터 1인당 2~4개의 세부 의견 포인트(총 50~80개+)를 추출한 뒤, 한국어 특화 `text-multilingual-embedding-002` 모델을 통해 128차원 MRL 임베딩 및 PCA 2축 투영을 거쳐 QuickChart 다면 여론 지형도(`feedback_clusters_map.png`)를 생성하여 종합 평가 Google Docs(`feedback_summary`)에 자동 삽입한다. |
 | **FR-08** | **BR-05** | **인간 참여형(HITL) 의사 결정 및 반자율 마케팅 콘텐츠 보정** | Step 6에서 마케터 전용 검토 모달을 띄워 보정 지침을 입력받아 `feedback_summary`에 기록하고, Step 7(rv-01) 및 Step 9(rv-02)에서 이전 평가 결과와 마케터 지침을 반영하여 카피, 비주얼 이미지, 숏폼 영상을 순차적으로 완결 보정한다. |
-| **FR-09** | **BR-06** | **실시간 대시보드 상태 동기화 및 하이퍼링크 갱신** | 매 단계 완료 시 구글 시트의 `실행 대시보드` 탭에 진행 상태(`COMPLETED`, `IN_PROGRESS`) 및 생성된 구글 독스, 구글 드라이브 폴더, 구글 폼의 직접 링크를 실시간 표기한다. |
+| **FR-09** | **BR-06** | **실시간 대시보드 상태 동기화 및 하이퍼링크 갱신** | 매 단계 완료 시 Google Sheets의 `실행 대시보드` 탭에 진행 상태(`COMPLETED`, `IN_PROGRESS`) 및 생성된 Google Docs, Google Drive 폴더, Google Forms의 직접 링크를 실시간 표기한다. |
 
 ---
 
@@ -59,3 +59,4 @@ All contents, designs, and code examples are subject to change, modification, or
 | **NFR-02** | **보안 및 무키(Keyless) 자격 증명 안전성** | 사용자 API Key 발급 및 수동 관리 부담을 전면 배제하고, 구글 계정 OAuth 2.0 Access Token(`Authorization: Bearer <token>` 헤더) 자동 주입 방식을 디폴트로 채택하여 자격 증명 탈취 위험을 원천 방어한다. |
 | **NFR-03** | **한글 맞춤법 복합어 띄어쓰기 및 문서 표준 준수** | 모든 생성 문서(PLAN, SPEC, 피드백 보고서, 카피라이팅)와 코드 주석은 한글 맞춤법 복합 명사 띄어쓰기 규정을 철저히 준수하고, 일체의 이모지 및 중간 점을 배제한다. |
 | **NFR-04** | **자원 격리 및 원클릭 무잔재 정리 (Teardown)** | 모든 산출물은 단일 캠페인 루트 폴더(`cp-ignite/`) 내에 격리 생성되어, 테스트 완료 후 해당 폴더 1개만 휴지통으로 이동하면 100% 무잔재 정리가 가능해야 한다. |
+| **NFR-05** | **비디오 처리 제약 방어 및 Google Cloud 엔터프라이즈 확장 경로** | Apps Script의 단일 실행 시간 제한(6분) 및 `UrlFetchApp`의 페이로드 제한(최대 50MB, Base64 직렬화 시 실질 35MB)을 고려하여 브라우저 내에서는 15~30초 이내(30MB 이하) 숏폼 영상으로 크기를 사전 검증하고 초과 시 즉시 안내 예외를 반환한다. 1분 이상의 장문 인터뷰나 대용량 고해상도 영상을 다루어야 하는 엔터프라이즈 환경에서는 Google Cloud 환경으로의 이관을 위해 Google Cloud에 연락하여 전문 컨설팅을 받도록 안내한다. |

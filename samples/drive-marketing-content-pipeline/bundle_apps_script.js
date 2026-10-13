@@ -168,7 +168,19 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent";
 
   var mimeType = mediaBlob.getContentType();
-  var base64Data = Utilities.base64Encode(mediaBlob.getBytes());
+  var bytes = mediaBlob.getBytes();
+  var sizeInMb = bytes.length / (1024 * 1024);
+
+  // Apps Script 런타임 제약 사전 방어 (페이로드 50MB 한계 및 6분 타임아웃 방지)
+  if (sizeInMb > 35) {
+    throw new Error(
+      "미디어 파일 크기(" + sizeInMb.toFixed(1) + "MB)가 Apps Script 단일 페이로드 한계(Base64 인코딩 기준 실질 35MB)를 초과합니다. " +
+      "안정적인 실행을 위해 15~30초 이내(30MB 이하)의 숏폼 영상을 권장하며, " +
+      "장시간 고객 인터뷰나 대용량 영상 분석을 위한 Google Cloud 환경으로의 이관은 Google Cloud에 연락하여 전문 컨설팅을 받으십시오."
+    );
+  }
+
+  var base64Data = Utilities.base64Encode(bytes);
 
   var payload = {
     contents: [{
@@ -2028,7 +2040,7 @@ function createAndLinkGoogleForm() {
     // 문항 4: 고객 촬영 동영상 피드백 소감 또는 파일 링크
     form.addParagraphTextItem()
       .setTitle("고객 촬영 동영상 피드백 소감 요약 또는 파일 링크 (선택 사항)")
-      .setHelpText("스마트폰으로 제품을 사용해보며 느낀 소감이나 고객의 생생한 목소리를 한두 줄로 자유롭게 적어주십시오. (동영상 공유 링크나 소감 텍스트 모두 환영합니다)")
+      .setHelpText("스마트폰으로 제품을 사용해보며 느낀 소감이나 고객의 생생한 목소리를 한두 줄로 자유롭게 적어주십시오. (동영상 공유 링크나 소감 텍스트 모두 환영하며, 권장 길이는 15~30초 이내 숏폼 영상입니다)")
       .setRequired(false);
 
     // 문항 5: 추가 이미지 피드백 소감 또는 링크
