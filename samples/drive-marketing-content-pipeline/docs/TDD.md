@@ -64,3 +64,51 @@ All contents, designs, and code examples are subject to change, modification, or
 | **NFR-03** | **한글 맞춤법 복합어 띄어쓰기 및 문서 표준 준수** | 모든 생성 문서(PLAN, SPEC, 피드백 보고서, 카피라이팅)와 코드 주석은 한글 맞춤법 복합 명사 띄어쓰기 규정을 철저히 준수하고, 일체의 이모지 및 중간 점을 배제한다. |
 | **NFR-04** | **자원 격리 및 원클릭 무잔재 정리 (Teardown)** | 모든 산출물은 단일 캠페인 루트 폴더(`cp-ignite/`) 내에 격리 생성되어, 테스트 완료 후 해당 폴더 1개만 휴지통으로 이동하면 100% 무잔재 정리가 가능해야 한다. |
 | **NFR-05** | **비디오 처리 제약 방어 및 Google Cloud 엔터프라이즈 확장 경로** | Apps Script의 단일 실행 시간 제한(6분) 및 `UrlFetchApp`의 페이로드 제한(최대 50MB, Base64 직렬화 시 실질 35MB)을 고려하여 브라우저 내에서는 15~30초 이내(30MB 이하) 숏폼 영상으로 크기를 사전 검증하고 초과 시 즉시 안내 예외를 반환한다. 1분 이상의 장문 인터뷰나 대용량 고해상도 영상을 다루어야 하는 엔터프라이즈 환경에서는 Google Cloud 환경으로의 이관을 위해 Google Cloud에 연락하여 전문 컨설팅을 받도록 안내한다. |
+
+---
+
+## 4. 개발자 사전 검증: 로컬 에뮬레이션 테스트 러너 명세 (test_suite.py)
+
+마케터 배포용 Apps Script 코드(`bundle_apps_script.js`)의 경량성을 완벽히 보존하기 위해, 브라우저 런타임에는 일체의 무거운 테스트 코드를 포함하지 않는다. 대신 개발자가 깃 푸시(Git Push)를 집행하기 전 로컬 환경에서 8대 핵심 영역(총 66개 항목)을 100% 모의(Mocking)하여 단 0.01초 만에 전수 검증할 수 있는 독립 파이썬 테스트 러너(`test_suite.py`)를 제공한다.
+
+### 8대 에뮬레이션 단위 테스트 수이트
+
+1. **Config & Manifest Suite (7개 검증)**:
+   - Apps Script 매니페스트(`appsscript.json`) 필수 OAuth 스코프 및 런타임 버전 유효성
+   - 캠페인 기본 코드(`cp-ignite`) 및 4대 서브 디렉터리 경로 상수 매핑 검증
+2. **Utils & Formatting Suite (7개 검증)**:
+   - 숫자 제로 패딩 포맷팅(`padZero`, 1 -> "01", 99 -> "99")
+   - PCA 2축 투영 및 좌표 변환 알고리즘 수학적 정합성 검증
+   - 비차단 토스트 시간 산출 로직 검증
+3. **Dynamic Round Detect Suite (7개 검증)**:
+   - 빈 디렉터리 초기값 탐색(`detectLatestFeedbackRoundNum` -> 1, `detectLatestRevisionRoundNum` -> 0)
+   - 불규칙한 회차 폴더 혼재 시 최신 회차 번호 계산 및 다음 회차 자동 증분 추천 검증
+   - 99차 극단 경계값 및 비숫자 폴더 무시 방어 로직 검증
+4. **VLM & Manual Scanner Suite (11개 검증)**:
+   - 지원 이미지 MIME 타입(JPEG, PNG, WEBP) 판별 및 25MB 초과 파일 차단 검증
+   - 수작업 피드백 스캐너의 시스템 예약 파일(`feedback_sample.mp4` 등) 제외 및 신규 사용자 파일(이미지, 텍스트 메모, 추가 비디오) 동적 감지 검증
+5. **Persona Dataset Suite (5개 검증)**:
+   - 25인 마스터 페르소나 데이터셋 무결성(전문 마케터 12인, 일반 소비자 13인 구성 안배)
+   - 7대 필수 필드(`id, name, age, gender, category, occupation, perspective`) 누락 여부 전수 검증
+6. **Form & Judge Logic Suite (3개 검증)**:
+   - Google Forms 질문 규격 및 미디어 파일 업로드 허용 확장자 검증
+   - 4대 가중치(타깃 적합성, 차별성, 브랜드 일관성, 즉각 반응도) 합산 100% 검증
+7. **HITL & Asset Refinement Suite (7개 검증)**:
+   - 마케터 피드백 지침 텍스트 유효성 검증
+   - 멀티 채널 콘텐츠 제작 명세서(배너 16:9, 포스터 9:16, SNS 1:1, 숏폼 9:16) 규격 정합성 검증
+8. **Bundle Synchronization Suite (19개 검증)**:
+   - 11개 코어 Apps Script 모듈 헤더 및 파일 분할 정합성 검증
+   - 번들 내 7대 핵심 신규 함수(`showProcessingToast`, `analyzeImageFeedbackWithVlm`, `scanManualFeedbackFiles`, `detectLatestFeedbackRoundNum`, `detectLatestRevisionRoundNum`, `promptAndRunJudgeEvaluation`, `promptAndRunReviseAssets`) 누락 여부 전수 검증
+
+### 로컬 터미널 실행 명령어
+
+```bash
+# 전체 8대 단위 테스트 수이트 일괄 실행 (All)
+python3 test_suite.py --all
+
+# 특정 단위 테스트만 단독 실행
+python3 test_suite.py --unit round     # 동적 회차 탐색기 검증
+python3 test_suite.py --unit vlm       # VLM 분석 및 수작업 스캐너 검증
+python3 test_suite.py --unit persona   # 25인 페르소나 데이터셋 규격 검증
+python3 test_suite.py --unit sync      # 번들과 서브 모듈 간 동기화 검증
+```
