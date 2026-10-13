@@ -19,11 +19,12 @@ All contents, designs, and code examples are subject to change, modification, or
 1. **Google Apps Script 런타임**:
    - 구글 시트 상단 커스텀 메뉴 (`>> 마케팅 콘텐츠 파이프라인 <<`) 제공
    - 모듈화된 11개 스크립트 로직(`Code_Config.js`, `Code_Gemini.js`, `Code_Utils.js`, `Code_Step1_Workspace.js`, `Code_Step2_IdeaToPlan.js`, `Code_Step3_ContentGen.js`, `Code_Step4_Form.js`, `Code_Step5_8_Judge.js`, `Code_Step6_Decision.js`, `Code_Step7_9_Refine.js`, `Code_Menu.js`) 및 원클릭 배포용 단일 번들(`bundle_apps_script.js`) 지원
-2. **구글 계정 기반 Gemini REST 엔드포인트 직접 연동 (As of 2026년 10월 최신 모델 규격)**:
+2. **구글 계정 기반 Gemini REST 엔드포인트 직접 연동 (태스크별 최적 모델 선정, As of 2026-10-13)**:
    - `generativelanguage.googleapis.com` 호출 시 `ScriptApp.getOAuthToken()`으로 취득한 구글 로그인 계정의 OAuth 2.0 Access Token을 `Authorization: Bearer <token>` 헤더로 자동 주입하여 순수 무키(Keyless) 인증 수행
-   - `gemini-3.8-flash`: 아이디어 구체화, PLAN 기획서 및 SPEC 명세서 컴파일, 25인 AI 페르소나 다면 평가 및 VLM 비디오 VoC 심층 분석, 복합 피드백 기반 1차(rv-01), 2차(rv-02) 콘텐츠 심층 보정
-   - `gemini-2.5-flash-image`: 16:9 가로 배너, 9:16 모바일 포스터, 1:1 정방형 SNS 피드 이미지 규격에 맞추어 시각화 소재 생성
-   - `veo-3.1-generate-001`: 9:16 모바일 숏폼 영상(shorts) 콘티 및 비디오 소재 생성
+   - 단일 모델에 의존하지 않고 각 작업의 속도, 처리 용량, 비용 효율성을 고려하여 검증된 모델을 취사선택하여 연동
+   - `gemini-3.8-flash`: 빠른 응답 속도와 긴 컨텍스트 처리를 위한 아이디어 구체화, PLAN 기획서 및 SPEC 명세서 컴파일, 25인 AI 페르소나 다면 평가 및 VLM 비디오 VoC 심층 분석, 복합 피드백 기반 1차(rv-01), 2차(rv-02) 콘텐츠 심층 보정
+   - `gemini-2.5-flash-image`: 16:9 가로 배너, 9:16 모바일 포스터, 1:1 정방형 SNS 피드 이미지 규격에 최적화된 시각화 소재 생성
+   - `veo-3.1-generate-001`: 9:16 모바일 숏폼 영상(shorts) 콘티 및 비디오 소재 생성에 적합
 3. **외부 경량 시각화 및 데이터 REST API**:
    - QuickChart REST API (`https://quickchart.io/chart`): 25인 페르소나 평점 및 비디오 VoC 분석 결과를 2D t-SNE 버블 산점도 차트 이미지로 실시간 렌더링
    - Hugging Face Datasets Server REST API (`https://datasets-server.huggingface.co/rows`): 공개 데이터셋으로부터 타깃 인구통계 페르소나 데이터 직접 인출 및 표준 정규화

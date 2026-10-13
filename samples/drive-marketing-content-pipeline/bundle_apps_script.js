@@ -26,7 +26,8 @@ var CONFIG = {
   // 비개발자 마케터가 API Key를 발급받을 필요 없이 구글 계정 로그인 권한으로 직접 안전하게 호출됨
   AUTH_MODE: "OAUTH",
   
-  // Google AI Studio 엔드포인트 및 모델 지정 (As of 2026년 10월 최신 모델 규격)
+  // Google AI Studio 엔드포인트 및 태스크별 최적 모델 지정 (As of 2026-10-13)
+  // 단일 모델에 의존하지 않고 작업별 특성(속도, 이미지, 영상)에 맞추어 검증된 모델을 취사선택함
   BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models",
   GEMINI_MODEL: "gemini-3.8-flash",
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 양산 모델
