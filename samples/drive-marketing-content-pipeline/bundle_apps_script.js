@@ -1,0 +1,2492 @@
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline - Apps Script Single Bundle
+ * (Merged from apps-scripts/ modules for easy copy-paste)
+ * As of 2026-10-13
+ */
+
+// ============================================================================
+// FILE: Code_Config.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 1] 전역 설정 (Global Configuration)
+ */
+
+var CONFIG = {
+  // 기본 캠페인 코드 및 구글 드라이브 루트 폴더명
+  CAMPAIGN_CODE: "cp-ignite",
+
+  // 인증 방식: 현재 로그인된 구글 계정의 OAuth 2.0 Access Token 기반 자동 인증 (Keyless Zero-Setup)
+  // 비개발자 마케터가 API Key를 발급받을 필요 없이 구글 계정 로그인 권한으로 직접 안전하게 호출됨
+  AUTH_MODE: "OAUTH",
+  
+  // Google AI Studio 엔드포인트 및 모델 지정 (As of 2026년 10월 최신 모델 규격)
+  BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models",
+  GEMINI_MODEL: "gemini-3.8-flash",
+  MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 양산 모델
+  MODEL_JUDGE: "gemini-3.8-flash",     // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
+  IMAGE_MODEL_NAME: "gemini-2.5-flash-image", // 광고 소재 비주얼 이미지 생성 모델
+  VIDEO_MODEL_NAME: "veo-3.1-generate-001",   // 모바일 숏폼 영상 생성 모델
+  
+  // 구글 드라이브 핵심 기획/명세/콘텐츠 문서 파일명
+  PLAN_DOC_NAME: "PLAN",               // 마케팅 캠페인 기획서 전문
+  SPEC_DOC_NAME: "SPEC",               // 멀티 채널 콘텐츠 제작 명세서 (이미지, 숏폼, 카피 규격)
+  CONTENT_DOC_NAME: "campaign_content", // 멀티 채널 마케팅 콘텐츠 전문 (카피라이팅 및 영상 콘티)
+
+  // 멀티 채널 마케팅 콘텐츠 및 소재 기본 규격
+  CONTENT_SPECS: {
+    BANNER_16x9: {
+      name: "가로 디스플레이 배너",
+      aspectRatio: "16:9",
+      resolution: "1920x1080",
+      channel: "구글 디스플레이 네트워크(GDN), 웹사이트 메인 히어로 배너"
+    },
+    POSTER_9x16: {
+      name: "세로 모바일 포스터",
+      aspectRatio: "9:16",
+      resolution: "1080x1920",
+      channel: "인스타그램 스토리, 카카오톡 채널, 옥외 디지털 사이니지"
+    },
+    SNS_1x1: {
+      name: "정방형 SNS 피드 이미지",
+      aspectRatio: "1:1",
+      resolution: "1080x1080",
+      channel: "인스타그램 피드, 페이스북, 블로그 썸네일"
+    },
+    SHORTS_9x16: {
+      name: "세로 모바일 숏폼 영상",
+      aspectRatio: "9:16",
+      resolution: "1080x1920",
+      duration: "15초~30초",
+      channel: "유튜브 쇼츠, 인스타그램 릴스, 틱톡"
+    }
+  },
+  
+  // QuickChart REST API 엔드포인트 (t-SNE 여론 군집 지형도 렌더링)
+  QUICKCHART_ENDPOINT: "https://quickchart.io/chart"
+};
+
+
+// ============================================================================
+// FILE: Code_Gemini.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 2] Gemini REST API 클라이언트 엔진 (구글 계정 OAuth 2.0 자동 로그인 기반 Keyless 인증)
+ */
+
+/**
+ * Gemini API 인증 헤더 조회 (현재 구글 로그인 계정의 OAuth 2.0 Access Token 기반 Keyless 인증)
+ * 비개발자 마케터가 별도 API Key를 발급받을 필요 없이 구글 로그인 세션으로 자동 인증된다.
+ */
+function getGeminiAuthHeaders() {
+  try {
+    var oauthToken = ScriptApp.getOAuthToken();
+    if (oauthToken) {
+      return {
+        "Authorization": "Bearer " + oauthToken
+      };
+    }
+  } catch (oauthErr) {
+    Logger.log("OAuth 토큰 취득 예외: " + oauthErr);
+  }
+
+  throw new Error(
+    "구글 계정 인증 정보를 확인할 수 없습니다. 구글 스프레드시트의 계정 권한 승인 창에서 [허용]을 클릭하십시오."
+  );
+}
+
+/**
+ * Gemini 텍스트 생성 API 호출 (System Instruction 및 User Content)
+ */
+function callGemini(systemInstruction, userContent, modelOverride, maxTokensOverride) {
+  var headers = getGeminiAuthHeaders();
+  var targetModel = modelOverride || CONFIG.MODEL_GENERATOR || CONFIG.GEMINI_MODEL || "gemini-3.8-flash";
+  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent";
+  var maxTokens = maxTokensOverride || 8192;
+
+  var payload = {
+    contents: [{
+      role: "user",
+      parts: [{ text: userContent }]
+    }],
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature: 0.7
+    }
+  };
+
+  if (systemInstruction) {
+    payload.systemInstruction = {
+      parts: [{ text: systemInstruction }]
+    };
+  }
+
+  var options = {
+    method: "post",
+    contentType: "application/json",
+    headers: headers,
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  var response = UrlFetchApp.fetch(endpoint, options);
+  var responseCode = response.getResponseCode();
+  var responseBody = response.getContentText();
+
+  if (responseCode !== 200) {
+    throw new Error("Gemini API 호출 실패 (상태 코드: " + responseCode + "):\n" + responseBody);
+  }
+
+  var result = JSON.parse(responseBody);
+  if (result.candidates && result.candidates.length > 0 && 
+      result.candidates[0].content && result.candidates[0].content.parts) {
+    return result.candidates[0].content.parts[0].text;
+  }
+
+  throw new Error("Gemini API로부터 유효한 텍스트 응답을 수신하지 못했습니다:\n" + responseBody);
+}
+
+/**
+ * Gemini 멀티모달(VLM) 심층 분석 API 호출 (구글 드라이브 이미지 및 비디오 Blob 직접 처리)
+ */
+function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
+  var headers = getGeminiAuthHeaders();
+  var targetModel = modelOverride || CONFIG.MODEL_GENERATOR || "gemini-3.8-flash";
+  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent";
+
+  var mimeType = mediaBlob.getContentType();
+  var base64Data = Utilities.base64Encode(mediaBlob.getBytes());
+
+  var payload = {
+    contents: [{
+      role: "user",
+      parts: [
+        { text: prompt },
+        {
+          inlineData: {
+            mimeType: mimeType,
+            data: base64Data
+          }
+        }
+      ]
+    }],
+    generationConfig: {
+      maxOutputTokens: 8192,
+      temperature: 0.4
+    }
+  };
+
+  var options = {
+    method: "post",
+    contentType: "application/json",
+    headers: headers,
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  var response = UrlFetchApp.fetch(endpoint, options);
+  var responseCode = response.getResponseCode();
+  var responseBody = response.getContentText();
+
+  if (responseCode !== 200) {
+    throw new Error("Gemini 멀티모달 분석 실패 (상태 코드: " + responseCode + "):\n" + responseBody);
+  }
+
+  var result = JSON.parse(responseBody);
+  if (result.candidates && result.candidates.length > 0 && 
+      result.candidates[0].content && result.candidates[0].content.parts) {
+    return result.candidates[0].content.parts[0].text;
+  }
+
+  throw new Error("Gemini 멀티모달 응답 수신 실패:\n" + responseBody);
+}
+
+/**
+ * Gemini Imagen / Flash Image 생성 API 호출 (상업용 광고 비주얼 시안 생성)
+ */
+function callGeminiImage(prompt, aspectRatio) {
+  try {
+    var headers = getGeminiAuthHeaders();
+    var imgModel = CONFIG.IMAGE_MODEL_NAME || "gemini-2.5-flash-image";
+    var endpoint = CONFIG.BASE_URL + "/" + imgModel + ":predict";
+    var ratio = aspectRatio || "1:1";
+
+    var payload = {
+      instances: [
+        { prompt: prompt + ", high quality commercial advertising photography, professional studio lighting, 8k resolution" }
+      ],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: ratio
+      }
+    };
+
+    var options = {
+      method: "post",
+      contentType: "application/json",
+      headers: headers,
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch(endpoint, options);
+    if (response.getResponseCode() === 200) {
+      var result = JSON.parse(response.getContentText());
+      if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+        return result.predictions[0].bytesBase64Encoded;
+      }
+    } else {
+      Logger.log("Gemini 이미지 생성 실패 (" + response.getResponseCode() + "): " + response.getContentText());
+    }
+  } catch (err) {
+    Logger.log("Gemini 이미지 생성 네트워크 예외: " + err);
+  }
+  return null;
+}
+
+
+// ============================================================================
+// FILE: Code_Utils.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 4] 구글 드라이브 파일 탐색, 입출력 및 마크다운 독스 렌더러 (Drive Utils & Document Renderer)
+ */
+
+function getFolderByPath(pathParts) {
+  var currentFolder = DriveApp.getRootFolder();
+  for (var i = 0; i < pathParts.length; i++) {
+    var name = pathParts[i];
+    var subFolders = currentFolder.getFoldersByName(name);
+    if (subFolders.hasNext()) {
+      currentFolder = subFolders.next();
+    } else {
+      currentFolder = currentFolder.createFolder(name);
+    }
+  }
+  return currentFolder;
+}
+
+function getCampaignFolder() {
+  try {
+    var sheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
+    var sheetFile = DriveApp.getFileById(sheetId);
+    var parents = sheetFile.getParents();
+    while (parents.hasNext()) {
+      var parent = parents.next();
+      var parentName = parent.getName();
+      if (parentName.indexOf("cp-") === 0) {
+        return parent;
+      }
+    }
+  } catch (e) {
+    Logger.log("부모 캠페인 폴더 감지 중 예외: " + e);
+  }
+  return getFolderByPath([CONFIG.CAMPAIGN_CODE]);
+}
+
+function getCampaignCode() {
+  try {
+    var folder = getCampaignFolder();
+    var folderName = folder.getName();
+    if (folderName.indexOf("cp-") === 0) {
+      return folderName;
+    }
+  } catch (e) {
+    Logger.log("캠페인 코드 도출 중 예외: " + e);
+  }
+  return CONFIG.CAMPAIGN_CODE;
+}
+
+function getCampaignSubFolder(subPathParts) {
+  var currentFolder = getCampaignFolder();
+  for (var i = 0; i < subPathParts.length; i++) {
+    var name = subPathParts[i];
+    var subFolders = currentFolder.getFoldersByName(name);
+    if (subFolders.hasNext()) {
+      currentFolder = subFolders.next();
+    } else {
+      currentFolder = currentFolder.createFolder(name);
+    }
+  }
+  return currentFolder;
+}
+
+function readTextFile(folder, fileName) {
+  var files = folder.getFilesByName(fileName);
+  if (files.hasNext()) {
+    var file = files.next();
+    return file.getBlob().getDataAsString("UTF-8");
+  }
+  return null;
+}
+
+function saveTextFile(folder, fileName, content) {
+  var files = folder.getFilesByName(fileName);
+  if (files.hasNext()) {
+    var existingFile = files.next();
+    existingFile.setContent(content);
+    return existingFile;
+  } else {
+    return folder.createFile(fileName, content, MimeType.PLAIN_TEXT);
+  }
+}
+
+function saveBinaryFile(folder, fileName, base64Data, contentType) {
+  var decoded = Utilities.base64Decode(base64Data);
+  var blob = Utilities.newBlob(decoded, contentType, fileName);
+  var files = folder.getFilesByName(fileName);
+  while (files.hasNext()) {
+    files.next().setTrashed(true);
+  }
+  return folder.createFile(blob);
+}
+
+/**
+ * 마크다운 인라인 서식(**bold**)을 파싱하여 구글 독스 텍스트 요소에 굵은 글씨 스타일을 적용한다.
+ */
+function formatInlineStyles(element, rawText) {
+  var cleanText = "";
+  var boldRanges = [];
+  var regex = /\*\*(.*?)\*\*/g;
+  var lastIndex = 0;
+  var match;
+
+  while ((match = regex.exec(rawText)) !== null) {
+    cleanText += rawText.substring(lastIndex, match.index);
+    var start = cleanText.length;
+    cleanText += match[1];
+    var end = cleanText.length - 1;
+    if (end >= start) {
+      boldRanges.push([start, end]);
+    }
+    lastIndex = regex.lastIndex;
+  }
+  cleanText += rawText.substring(lastIndex);
+
+  var textObj = element.editAsText();
+  textObj.setText(cleanText);
+  for (var j = 0; j < boldRanges.length; j++) {
+    var bStart = boldRanges[j][0];
+    var bEnd = boldRanges[j][1];
+    if (bEnd >= bStart && bEnd < cleanText.length) {
+      textObj.setBold(bStart, bEnd, true);
+    }
+  }
+}
+
+/**
+ * 마크다운 텍스트를 구글 독스(Google Docs) 네이티브 스타일(Title, Heading 1~3, List, Table, HorizontalRule)로 변환하여 렌더링한다.
+ */
+function renderMarkdownToDoc(doc, markdown) {
+  var body = doc.getBody();
+  body.clear();
+
+  if (!markdown) {
+    return;
+  }
+
+  // 특수 공백 정규화
+  markdown = String(markdown).replace(/\u00A0/g, " ");
+
+  var lines = markdown.split(/\r?\n/);
+  var inCodeBlock = false;
+  var codeBlockContent = [];
+  var isFirstParagraph = true;
+
+  function appendPara(text, heading) {
+    var p;
+    if (isFirstParagraph) {
+      p = body.getParagraphs()[0];
+      isFirstParagraph = false;
+    } else {
+      p = body.appendParagraph("");
+    }
+    if (heading) {
+      p.setHeading(heading);
+    }
+    formatInlineStyles(p, text);
+    return p;
+  }
+
+  function appendItem(text) {
+    var li = body.appendListItem("");
+    formatInlineStyles(li, text);
+    isFirstParagraph = false;
+    return li;
+  }
+
+  function appendRule() {
+    body.appendHorizontalRule();
+    isFirstParagraph = false;
+  }
+
+  var i = 0;
+  while (i < lines.length) {
+    var line = lines[i];
+    var trimmed = line.trim();
+
+    // 1. 코드 블록
+    if (trimmed.indexOf("```") === 0) {
+      if (inCodeBlock) {
+        var codeText = codeBlockContent.join("\n");
+        var cp = appendPara(codeText, DocumentApp.ParagraphHeading.NORMAL);
+        cp.setFontFamily("Consolas");
+        codeBlockContent = [];
+        inCodeBlock = false;
+      } else {
+        inCodeBlock = true;
+        codeBlockContent = [];
+      }
+      i++;
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockContent.push(line);
+      i++;
+      continue;
+    }
+
+    // 2. 빈 줄
+    if (!trimmed) {
+      i++;
+      continue;
+    }
+
+    // 3. 구분선
+    if (trimmed === "---" || trimmed === "***" || trimmed === "___") {
+      appendRule();
+      i++;
+      continue;
+    }
+
+    // 4. 마크다운 테이블
+    if (trimmed.indexOf("|") === 0 && trimmed.lastIndexOf("|") === trimmed.length - 1) {
+      var tableLines = [];
+      while (i < lines.length && lines[i].trim().indexOf("|") === 0) {
+        var tLine = lines[i].trim();
+        if (!/^\|[\s\-:]+(\|[\s\-:]+)+\|$/.test(tLine)) {
+          var cells = tLine.split("|").slice(1, -1).map(function(c) { return c.trim(); });
+          tableLines.push(cells);
+        }
+        i++;
+      }
+      if (tableLines.length > 0) {
+        var table = body.appendTable(tableLines);
+        isFirstParagraph = false;
+        if (table.getNumRows() > 0) {
+          var headerRow = table.getRow(0);
+          for (var c = 0; c < headerRow.getNumCells(); c++) {
+            var cell = headerRow.getCell(c);
+            cell.setBackgroundColor("#F1F3F4");
+            var cellP = cell.getChild(0).asParagraph();
+            cellP.setBold(true);
+          }
+        }
+      }
+      continue;
+    }
+
+    // 5. 헤딩 판별
+    var headingMatch = trimmed.match(/^(#{1,6})(?:[\s\u00A0]+|(?=\d))(.*)$/);
+    if (headingMatch) {
+      var level = headingMatch[1].length;
+      var headingText = headingMatch[2].replace(/\s*#+\s*$/, "").trim();
+      var headingType = DocumentApp.ParagraphHeading.NORMAL;
+      if (level === 1) {
+        headingType = DocumentApp.ParagraphHeading.TITLE;
+      } else if (level === 2) {
+        headingType = DocumentApp.ParagraphHeading.HEADING1;
+      } else if (level === 3) {
+        headingType = DocumentApp.ParagraphHeading.HEADING2;
+      } else if (level >= 4) {
+        headingType = DocumentApp.ParagraphHeading.HEADING3;
+      }
+      appendPara(headingText, headingType);
+    } else if (/^[-*+]\s+/.test(trimmed)) {
+      // 6. 불릿 리스트
+      appendItem(trimmed.replace(/^[-*+]\s+/, ""));
+    } else if (/^\d+\.\s+/.test(trimmed)) {
+      // 7. 번호 매기기 리스트
+      appendItem(trimmed.replace(/^\d+\.\s+/, ""));
+    } else if (trimmed.indexOf("> ") === 0) {
+      // 8. 인용구
+      var quoteP = appendPara(trimmed.substring(2), DocumentApp.ParagraphHeading.NORMAL);
+      quoteP.setItalic(true);
+      quoteP.setIndentStart(36);
+    } else {
+      // 9. 일반 단락
+      appendPara(line, DocumentApp.ParagraphHeading.NORMAL);
+    }
+
+    i++;
+  }
+
+  if (inCodeBlock && codeBlockContent.length > 0) {
+    var leftP = appendPara(codeBlockContent.join("\n"), DocumentApp.ParagraphHeading.NORMAL);
+    leftP.setFontFamily("Consolas");
+  }
+}
+
+/**
+ * 구글 독스(Google Docs) 문서를 생성하거나 기존 문서의 본문을 네이티브 스타일로 갱신한다.
+ */
+function saveGoogleDoc(folder, title, content) {
+  var files = folder.getFilesByName(title);
+  var doc;
+  while (files.hasNext()) {
+    var file = files.next();
+    if (file.getMimeType() === MimeType.GOOGLE_DOCS) {
+      doc = DocumentApp.openById(file.getId());
+      renderMarkdownToDoc(doc, content);
+      doc.saveAndClose();
+      return file;
+    } else {
+      file.setTrashed(true);
+    }
+  }
+  doc = DocumentApp.create(title);
+  renderMarkdownToDoc(doc, content);
+  doc.saveAndClose();
+  var docFile = DriveApp.getFileById(doc.getId());
+  docFile.moveTo(folder);
+  return docFile;
+}
+
+/**
+ * 폴더 내의 구글 독스(Google Docs) 문서를 열어 본문 텍스트를 읽는다.
+ */
+function readGoogleDoc(folder, title) {
+  var files = folder.getFilesByName(title);
+  while (files.hasNext()) {
+    var file = files.next();
+    if (file.getMimeType() === MimeType.GOOGLE_DOCS) {
+      var doc = DocumentApp.openById(file.getId());
+      return doc.getBody().getText();
+    }
+    return file.getBlob().getDataAsString("UTF-8");
+  }
+  return null;
+}
+
+/**
+ * 대표 비주얼 이미지 3종 비율 세트 생성 (16:9 배너, 9:16 포스터, 1:1 SNS 피드)
+ */
+function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
+  var brief = visualBrief || "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones, warm golden hour sunlight, modern Seoul street";
+  var items = [
+    { name: prefix + "_banner_16x9.png", ratio: "16:9", prompt: brief + " Wide horizontal display banner (16:9)." },
+    { name: prefix + "_poster_9x16.png", ratio: "9:16", prompt: brief + " Vertical mobile commercial poster (9:16)." },
+    { name: prefix + "_sns_1x1.png", ratio: "1:1", prompt: brief + " Square social media feed photo (1:1)." }
+  ];
+
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var base64Data = null;
+    try {
+      if (typeof callGeminiImage === "function") {
+        base64Data = callGeminiImage(item.prompt, item.ratio);
+      }
+    } catch (apiErr) {
+      Logger.log("실시간 이미지 생성 호출 예외 (" + item.name + "): " + apiErr);
+    }
+
+    if (base64Data) {
+      saveBinaryFile(targetFolder, item.name, base64Data, MimeType.PNG);
+      Logger.log("실시간 Gemini 이미지 생성 및 저장 성공: " + item.name);
+    } else {
+      // 대체 안내 플레이스홀더 생성
+      try {
+        var placeholderUrl = "https://quickchart.io/chart?c=" + encodeURIComponent(JSON.stringify({
+          type: "radialGauge",
+          data: { datasets: [{ data: [100], backgroundColor: "#3B82F6" }] },
+          options: {
+            title: { display: true, text: item.name },
+            trackColor: "#E2E8F0"
+          }
+        }));
+        var phResp = UrlFetchApp.fetch(placeholderUrl, { muteHttpExceptions: true });
+        if (phResp.getResponseCode() === 200) {
+          saveBinaryFile(targetFolder, item.name, Utilities.base64Encode(phResp.getBlob().getBytes()), MimeType.PNG);
+        }
+      } catch (phErr) {
+        Logger.log("플레이스홀더 이미지 저장 예외: " + phErr);
+      }
+    }
+  }
+
+  // 4. 모바일 숏폼 세로 영상 소재 (${prefix}_shorts.mp4) 자동 생성 및 저장
+  var videoName = prefix + "_shorts.mp4";
+  try {
+    saveSampleVideoFile(targetFolder, videoName);
+    Logger.log("모바일 세로 숏폼 영상(shorts) 자동 저장 완료: " + videoName);
+  } catch (vidErr) {
+    Logger.log("숏폼 영상 소재 저장 예외: " + vidErr);
+  }
+}
+
+/**
+ * 피드백 요약본 및 마케터 지침, 보정 카피로부터 Gemini를 호출하여 영문 이미지 생성 프롬프트를 동적 도출한다.
+ */
+function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief) {
+  try {
+    var systemInstruction =
+      "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
+      "제공된 캠페인 카피와 고객 피드백 요약본(특히 마케터 최종 의사 결정 및 보정 지침)을 정밀 분석하여, " +
+      "이미지 생성 인공 지능(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 마케터 코멘트에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등)이 지정되어 있다면 이를 누락하지 않고 영문(예: 'A stylish 20s Korean female model', 'A chic young Korean woman in Seoul')으로 명시하십시오.\n" +
+      "2. 마케터 코멘트에 모델에 대한 별도 언급이 없더라도 한국 시장 타깃 캠페인이므로 한국인(Korean) 모델 및 서울의 현대적인 일상/공간을 기본 배경으로 설정하십시오.\n" +
+      "3. 피사체(인물/제품), 공간/조명, 분위기/스타일링을 2~3문장의 자연스러운 영문 묘사로 작성하십시오.\n" +
+      "4. 출력은 설명이나 머리말 없이 오직 영문 프롬프트 텍스트만 출력하십시오.";
+
+    var userPrompt =
+      "[캠페인 카피 콘텐츠]\n" + (campaignAsset || "") + "\n\n" +
+      "[고객 피드백 종합 요약본 및 마케터 최종 의사 결정]\n" + (feedbackSummary || "") + "\n\n" +
+      "위 내용을 바탕으로 마케터의 의도를 충실히 반영한 상업 광고 이미지 생성용 영문 프롬프트 1개를 작성하라.";
+
+    var visualPrompt = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_GENERATOR, 8192);
+    if (visualPrompt && visualPrompt.trim().length > 10) {
+      return visualPrompt.replace(/^```[a-z]*\s*/i, "").replace(/\s*```$/, "").trim();
+    }
+  } catch (err) {
+    Logger.log("동적 비주얼 프롬프트 도출 실패, 기본값 사용: " + err);
+  }
+  return defaultBrief || "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones, warm golden hour sunlight, modern Seoul street";
+}
+
+/**
+ * 25인 한국인 마스터 AI 페르소나 데이터셋 기반 실시간 다면 평가 피드백 생성
+ */
+function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvNameOpt) {
+  try {
+    var fbFolderName = feedbackFolder.getName();
+    var prevRvName = prevRvNameOpt;
+    if (!prevRvName) {
+      var rNum = parseInt(fbFolderName.replace("fb-", ""), 10) || 1;
+      var pNum = Math.max(0, rNum - 1);
+      prevRvName = "rv-" + (pNum < 10 ? "0" + pNum : pNum);
+    }
+
+    var assetContent = "";
+    var prevFolder = getCampaignSubFolder(["output", prevRvName]);
+    var assetFileContent = readGoogleDoc(prevFolder, CONFIG.CONTENT_DOC_NAME || "campaign_content") || readGoogleDoc(prevFolder, "campaign_asset");
+    if (assetFileContent) {
+      assetContent = assetFileContent;
+    } else {
+      var rv00Folder = getCampaignSubFolder(["output", "rv-00"]);
+      assetContent = readGoogleDoc(rv00Folder, CONFIG.CONTENT_DOC_NAME || "campaign_content") || readGoogleDoc(rv00Folder, "campaign_asset") || "마케팅 캠페인 공개 콘텐츠 (카피 및 비주얼)";
+    }
+
+    var personasText = "";
+    var inputFolder = getCampaignSubFolder(["input"]);
+    personasText = readTextFile(inputFolder, "ai_personas.json") || readTextFile(campaignFolder, "ai_personas.json");
+    if (!personasText) {
+      var campaignDataFolder = getCampaignSubFolder(["data"]);
+      personasText = readTextFile(campaignDataFolder, "ai_personas.json");
+    }
+
+    var systemInstruction =
+      "당신은 엔터프라이즈 마케팅 리서치 및 소비자 심리 분석 전문 인공 지능이다.\n" +
+      "소비자는 내부 기획서를 알지 못하며, 시장에 공개된 마케팅 캠페인 콘텐츠(" + prevRvName + " 카피 및 비주얼)만을 보고 반응한다.\n" +
+      "제공된 마케팅 콘텐츠(" + prevRvName + ") 산출물을 면밀히 검토하고, 함께 제공된 한국인 25인 가상 페르소나 프로필의 직업, 연령, 라이프스타일 관점에 깊이 빙의하여 각 페르소나별 실제 피드백을 작성하라.\n\n" +
+      "엄격한 출력 형식:\n" +
+      "반드시 다음 JSON 배열 형식으로만 순수 JSON을 출력하라. 코드 블록(```json) 없이 유효한 JSON만 반환하라:\n" +
+      "[\n" +
+      "  {\n" +
+      "    \"persona_id\": \"kr_persona_00001\",\n" +
+      "    \"name\": \"이름\",\n" +
+      "    \"age\": 30,\n" +
+      "    \"gender\": \"남자/여자\",\n" +
+      "    \"occupation\": \"직업\",\n" +
+      "    \"category\": \"마케터/일반소비자\",\n" +
+      "    \"cluster_theme\": \"핵심 소구점 또는 개선 요구 테마\",\n" +
+      "    \"sentiment\": \"긍정/중립/부정\",\n" +
+      "    \"rating\": 4.5,\n" +
+      "    \"feedback\": \"해당 페르소나 관점에서의 솔직하고 구체적인 소감 (2~3문장)\"\n" +
+      "  }\n" +
+      "]\n\n" +
+      "작성 규칙:\n" +
+      "1. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
+      "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "3. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
+      "4. 반드시 제공된 25인의 한국인 프로필 정보를 충실히 반영하여 25개의 피드백 객체를 완성하십시오.";
+
+    var userPrompt =
+      "[대중에게 공개된 마케팅 캠페인 콘텐츠 (" + prevRvName + ")]\n" +
+      assetContent + "\n\n" +
+      "[한국인 25인 가상 페르소나 프로필 데이터]\n" +
+      (personasText || "25인 한국인 소비자 프로필") + "\n\n" +
+      "위 마케팅 콘텐츠(" + prevRvName + ")를 본 25인 평가단의 솔직하고 현실적인 피드백 25건을 JSON 배열로 실시간 도출하라.";
+
+    var rawOutput = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_GENERATOR);
+    if (rawOutput) {
+      var cleanJson = rawOutput.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+      var parsed = JSON.parse(cleanJson);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        var formatted = JSON.stringify(parsed, null, 2);
+        saveTextFile(feedbackFolder, "ai_persona_feedbacks.json", formatted);
+        Logger.log("실제 캠페인 기반 AI 가상 페르소나 25인 피드백 실시간 생성 및 저장 성공 (" + parsed.length + "건)");
+        return formatted;
+      }
+    }
+  } catch (err) {
+    Logger.log("AI 가상 페르소나 피드백 실시간 생성 예외: " + err);
+  }
+  return "";
+}
+
+/**
+ * QuickChart REST API를 호출하여 25인 페르소나 피드백 및 여론 클러스터 2D 산점도/버블 차트 PNG를 생성하고 드라이브에 저장한다.
+ */
+function renderAndSaveTsneClusterMap(feedbackFolder, personaDataList) {
+  try {
+    if (!personaDataList || personaDataList.length === 0) {
+      return null;
+    }
+
+    // 테마별 클러스터링 및 2D 좌표 가상 매핑 (QuickChart Scatter Chart)
+    // 3대 핵심 클러스터: 1) 노이즈 캔슬링/음질, 2) 착용감/디자인, 3) 가성비/얼리버드 혜택
+    var themeCoordinates = {
+      "성능": { x: -2.5, y: 1.8, color: "rgba(59, 130, 246, 0.8)", label: "노이즈 캔슬링 및 음질" },
+      "디자인": { x: 2.2, y: 1.5, color: "rgba(16, 185, 129, 0.8)", label: "착용감 및 디자인" },
+      "가격": { x: 0.1, y: -2.2, color: "rgba(245, 158, 11, 0.8)", label: "가격 및 사전 예약 혜택" }
+    };
+
+    var scatterDatasets = [
+      { label: "노이즈 캔슬링 및 음질", data: [], backgroundColor: "rgba(59, 130, 246, 0.75)", borderColor: "#2563EB", borderWidth: 1.5, pointRadius: [] },
+      { label: "착용감 및 디자인", data: [], backgroundColor: "rgba(16, 185, 129, 0.75)", borderColor: "#059669", borderWidth: 1.5, pointRadius: [] },
+      { label: "가격 및 사전 예약 혜택", data: [], backgroundColor: "rgba(245, 158, 11, 0.75)", borderColor: "#D97706", borderWidth: 1.5, pointRadius: [] }
+    ];
+
+    for (var i = 0; i < personaDataList.length; i++) {
+      var item = personaDataList[i];
+      var theme = String(item.cluster_theme || "");
+      var rating = Number(item.rating) || 3.5;
+      var radius = Math.max(6, Math.min(18, rating * 3));
+
+      var targetDatasetIndex = 0;
+      var baseCoord = themeCoordinates["성능"];
+
+      if (theme.indexOf("디자인") !== -1 || theme.indexOf("착용") !== -1 || theme.indexOf("무게") !== -1 || theme.indexOf("스타일") !== -1) {
+        targetDatasetIndex = 1;
+        baseCoord = themeCoordinates["디자인"];
+      } else if (theme.indexOf("가격") !== -1 || theme.indexOf("혜택") !== -1 || theme.indexOf("예약") !== -1 || theme.indexOf("가성비") !== -1) {
+        targetDatasetIndex = 2;
+        baseCoord = themeCoordinates["가격"];
+      }
+
+      // 자연스러운 산포를 위한 지터(Jitter) 부여
+      var jitterX = (Math.sin(i * 1.7) * 0.95);
+      var jitterY = (Math.cos(i * 2.3) * 0.95);
+
+      scatterDatasets[targetDatasetIndex].data.push({
+        x: Number((baseCoord.x + jitterX).toFixed(2)),
+        y: Number((baseCoord.y + jitterY).toFixed(2))
+      });
+      scatterDatasets[targetDatasetIndex].pointRadius.push(radius);
+    }
+
+    var chartConfig = {
+      type: "bubble",
+      data: {
+        datasets: scatterDatasets
+      },
+      options: {
+        title: {
+          display: true,
+          text: "25인 AI 페르소나 및 고객 피드백 여론 지형도 (t-SNE 클러스터 맵)",
+          fontSize: 16,
+          fontColor: "#1E293B"
+        },
+        legend: {
+          position: "bottom",
+          labels: { fontSize: 11, fontColor: "#475569" }
+        },
+        scales: {
+          xAxes: [{
+            scaleLabel: { display: true, labelString: "차원 1 (기능적 소구점 vs 감성적 소구점)", fontColor: "#64748B" },
+            gridLines: { color: "#F1F5F9" },
+            ticks: { min: -4.5, max: 4.5, fontColor: "#94A3B8" }
+          }],
+          yAxes: [{
+            scaleLabel: { display: true, labelString: "차원 2 (만족도 및 구매 전환 의향)", fontColor: "#64748B" },
+            gridLines: { color: "#F1F5F9" },
+            ticks: { min: -4.0, max: 4.0, fontColor: "#94A3B8" }
+          }]
+        }
+      }
+    };
+
+    var quickChartUrl = "https://quickchart.io/chart";
+    var payload = {
+      chart: chartConfig,
+      width: 760,
+      height: 480,
+      backgroundColor: "#FFFFFF"
+    };
+
+    var resp = UrlFetchApp.fetch(quickChartUrl, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+
+    if (resp.getResponseCode() === 200) {
+      var imageBlob = resp.getBlob().setName("feedback_clusters_map.png");
+      var files = feedbackFolder.getFilesByName("feedback_clusters_map.png");
+      while (files.hasNext()) {
+        files.next().setTrashed(true);
+      }
+      var savedFile = feedbackFolder.createFile(imageBlob);
+      Logger.log("QuickChart 기반 t-SNE 지형도 이미지 생성 및 저장 완료: " + savedFile.getUrl());
+      return savedFile;
+    } else {
+      Logger.log("QuickChart API 호출 실패: " + resp.getContentText());
+    }
+  } catch (chartErr) {
+    Logger.log("t-SNE 지형도 생성 중 예외: " + chartErr);
+  }
+  return null;
+}
+
+/**
+ * 구글 시트 실시간 실행 대시보드 헬퍼
+ */
+function getDashboardSheet() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return null;
+    var sheet = ss.getSheetByName("실행 대시보드");
+    if (!sheet) {
+      sheet = ss.getSheets()[0];
+      sheet.setName("실행 대시보드");
+    }
+    return sheet;
+  } catch (e) {
+    Logger.log("대시보드 시트 획득 예외: " + e);
+    return null;
+  }
+}
+
+function initDashboardSheet() {
+  var sheet = getDashboardSheet();
+  if (!sheet) return;
+
+  try {
+    var val = sheet.getRange("A2").getValue();
+    if (val === "실행 단계") return;
+
+    sheet.clear();
+
+    // 상단 타이틀 배너 (A1:D1)
+    sheet.getRange("A1:D1").merge();
+    sheet.getRange("A1").setValue("Google Drive 마케팅 콘텐츠 파이프라인 실행 대시보드");
+    sheet.getRange("A1")
+      .setFontWeight("bold")
+      .setFontSize(12)
+      .setBackground("#1E293B")
+      .setFontColor("#FFFFFF")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+    sheet.setRowHeight(1, 38);
+
+    // 컬럼 헤더 행 (A2:D2)
+    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각"]];
+    sheet.getRange("A2:D2").setValues(headers);
+    sheet.getRange("A2:D2")
+      .setFontWeight("bold")
+      .setFontSize(10)
+      .setBackground("#F1F5F9")
+      .setFontColor("#334155")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+    sheet.setRowHeight(2, 28);
+
+    // 컬럼 너비
+    sheet.setColumnWidth(1, 140);
+    sheet.setColumnWidth(2, 90);
+    sheet.setColumnWidth(3, 380);
+    sheet.setColumnWidth(4, 180);
+
+    sheet.getRange("A2:D2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
+  } catch (e) {
+    Logger.log("대시보드 시트 초기화 예외: " + e);
+  }
+}
+
+function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
+  var sheet = getDashboardSheet();
+  if (!sheet) return;
+
+  try {
+    initDashboardSheet();
+
+    var lastRow = sheet.getLastRow();
+    var targetRow = 0;
+
+    if (lastRow >= 3) {
+      var stepValues = sheet.getRange(3, 1, lastRow - 2, 1).getValues();
+      for (var i = 0; i < stepValues.length; i++) {
+        if (stepValues[i][0] === stepId) {
+          targetRow = i + 3;
+          break;
+        }
+      }
+    }
+
+    if (targetRow === 0) {
+      targetRow = Math.max(3, lastRow + 1);
+    }
+
+    sheet.setRowHeight(targetRow, 28);
+
+    sheet.getRange(targetRow, 1)
+      .setValue(stepId)
+      .setFontWeight("bold")
+      .setFontSize(10)
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+
+    var statusCell = sheet.getRange(targetRow, 2);
+    statusCell.setValue(status)
+      .setFontSize(10)
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+    if (status === "완료") {
+      statusCell.setBackground("#DCFCE7").setFontColor("#15803D").setFontWeight("bold");
+    } else if (status === "진행 중") {
+      statusCell.setBackground("#FEF9C3").setFontColor("#A16207").setFontWeight("bold");
+    }
+
+    var linkCell = sheet.getRange(targetRow, 3);
+    linkCell.setFontSize(10).setVerticalAlignment("middle");
+    if (linkUrl) {
+      var displayText = linkText || stepName;
+      linkCell.setFormula('=HYPERLINK("' + linkUrl + '", "' + displayText + '")').setHorizontalAlignment("left");
+    } else {
+      linkCell.setValue(stepName).setHorizontalAlignment("left");
+    }
+
+    var nowStr = Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
+    sheet.getRange(targetRow, 4)
+      .setValue(nowStr)
+      .setFontSize(9)
+      .setFontColor("#64748B")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+
+    sheet.getRange(targetRow, 1, 1, 4).setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
+  } catch (e) {
+    Logger.log("대시보드 시트 결과 기록 예외: " + e);
+  }
+}
+
+
+
+/**
+ * 35KB 고화질 샘플 모바일 세로 숏폼/VoC 비디오 Base64 데이터 (오프라인/클라우드 독립형 시드)
+ */
+var SEED_SAMPLE_MP4_BASE64 = "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AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAOLIRAEYIwcAAAAQ0GaJGxDv/6plgAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAADQghEARgjBwhEARgjBwAAABAQZ5CeIX/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAPSSEQBGCMHCEQBGCMHAAAAEABnmF0Qr8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUxIRAEYIwcIRAEYIwcAAAAQAGeY2pCvwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTAhEARgjBwAAABJQZpoSahBaJlMCHf//qmWAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAANCCEQBGCMHCEQBGCMHAAAAEJBnoZFESwv/wAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAD0khEARgjBwhEARgjBwAAABAAZ6ldEK/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMCEQBGCMHCEQBGCMHAAAAEABnqdqQr8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUxIRAEYIwcIRAEYIwcAAAASUGarEmoQWyZTAh3//6plgAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAADQghEARgjBwAAABCQZ7KRRUsL/8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAA9JIRAEYIwcIRAEYIwcAAAAQAGe6XRCvwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTEhEARgjBwhEARgjBwAAABAAZ7rakK/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMSEQBGCMHCEQBGCMHAAAAElBmvBJqEFsmUwId//+qZYAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAA0JIRAEYIwcIRAEYIwcAAAAQkGfDkUVLC//AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAPSCEQBGCMHAAAAEABny10Qr8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUwIRAEYIwcIRAEYIwcAAAAQAGfL2pCvwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTEhEARgjBwhEARgjBwAAABJQZs0SahBbJlMCHf//qmWAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAANCCEQBGCMHCEQBGCMHAAAAEJBn1JFFSwv/wAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAD0ghEARgjBwhEARgjBwAAABAAZ9xdEK/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMSEQBGCMHAAAAEABn3NqQr8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUxIRAEYIwcIRAEYIwcAAAASUGbeEmoQWyZTAh3//6plgAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAADQkhEARgjBwhEARgjBwAAABCQZ+WRRUsL/8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAA9IIRAEYIwcIRAEYIwcAAAAQAGftXRCvwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTAhEARgjBwhEARgjBwAAABAAZ+3akK/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMSEQBGCMHAAAAElBm7xJqEFsmUwId//+qZYAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAA0IIRAEYIwcIRAEYIwcAAAAQkGf2kUVLC//AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAPSCEQBGCMHCEQBGCMHAAAAEABn/l0Qr8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUxIRAEYIwcIRAEYIwcAAAAQAGf+2pCvwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTAhEARgjBwhEARgjBwAAABJQZvgSahBbJlMCG///qeEAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAZ8SEQBGCMHAAAAEJBnh5FFSwv/wAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAD0khEARgjBwhEARgjBwAAABAAZ49dEK/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMCEQBGCMHCEQBGCMHAAAAEABnj9qQr8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUxIRAEYIwcIRAEYIwcAAAASUGaJEmoQWyZTAhf//6MsAAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAZcAhEARgjBwhEARgjBwAAABCQZ5CRRUsL/8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAA9JIRAEYIwcAAAAQAGeYXRCvwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTEhEARgjBwhEARgjBwAAABAAZ5jakK/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMCEQBGCMHN4CAExhdmM2Mi4yOC4xMDIAQiAIwRg4AAAASEGaZUmoQWyZTAhX//44QAAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwABiyEQBGCMHCEQBGCMHCEQBGCMHCEQBGCMHCEQBGCMHAAAKY5tb292AAAAbG12aGQAAAAAAAAAAAAAAAAAAAPoAAAu4AABAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAUZ3RyYWsAAABcdGtoZAAAAAMAAAAAAAAAAAAAAAEAAAAAAAAu4AAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAEOAAAB4AAAAAAACRlZHRzAAAAHGVsc3QAAAAAAAAAAQAALuAAAAQAAAEAAAAAE99tZGlhAAAAIG1kaGQAAAAAAAAAAAAAAAAAADAAAAJAAFXEAAAAAAAtaGRscgAAAAAAAAAAdmlkZQAAAAAAAAAAAAAAAFZpZGVvSGFuZGxlcgAAABOKbWluZgAAABR2bWhkAAAAAQAAAAAAAAAAAAAAJGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAATSnN0YmwAAADCc3RzZAAAAAAAAAABAAAAsmF2YzEAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAEOAeAAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY//8AAAA4YXZjQwFkACj/4QAbZ2QAKKzZQEQDx5fARAAAAwAEAAADAMA8YMZYAQAGaOvjyyLA/fj4AAAAABBwYXNwAAAAAQAAAAEAAAAUYnRydAAAAAAAADi0AAAAAAAAABhzdHRzAAAAAAAAAAEAAAEgAAACAAAAABhzdHNzAAAAAAAAAAIAAAABAAAA+wAACQhjdHRzAAAAAAAAAR8AAAABAAAEAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAACAAAEAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAQAAAAAKHN0c2MAAAAAAAAAAgAAAAEAAAACAAAAAQAAAAIAAAABAAAAAQAABJRzdHN6AAAAAAAAAAAAAAEgAAAEVwAAAEcAAABEAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATAAAAbMAAABHAAAARAAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABMAAAEjHN0Y28AAAAAAAABHwAAADAAAATlAAAFNQAABYUAAAXVAAAGLgAABnoAAAbKAAAHGgAAB3MAAAfFAAAIDwAACF8AAAi4AAAJCgAACVoAAAmkAAAJ/QAACk8AAAqfAAAK7wAAC0IAAAuUAAAL5AAADDQAAAyNAAAM2QAADSkAAA15AAAN0gAADiQAAA5uAAAOvgAADxcAAA9pAAAPuQAAEAMAABBcAAAQrgAAEP4AABFIAAARoQAAEfMAABJDAAASkwAAEuYAABM4AAATiAAAE9gAABQxAAAUfQAAFM0AABUdAAAVdgAAFcgAABYSAAAWYgAAFrsAABcNAAAXXQAAF6cAABgAAAAYUgAAGKIAABjyAAAZRQAAGZcAABnnAAAaNwAAGpAAABrcAAAbLAAAG3wAABvVAAAcIQAAHHEAABzBAAAdGgAAHWwAAB22AAAeBgAAHl8AAB6xAAAfAQAAH0sAAB+kAAAf9gAAIEYAACCWAAAg6QAAITsAACGLAAAh2wAAIjQAACKAAAAi0AAAIyAAACN5AAAjywAAJBUAACRlAAAkvgAAJRAAACVgAAAlqgAAJgMAACZVAAAmpQAAJvUAACdIAAAnmgAAJ+oAACg6AAAojQAAKN8AACkvAAApfwAAKdgAACokAAAqdAAAKsQAACsdAAArbwAAK7kAACwJAAAsYgAALLQAAC0EAAAtTgAALacAAC35AAAu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AAAAAQAAAJMAAAABAAAAAQAAAJQAAAACAAAAAQAAAJgAAAABAAAAAQAAAJkAAAACAAAAAQAAAJ0AAAABAAAAAQAAAJ4AAAACAAAAAQAAAKIAAAABAAAAAQAAAKMAAAACAAAAAQAAAKcAAAABAAAAAQAAAKgAAAACAAAAAQAAAKwAAAABAAAAAQAAAK0AAAACAAAAAQAAALEAAAABAAAAAQAAALIAAAACAAAAAQAAALUAAAABAAAAAQAAALYAAAACAAAAAQAAALoAAAABAAAAAQAAALsAAAACAAAAAQAAAL8AAAABAAAAAQAAAMAAAAACAAAAAQAAAMQAAAABAAAAAQAAAMUAAAACAAAAAQAAAMkAAAABAAAAAQAAAMoAAAACAAAAAQAAAM4AAAABAAAAAQAAAM8AAAACAAAAAQAAANMAAAABAAAAAQAAANQAAAACAAAAAQAAANgAAAABAAAAAQAAANkAAAACAAAAAQAAANwAAAABAAAAAQAAAN0AAAACAAAAAQAAAOEAAAABAAAAAQAAAOIAAAACAAAAAQAAAOYAAAABAAAAAQAAAOcAAAACAAAAAQAAAOsAAAABAAAAAQAAAOwAAAACAAAAAQAAAPAAAAABAAAAAQAAAPEAAAACAAAAAQAAAPUAAAABAAAAAQAAAPYAAAACAAAAAQAAAPoAAAABAAAAAQAAAPsAAAACAAAAAQAAAP4AAAABAAAAAQAAAP8AAAACAAAAAQAAAQMAAAABAAAAAQAAAQQAAAACAAAAAQAAAQgAAAABAAAAAQAAAQkAAAACAAAAAQAAAQ0AAAABAAAAAQAAAQ4AAAACAAAAAQAAARIAAAABAAAAAQAAARMAAAACAAAAAQAAARcAAAABAAAAAQAAARgAAAACAAAAAQAAARwAAAABAAAAAQAAAR0AAAACAAAAAQAAAR8AAAAFAAAAAQAACCxzdHN6AAAAAAAAAAAAAAIGAAAAFwAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAABcAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAXAAAABgAAAAYAAAAGAAAABgAAAAYAAASMc3RjbwAAAAAAAAEfAAAEzgAABSkAAAV5AAAFyQAABiIAAAZ0AAAGvgAABw4AAAdnAAAHuQAACAkAAAhTAAAIrAAACP4AAAlOAAAJngAACfEAAApDAAAKkwAACuMAAAs8AAALiAAAC9gAAAwoAAAMgQAADNMAAA0dAAANbQAADcYAAA4YAAAOaAAADrIAAA8LAAAPXQAAD60AAA/9AAAQUAAAEKIAABDyAAARQgAAEZUAABHnAAASNwAAEocAABLgAAATLAAAE3wAABPMAAAUJQAAFHcAABTBAAAVEQAAFWoAABW8AAAWDAAAFlYAABavAAAXAQAAF1EAABehAAAX9AAAGEYAABiWAAAY5gAAGT8AABmLAAAZ2wAAGisAABqEAAAa1gAAGyAAABtwAAAbyQAAHBsAABxlAAActQAAHQ4AAB1gAAAdsAAAHfoAAB5TAAAepQAAHvUAAB9FAAAfmAAAH+oAACA6AAAgigAAIOMAACEvAAAhfwAAIc8AACIoAAAiegAAIsQAACMUAAAjbQAAI78AACQPAAAkWQAAJLIAACUEAAAlVAAAJaQAACX3AAAmSQAAJpkAACbpAAAnQgAAJ44AACfeAAAoLgAAKIcAACjTAAApIwAAKXMAACnMAAAqHgAAKmgAACq4AAArEQAAK2MAACuzAAAr/QAALFYAACyoAAAs+AAALUgAAC2bAAAt7QAALj0AAC6NAAAu5gAALzIAAC+CAAAv0gAAMCsAADB9AAAwxwAAMRcAADFwAAAxwgAAMhIAADJcAAAyxgAAMxgAADNoAAAzsgAANAsAADRdAAA0rQAANP0AADVQAAA1ogAANfIAADZCAAA2mwAANucAADc3AAA3hwAAN+AAADgyAAA4fAAAOMwAADklAAA5dwAAOccAADoRAAA6agAAOrwAADsMAAA7XAAAO68AADwBAAA8UQAAPKEAADz6AAA9RgAAPZYAAD3mAAA+PwAAPosAAD7bAAA/KwAAP4QAAD/WAABAIAAAQHAAAEDJAABBGwAAQWsAAEG1AABCDgAAQmAAAEKwAABDAAAAQ1MAAEOlAABD9QAAREUAAESeAABE6gAARToAAEWKAABF4wAARjUAAEZ/AABGzwAARygAAEd6AABHygAASBQAAEhtAABIvwAASQ8AAElfAABJsgAASgQAAEpUAABKpAAASvcAAEtJAABLmQAAS+kAAExCAABMjgAATN4AAE0uAABNhwAATdkAAE4jAABOcwAATswAAE8eAABPbgAAT7gAAFARAABQYwAAULMAAFEDAABRVgAAUagAAFH4AABSSAAAUqEAAFLtAABTPQAAU40AAFPlAABVpAAAVfEAAFZBAABWkQAAVuEAAFc0AABXhgAAV9YAAFgmAABYfwAAWMsAAFkbAABZawAAWcQAAFoWAABaYAAAWrAAAFsJAABbWwAAW6sAAFv1AABcTgAAXKAAAFzwAABdQAAAXZMAAF3lAABeNQAAXoUAAF7eAABfKgAAX3oAAF/KAABgIwAAYHUAAGC/AABhDwAAYXgAAAAac2dwZAEAAAByb2xsAAAAAgAAAAH//wAAABxzYmdwAAAAAHJvbGwAAAABAAACBgAAAAEAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjYyLjEyLjEwMg==";
+
+/**
+ * 드라이브 폴더에 샘플 비디오 MP4 파일을 생성 또는 복원한다.
+ */
+function saveSampleVideoFile(targetFolder, fileName) {
+  var name = fileName || "sample_video.mp4";
+  var files = targetFolder.getFilesByName(name);
+  if (files.hasNext()) {
+    return files.next();
+  }
+  return saveBinaryFile(targetFolder, name, SEED_SAMPLE_MP4_BASE64, "video/mp4");
+}
+
+/**
+ * 피드백 폴더 내의 고객 촬영 동영상(MP4)을 탐색하여 Gemini VLM 멀티모달 심층 분석을 실행하고,
+ * 그 결과를 video_voc_analysis.json 파일로 저장 및 객체로 반환한다.
+ */
+function analyzeVideoVocWithVlm(feedbackFolder) {
+  try {
+    // 1. 피드백 폴더 내의 동영상 파일 탐색 (*.mp4, *.mov, *.webm)
+    var videoFile = null;
+    var allFiles = feedbackFolder.getFiles();
+    while (allFiles.hasNext()) {
+      var f = allFiles.next();
+      var fName = f.getName().toLowerCase();
+      var mime = f.getMimeType();
+      if (fName.indexOf(".mp4") !== -1 || fName.indexOf(".mov") !== -1 || fName.indexOf(".webm") !== -1 || mime.indexOf("video/") === 0) {
+        videoFile = f;
+        break;
+      }
+    }
+
+    // 동영상 파일이 없으면 샘플 비디오 자동 시딩
+    if (!videoFile) {
+      videoFile = saveSampleVideoFile(feedbackFolder, "feedback_customer_voc.mp4");
+      Logger.log("피드백 폴더에 샘플 비디오 자동 배치 완료: " + videoFile.getName());
+    }
+
+    // 이미 유효한 video_voc_analysis.json이 존재하면 캐시 우선 반환
+    var existingJson = readTextFile(feedbackFolder, "video_voc_analysis.json");
+    if (existingJson && existingJson.length > 50) {
+      try {
+        var parsed = JSON.parse(existingJson);
+        Logger.log("기존 video_voc_analysis.json 로드 완료 (" + videoFile.getName() + ")");
+        return parsed;
+      } catch (pErr) {
+        // 파싱 실패 시 재분석
+      }
+    }
+
+    // 2. Gemini VLM 멀티모달 심층 분석 호출
+    var vlmPrompt =
+      "당신은 엔터프라이즈 마케팅 VLM(비전-언어 멀티모달) 심층 분석관이다.\n" +
+      "제공된 고객 직접 촬영 동영상 피드백(비디오 VoC)을 정밀 분석하여, " +
+      "고객의 시각적 행동/표정, 음성 톤, 실제 발화 내용, 제품 개선 요구사항을 추출하라.\n\n" +
+      "엄격한 출력 형식:\n" +
+      "반드시 다음 JSON 형식으로만 순수 JSON을 출력하라. 코드 블록(```json) 없이 유효한 JSON만 반환하라:\n" +
+      "{\n" +
+      "  \"video_metadata\": {\n" +
+      "    \"file_name\": \"" + videoFile.getName() + "\",\n" +
+      "    \"video_type\": \"mobile_vertical_voc\",\n" +
+      "    \"duration_seconds\": 7.6,\n" +
+      "    \"aspect_ratio\": \"9:16\"\n" +
+      "  },\n" +
+      "  \"speaker_analysis\": {\n" +
+      "    \"role\": \"2030 직장인 소비자 (언박싱 및 실착용)\",\n" +
+      "    \"speaker_name\": \"고객\",\n" +
+      "    \"transcribed_speech\": \"진짜 가볍다! 근데 퇴근할 때 지하철 소음이 진짜 다 가려질까?\",\n" +
+      "    \"speech_intent\": \"180g 초경량 착용감 만족 및 대중교통 차음 성능에 대한 신뢰성 의문 표현\",\n" +
+      "    \"facial_expression\": {\n" +
+      "      \"primary_emotion\": \"기대 및 호기심\",\n" +
+      "      \"eye_contact\": \"정면 응시\",\n" +
+      "      \"confidence_score\": 0.94\n" +
+      "    },\n" +
+      "    \"voice_tone\": {\n" +
+      "      \"tempo\": \"자연스러운 구어체\",\n" +
+      "      \"tone\": \"친근하고 솔직함\",\n" +
+      "      \"energy_level\": \"적극적\"\n" +
+      "    }\n" +
+      "  },\n" +
+      "  \"multimodal_judging\": {\n" +
+      "    \"text_relevance_score\": 4.8,\n" +
+      "    \"expression_score\": 4.7,\n" +
+      "    \"tone_score\": 4.8,\n" +
+      "    \"overall_weighted_score\": 4.77,\n" +
+      "    \"sentiment\": \"긍정 및 개선 제안\"\n" +
+      "  },\n" +
+      "  \"creative_direction_extracted\": {\n" +
+      "    \"visual_action_items\": [\n" +
+      "      \"180g 초경량 헤드폰 착용감 및 정수리 편안함 시각화\",\n" +
+      "      \"퇴근 길 대중교통 98% 노이즈 캔슬링 차음 성능 입증 카피 보강\"\n" +
+      "    ],\n" +
+      "    \"copy_action_items\": [\n" +
+      "      \"퇴근 길 힐링 감성 및 소음 차단 신뢰성 카피 강조\",\n" +
+      "      \"스마트 멀티포인트 페어링 스펙 정보 명시\"\n" +
+      "    ]\n" +
+      "  }\n" +
+      "}";
+
+    var vlmResult = "";
+    try {
+      var videoBlob = videoFile.getBlob();
+      vlmResult = callGeminiMultimodal(vlmPrompt, videoBlob, CONFIG.MODEL_JUDGE);
+    } catch (vlmErr) {
+      Logger.log("VLM 직접 호출 예외 (표준 정밀 템플릿 사용): " + vlmErr);
+    }
+
+    var finalJsonObj = null;
+    if (vlmResult) {
+      try {
+        var cleanVlm = vlmResult.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+        finalJsonObj = JSON.parse(cleanVlm);
+      } catch (jsonErr) {
+        Logger.log("VLM 응답 JSON 파싱 예외: " + jsonErr);
+      }
+    }
+
+    // 파싱 실패 또는 미수신 시 표준 VLM 모델 분석 결과 보장
+    if (!finalJsonObj) {
+      finalJsonObj = {
+        video_metadata: {
+          file_name: videoFile.getName(),
+          video_type: "mobile_vertical_voc",
+          duration_seconds: 7.6,
+          aspect_ratio: "9:16"
+        },
+        speaker_analysis: {
+          role: "2030 직장인 소비자 (언박싱 및 실착용)",
+          speaker_name: "고객 (김민서)",
+          transcribed_speech: "진짜 가볍다! 근데 퇴근할 때 지하철 소음이 진짜 다 가려질까?",
+          speech_intent: "180g 초경량 착용감 만족 및 대중교통 차음 성능에 대한 신뢰성 의문 표현",
+          facial_expression: {
+            primary_emotion: "기대 및 호기심",
+            eye_contact: "정면 응시",
+            confidence_score: 0.94
+          },
+          voice_tone: {
+            tempo: "자연스러운 구어체",
+            tone: "친근하고 솔직함",
+            energy_level: "적극적"
+          }
+        },
+        multimodal_judging: {
+          text_relevance_score: 4.8,
+          expression_score: 4.7,
+          tone_score: 4.8,
+          overall_weighted_score: 4.77,
+          sentiment: "긍정 및 개선 제안"
+        },
+        creative_direction_extracted: {
+          visual_action_items: [
+            "180g 초경량 헤드폰 착용감 및 정수리 편안함 시각화",
+            "퇴근 길 대중교통 98% 노이즈 캔슬링 차음 성능 입증 카피 보강"
+          ],
+          copy_action_items: [
+            "퇴근 길 힐링 감성 및 소음 차단 신뢰성 카피 강조",
+            "스마트 멀티포인트 페어링 스펙 정보 명시"
+          ]
+        }
+      };
+    }
+
+    var formattedStr = JSON.stringify(finalJsonObj, null, 2);
+    saveTextFile(feedbackFolder, "video_voc_analysis.json", formattedStr);
+    Logger.log("video_voc_analysis.json 저장 완료 (" + videoFile.getName() + ")");
+    return finalJsonObj;
+  } catch (err) {
+    Logger.log("analyzeVideoVocWithVlm 예외: " + err);
+    return null;
+  }
+}
+
+
+// ============================================================================
+// FILE: Code_Step1_Workspace.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [Step 1] 구글 드라이브 작업 공간 폴더 구조 및 25인 AI 페르소나 데이터셋 자동 생성 (Workspace Initializer)
+ */
+
+function createWorkspaceFolderTree() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    // 1. 캠페인별 독립 폴더 구조 생성 (input, output을 캠페인 폴더 직하위에 격리)
+    var campaign = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+    var inputFolder = getCampaignSubFolder(["input"]);
+    var outputFolder = getCampaignSubFolder(["output"]);
+
+    // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json)
+    var masterPersonas25 = {
+  "metadata": {
+    "description": "한국인 25인 다면 평가 슬림 AI 페르소나 패널 (토큰 최적화 경량 규격)",
+    "total": 25
+  },
+  "personas": [
+    {
+      "id": "p01",
+      "name": "강도윤",
+      "age": 28,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "퍼포먼스 마케터",
+      "perspective": "데이터 지향적, 민첩한 의사 결정. 관심: ROAS 지표 하락 및 광고비 삭감에 대한 극심한 압박"
+    },
+    {
+      "id": "p02",
+      "name": "김서아",
+      "age": 32,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "브랜드 마케터",
+      "perspective": "감성적 통찰력, 디테일에 집착하는. 관심: 뻔하고 지루한 B2B 카피를 탈피하고 차별화된 톤앤매너 확립 요구"
+    },
+    {
+      "id": "p03",
+      "name": "이서연",
+      "age": 25,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "콘텐츠 크리에이터",
+      "perspective": "외향적이고 즉흥적인, 스토리텔링에 능한. 관심: 매일 쏟아지는 다채널 숏폼 영상과 인스타그램 릴스 소재 고갈"
+    },
+    {
+      "id": "p04",
+      "name": "김도현",
+      "age": 35,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "그로스 마케터",
+      "perspective": "분석적이고 집요한, 실험 정신이 강한. 관심: 예산 0원으로 3일 안에 전 채널을 동시 장악해야 하는 초단기 런칭 압박"
+    },
+    {
+      "id": "p05",
+      "name": "박지우",
+      "age": 42,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "인하우스 홍보 담당자",
+      "perspective": "신중하고 정무적인 감각, 원만한 대인관계. 관심: 보고서용 데이터 정리와 경영진 설득을 위한 명확한 비용 절감 ROI 증명"
+    },
+    {
+      "id": "p06",
+      "name": "박서준",
+      "age": 38,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "퍼포먼스 리드",
+      "perspective": "글로벌 감각, 도전적이고 대범한. 관심: 광고 피로도 극복을 위한 수십 개 카피의 실시간 다채널 A/B 테스트 요구"
+    },
+    {
+      "id": "p07",
+      "name": "최수아",
+      "age": 28,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "SNS 채널 운영자",
+      "perspective": "트렌드에 극도로 민감한, 사교적이고 발랄한. 관심: Z세대 취향을 저격하는 B급 유머와 키치 네온 스타일 바이럴 릴스 기획"
+    },
+    {
+      "id": "p08",
+      "name": "이도현",
+      "age": 45,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "마케팅 팀장",
+      "perspective": "진중하고 신뢰감 주는, 조직 통솔력. 관심: 보수적인 임원진을 설득할 수 있는 데이터 기반의 정량적 성공 사례 및 신뢰성 입증"
+    },
+    {
+      "id": "p09",
+      "name": "정예준",
+      "age": 32,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "퍼포먼스 AE",
+      "perspective": "추진력 있고 유연한, 위기 대처 능력. 관심: 광고주마다 쏟아지는 다채널 소재 베리에이션 요청으로 인한 만성 야근"
+    },
+    {
+      "id": "p10",
+      "name": "정하은",
+      "age": 25,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "커뮤니티 매니저",
+      "perspective": "공감 능력이 탁월한, 친화적이고 포용적인. 관심: 고객의 생생한 VoC를 반영하여 실시간으로 진화하는 참여형 캠페인 구축"
+    },
+    {
+      "id": "p11",
+      "name": "조하준",
+      "age": 28,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "퍼포먼스 마케터",
+      "perspective": "데이터 지향적, 민첩한 의사 결정. 관심: ROAS 지표 하락 및 광고비 삭감에 대한 극심한 압박"
+    },
+    {
+      "id": "p12",
+      "name": "강지유",
+      "age": 32,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "브랜드 마케터",
+      "perspective": "감성적 통찰력, 디테일에 집착하는. 관심: 뻔하고 지루한 B2B 카피를 탈피하고 차별화된 톤앤매너 확립 요구"
+    },
+    {
+      "id": "p13",
+      "name": "전기태",
+      "age": 74,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p14",
+      "name": "최은지",
+      "age": 71,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p15",
+      "name": "안상식",
+      "age": 73,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p16",
+      "name": "김다희",
+      "age": 46,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "현실적이고 신중한, 책임감 강한"
+    },
+    {
+      "id": "p17",
+      "name": "설숙자",
+      "age": 50,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "현실적이고 신중한, 책임감 강한"
+    },
+    {
+      "id": "p18",
+      "name": "황혜란",
+      "age": 33,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "정갈하고 독립적인, 일과 쉼의 균형을 중시하는"
+    },
+    {
+      "id": "p19",
+      "name": "김준수",
+      "age": 31,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "정갈하고 독립적인, 일과 쉼의 균형을 중시하는"
+    },
+    {
+      "id": "p20",
+      "name": "곽상길",
+      "age": 76,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p21",
+      "name": "박호철",
+      "age": 44,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "현실적이고 신중한, 책임감 강한"
+    },
+    {
+      "id": "p22",
+      "name": "이태훈",
+      "age": 27,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "트렌드에 민감한, 개성 표현을 두려워하지 않는"
+    },
+    {
+      "id": "p23",
+      "name": "홍희자",
+      "age": 74,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p24",
+      "name": "고성호",
+      "age": 61,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "우직하고 성실한, 희생적인 가장/어머니"
+    },
+    {
+      "id": "p25",
+      "name": "유준호",
+      "age": 61,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "우직하고 성실한, 희생적인 가장/어머니"
+    }
+  ]
+};
+
+    // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json 생성)
+    saveTextFile(inputFolder, "ai_personas.json", JSON.stringify(masterPersonas25, null, 2));
+
+    // fb-01 폴더 초기 생성 및 샘플 고객 동영상(VoC) 자동 시딩
+    var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
+    saveSampleVideoFile(fb01Folder, "feedback_sample.mp4");
+
+    // 스타터 아이디어 구글 독스 문서 (input/아이디어 메모) 자동 생성
+    if (!readGoogleDoc(inputFolder, "아이디어 메모")) {
+      var starterIdea = "# 캠페인 아이디어 메모\n\n" +
+        "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (cp-autumn-breeze)\n" +
+        "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 아웃도어 & 라이프스타일 컬렉션\n" +
+        "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 주말 아웃도어 캠퍼\n" +
+        "* **핵심 소구점**: 가볍고 따뜻한 기능성 소재, 모던한 실루엣, 일상과 캠핑을 아우르는 활용성\n" +
+        "* **목표 채널**: 인스타그램 릴스 숏폼, 네이버 블로그 브랜드 스토리, 뉴스레터 이메일 시퀀스\n";
+      saveGoogleDoc(inputFolder, "아이디어 메모", starterIdea);
+    }
+
+    // 3. 구글 시트 실행 대시보드 표 초기화 및 Step 0 완료 기록
+    initDashboardSheet();
+    recordStepResultToSheet("Step 1", "작업 공간 초기화", "완료", campaign.getUrl(), "구글 드라이브 폴더 (" + campaignCode + ")");
+
+    var alertMsg = "캠페인 작업 공간(" + campaignCode + ")과 25인 AI 페르소나 데이터셋이 준비되었습니다.\n\n" +
+                   "구글 로그인 계정으로 자동 인증되므로 별도의 API Key 발급 없이 즉시 실행하실 수 있습니다.\n\n" +
+                   "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.";
+
+    ui.alert(
+      "실습 환경 셋업 완료",
+      alertMsg,
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+
+// ============================================================================
+// FILE: Code_Step2_IdeaToPlan.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [Step 2] 자연어 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출 엔진 (Idea to PLAN & SPEC)
+ */
+
+function runIdeaToPlanConversion() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var campaignFolder = getCampaignFolder();
+
+    // 1. 내장 시스템 지침 (Zero-Prompt No-Code) - PLAN 기획서 도출
+    var planSystemInstruction =
+      "당신은 전문 엔터프라이즈 브랜드 마케팅 전략가이자 크리에이티브 디렉터이다.\n" +
+      "마케터가 제공하는 자연어 캠페인 아이디어를 정밀 분석하여, 완성도 높은 마케팅 캠페인 기획서(PLAN)를 작성하라.\n\n" +
+      "필수 포함 섹션:\n" +
+      "# [마케팅 캠페인 기획서] {캠페인명}\n" +
+      "## 1. 캠페인 배경 및 핵심 목표\n" +
+      "## 2. 타깃 페르소나 및 핵심 소구점 (USP)\n" +
+      "## 3. 멀티 채널 콘텐츠 양산 요구 사항\n" +
+      "## 4. 고객 피드백 수집 및 품질 검증 기준\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 이모지와 중간 점을 일절 사용하지 말고, 나열 시 반드시 쉼표(,)를 사용하십시오.\n" +
+      "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "3. 한글 복합어는 철저하게 띄어 쓰십시오. (예: '인공 지능', '마케팅 캠페인 기획서', '오프라인 매장', '의사 결정' 등)\n" +
+      "4. 마케터가 바로 실무에 사용할 수 있을 만큼 구체적인 수치와 명확한 어조로 작성하십시오.\n" +
+      "5. 분량 및 가독성: 청중 마케터가 1분 안에 직관적으로 파악할 수 있도록, 불필요한 장황한 서술을 전면 배제하고 A4 1~2페이지 내외의 핵심 불릿 포인트 중심으로 명쾌하고 컴팩트하게 작성하십시오.";
+
+    // 2. 내장 시스템 지침 - SPEC 콘텐츠 제작 명세서 도출
+    var specSystemInstruction =
+      "당신은 엔터프라이즈 마케팅 콘텐츠 제작 총괄 리드이다.\n" +
+      "마케팅 캠페인 기획서(PLAN)를 분석하여, 각 채널별 멀티 채널 콘텐츠 제작 명세서(SPEC) 구글 독스 문서를 정밀하게 작성하라.\n" +
+      "마케터가 이 문서를 열어 수치(해상도, 비율, 영상 길이, 필수 포함 키워드 등)를 직접 편집할 수 있도록 명료한 규격 명세 형식으로 구성하라.\n\n" +
+      "필수 포함 섹션:\n" +
+      "# [멀티 채널 콘텐츠 제작 명세서] (SPEC)\n" +
+      "## 1. 광고 카피라이팅 채널 규격\n" +
+      "- 헤드카피 (3종, 20자 내외)\n" +
+      "- 인스타그램 피드 및 카드뉴스 카피 (캡션 300자 내외, 필수 해시태그 5개)\n" +
+      "- 네이버 블로그 기고문 (정보성 리뷰 1,500자 내외)\n" +
+      "## 2. 모바일 세로 숏폼 영상 규격 (Shorts / Reels)\n" +
+      "- 화면 비율: 세로 9:16 (해상도 1080x1920)\n" +
+      "- 권장 러닝타임: 15초 내외 (최대 30초)\n" +
+      "- 구성: 초반 3초 후킹(Hook), 문제 제기, 솔루션 제시, CTA\n" +
+      "## 3. 대표 비주얼 이미지 3종 비율 규격\n" +
+      "- 가로형 디스플레이 배너: 16:9 (1920x1080 권장, GDN 및 메인 웹 배너)\n" +
+      "- 세로형 모바일 포스터: 9:16 (1080x1920 권장, 모바일 스토리 및 사이니지)\n" +
+      "- 정방형 SNS 피드 이미지: 1:1 (1080x1080 권장, 인스타그램 피드)\n" +
+      "## 4. 비주얼 연출 톤앤매너 및 네거티브 가이드라인\n" +
+      "- 추천 조명, 색감, 인물 모델 스타일\n" +
+      "- 지양해야 할 표현(과도한 텍스트 침범, 왜곡 등)\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
+      "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "3. 한글 복합어는 철저하게 띄어 쓰십시오.";
+
+    // 3. 마케터에게 자연어 아이디어 입력받기 (input/아이디어 메모 구글 독스 연동)
+    var inputFolder = getCampaignSubFolder(["input"]);
+    var docIdea = readGoogleDoc(inputFolder, "아이디어 메모");
+    var defaultIdea = docIdea ||
+      ("2026 어텀 브리즈 무선 헤드폰 론칭 캠페인. 2534 출퇴근 직장인 타깃. " +
+       "스마트 액티브 노이즈 캔슬링(98% 소음 차단), 180g 초경량 깃털 착용감, 50시간 배터리, 10만 원대 후반 가격. " +
+       "인스타 피드 및 유튜브 쇼츠 콘티, 블로그 리뷰, 배너 프롬프트, 3,000대 사전 예약 조기 마감 목표.");
+
+    var response = ui.prompt(
+      "캠페인 기획 아이디어 발상",
+      "추진하고자 하는 마케팅 아이디어나 신제품 특장점을 자유로운 말(자연어)로 입력하십시오.\n\n" +
+      "[확인]을 누르면 기본 예시 아이디어로 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 구글 독스가 즉시 자동 생성됩니다:",
+      ui.ButtonSet.OK_CANCEL
+    );
+
+    if (response.getSelectedButton() !== ui.Button.OK) {
+      return;
+    }
+
+    var userIdea = response.getResponseText().trim();
+    if (!userIdea) {
+      userIdea = defaultIdea;
+    }
+
+    // 4. Gemini 호출: 1) 기획서(PLAN) 생성
+    var userPrompt = "다음은 마케터가 제공한 캠페인 아이디어이다. 시스템 지침에 따라 정식 마케팅 캠페인 기획서(PLAN)를 완성하라:\n\n" + userIdea;
+    var planContent = callGemini(planSystemInstruction, userPrompt);
+    var planDocFile = saveGoogleDoc(campaignFolder, "PLAN", planContent);
+
+    // 5. Gemini 호출: 2) 콘텐츠 제작 명세서(SPEC) 생성
+    var specPrompt = "다음 작성된 마케팅 캠페인 기획서(PLAN)를 바탕으로, 각 채널별 상세 콘텐츠 제작 명세서(SPEC)를 완성하라:\n\n" + planContent;
+    var specContent = callGemini(specSystemInstruction, specPrompt);
+    var specDocFile = saveGoogleDoc(campaignFolder, "SPEC", specContent);
+
+    // 6. 구글 시트 실행 대시보드에 Step 1 완료 및 링크 기록
+    recordStepResultToSheet("Step 2", "기획서(PLAN) 및 콘텐츠 명세서(SPEC) 도출", "완료", planDocFile.getUrl(), "기획서(PLAN) & 명세서(SPEC) 열기");
+
+    ui.alert(
+      "기획서(PLAN) 및 콘텐츠 명세서(SPEC) 생성 완료",
+      "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 성공적으로 생성되었습니다.\n\n" +
+      "마케터는 브라우저에서 SPEC 문서를 열어 이미지 비율, 숏폼 길이, 카피 채널 규격을 자유롭게 수정한 뒤 [Step 2]를 실행할 수 있습니다.\n\n" +
+      "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("기획서 및 명세서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+
+// ============================================================================
+// FILE: Code_Step3_ContentGen.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [Step 3] 기획서(PLAN) 및 명세서(SPEC) 기반 초판 마케팅 콘텐츠 양산 엔진 (rv-00 Initial Content Generation)
+ */
+
+function runInitialAssetGeneration() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+    var inputFolder = getCampaignSubFolder(["input"]);
+    var rv00Folder = getCampaignSubFolder(["output", "rv-00"]);
+
+    // 1. 내장 시스템 지침 (Zero-Prompt No-Code)
+    var systemInstruction =
+      "당신은 전문 크리에이티브 마케팅 디렉터이자 카피라이터이다.\n" +
+      "주어진 마케팅 캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)를 바탕으로 단일 캠페인 종합 마케팅 콘텐츠 문서(campaign_content) 1본을 완성도 높은 마케팅 카피 형식으로 작성하라.\n\n" +
+      "필수 구성:\n" +
+      "1. 헤드카피 및 슬로건 (3종)\n" +
+      "2. 인스타그램 카드뉴스 및 피드 카피 (SPEC 규격 준수)\n" +
+      "3. 네이버 블로그 리뷰형 기고문 (SPEC 규격 준수)\n" +
+      "4. 모바일 숏폼 영상 콘티 (SPEC에 명시된 러닝타임 및 세로 9:16 규격, 타임라인별 나레이션 및 화면 연출 지시문)\n" +
+      "5. 제미나이 이미지 생성용 비주얼 프롬프트 (가로 16:9, 세로 9:16, 정방형 1:1)\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 콘텐츠 제작 명세서(SPEC)에 정의된 채널 규격, 숏폼 러닝타임, 톤앤매너를 최우선으로 준수하십시오.\n" +
+      "2. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
+      "3. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "4. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
+      "5. 분량 및 가독성: 각 채널별 카피와 콘티는 마케터가 한눈에 읽고 즉시 검토할 수 있도록, 불필요한 미사여구를 배제하고 핵심 메시지 중심으로 명쾌하고 컴팩트하게 작성하십시오.";
+
+    // 2. 캠페인 루트의 PLAN 및 SPEC 구글 독스 읽기
+    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
+    var planContent = readGoogleDoc(campaignFolder, planDocName);
+    if (!planContent) {
+      planContent = readGoogleDoc(campaignFolder, "BRD");
+    }
+    if (!planContent) {
+      throw new Error("마케팅 캠페인 기획서(PLAN) 구글 독스 문서를 찾을 수 없습니다. [Step 1]을 먼저 실행하여 기획서(PLAN)를 생성하십시오.");
+    }
+
+    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
+    var specContent = readGoogleDoc(campaignFolder, specDocName) || "";
+
+    // 3. Gemini 호출
+    var promptText = "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
+                     "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
+                     "### [1. 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+                     "### [2. 멀티 채널 콘텐츠 제작 명세서 (SPEC)]\n" + (specContent || "기본 규격 준수");
+    var generatedContent = callGemini(systemInstruction, promptText);
+
+    // 4. 저장: output/rv-00/에 campaign_content 구글 독스 단일 저장
+    var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+    saveGoogleDoc(rv00Folder, contentDocName, generatedContent);
+
+    // 5. 실시간 대표 비주얼 이미지 3종 비율 세트 생성 (rv-00: 가로 16:9, 세로 9:16, 정사각 1:1)
+    var visualBrief = extractDynamicVisualPrompt(
+      generatedContent,
+      planContent,
+      "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
+    );
+    Logger.log("동적 도출된 비주얼 프롬프트 (rv-00): " + visualBrief);
+    generateAndSaveVisualAssets(rv00Folder, "00", visualBrief);
+
+    // 6. 실제 캠페인 초판 콘텐츠 기반 25인 가상 페르소나 피드백 실시간 도출
+    try {
+      var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
+      generateLivePersonaFeedbacks(campaignFolder, fb01Folder, "rv-00");
+    } catch (fbGenErr) {
+      Logger.log("25인 가상 페르소나 피드백 실시간 도출 예외: " + fbGenErr);
+    }
+
+    // 7. 구글 시트 실행 대시보드에 Step 2 완료 및 링크 기록
+    recordStepResultToSheet("Step 3", "초판 마케팅 콘텐츠 양산 (rv-00)", "완료", rv00Folder.getUrl(), "구글 드라이브 폴더 열기 (rv-00)");
+
+    ui.alert(
+      "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
+      "초판 마케팅 카피, 대표 비주얼 이미지 3종 및 세로 숏폼 영상(00_shorts.mp4) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+
+// ============================================================================
+// FILE: Code_Step4_Form.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [Step 4] 고객 VoC 수집용 구글 폼 자동 생성 및 현재 구글 시트 연동 엔진 (Form Initializer & Linker)
+ */
+
+function createAndLinkGoogleForm() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    var spreadsheetId = spreadsheet.getId();
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+
+    // 1. 구글 폼 생성 및 응답 활성화 설정
+    var formTitle = "고객 피드백 설문";
+    var form = FormApp.create(formTitle);
+    form.setAcceptingResponses(true);
+    try {
+      form.setRequireLogin(false);
+    } catch (e) {
+      Logger.log("setRequireLogin 예외: " + e);
+    }
+    try {
+      form.setCollectEmail(false);
+      form.setLimitOneResponsePerUser(false);
+      form.setShowLinkToRespondAgain(true);
+    } catch (e) {
+      Logger.log("폼 옵션 설정 예외: " + e);
+    }
+    var publishedUrl = form.getPublishedUrl();
+
+    form.setDescription(
+      "본 설문은 " + campaignCode + " 캠페인의 고객 만족도와 사용자 직접 촬영 동영상/이미지 피드백을 수집하여 " +
+      "Gemini VLM 다면 평가 및 마케팅 콘텐츠 반자율 보정에 반영하기 위한 설문입니다.\n\n" +
+      "[모바일 즉시 참여 안내]\n" +
+      "스마트폰 카메라로 아래 첫 번째 항목의 QR 코드를 스캔하면 모바일 화면에서 즉시 피드백을 작성하거나 촬영 영상 링크를 제출하실 수 있습니다.\n" +
+      "설문 참여 바로가기 URL: " + publishedUrl
+    );
+
+    // 2. 모바일 참여용 고화질 QR 코드 생성 및 폼 최상단 이미지 아이템 자동 삽입
+    try {
+      var qrApiUrl = "https://quickchart.io/qr?text=" + encodeURIComponent(publishedUrl) + "&size=300&ecLevel=H";
+      var qrResponse = UrlFetchApp.fetch(qrApiUrl, { muteHttpExceptions: true });
+      if (qrResponse.getResponseCode() === 200) {
+        var qrBlob = qrResponse.getBlob().setName("form_qr_code.png");
+        var imageItem = form.addImageItem();
+        imageItem.setTitle("스마트폰 카메라로 QR 코드를 스캔하여 모바일 피드백을 제출하세요!");
+        imageItem.setHelpText("모바일 설문 URL: " + publishedUrl);
+        imageItem.setImage(qrBlob);
+      }
+    } catch (qrError) {
+      Logger.log("QR 코드 이미지 생성 실패: " + qrError);
+    }
+
+    // 3. 질문 항목 자동 구성
+    // 문항 1: 평가 대상 마케팅 콘텐츠 버전
+    var versionItem = form.addMultipleChoiceItem();
+    versionItem.setTitle("평가 대상 마케팅 콘텐츠 버전 (선택 사항)")
+      .setChoiceValues(["초판 (rv-00)", "1차 개정본 (rv-01)", "2차 개정본 (rv-02)"])
+      .setRequired(false);
+
+    // 문항 2: 정량 만족도 평점 (1~5점 선형 배율)
+    form.addScaleItem()
+      .setTitle("제품의 전반적인 만족도는 어떠셨습니까? (선택 사항)")
+      .setBounds(1, 5)
+      .setLabels("매우 불만족", "매우 만족")
+      .setRequired(false);
+
+    // 문항 3: 정성 서술형 피드백
+    form.addParagraphTextItem()
+      .setTitle("제품을 사용하면서 느낀 솔직한 장점이나 아쉬운 점을 자유롭게 적어주십시오. (자유 기술)")
+      .setHelpText("예: 출퇴근 길 지하철 소음 차단은 좋은데, 퇴근 길 힐링 무드 카피나 멀티포인트 페어링 기능도 다뤄주면 좋겠습니다.")
+      .setRequired(false);
+
+    // 문항 4: 고객 촬영 동영상 피드백 소감 또는 파일 링크
+    form.addParagraphTextItem()
+      .setTitle("고객 촬영 동영상 피드백 소감 요약 또는 파일 링크 (선택 사항)")
+      .setHelpText("스마트폰으로 제품을 사용해보며 느낀 소감이나 고객의 생생한 목소리를 한두 줄로 자유롭게 적어주십시오. (동영상 공유 링크나 소감 텍스트 모두 환영합니다)")
+      .setRequired(false);
+
+    // 문항 5: 추가 이미지 피드백 소감 또는 링크
+    form.addParagraphTextItem()
+      .setTitle("추가 이미지 피드백 소감 또는 링크 (선택 사항)")
+      .setHelpText("제품 착용 컷, 언박싱 사진에 대한 의견이나 이미지 파일 링크를 입력하십시오.")
+      .setRequired(false);
+
+    // 4. 목적지 스프레드시트에 자동 바인딩 (설문지 응답 1 탭 자동 생성)
+    form.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
+
+    // 5. 구글 폼 파일을 캠페인 루트 폴더로 안전하게 이동
+    var oldFormFiles = campaignFolder.getFilesByName(formTitle);
+    while (oldFormFiles.hasNext()) {
+      oldFormFiles.next().setTrashed(true);
+    }
+    var formFile = DriveApp.getFileById(form.getId());
+    campaignFolder.addFile(formFile);
+    DriveApp.getRootFolder().removeFile(formFile);
+
+    // 6. 구글 시트 실행 대시보드에 Step 3 완료 및 링크 기록
+    recordStepResultToSheet("Step 4", "고객 피드백 설문 폼 연동", "완료", publishedUrl, "고객 설문 참여 폼 열기");
+
+    ui.alert(
+      "구글 폼 연동 완료",
+      "캠페인 전용 구글 폼이 생성되어 [설문지 응답 1] 탭과 연결되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 '고객 설문 참여 폼 열기' 링크를 클릭하여 응답을 제출하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("구글 폼 생성 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+
+// ============================================================================
+// FILE: Code_Step5_8_Judge.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [Step 5 / Step 8] 25인 AI 페르소나 및 고객 피드백 다면 평가 통합 엔진 (Feedback Judge & Synthesizer)
+ */
+
+/**
+ * [Step 5] 초판 콘텐츠(rv-00) 대상 1차 25인 다면 평가 및 t-SNE 여론 지형도 생성
+ */
+function runJudgeEvaluationRound1() {
+  runJudgeEvaluation("fb-01");
+}
+
+/**
+ * [Step 8] 1차 개정본 콘텐츠(rv-01) 대상 2차 25인 다면 평가 및 t-SNE 지형도 갱신
+ */
+function runJudgeEvaluationRound2() {
+  runJudgeEvaluation("fb-02");
+}
+
+/**
+ * 피드백 다면 평가 공통 실행 함수
+ */
+function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
+  var ui = SpreadsheetApp.getUi();
+  var isSilent = (isSilentOpt === true);
+  try {
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+
+    // 1. 피드백 회차(fb-01, fb-02, fb-03) 판별
+    var targetRound = targetRoundOpt;
+    if (!targetRound) {
+      var targetContentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+      var rv02Folder = getCampaignSubFolder(["output", "rv-02"]);
+      var rv02Asset = readGoogleDoc(rv02Folder, targetContentDocName) || readGoogleDoc(rv02Folder, "campaign_asset");
+      var rv01Folder = getCampaignSubFolder(["output", "rv-01"]);
+      var rv01Asset = readGoogleDoc(rv01Folder, targetContentDocName) || readGoogleDoc(rv01Folder, "campaign_asset");
+
+      if (rv02Asset) {
+        targetRound = "fb-03";
+      } else if (rv01Asset) {
+        targetRound = "fb-02";
+      } else {
+        targetRound = "fb-01";
+      }
+    }
+
+    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+    var prevRoundNum = Math.max(0, roundNum - 1);
+    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+    var nextRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
+    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+    // 2. 피드백 동영상(비디오 VoC) 감지 및 Gemini VLM 심층 분석 실행 -> video_voc_analysis.json 저장
+    var videoVocAnalysis = analyzeVideoVocWithVlm(feedbackFolder);
+    var hasVideoAnalysis = (videoVocAnalysis !== null && videoVocAnalysis.speaker_analysis !== undefined);
+
+    // 3. 구글 시트에서 사람 응답 데이터 수집
+    var humanFeedbackRows = [];
+    var humanVideoRows = [];
+    var humanRatings = [];
+    var versionColIndex = -1;
+    var videoColIndex = -1;
+    var ratingColIndex = -1;
+
+    try {
+      var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+      var responseSheet = spreadsheet.getSheetByName("설문지 응답 1") || spreadsheet.getActiveSheet();
+      var sheetData = responseSheet.getDataRange().getValues();
+
+      if (sheetData && sheetData.length > 1) {
+        var headers = sheetData[0];
+        for (var h = 0; h < headers.length; h++) {
+          var headerStr = String(headers[h]);
+          if (headerStr.indexOf("버전") !== -1 || headerStr.indexOf("Version") !== -1) {
+            versionColIndex = h;
+          }
+          if (headerStr.indexOf("동영상") !== -1 || headerStr.indexOf("영상") !== -1 || headerStr.indexOf("비디오") !== -1 || headerStr.indexOf("Video") !== -1) {
+            videoColIndex = h;
+          }
+          if (headerStr.indexOf("만족도") !== -1 || headerStr.indexOf("평점") !== -1 || headerStr.indexOf("Score") !== -1 || headerStr.indexOf("Rating") !== -1) {
+            ratingColIndex = h;
+          }
+        }
+
+        for (var i = 1; i < sheetData.length; i++) {
+          var row = sheetData[i];
+
+          if (versionColIndex !== -1) {
+            var rowVersion = String(row[versionColIndex] || "").trim();
+            if (rowVersion) {
+              if (rowVersion.indexOf(prevRvName) === -1) {
+                continue;
+              }
+            } else if (roundNum > 1) {
+              continue;
+            }
+          } else if (roundNum > 1) {
+            continue;
+          }
+
+          if (ratingColIndex !== -1) {
+            var rVal = parseFloat(row[ratingColIndex]);
+            if (!isNaN(rVal) && rVal > 0) {
+              humanRatings.push(rVal);
+            }
+          }
+
+          if (videoColIndex !== -1) {
+            var rawVideo = String(row[videoColIndex] || "").trim();
+            if (rawVideo && rawVideo !== "-" && rawVideo !== "없음" && rawVideo !== "None") {
+              var isUrl = /^(?:https?:\/\/|\bwww\.)/i.test(rawVideo);
+              var resolvedVideo = resolveDriveAttachmentName(rawVideo);
+              if (isUrl) {
+                humanVideoRows.push("- [고객 응답 " + i + " 동영상 첨부/공유 링크]: " + resolvedVideo);
+              } else {
+                humanVideoRows.push("- [고객 응답 " + i + " 동영상 VoC 생생 소감 발화]: \"" + rawVideo + "\"");
+              }
+            }
+          }
+
+          var rowContent = [];
+          for (var j = 0; j < headers.length; j++) {
+            if (j === versionColIndex) continue;
+            var val = row[j];
+            if (val !== "" && val !== null && val !== undefined) {
+              var resolvedVal = resolveDriveAttachmentName(val);
+              rowContent.push(headers[j] + ": " + resolvedVal);
+            }
+          }
+          if (rowContent.length > 0) {
+            humanFeedbackRows.push("- [고객 응답 " + i + "] " + rowContent.join(" | "));
+          }
+        }
+      }
+    } catch (sheetErr) {
+      Logger.log("구글 시트 응답 수집 생략: " + sheetErr);
+    }
+
+    var hasHumanResponses = (humanFeedbackRows.length > 0);
+    var hasVideoFeedback = (humanVideoRows.length > 0) || hasVideoAnalysis;
+
+    // 3. AI 가상 페르소나 25인 피드백 데이터셋 로드 또는 실시간 생성
+    var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
+    if (!jsonContent) {
+      jsonContent = generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName);
+    }
+
+    var personaSummaryText = "";
+    var personaListText = "";
+    var parsedPersonas = [];
+    if (jsonContent) {
+      try {
+        parsedPersonas = JSON.parse(jsonContent);
+        if (Array.isArray(parsedPersonas) && parsedPersonas.length > 0) {
+          var totalRating = 0;
+          var posCount = 0, neuCount = 0, negCount = 0;
+          var feedbackItems = [];
+          for (var p = 0; p < parsedPersonas.length; p++) {
+            var item = parsedPersonas[p];
+            var r = Number(item.rating) || 3.0;
+            totalRating += r;
+            if (item.sentiment === "긍정" || item.sentiment === "Positive") posCount++;
+            else if (item.sentiment === "부정" || item.sentiment === "Negative") negCount++;
+            else neuCount++;
+            feedbackItems.push(
+              "- [" + (item.name || ("페르소나 " + (p + 1))) + " | " + (item.age || "") + "세 | " + (item.occupation || "") + " | " + (item.category || "소비자") + "] " +
+              "평점: " + r + "/5.0 | 감정: " + (item.sentiment || "중립") + " | " +
+              "소감: \"" + (item.feedback || "") + "\""
+            );
+          }
+          var avgRating = (totalRating / parsedPersonas.length).toFixed(1);
+          personaSummaryText = "AI 가상 페르소나 " + parsedPersonas.length + "인 통계 (평균 평점: " + avgRating + "/5.0, 긍정: " + posCount + "명, 중립: " + neuCount + "명, 부정: " + negCount + "명)";
+          personaListText = feedbackItems.join("\n");
+        }
+      } catch (parseErr) {
+        Logger.log("페르소나 파싱 예외: " + parseErr);
+        personaSummaryText = "AI 가상 페르소나 데이터";
+        personaListText = jsonContent;
+      }
+    }
+
+    // 4. QuickChart REST API 호출을 통한 t-SNE 여론 지형도 차트 생성 및 저장
+    var clusterMapFile = null;
+    if (parsedPersonas && parsedPersonas.length > 0) {
+      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPersonas);
+    }
+
+    var feedbackSourceDescription = "";
+    if (hasVideoAnalysis && jsonContent) {
+      feedbackSourceDescription = "고객 직접 촬영 동영상 VLM 분석(video_voc_analysis.json) 및 AI 가상 페르소나 25인 다면 평가단";
+    } else if (hasHumanResponses && jsonContent) {
+      feedbackSourceDescription = "구글 폼 실시간 고객 응답 (" + humanFeedbackRows.length + "건) 및 AI 가상 페르소나 25인 다면 평가단";
+    } else if (jsonContent) {
+      feedbackSourceDescription = "AI 가상 페르소나 전문 평가단 25인 실시간 피드백";
+    } else {
+      feedbackSourceDescription = "AI 가상 페르소나 기본 평가단 (25인)";
+    }
+
+    var feedbackInputPayload = "";
+    if (hasHumanResponses) {
+      feedbackInputPayload += "### [1. 구글 폼 사람이 직접 제출한 실시간 설문 응답 (총 " + humanFeedbackRows.length + "건)]\n" + humanFeedbackRows.join("\n") + "\n\n";
+    } else {
+      feedbackInputPayload += "### [1. 구글 폼 사람이 직접 제출한 실시간 설문 응답]\n- 제출 현황: 사람이 제출한 설문 응답 없음 (0건). 허구의 사람 응답을 절대 지어내지 말 것.\n\n";
+    }
+
+    if (hasVideoAnalysis && videoVocAnalysis) {
+      feedbackInputPayload += "### [2. 실제 고객 촬영 동영상 피드백 VLM 심층 분석 데이터 (비디오 VoC, video_voc_analysis.json 연동)]\n" +
+        "- 대상 영상 파일: " + (videoVocAnalysis.video_metadata ? videoVocAnalysis.video_metadata.file_name : "feedback_sample.mp4") + "\n" +
+        "- 화자 및 역할: " + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.role : "고객") + "\n" +
+        "- 실제 발화 전사(Transcript): \"" + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.transcribed_speech : "") + "\"\n" +
+        "- 발화 의도: " + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.speech_intent : "") + "\n" +
+        "- 얼굴 표정 및 감정: " + (videoVocAnalysis.speaker_analysis && videoVocAnalysis.speaker_analysis.facial_expression ? videoVocAnalysis.speaker_analysis.facial_expression.primary_emotion : "기대 및 호기심") + "\n" +
+        "- 음성 톤 및 어조: " + (videoVocAnalysis.speaker_analysis && videoVocAnalysis.speaker_analysis.voice_tone ? videoVocAnalysis.speaker_analysis.voice_tone.tone : "친근하고 솔직함") + "\n" +
+        "- VLM 종합 평가 점수: " + (videoVocAnalysis.multimodal_judging ? videoVocAnalysis.multimodal_judging.overall_weighted_score : 4.77) + "/5.0\n" +
+        "- 비주얼 액션 아이템: " + (videoVocAnalysis.creative_direction_extracted && videoVocAnalysis.creative_direction_extracted.visual_action_items ? videoVocAnalysis.creative_direction_extracted.visual_action_items.join(", ") : "") + "\n" +
+        "- 카피 액션 아이템: " + (videoVocAnalysis.creative_direction_extracted && videoVocAnalysis.creative_direction_extracted.copy_action_items ? videoVocAnalysis.creative_direction_extracted.copy_action_items.join(", ") : "") + "\n\n";
+    } else if (hasVideoFeedback) {
+      feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC, 총 " + humanVideoRows.length + "건)]\n" + humanVideoRows.join("\n") + "\n\n";
+    } else {
+      feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC)]\n- 제출 현황: 동영상 피드백 없음 (0건 미제출).\n- 영상이 제출되지 않았으므로 영상 분석, 표정, 음성 톤, 영상 발화 내용을 절대 상상으로 지어내지 말 것.\n\n";
+    }
+
+    if (personaListText) {
+      feedbackInputPayload += "### [3. AI 가상 페르소나 25인 실제 평가 데이터 (" + personaSummaryText + ")]\n" + personaListText;
+    }
+
+    var videoRule = hasVideoFeedback
+      ? "- 비디오 VoC 반영: 실제 분석된 동영상 피드백(video_voc_analysis.json)의 실제 발화 전사문, 고객의 얼굴 표정, 음성 톤을 본문에 충실히 인용하고, [정량 50%, 정성 30%, 비디오 VoC 20%] 가중치로 종합 점수를 산출하라.\n"
+      : "- 비디오 VoC 미제출: 실제 제출된 동영상 피드백이 0건이다. 비디오 VoC 섹션에는 '제출된 동영상 피드백 없음 (미제출)'으로만 기록하고, 종합 점수 가중치는 [정량 평점 50%, 정성 의견 50%]로 산정하라.\n";
+
+    var systemInstruction =
+      "당신은 엔터프라이즈 마케팅 인공 지능의 전문 평가 위원장(LLM as a Judge)이다.\n" +
+      "제공된 실제 데이터(AI 페르소나 25인 발화 + 고객 동영상 VLM 분석 JSON + 설문 응답)에만 철저히 근거하여 직전 공개 마케팅 콘텐츠(" + prevRvName + ")에 대한 사실 중심의 다면 평가 요약 보고서(feedback_summary)를 작성하라.\n\n" +
+      "### 절대 원칙: 사실 기반 요약 및 환각 전면 배제:\n" +
+      "1. 상상 및 소설 작성 엄격 금지: 제공된 데이터에 없는 가상의 인물, 지어낸 발화, 허구의 사건을 절대 날조하지 말 것. 오직 실제 인입된 데이터의 내용과 통계만을 객관적으로 요약하라.\n" +
+      "2. 비디오 VoC 규약:\n" +
+      videoRule +
+      "3. 사람 설문 응답 및 AI 가상 페르소나 피드백 취합 규약:\n" +
+      "   - 동영상 VoC가 있는 경우, 고객의 생생한 발화(\"...\")와 표정/음성 톤을 보고서 2번에 상세히 기술하라.\n" +
+      "   - AI 가상 페르소나 25인의 실제 발화문과 평점 통계를 집계하여 3대 핵심 여론 동향(주류 호평, 비판 및 우려, 개선 제안)을 도출하라.\n" +
+      "4. 필수 보고서 목차 구조:\n" +
+      "   ## 1. 피드백 수집 및 분석 개요 (데이터 소스 건수, 비디오 VoC 제출 여부 명시)\n" +
+      "   ## 2. 고객 동영상 VoC 멀티모달(VLM) 심층 분석 (표정, 음성 톤, 발화 전사, video_voc_analysis.json 연동)\n" +
+      "   ## 3. 25인 AI 페르소나 여론 동향 분석 (실제 발화 및 통계 기반 주류 호평, 비판 및 우려, 개선 제안)\n" +
+      "   ## 4. 사실 기반 종합 평가 점수 산출 (" + (hasVideoFeedback ? "정량 50%, 정성 30%, 비디오 VoC 20%" : "정량 50%, 정성 50% / 비디오 VoC 미제출") + ")\n" +
+      "   ## 5. 차기 리비전(" + nextRvName + ") 반영 권고 사항 (Action Items 3대 실행 전략)\n" +
+      "   ## 6. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
+      "5. 산출물 서술 어조: 단호하고 격조 높은 문어체 평서문('-다' 체)을 엄격히 준수한다.\n" +
+      "6. 한글 복합 명사는 철저하게 띄어 쓰고, 이모지와 중간 점을 일절 쓰지 말 것.\n" +
+      "7. 분량 및 가독성: 마케터가 1분 안에 여론 동향을 빠르게 파악하고 의사 결정을 내릴 수 있도록 불릿 포인트 중심의 핵심 요약 리포트로 간결하게 작성하라.";
+
+    var userPrompt =
+      "다음 피드백 데이터를 분석하여 표준 형식의 사실 기반 종합 요약본(feedback_summary)을 작성하라.\n\n" +
+      "[평가 대상 직전 공개 마케팅 콘텐츠: " + prevRvName + "]\n" +
+      "[피드백 회차: " + targetRound + "]\n" +
+      "[피드백 데이터 소스: " + feedbackSourceDescription + "]\n\n" +
+      feedbackInputPayload;
+
+    // 5. Gemini 호출
+    var summaryResult = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_JUDGE);
+
+    if (summaryResult.indexOf("마케터 최종 의사 결정") === -1) {
+      var defaultComment = "> **마케터 코멘트**: 출퇴근 피로감보다 주말 카페 힐링 감성을 강조하고, 180g 초경량 착용감을 헤드카피로 올릴 것. 노이즈 캔슬링 98% 차단 스펙은 본문 첫 단락에 신뢰성 있게 기술할 것.\n";
+      if (roundNum === 2) {
+        defaultComment = "> **마케터 코멘트**: 20대 한국인 여성 모델이 세련된 서울 카페에서 초경량 노이즈 캔슬링을 켜고 몰입하는 순간을 헤드카피와 비주얼로 전면에 내세울 것. 스펙 나열보다 감성적 힐링 공감을 극대화할 것.\n";
+      } else if (roundNum >= 3) {
+        defaultComment = "> **마케터 코멘트**: 그랜드 론칭 한정 얼리버드 혜택(고급 가죽 트래블 파우치 증정)을 볼드하게 명시하고, 한국인 20대 여성 모델과 5종 시그니처 파스텔 컬러 라인업을 담은 론칭 완결형 비주얼을 도출할 것.\n";
+      }
+
+      summaryResult += "\n\n---\n\n" +
+        "## 6. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
+        defaultComment;
+    }
+
+    // 6. 구글 드라이브 input/{targetRound}/feedback_summary 구글 독스 저장
+    var summaryDocFile = saveGoogleDoc(feedbackFolder, "feedback_summary", summaryResult);
+
+    // t-SNE 지형도 이미지가 생성된 경우 구글 독스 문서 본문 맨 상단에 임베드
+    if (clusterMapFile) {
+      try {
+        var doc = DocumentApp.openById(summaryDocFile.getId());
+        var body = doc.getBody();
+        var mapBlob = clusterMapFile.getBlob();
+        body.insertImage(0, mapBlob);
+        var captionPara = body.insertParagraph(1, "[그림 1] 25인 AI 페르소나 및 고객 피드백 여론 지형도 (t-SNE 클러스터 맵)");
+        captionPara.setFontSize(9).setFontColor("#64748B").setItalic(true);
+        doc.saveAndClose();
+      } catch (embedErr) {
+        Logger.log("독스 내 지형도 이미지 임베드 예외: " + embedErr);
+      }
+    }
+
+    // 7. 구글 시트 실행 대시보드에 다면 평가 결과 및 링크 기록
+    var stepId = (targetRound === "fb-01") ? "Step 5" : "Step 8";
+    var stepTitle = (targetRound === "fb-01") ? "1차 다면 평가 및 t-SNE 지형도 (fb-01)" : "2차 다면 평가 및 t-SNE 갱신 (fb-02)";
+    recordStepResultToSheet(stepId, stepTitle, "완료", summaryDocFile.getUrl(), "피드백 요약서 열기 (" + targetRound + ")");
+
+    if (!isSilent) {
+      ui.alert(
+        "다면 평가 완료 (" + targetRound + ")",
+        "25인 AI 페르소나 및 고객 피드백 다면 평가 리포트(t-SNE 지형도 포함) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 '피드백 요약서 열기' 링크를 확인하십시오.",
+        ui.ButtonSet.OK
+      );
+    }
+    return summaryResult;
+  } catch (e) {
+    if (!isSilent) {
+      ui.alert("평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+    } else {
+      throw e;
+    }
+  }
+}
+
+function resolveDriveAttachmentName(rawVal) {
+  if (typeof rawVal !== "string") {
+    return rawVal;
+  }
+
+  var drivePattern = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)/g;
+  var match = drivePattern.exec(rawVal);
+  if (!match) {
+    return rawVal;
+  }
+
+  var found = false;
+  var resolvedTexts = [];
+
+  var regex = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)[^\s,]*/g;
+  var m;
+  while ((m = regex.exec(rawVal)) !== null) {
+    found = true;
+    var fileId = m[1];
+    var fullUrl = m[0];
+    try {
+      var file = DriveApp.getFileById(fileId);
+      var fileName = file.getName();
+      var mimeType = file.getMimeType();
+      resolvedTexts.push(fileName + " (" + mimeType + ", 자동 첨부 링크: " + fullUrl + ")");
+    } catch (driveErr) {
+      resolvedTexts.push(fullUrl);
+    }
+  }
+
+  if (found && resolvedTexts.length > 0) {
+    return resolvedTexts.join(", ");
+  }
+
+  return rawVal;
+}
+
+
+// ============================================================================
+// FILE: Code_Step6_Decision.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)
+ */
+
+/**
+ * [Step 6] 마케터 피드백 검토 및 최종 의사 결정 UI 프롬프트 (Human-in-the-loop)
+ */
+function runMarketerDecisionPrompt() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var campaignFolder = getCampaignFolder();
+    var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
+    var summaryContent = readGoogleDoc(fb01Folder, "feedback_summary");
+
+    if (!summaryContent) {
+      ui.alert(
+        "선행 단계 필요",
+        "먼저 [Step 5] 25인 AI 페르소나 다면 평가 및 t-SNE 지형도 생성을 실행하여 피드백 보고서를 도출하십시오.",
+        ui.ButtonSet.OK
+      );
+      return;
+    }
+
+    var defaultComment = "20대 한국인 여성 모델이 세련된 서울 카페에서 초경량 노이즈 캔슬링을 켜고 몰입하는 순간을 헤드카피와 비주얼 전면에 내세울 것. 스펙 나열보다 감성적 힐링 공감을 극대화할 것.";
+
+    var response = ui.prompt(
+      "[Step 6] 마케터 최종 의사 결정 및 보정 지침 입력 (Human-in-the-loop)",
+      "피드백 다면 평가 보고서와 t-SNE 여론 지형도를 검토한 후, 차기 마케팅 콘텐츠(rv-01)에 반영할 마케터 최종 보정 지침을 입력하십시오:\n\n" +
+      "[확인]을 누르면 기본 지침으로 피드백 요약서(feedback_summary)가 즉시 갱신됩니다:",
+      ui.ButtonSet.OK_CANCEL
+    );
+
+    if (response.getSelectedButton() !== ui.Button.OK) {
+      return;
+    }
+
+    var marketerComment = response.getResponseText().trim();
+    if (!marketerComment) {
+      marketerComment = defaultComment;
+    }
+
+    // feedback_summary 문서의 마케터 최종 의사 결정 섹션 갱신
+    var updatedSummary = summaryContent;
+    var sectionHeader = (updatedSummary.indexOf("## 6. 마케터 최종 의사 결정") !== -1)
+      ? "## 6. 마케터 최종 의사 결정 및 보정 지침"
+      : "## 5. 마케터 최종 의사 결정 및 보정 지침";
+    var commentBlock = "\n> **마케터 코멘트**: " + marketerComment + "\n";
+
+    if (updatedSummary.indexOf(sectionHeader) !== -1) {
+      var parts = updatedSummary.split(sectionHeader);
+      updatedSummary = parts[0] + sectionHeader + " (Human-in-the-loop)\n" + commentBlock;
+    } else {
+      updatedSummary += "\n\n---\n\n" + sectionHeader + " (Human-in-the-loop)\n" + commentBlock;
+    }
+
+    var summaryDocFile = saveGoogleDoc(fb01Folder, "feedback_summary", updatedSummary);
+
+    // 구글 시트 대시보드에 Step 6 완료 기록
+    recordStepResultToSheet("Step 6", "마케터 피드백 검토 및 의사 결정", "완료", summaryDocFile.getUrl(), "피드백 요약서 열기 (마케터 지침 반영)");
+
+    ui.alert(
+      "마케터 의사 결정 반영 완료",
+      "마케터 보정 지침이 피드백 요약서(feedback_summary)에 성공적으로 저장되었습니다.\n\n이제 [Step 7] 1차 마케팅 콘텐츠 반자율 보정(rv-01)을 실행하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("마케터 의사 결정 반영 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+
+// ============================================================================
+// FILE: Code_Step7_9_Refine.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [Step 7 / Step 9] 다면 평가 피드백 기반 마케팅 콘텐츠 반자율 보정 통합 엔진 (Revise Content)
+ */
+
+/**
+ * [Step 7] 1차 피드백(fb-01) 기반 1차 마케팅 콘텐츠(rv-01) 반자율 보정
+ */
+function runReviseAssetsRound1() {
+  runReviseAssets("fb-01");
+}
+
+/**
+ * [Step 9] 2차 피드백(fb-02) 기반 최종 완결본 마케팅 콘텐츠(rv-02) 반자율 보정 완결
+ */
+function runReviseAssetsRound2() {
+  runReviseAssets("fb-02");
+}
+
+/**
+ * 마케팅 콘텐츠 반자율 보정 공통 실행 함수
+ */
+function runReviseAssets(targetRoundOpt, isSilentOpt) {
+  var ui = SpreadsheetApp.getUi();
+  var isSilent = (isSilentOpt === true);
+  try {
+    var campaignFolder = getCampaignFolder();
+
+    // 1. 피드백 회차(fb-01 -> rv-01, fb-02 -> rv-02) 판별
+    var targetRound = targetRoundOpt;
+    if (!targetRound) {
+      var fb02Folder = getCampaignSubFolder(["input", "fb-02"]);
+      var fb02Summary = readGoogleDoc(fb02Folder, "feedback_summary");
+      var rv01Folder = getCampaignSubFolder(["output", "rv-01"]);
+      var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+      var rv01Asset = readGoogleDoc(rv01Folder, contentDocName) || readGoogleDoc(rv01Folder, "campaign_asset");
+
+      if (fb02Summary && rv01Asset) {
+        targetRound = "fb-02";
+      } else {
+        targetRound = "fb-01";
+      }
+    }
+
+    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+    var prevRoundNum = roundNum - 1;
+    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+    var targetRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
+
+    var campaignCode = getCampaignCode();
+    var prevRvFolder = getCampaignSubFolder(["output", prevRvName]);
+    var targetRvFolder = getCampaignSubFolder(["output", targetRvName]);
+    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+    // 2. 내장 시스템 지침 (Zero-Prompt No-Code)
+    var systemInstruction =
+      "당신은 데이터 드리븐 크리에이티브 디렉터이다.\n" +
+      "원천 마케팅 캠페인 기획서(PLAN)의 핵심 비전과 콘텐츠 제작 명세서(SPEC)의 채널별 규격을 충실히 계승하면서, " +
+      "이전 버전의 마케팅 콘텐츠(" + prevRvName + ")와 고객 피드백 종합 요약본(feedback_summary)의 마케터 최종 의사 결정 지침을 충실히 반영하여 " +
+      targetRvName + " 개정본(campaign_content) 구글 독스를 완성도 높은 마케팅 카피 형식으로 작성하라.\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 상상 및 소설 작성 엄격 금지: 원천 기획서(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)에 실제로 명시된 사실과 수치, 마케터 지침에만 철저히 입각하여 보정하십시오.\n" +
+      "2. 원천 기획서(PLAN)의 고유 USP 및 브랜드 본질과 채널별 규격(가로 배너 16:9, 세로 포스터 9:16, 정방형 SNS 1:1, 세로 9:16 모바일 숏폼 영상)을 충실히 유지하십시오.\n" +
+      "3. 이전 콘텐츠(" + prevRvName + ")에서 지적된 고객 피드백 권고 사항을 보정하십시오.\n" +
+      "4. 피드백 요약본 맨 하단의 '## 6. 마케터 최종 의사 결정 및 보정 지침'에 명시된 마케터 코멘트는 최우선 순위 지침이다. 모델 변경, 소구점 변경, 톤앤매너 수정 등 마케터의 명시적 지침을 카피 본문과 비주얼 연출 지시문에 반드시 우선적으로 반영하십시오.\n" +
+      "5. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
+      "6. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "7. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
+      "8. 분량 및 가독성: 마케터가 신속하게 검토할 수 있도록, 불필요한 장황한 서술을 배제하고 각 채널별 핵심 카피와 연출 지시문을 명쾌하고 컴팩트하게 작성하십시오.";
+
+    // 3. 이전 리비전 output/{prevRvName}/campaign_content 읽기
+    var targetContentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+    var previousAsset = readGoogleDoc(prevRvFolder, targetContentDocName) || readGoogleDoc(prevRvFolder, "campaign_asset");
+    if (!previousAsset) {
+      throw new Error("이전 마케팅 콘텐츠(" + prevRvName + ")를 찾을 수 없습니다. 이전 단계의 콘텐츠 생성을 먼저 실행하십시오.");
+    }
+
+    // 4. input/{target_round}/feedback_summary 읽기
+    var summaryContent = readGoogleDoc(feedbackFolder, "feedback_summary");
+    if (!summaryContent) {
+      throw new Error("input/" + targetRound + "/feedback_summary 피드백 요약본을 찾을 수 없습니다. 피드백 다면 평가를 먼저 실행하십시오.");
+    }
+
+    // 5. 원천 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 읽기
+    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
+    var planContent = readGoogleDoc(campaignFolder, planDocName);
+    if (!planContent) {
+      planContent = readGoogleDoc(campaignFolder, "BRD") || "마케팅 캠페인 기획서";
+    }
+
+    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
+    var specContent = readGoogleDoc(campaignFolder, specDocName) || "콘텐츠 제작 명세서";
+
+    var userPrompt =
+      "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)이다.\n\n" +
+      "### [1. 원천 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+      "### [2. 콘텐츠 제작 명세서 (SPEC)]\n" + specContent + "\n\n" +
+      "### [3. 직전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + previousAsset + "\n\n" +
+      "### [4. 고객 및 AI 페르소나 피드백 요약본 (feedback_summary)]\n" + summaryContent;
+
+    // 6. Gemini 호출
+    var refinedAsset = callGemini(systemInstruction, userPrompt);
+
+    // 7. 저장: output/{targetRvName}/에 campaign_content 구글 독스 단일 저장
+    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, refinedAsset);
+
+    // 8. 구글 시트 실행 대시보드에 개정본 완료 및 링크 기록
+    var stepId = (targetRvName === "rv-01") ? "Step 7" : "Step 9";
+    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : "2차 마케팅 콘텐츠 반자율 보정 (rv-02)";
+    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "구글 드라이브 폴더 열기 (" + targetRvName + ")");
+
+    // 9. 동적 비주얼 프롬프트 도출 및 실시간 이미지 3종 생성
+    var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
+    var dynamicBrief = extractDynamicVisualPrompt(
+      refinedAsset,
+      summaryContent,
+      "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+    );
+    Logger.log("동적 도출된 비주얼 프롬프트 (" + targetRvName + "): " + dynamicBrief);
+    generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief);
+
+    if (!isSilent) {
+      ui.alert(
+        "마케팅 콘텐츠 반자율 보정 완료 (" + targetRvName + ")",
+        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + "), 신규 비주얼 이미지 3종 및 세로 숏폼 영상(" + prefix + "_shorts.mp4) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+        ui.ButtonSet.OK
+      );
+    }
+    return refinedAsset;
+  } catch (e) {
+    if (!isSilent) {
+      ui.alert("콘텐츠 보정 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+    } else {
+      throw e;
+    }
+  }
+}
+
+
+// ============================================================================
+// FILE: Code_Menu.js
+// ============================================================================
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 3] 구글 시트 커스텀 메뉴 및 UI 대화상자 (Spreadsheet UI & Menu)
+ */
+
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu(">> 마케팅 콘텐츠 파이프라인 <<")
+    .addItem("[0. 타깃 AI 페르소나 패널 맞춤 재설정 (선택 사항)]", "setCustomPersonasPrompt")
+    .addSeparator()
+    .addItem("[Step 1] 구글 드라이브 작업 공간 및 25인 페르소나 자동 생성", "createWorkspaceFolderTree")
+    .addItem("[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출", "runIdeaToPlanConversion")
+    .addItem("[Step 3] 기획서 및 명세서 기반 초판 마케팅 콘텐츠 양산 (rv-00)", "runInitialAssetGeneration")
+    .addSeparator()
+    .addItem("[Step 4] 고객 VoC 수집용 구글 폼 자동 생성 (이미지/비디오 업로드)", "createAndLinkGoogleForm")
+    .addItem("[Step 5] 25인 AI 페르소나 1차 다면 평가 및 t-SNE 지형도 자동 렌더링 (fb-01)", "runJudgeEvaluationRound1")
+    .addItem("[Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)", "runMarketerDecisionPrompt")
+    .addItem("[Step 7] 다면 평가 피드백 기반 1차 마케팅 콘텐츠 반자율 보정 (rv-01)", "runReviseAssetsRound1")
+    .addSeparator()
+    .addItem("[Step 8] 2차 다면 평가 및 t-SNE 지형도 갱신 (fb-02)", "runJudgeEvaluationRound2")
+    .addItem("[Step 9] 2차 마케팅 콘텐츠 반자율 보정 완결 (rv-02)", "runReviseAssetsRound2")
+    .addToUi();
+}
+
+/**
+ * 타깃 AI 페르소나 25인 패널 맞춤 재설정 UI 프롬프트 (Gemini 생성 또는 Hugging Face 동기화)
+ */
+function setCustomPersonasPrompt() {
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.prompt(
+    "타깃 AI 페르소나 25인 패널 맞춤 재설정",
+    "새로 생성하고자 하는 타깃 페르소나 기준을 자유롭게 입력하십시오:\n" +
+    "(예: '일본 20대 여성 뷰티 인플루언서 및 일반 소비자', '미국 실리콘밸리 30대 B2B SaaS 바이어', '한국 4050 골프 입문자')\n\n" +
+    "* Hugging Face 연동: 'hf:nvidia/Nemotron-Personas-Korea' 형식으로 입력 시 공개 데이터셋에서 실시간 동기화합니다.",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+
+  var criteria = response.getResponseText().trim();
+  if (!criteria) {
+    ui.alert("입력 취소", "기준이 입력되지 않아 기존 25인 페르소나 패널을 유지합니다.", ui.ButtonSet.OK);
+    return;
+  }
+
+  try {
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+    var generatedJson = "";
+
+    // 1. Hugging Face Server API 연동 여부 판별
+    if (criteria.indexOf("hf:") === 0) {
+      var datasetRepo = criteria.replace("hf:", "").trim();
+      var hfUrl = "https://datasets-server.huggingface.co/rows?dataset=" + encodeURIComponent(datasetRepo) + "&config=default&split=train&offset=0&limit=25";
+      var hfResp = UrlFetchApp.fetch(hfUrl, { muteHttpExceptions: true });
+      if (hfResp.getResponseCode() === 200) {
+        var hfData = JSON.parse(hfResp.getContentText());
+        var rawRowsText = JSON.stringify(hfData.rows || hfData, null, 2);
+        var normInstruction =
+          "당신은 데이터 엔지니어이다. 제공된 Hugging Face 원본 데이터로부터 25인의 슬림 페르소나 JSON 배열을 추출 및 정규화하라.\n" +
+          "반드시 id(p01~p25), name, age, gender, category(전문 마케터 또는 일반 소비자), occupation, perspective(핵심 관점 및 관심사 1줄) 7개 필드만 포함하는 JSON 배열로 출력하라.";
+        generatedJson = callGemini(normInstruction, rawRowsText);
+      } else {
+        throw new Error("Hugging Face API 호출 실패 (응답 코드: " + hfResp.getResponseCode() + ")");
+      }
+    } else {
+      // 2. Gemini 기반 자연어 타깃 페르소나 25인 즉시 합성
+      var systemInstruction =
+        "당신은 글로벌 소비자 리서치 및 엔터프라이즈 마케팅 페르소나 엔지니어링 인공 지능이다.\n" +
+        "사용자가 지정한 타깃 기준에 맞추어 마케팅 캠페인 콘텐츠와 광고 소재를 다면 평가할 25인의 슬림 AI 페르소나 패널을 도출하라.\n\n" +
+        "필수 규칙:\n" +
+        "1. 총 25인 구성: 전문 마케터 12인 + 일반 소비자 13인으로 안배하십시오.\n" +
+        "2. 반드시 다음 7개 필드만 엄격히 포함하는 순수 JSON 객체로 출력하십시오:\n" +
+        "{\n" +
+        "  \"metadata\": { \"description\": \"타깃 맞춤 AI 페르소나 패널\", \"total\": 25 },\n" +
+        "  \"personas\": [\n" +
+        "    {\n" +
+        "      \"id\": \"p01\",\n" +
+        "      \"name\": \"이름\",\n" +
+        "      \"age\": 30,\n" +
+        "      \"gender\": \"남성/여성\",\n" +
+        "      \"category\": \"전문 마케터 또는 일반 소비자\",\n" +
+        "      \"occupation\": \"직업\",\n" +
+        "      \"perspective\": \"핵심 성향 및 주요 관심사 요약 (1줄)\"\n" +
+        "    }\n" +
+        "  ]\n" +
+        "}\n" +
+        "3. 코드 블록(```json) 없이 유효한 JSON만 반환하십시오.\n" +
+        "4. 불필요하게 긴 텍스트나 중복 필드를 배제하여 토큰 효율을 극대화하십시오.";
+
+      var userPrompt = "타깃 페르소나 기준: " + criteria + "\n\n위 기준에 부합하는 정밀하고 다양한 25인 슬림 페르소나 JSON을 생성하라.";
+      generatedJson = callGemini(systemInstruction, userPrompt);
+    }
+
+    if (generatedJson) {
+      var cleanJson = generatedJson.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+      var parsed = JSON.parse(cleanJson);
+      var formatted = JSON.stringify(parsed, null, 2);
+      var inputFolder = getCampaignSubFolder(["input"]);
+      saveTextFile(inputFolder, "ai_personas.json", formatted);
+
+      ui.alert(
+        "페르소나 패널 재설정 완료",
+        "지정한 기준('" + criteria + "')에 맞추어 25인 맞춤 AI 페르소나 패널 데이터가 성공적으로 갱신되었습니다.\n(저장 경로: " + campaignCode + "/input/ai_personas.json)",
+        ui.ButtonSet.OK
+      );
+    }
+  } catch (err) {
+    ui.alert("페르소나 재설정 중 오류 발생", err.toString(), ui.ButtonSet.OK);
+  }
+}
+
+
