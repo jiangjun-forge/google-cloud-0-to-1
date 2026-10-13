@@ -22,6 +22,18 @@ function onOpen() {
     .addSeparator()
     .addItem("[Step 8] 다면 평가 및 t-SNE 지형도 갱신 (N차 피드백: fb-02 ~ fb-99)", "promptAndRunJudgeEvaluation")
     .addItem("[Step 9] 마케팅 콘텐츠 반자율 보정 (N차 리비전: rv-02 ~ rv-99)", "promptAndRunReviseAssets")
+    .addSeparator()
+    .addSubMenu(ui.createMenu("[테스트 수이트] 에뮬레이션 단위 테스트")
+      .addItem(">> 전체 단위 테스트 일괄 실행 (All) <<", "runAllEmulatedUnitTests")
+      .addSeparator()
+      .addItem("1. 환경 및 설정 구성 검증 (Config)", "testSuite_Config_Alert")
+      .addItem("2. 헬퍼 유틸리티 검증 (Utils)", "testSuite_Utils_Alert")
+      .addItem("3. 동적 회차 탐색기 검증 (Dynamic Round Detect)", "testSuite_DynamicRoundDetect_Alert")
+      .addItem("4. VLM 분석 및 수작업 스캐너 검증 (VLM & Scanner)", "testSuite_VlmAndScanner_Alert")
+      .addItem("5. 작업 공간 및 페르소나 데이터셋 검증 (Workspace & Init)", "testSuite_WorkspaceAndInit_Alert")
+      .addItem("6. 설문 문항 및 다면 평가 가중치 검증 (Form & Judge)", "testSuite_FormAndJudge_Alert")
+      .addItem("7. 마케터 HITL 및 N차 리비전 검증 (HITL & Refine)", "testSuite_HitlAndRefine_Alert")
+      .addItem("8. 타깃 페르소나 및 Hugging Face 검증 (Persona & HF)", "testSuite_PersonaAndHf_Alert"))
     .addToUi();
 }
 

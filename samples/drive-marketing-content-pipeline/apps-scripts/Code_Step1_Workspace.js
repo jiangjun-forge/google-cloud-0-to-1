@@ -15,9 +15,51 @@ function createWorkspaceFolderTree() {
     var campaignCode = getCampaignCode();
     var inputFolder = getCampaignSubFolder(["input"]);
     var outputFolder = getCampaignSubFolder(["output"]);
-
     // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json)
-    var masterPersonas25 = {
+    var masterPersonas25 = getMasterPersonas25();
+
+    // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json 생성)
+    saveTextFile(inputFolder, "ai_personas.json", JSON.stringify(masterPersonas25, null, 2));
+
+    // fb-01 폴더 초기 생성 및 샘플 고객 동영상(VoC) 자동 시딩
+    var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
+    saveSampleVideoFile(fb01Folder, "feedback_sample.mp4");
+
+    // 스타터 아이디어 구글 독스 문서 (input/아이디어 메모) 자동 생성
+    if (!readGoogleDoc(inputFolder, "아이디어 메모")) {
+      var starterIdea = "# 캠페인 아이디어 메모\n\n" +
+        "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (cp-autumn-breeze)\n" +
+        "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 아웃도어 & 라이프스타일 컬렉션\n" +
+        "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 주말 아웃도어 캠퍼\n" +
+        "* **핵심 소구점**: 가볍고 따뜻한 기능성 소재, 모던한 실루엣, 일상과 캠핑을 아우르는 활용성\n" +
+        "* **목표 채널**: 인스타그램 릴스 숏폼, 네이버 블로그 브랜드 스토리, 뉴스레터 이메일 시퀀스\n";
+      saveGoogleDoc(inputFolder, "아이디어 메모", starterIdea);
+    }
+
+    // 3. 구글 시트 실행 대시보드 표 초기화 및 Step 0 완료 기록
+    initDashboardSheet();
+    recordStepResultToSheet("Step 1", "작업 공간 초기화", "완료", campaign.getUrl(), "구글 드라이브 폴더 (" + campaignCode + ")");
+
+    var alertMsg = "캠페인 작업 공간(" + campaignCode + ")과 25인 AI 페르소나 데이터셋이 준비되었습니다.\n\n" +
+                   "구글 로그인 계정으로 자동 인증되므로 별도의 API Key 발급 없이 즉시 실행하실 수 있습니다.\n\n" +
+                   "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.";
+
+    ui.alert(
+      "실습 환경 셋업 완료",
+      alertMsg,
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+
+/**
+ * 기본 25인 슬림 AI 페르소나 마스터 데이터셋 반환
+ */
+function getMasterPersonas25() {
+  return {
   "metadata": {
     "description": "한국인 25인 다면 평가 슬림 AI 페르소나 패널 (토큰 최적화 경량 규격)",
     "total": 25
@@ -250,39 +292,4 @@ function createWorkspaceFolderTree() {
     }
   ]
 };
-
-    // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json 생성)
-    saveTextFile(inputFolder, "ai_personas.json", JSON.stringify(masterPersonas25, null, 2));
-
-    // fb-01 폴더 초기 생성 및 샘플 고객 동영상(VoC) 자동 시딩
-    var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
-    saveSampleVideoFile(fb01Folder, "feedback_sample.mp4");
-
-    // 스타터 아이디어 구글 독스 문서 (input/아이디어 메모) 자동 생성
-    if (!readGoogleDoc(inputFolder, "아이디어 메모")) {
-      var starterIdea = "# 캠페인 아이디어 메모\n\n" +
-        "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (cp-autumn-breeze)\n" +
-        "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 아웃도어 & 라이프스타일 컬렉션\n" +
-        "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 주말 아웃도어 캠퍼\n" +
-        "* **핵심 소구점**: 가볍고 따뜻한 기능성 소재, 모던한 실루엣, 일상과 캠핑을 아우르는 활용성\n" +
-        "* **목표 채널**: 인스타그램 릴스 숏폼, 네이버 블로그 브랜드 스토리, 뉴스레터 이메일 시퀀스\n";
-      saveGoogleDoc(inputFolder, "아이디어 메모", starterIdea);
-    }
-
-    // 3. 구글 시트 실행 대시보드 표 초기화 및 Step 0 완료 기록
-    initDashboardSheet();
-    recordStepResultToSheet("Step 1", "작업 공간 초기화", "완료", campaign.getUrl(), "구글 드라이브 폴더 (" + campaignCode + ")");
-
-    var alertMsg = "캠페인 작업 공간(" + campaignCode + ")과 25인 AI 페르소나 데이터셋이 준비되었습니다.\n\n" +
-                   "구글 로그인 계정으로 자동 인증되므로 별도의 API Key 발급 없이 즉시 실행하실 수 있습니다.\n\n" +
-                   "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.";
-
-    ui.alert(
-      "실습 환경 셋업 완료",
-      alertMsg,
-      ui.ButtonSet.OK
-    );
-  } catch (e) {
-    ui.alert("오류 발생", e.toString(), ui.ButtonSet.OK);
-  }
 }
