@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): Vertex AI Search 데이터 저장소 색인 및 그라운딩 정합성 진단기
+# 기술 상세 설계서 (TDD): Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기
 
 ## 1. 시스템 아키텍처 및 동작 원리
 본 도구는 파이썬 표준 CLI(`diagnose.py`)와 원클릭 배시 실행 래퍼(`diagnose.py`)를 결합한 투트랙(Two-track) 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.

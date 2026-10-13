@@ -212,7 +212,7 @@ def load_dataset(data_path: str, max_samples: int) -> Tuple[List[str], List[Dict
     base_docs = [
         "Cloud Run은 완전 관리형 서버리스 컨테이너 플랫폼으로 트래픽에 따른 0 to N 자동 확장을 지원한다.",
         "BigQuery는 페타바이트 규모의 대규모 정형 및 반정형 데이터를 분석하는 서버리스 데이터 웨어하우스다.",
-        "Vertex AI Search는 비정형 문서 기반 검색 및 RAG 파이프라인 구축을 지원하는 고성능 검색 엔진이다.",
+        "Agent Platform Search는 비정형 문서 기반 검색 및 RAG 파이프라인 구축을 지원하는 고성능 검색 엔진이다.",
         "Cloud KMS는 고객 관리 암호화 키 CMEK 생성 및 주기적 자동 순환을 관리하는 클라우드 보안 서비스다.",
         "Cloud SQL은 PostgreSQL, MySQL 엔진을 클라우드 환경에서 완전 관리형으로 제공하는 관계형 데이터베이스다.",
         "VPC Service Controls는 구글 클라우드 리소스 간 사설 보안 경계를 형성하여 비인가 데이터 유출을 방지한다.",

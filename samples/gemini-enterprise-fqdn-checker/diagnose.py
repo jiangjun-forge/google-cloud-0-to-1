@@ -58,7 +58,7 @@ TARGET_FQDNS = [
         "fqdn": "vertexaisearch.cloud.google.com",
         "port": 443,
         "critical": True,
-        "purpose": "Vertex AI Search 웹 콘솔 및 엔드포인트",
+        "purpose": "Agent Platform Search 웹 콘솔 및 엔드포인트",
     },
     {
         "category": "Core API",

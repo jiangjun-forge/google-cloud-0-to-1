@@ -29,7 +29,7 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 단일 리전/단일 클러스터 내 GPU 재고 부족으로 인해 여러 리전의 GKE 클러스터 및 타 클라우드(EKS, AKS 등)에 걸쳐 다수의 분산 클러스터를 운영하고 있을 때
 - [ ] 단순 라운드로빈 로드 밸런서로 인해 특정 클러스터의 VRAM / KV-cache 메모리 고갈(40%+ 포화) 시 동적 오버플로 분배가 이루어지지 않고 인퍼런스 지연이 급증할 때
 - [ ] 다계층 Istio 서비스 메시 중계 구조(허브 클러스터 $\rightarrow$ 중간 프록시 $\rightarrow$ 백엔드 파드)로 인해 헤어피닝 지연 시간(TTFT)이 증가하고 불필요한 크로스 리전 Egress 비용이 발생할 때
-- [ ] 멀티 클러스터 제어를 위해 GKE Enterprise(구 Anthos)에 타 클라우드 GPU 워커 노드를 등록할 경우 발생하는 vCPU 관리 라이선스 과금을 회피하고 싶을 때 ( https://cloud.google.com/anthos/pricing )
+- [ ] 멀티 클러스터 제어를 위해 GKE Enterprise에 타 클라우드 GPU 워커 노드를 등록할 경우 발생하는 vCPU 관리 라이선스 과금을 회피하고 싶을 때 ( https://cloud.google.com/anthos/pricing )
 - [ ] 특정 GPU 클러스터 장애 시 전체 시스템으로 장애가 전파되지 않도록 글로벌 Anycast VIP 기반 1:1 플랫 직결 및 서킷 브레이커(이상치 탐지)를 신속하게 검증하고 싶을 때
 
 ---

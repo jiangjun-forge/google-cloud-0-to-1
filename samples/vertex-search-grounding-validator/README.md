@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Vertex AI Search 데이터 저장소 색인 및 그라운딩 정합성 진단기
+# Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기
 
-Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Storage) 원본 문서와 버텍스 AI Search(Vertex AI Search) 데이터 저장소(Data Store) 간의 색인 누락, 청킹(Chunking) 실패, 서비스 에이전트 권한 누락 및 Gemini 그라운딩 검색 품질 저하를 1분 만에 일괄 진단하고 처방하는 도구다. (As of 2026-09-09)
+Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Storage) 원본 문서와 Agent Platform Search 데이터 저장소(Data Store) 간의 색인 누락, 청킹(Chunking) 실패, 서비스 에이전트 권한 누락 및 Gemini 그라운딩 검색 품질 저하를 1분 만에 일괄 진단하고 처방하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -26,7 +26,7 @@ Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Sto
 
 ## 1. 이 가이드가 필요한 상황
 
-- Cloud Storage 버킷에 신규 문서나 개정된 사내 규정을 업로드했으나, Vertex AI Search 및 제미나이(Gemini) 모델 답변에 최신 내용이 반영되지 않는 경우
+- Cloud Storage 버킷에 신규 문서나 개정된 사내 규정을 업로드했으나, Agent Platform Search 및 제미나이(Gemini) 모델 답변에 최신 내용이 반영되지 않는 경우
 - 원본 스토리지 객체 수 대비 데이터 저장소에 실제 색인(Indexed) 완료된 문서 수가 현저히 부족하여 색인 누락율을 전수 파악해야 하는 경우
 - 복잡한 표(Table), 다단 레이아웃, 스캔 PDF 파일이 단순 Digital Parser로 처리되어 검색 결과가 깨지거나 누락되는 경우
 - Discovery Engine 서비스 에이전트(`gcp-sa-discoveryengine`)에 스토리지 읽기 권한(`roles/storage.objectViewer`)이 누락되어 색인 동기화가 차단된 경우
@@ -38,7 +38,7 @@ Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Sto
 
 ```mermaid
 graph TD
-    A["Vertex AI Search 데이터 저장소 목록 수집"] --> B["Cloud Storage 원본 문서 수 집계"]
+    A["Agent Platform Search 데이터 저장소 목록 수집"] --> B["Cloud Storage 원본 문서 수 집계"]
     B --> C["데이터 저장소 색인 완료 문서 수 비교"]
     C --> D{"색인 누락율 분석"}
     D -- "누락 발생 (동기화 지연/실패)" --> E["델타 수동 재색인 명령어 처방"]
@@ -93,9 +93,9 @@ python diagnose.py --project=my-prod-project --location=global --datastore=enter
 
 ```text
 ================================================================================
-Vertex AI Search 데이터 저장소 색인 및 그라운딩 정합성 진단 리포트
+Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단 리포트
 진단 모드: 가상 실행 (Dry-run)
-대상 프로젝트: demo-vertex-search-project
+대상 프로젝트: demo-agent-platform-project
 위치(Location): global
 점검 데이터 저장소 수: 2개
 ================================================================================
@@ -145,7 +145,7 @@ customer-faq-ds            500          500          100.0%     OK
      --auto-generate-ids
 
 2. 복합 표/다단 PDF 문서를 위한 Layout Parser(고급 레이아웃 파서) 활성화:
-   - Agent Builder 콘솔 > Data Stores > Configurations > Document Processing
+   - Agent Platform 콘솔 > Data Stores > Configurations > Document Processing
    - Parser 옵션을 'Digital Parser'에서 'Layout Parser(청킹 지원)'로 변경 후 재색인 수행
 
 3. Discovery Engine 서비스 에이전트에 버킷 읽기 권한 보장:
@@ -160,14 +160,14 @@ customer-faq-ds            500          500          100.0%     OK
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **데이터 저장소 수동 재색인 및 상태 모니터링**:
-   - Agent Builder / Vertex AI Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/gen-app-builder/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
+   - Agent Platform Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/gen-app-builder/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
    - 비정형 데이터 저장소 생성 및 관리 ( https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es )
 2. **문서 청킹 및 Layout Parser 설정**:
    - 고품질 RAG 검색을 위해 복잡한 PDF 구조를 이해하는 Layout Parser와 적절한 청크 크기(200~500 토큰)를 설정한다.
    - 문서 파싱 및 청킹 가이드 ( https://cloud.google.com/generative-ai-app-builder/docs/parse-chunk-documents )
 3. **제미나이(Gemini) 그라운딩 연동 최적화**:
    - 검색된 문서를 파운데이션 모델에 공급할 때 검색 점수 임계치(Dynamic Retrieval Threshold)를 설정하여 무관한 문서 인입을 차단한다.
-   - Vertex AI Search를 활용한 Gemini 그라운딩 ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
+   - Agent Platform Search를 활용한 Gemini 그라운딩 ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
 
 ---
 
@@ -177,5 +177,5 @@ customer-faq-ds            500          500          100.0%     OK
 
 ```bash
 # 테스트 데이터 저장소 삭제 안내
-# Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/data-stores ) 에서 해당 저장소 선택 후 삭제(Delete)
+# Agent Platform 콘솔 ( https://console.cloud.google.com/gen-app-builder/data-stores ) 에서 해당 저장소 선택 후 삭제(Delete)
 ```

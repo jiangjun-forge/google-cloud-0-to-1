@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Vertex AI Search 데이터 저장소 색인 및 그라운딩 정합성 진단 도구."""
+"""Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단 도구."""
 
 import argparse
 import json
@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional
 def parse_args() -> argparse.Namespace:
     """명령줄 인자를 파싱한다."""
     parser = argparse.ArgumentParser(
-        description="Vertex AI Search 데이터 저장소 색인 및 그라운딩 정합성 진단기"
+        description="Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기"
     )
     parser.add_argument(
         "-p",
@@ -45,7 +45,7 @@ def parse_args() -> argparse.Namespace:
         "-d",
         "--datastore",
         default=os.getenv("DATASTORE_ID") or "",
-        help="점검 대상 Vertex AI Search 데이터 저장소 ID",
+        help="점검 대상 Agent Platform Search 데이터 저장소 ID",
     )
     parser.add_argument(
         "-b",
@@ -169,7 +169,7 @@ def run_command_json(cmd: List[str]) -> Optional[Any]:
 
 
 def inspect_vertex_search(project_id: str, location: str, datastore_id: str, bucket_name: str, query: str) -> List[Dict[str, Any]]:
-    """실제 GCP 환경의 Vertex AI Search 데이터 저장소 및 GCS 동기화 상태를 점검한다."""
+    """실제 GCP 환경의 Agent Platform Search 데이터 저장소 및 GCS 동기화 상태를 점검한다."""
     # gcloud alpha/beta discovery-engine
     token_res = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True)
     token = token_res.stdout.strip()
@@ -212,7 +212,7 @@ def inspect_vertex_search(project_id: str, location: str, datastore_id: str, buc
 def print_report(project_id: str, location: str, is_dry_run: bool, datastores: List[Dict[str, Any]]) -> None:
     """진단 리포트를 출력한다."""
     print("=" * 80)
-    print("Vertex AI Search 데이터 저장소 색인 및 그라운딩 정합성 진단 리포트")
+    print("Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단 리포트")
     print(f"진단 모드: {'가상 실행 (Dry-run)' if is_dry_run else '실제 환경 점검'}")
     print(f"대상 프로젝트: {project_id}")
     print(f"위치(Location): {location}")

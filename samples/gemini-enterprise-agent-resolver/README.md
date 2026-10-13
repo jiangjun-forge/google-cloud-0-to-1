@@ -63,7 +63,7 @@ flowchart TD
 ## 3. 필요 IAM 권한
 - `roles/iam.securityReviewer` (IAM 정책 조회)
 - `roles/orgpolicy.policyViewer` (조직 정책 제약 조건 조회)
-- `roles/aiplatform.viewer` (Vertex AI Agent Engine 조회)
+- `roles/aiplatform.viewer` (Agent Platform Agent Engine 조회)
 
 ---
 
@@ -89,7 +89,7 @@ python diagnose.py --dry-run --json
 ---
 
 ## 5. 결과 확인 후 즉각 조치 가이드
-- Vertex AI Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
+- Agent Platform Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
 - 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )
 - Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )
 
