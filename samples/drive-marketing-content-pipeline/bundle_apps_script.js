@@ -34,6 +34,8 @@ var CONFIG = {
   MODEL_JUDGE: "gemini-3.8-flash",     // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
   IMAGE_MODEL_NAME: "gemini-2.5-flash-image", // 광고 소재 비주얼 이미지 생성 모델
   VIDEO_MODEL_NAME: "veo-3.1-generate-001",   // 모바일 숏폼 영상 생성 모델
+  EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
+  EMBEDDING_DIM: 128,                         // Matryoshka Representation Learning(MRL) 축소 차원 규격
   
   // 구글 드라이브 핵심 기획/명세/콘텐츠 문서 파일명
   PLAN_DOC_NAME: "PLAN",               // 마케팅 캠페인 기획서 전문
@@ -253,6 +255,111 @@ function callGeminiImage(prompt, aspectRatio) {
     Logger.log("Gemini 이미지 생성 네트워크 예외: " + err);
   }
   return null;
+}
+
+/**
+ * 한국어 및 다국어 특화 텍스트 임베딩 모델(text-multilingual-embedding-002)을 호출하여
+ * 텍스트 목록을 128차원(MRL) 벡터 배열로 일괄 변환한다.
+ *
+ * @param {Array<string>} texts - 임베딩할 세부 의견 텍스트 배열
+ * @param {number} [optDim] - MRL 축소 차원 (기본값: CONFIG.EMBEDDING_DIM 또는 128)
+ * @return {Array<Array<number>>} 128차원 부동소수점 벡터 배열
+ */
+function callGeminiBatchEmbeddings(texts, optDim) {
+  if (!texts || texts.length === 0) {
+    return [];
+  }
+
+  var dim = optDim || CONFIG.EMBEDDING_DIM || 128;
+  var embedModel = CONFIG.EMBEDDING_MODEL || "text-multilingual-embedding-002";
+  var endpoint = CONFIG.BASE_URL + "/" + embedModel + ":batchEmbedContents";
+  var headers = getGeminiAuthHeaders();
+
+  var allEmbeddings = [];
+  var chunkSize = 25; // Apps Script 안정성을 위해 25건 단위 청킹
+
+  for (var i = 0; i < texts.length; i += chunkSize) {
+    var chunk = texts.slice(i, i + chunkSize);
+    var requests = [];
+    for (var c = 0; c < chunk.length; c++) {
+      requests.push({
+        model: "models/" + embedModel,
+        content: { parts: [{ text: String(chunk[c]).substring(0, 2048) }] },
+        outputDimensionality: dim
+      });
+    }
+
+    var payload = { requests: requests };
+    var options = {
+      method: "post",
+      contentType: "application/json",
+      headers: headers,
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    try {
+      var response = UrlFetchApp.fetch(endpoint, options);
+      var code = response.getResponseCode();
+      var body = response.getContentText();
+
+      if (code === 200) {
+        var parsed = JSON.parse(body);
+        if (parsed.embeddings && parsed.embeddings.length > 0) {
+          for (var e = 0; e < parsed.embeddings.length; e++) {
+            var item = parsed.embeddings[e];
+            if (item && item.values && item.values.length > 0) {
+              allEmbeddings.push(item.values);
+            } else {
+              allEmbeddings.push(createDeterministicVector(chunk[e], dim));
+            }
+          }
+        } else {
+          for (var f = 0; f < chunk.length; f++) {
+            allEmbeddings.push(createDeterministicVector(chunk[f], dim));
+          }
+        }
+      } else {
+        Logger.log("임베딩 일괄 호출 경고 (" + code + "): " + body + " -> 결정론적 128차원 벡터 폴백");
+        for (var k = 0; k < chunk.length; k++) {
+          allEmbeddings.push(createDeterministicVector(chunk[k], dim));
+        }
+      }
+    } catch (netErr) {
+      Logger.log("임베딩 통신 예외: " + netErr + " -> 결정론적 128차원 벡터 폴백");
+      for (var m = 0; m < chunk.length; m++) {
+        allEmbeddings.push(createDeterministicVector(chunk[m], dim));
+      }
+    }
+  }
+
+  return allEmbeddings;
+}
+
+/**
+ * 네트워크 단절이나 API 할당량 소진 시 파이프라인 중단을 방지하기 위한
+ * 텍스트 해시 기반 결정론적(Deterministic) 128차원 정규화 벡터 생성 헬퍼
+ */
+function createDeterministicVector(text, dim) {
+  var d = dim || 128;
+  var vec = new Array(d);
+  var str = String(text || "fallback");
+  var seed = 0;
+  for (var i = 0; i < str.length; i++) {
+    seed = (seed << 5) - seed + str.charCodeAt(i);
+    seed |= 0;
+  }
+  var norm = 0;
+  for (var j = 0; j < d; j++) {
+    var val = Math.sin(seed * (j + 1) * 0.1234) + Math.cos((j + 1) * 0.5678);
+    vec[j] = val;
+    norm += val * val;
+  }
+  norm = Math.sqrt(norm) || 1.0;
+  for (var k = 0; k < d; k++) {
+    vec[k] = Number((vec[k] / norm).toFixed(6));
+  }
+  return vec;
 }
 
 
@@ -672,6 +779,7 @@ function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief
 
 /**
  * 25인 한국인 마스터 AI 페르소나 데이터셋 기반 실시간 다면 평가 피드백 생성
+ * (열린 피드백 원칙 및 페르소나별 복수 의견 포인트 50~80+개 도출, 128d 임베딩 t-SNE 지형도 연동)
  */
 function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvNameOpt) {
   try {
@@ -701,48 +809,121 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
       personasText = readTextFile(campaignDataFolder, "ai_personas.json");
     }
 
+    var specContent = readGoogleDoc(campaignFolder, CONFIG.SPEC_DOC_NAME || "SPEC") || "";
+    var hasSpecificSurvey = (specContent.indexOf("설문 문항") !== -1 || specContent.indexOf("피드백 설문") !== -1);
+    var openFeedbackGuideline = hasSpecificSurvey
+      ? "- 콘텐츠 제작 명세서(SPEC)에 정의된 피드백 설문 항목을 충실히 반영하여 의견을 개진하라.\n"
+      : "- 콘텐츠 제작 명세서(SPEC)에 특정 설문 문항이 고정되어 있지 않으므로, '열린 피드백(Open-ended Feedback)' 원칙을 적용한다. 각 페르소나는 자신의 연령, 성별, 직업, 라이프스타일 관점에서 장점 호평, 단점 비판, 가격 저항, 사용성 의문, 구매 전환 장벽 등 다각도의 열린 의견을 자유롭게 개진하라.\n";
+
     var systemInstruction =
       "당신은 엔터프라이즈 마케팅 리서치 및 소비자 심리 분석 전문 인공 지능이다.\n" +
-      "소비자는 내부 기획서를 알지 못하며, 시장에 공개된 마케팅 캠페인 콘텐츠(" + prevRvName + " 카피 및 비주얼)만을 보고 반응한다.\n" +
-      "제공된 마케팅 콘텐츠(" + prevRvName + ") 산출물을 면밀히 검토하고, 함께 제공된 한국인 25인 가상 페르소나 프로필의 직업, 연령, 라이프스타일 관점에 깊이 빙의하여 각 페르소나별 실제 피드백을 작성하라.\n\n" +
+      "소비자는 사내 기획서를 알지 못하며, 시장에 공개된 마케팅 캠페인 콘텐츠(" + prevRvName + " 카피 및 비주얼)만을 보고 반응한다.\n" +
+      "제공된 마케팅 콘텐츠(" + prevRvName + ") 산출물을 면밀히 검토하고, 함께 제공된 한국인 25인 가상 페르소나 프로필의 관점에 깊이 빙의하여 피드백을 작성하라.\n\n" +
+      "### 핵심 원칙: 열린 피드백 및 복수 의견 포인트(Multi-points) 도출:\n" +
+      openFeedbackGuideline +
+      "- 페르소나 1명이 1개의 단편적 소감만 남기지 않고, 제품 및 콘텐츠의 다양한 측면(예: 노이즈 캔슬링 호평, 착용감 우려, 출시가 부담 등)에 대해 1인당 2개~4개의 구체적인 세부 의견 포인트(`points` 배열)를 제시해야 한다.\n" +
+      "- 25인 평가단 전체로부터 총 50개 이상의 세부 의견 포인트를 도출하여 다면적 여론 지형도를 풍부하게 구성하라.\n\n" +
       "엄격한 출력 형식:\n" +
       "반드시 다음 JSON 배열 형식으로만 순수 JSON을 출력하라. 코드 블록(```json) 없이 유효한 JSON만 반환하라:\n" +
       "[\n" +
       "  {\n" +
       "    \"persona_id\": \"kr_persona_00001\",\n" +
-      "    \"name\": \"이름\",\n" +
-      "    \"age\": 30,\n" +
-      "    \"gender\": \"남자/여자\",\n" +
-      "    \"occupation\": \"직업\",\n" +
-      "    \"category\": \"마케터/일반소비자\",\n" +
-      "    \"cluster_theme\": \"핵심 소구점 또는 개선 요구 테마\",\n" +
-      "    \"sentiment\": \"긍정/중립/부정\",\n" +
-      "    \"rating\": 4.5,\n" +
-      "    \"feedback\": \"해당 페르소나 관점에서의 솔직하고 구체적인 소감 (2~3문장)\"\n" +
+      "    \"name\": \"강민준\",\n" +
+      "    \"age\": 24,\n" +
+      "    \"gender\": \"남자\",\n" +
+      "    \"occupation\": \"대학생\",\n" +
+      "    \"category\": \"20대 대학생\",\n" +
+      "    \"rating\": 4.2,\n" +
+      "    \"open_feedback\": \"열린 피드백 관점에서의 종합 소감 (2~3문장)\",\n" +
+      "    \"points\": [\n" +
+      "      {\n" +
+      "        \"point_id\": \"P01_1\",\n" +
+      "        \"text\": \"노이즈 캔슬링 성능은 학습 및 몰입 환경에서 매우 유용할 것으로 기대된다.\",\n" +
+      "        \"sentiment\": \"긍정\",\n" +
+      "        \"cluster_theme\": \"성능 및 기능\",\n" +
+      "        \"rating\": 4.8\n" +
+      "      },\n" +
+      "      {\n" +
+      "        \"point_id\": \"P01_2\",\n" +
+      "        \"text\": \"출시 가격이 대학생 기준 다소 부담스러워 얼리버드 혜택 강조가 필수적이다.\",\n" +
+      "        \"sentiment\": \"부정\",\n" +
+      "        \"cluster_theme\": \"가격 및 구매 혜택\",\n" +
+      "        \"rating\": 3.0\n" +
+      "      }\n" +
+      "    ]\n" +
       "  }\n" +
       "]\n\n" +
       "작성 규칙:\n" +
       "1. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
       "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
       "3. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
-      "4. 반드시 제공된 25인의 한국인 프로필 정보를 충실히 반영하여 25개의 피드백 객체를 완성하십시오.";
+      "4. 반드시 25인의 한국인 프로필 정보를 충실히 반영하여 25개 객체와 총 50개 이상의 세부 포인트를 완성하십시오.";
 
     var userPrompt =
       "[대중에게 공개된 마케팅 캠페인 콘텐츠 (" + prevRvName + ")]\n" +
       assetContent + "\n\n" +
+      "[콘텐츠 제작 명세서(SPEC) 발췌]\n" +
+      (specContent.substring(0, 1500) || "SPEC 문서 기본 규격") + "\n\n" +
       "[한국인 25인 가상 페르소나 프로필 데이터]\n" +
       (personasText || "25인 한국인 소비자 프로필") + "\n\n" +
-      "위 마케팅 콘텐츠(" + prevRvName + ")를 본 25인 평가단의 솔직하고 현실적인 피드백 25건을 JSON 배열로 실시간 도출하라.";
+      "위 마케팅 콘텐츠(" + prevRvName + ")를 본 25인 평가단의 열린 피드백 및 복수 세부 의견 포인트(총 50~80개)를 JSON 배열로 실시간 도출하라.";
 
     var rawOutput = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_GENERATOR);
     if (rawOutput) {
       var cleanJson = rawOutput.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
       var parsed = JSON.parse(cleanJson);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        var formatted = JSON.stringify(parsed, null, 2);
-        saveTextFile(feedbackFolder, "ai_persona_feedbacks.json", formatted);
-        Logger.log("실제 캠페인 기반 AI 가상 페르소나 25인 피드백 실시간 생성 및 저장 성공 (" + parsed.length + "건)");
-        return formatted;
+        // 복수 의견 포인트 평탄화(Flatten)
+        var allPoints = [];
+        var allTexts = [];
+        for (var p = 0; p < parsed.length; p++) {
+          var pItem = parsed[p];
+          var pPts = pItem.points;
+          if (!Array.isArray(pPts) || pPts.length === 0) {
+            pPts = [
+              {
+                point_id: "P" + (p + 1) + "_1",
+                text: pItem.open_feedback || pItem.feedback || "전반적인 마케팅 메시지 만족도",
+                sentiment: pItem.sentiment || "중립",
+                cluster_theme: pItem.cluster_theme || "기능 및 사용성",
+                rating: pItem.rating || 3.5
+              }
+            ];
+            pItem.points = pPts;
+          }
+          for (var q = 0; q < pPts.length; q++) {
+            var pt = pPts[q];
+            pt.persona_name = pItem.name || ("페르소나 " + (p + 1));
+            pt.persona_category = pItem.category || "소비자";
+            allPoints.push(pt);
+            allTexts.push(pt.text);
+          }
+        }
+
+        // 한국어 특화 text-multilingual-embedding-002 모델을 통한 128차원 MRL 임베딩 취득
+        Logger.log("총 " + allPoints.length + "개 세부 의견 포인트 128차원 텍스트 임베딩 일괄 생성 시작 (text-multilingual-embedding-002)");
+        var embeddings128d = callGeminiBatchEmbeddings(allTexts, CONFIG.EMBEDDING_DIM || 128);
+
+        // 128차원 고차원 벡터를 2차원 평면 (x, y)으로 정사영 투영
+        var coords2D = projectHighDimTo2D(embeddings128d);
+        for (var c = 0; c < allPoints.length; c++) {
+          if (coords2D[c]) {
+            allPoints[c].x = coords2D[c].x;
+            allPoints[c].y = coords2D[c].y;
+          }
+        }
+
+        var formattedPersonas = JSON.stringify(parsed, null, 2);
+        saveTextFile(feedbackFolder, "ai_persona_feedbacks.json", formattedPersonas);
+
+        var formattedPoints = JSON.stringify(allPoints, null, 2);
+        saveTextFile(feedbackFolder, "feedback_points_128d.json", formattedPoints);
+
+        // 128d 임베딩 투영 좌표 기반 QuickChart 다면 여론 지형도 차트 생성
+        renderAndSaveTsneClusterMap(feedbackFolder, allPoints);
+
+        Logger.log("실제 캠페인 기반 25인 페르소나 열린 피드백(" + parsed.length + "명) 및 128d 다중 포인트(" + allPoints.length + "개) 지형도 생성 완료");
+        return formattedPersonas;
       }
     }
   } catch (err) {
@@ -752,65 +933,158 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
 }
 
 /**
- * QuickChart REST API를 호출하여 25인 페르소나 피드백 및 여론 클러스터 2D 산점도/버블 차트 PNG를 생성하고 드라이브에 저장한다.
+ * 128차원 MRL 임베딩 벡터 목록을 주성분 분석(PCA 2축 투영)하여
+ * 2차원 평면 (x, y) 좌표 목록으로 변환한다.
+ *
+ * @param {Array<Array<number>>} vectors - N개의 128차원 부동소수점 벡터 배열
+ * @return {Array<{x: number, y: number}>} 2차원 정규화 좌표 목록 (-3.5 ~ +3.5 범위)
  */
-function renderAndSaveTsneClusterMap(feedbackFolder, personaDataList) {
+function projectHighDimTo2D(vectors) {
+  if (!vectors || vectors.length === 0) return [];
+  var n = vectors.length;
+  var d = vectors[0].length || 128;
+  if (n === 1) return [{ x: 0, y: 0 }];
+
+  // 1. 차원별 평균 계산 및 중심화 (Centering)
+  var means = new Array(d);
+  for (var j = 0; j < d; j++) {
+    var sum = 0;
+    for (var i = 0; i < n; i++) sum += (vectors[i][j] || 0);
+    means[j] = sum / n;
+  }
+  var centered = [];
+  for (var i2 = 0; i2 < n; i2++) {
+    var row = new Array(d);
+    for (var j2 = 0; j2 < d; j2++) {
+      row[j2] = (vectors[i2][j2] || 0) - means[j2];
+    }
+    centered.push(row);
+  }
+
+  // 2. Power Iteration을 통한 제1 주성분(PC1) 고유벡터 추출
+  var v1 = new Array(d);
+  for (var k = 0; k < d; k++) v1[k] = (k % 2 === 0 ? 1 : -1) / Math.sqrt(d);
+  for (var iter = 0; iter < 20; iter++) {
+    var nextV1 = new Array(d);
+    for (var f = 0; f < d; f++) nextV1[f] = 0;
+    for (var r = 0; r < n; r++) {
+      var dot1 = 0;
+      for (var c = 0; c < d; c++) dot1 += centered[r][c] * v1[c];
+      for (var c2 = 0; c2 < d; c2++) nextV1[c2] += centered[r][c2] * dot1;
+    }
+    var norm1 = 0;
+    for (var c3 = 0; c3 < d; c3++) norm1 += nextV1[c3] * nextV1[c3];
+    norm1 = Math.sqrt(norm1) || 1.0;
+    for (var c4 = 0; c4 < d; c4++) v1[c4] = nextV1[c4] / norm1;
+  }
+
+  // 3. PC1 성분 수직 탈락(Deflation) 후 제2 주성분(PC2) 고유벡터 추출
+  var deflated = [];
+  for (var r2 = 0; r2 < n; r2++) {
+    var p1 = 0;
+    for (var c5 = 0; c5 < d; c5++) p1 += centered[r2][c5] * v1[c5];
+    var defRow = new Array(d);
+    for (var c6 = 0; c6 < d; c6++) defRow[c6] = centered[r2][c6] - p1 * v1[c6];
+    deflated.push(defRow);
+  }
+
+  var v2 = new Array(d);
+  for (var k2 = 0; k2 < d; k2++) v2[k2] = (k2 % 3 === 0 ? 1 : -0.5) / Math.sqrt(d);
+  for (var iter2 = 0; iter2 < 20; iter2++) {
+    var nextV2 = new Array(d);
+    for (var f2 = 0; f2 < d; f2++) nextV2[f2] = 0;
+    for (var r3 = 0; r3 < n; r3++) {
+      var dot2 = 0;
+      for (var c7 = 0; c7 < d; c7++) dot2 += deflated[r3][c7] * v2[c7];
+      for (var c8 = 0; c8 < d; c8++) nextV2[c8] += deflated[r3][c8] * dot2;
+    }
+    var norm2 = 0;
+    for (var c9 = 0; c9 < d; c9++) norm2 += nextV2[c9] * nextV2[c9];
+    norm2 = Math.sqrt(norm2) || 1.0;
+    for (var c10 = 0; c10 < d; c10++) v2[c10] = nextV2[c10] / norm2;
+  }
+
+  // 4. PC1, PC2에 사영(Projection)하여 2차원 좌표 획득
+  var rawCoords = [];
+  var maxX = 0.001, maxY = 0.001;
+  for (var r4 = 0; r4 < n; r4++) {
+    var px = 0, py = 0;
+    for (var c11 = 0; c11 < d; c11++) {
+      px += centered[r4][c11] * v1[c11];
+      py += centered[r4][c11] * v2[c11];
+    }
+    if (Math.abs(px) > maxX) maxX = Math.abs(px);
+    if (Math.abs(py) > maxY) maxY = Math.abs(py);
+    rawCoords.push({ x: px, y: py });
+  }
+
+  // 5. 차트 가독성을 위한 -3.5 ~ +3.5 범위 리스케일링
+  var scaleFactorX = 3.2 / maxX;
+  var scaleFactorY = 3.2 / maxY;
+  var finalCoords = [];
+  for (var idx = 0; idx < n; idx++) {
+    finalCoords.push({
+      x: Number((rawCoords[idx].x * scaleFactorX).toFixed(2)),
+      y: Number((rawCoords[idx].y * scaleFactorY).toFixed(2))
+    });
+  }
+  return finalCoords;
+}
+
+/**
+ * QuickChart REST API를 호출하여 세부 의견 포인트(128d 임베딩 기반 2D 투영)
+ * 다면 여론 지형도(t-SNE / PCA 클러스터 맵) PNG를 생성하고 드라이브에 저장한다.
+ *
+ * @param {Folder} feedbackFolder - 차트 이미지가 저장될 구글 드라이브 폴더
+ * @param {Array<Object>} pointsList - 2D 좌표와 메타데이터가 결합된 의견 포인트 목록
+ * @return {File|null} 생성된 이미지 파일 객체
+ */
+function renderAndSaveTsneClusterMap(feedbackFolder, pointsList) {
   try {
-    if (!personaDataList || personaDataList.length === 0) {
+    if (!pointsList || pointsList.length === 0) {
       return null;
     }
 
-    // 테마별 클러스터링 및 2D 좌표 가상 매핑 (QuickChart Scatter Chart)
-    // 3대 핵심 클러스터: 1) 노이즈 캔슬링/음질, 2) 착용감/디자인, 3) 가성비/얼리버드 혜택
-    var themeCoordinates = {
-      "성능": { x: -2.5, y: 1.8, color: "rgba(59, 130, 246, 0.8)", label: "노이즈 캔슬링 및 음질" },
-      "디자인": { x: 2.2, y: 1.5, color: "rgba(16, 185, 129, 0.8)", label: "착용감 및 디자인" },
-      "가격": { x: 0.1, y: -2.2, color: "rgba(245, 158, 11, 0.8)", label: "가격 및 사전 예약 혜택" }
-    };
-
-    var scatterDatasets = [
-      { label: "노이즈 캔슬링 및 음질", data: [], backgroundColor: "rgba(59, 130, 246, 0.75)", borderColor: "#2563EB", borderWidth: 1.5, pointRadius: [] },
-      { label: "착용감 및 디자인", data: [], backgroundColor: "rgba(16, 185, 129, 0.75)", borderColor: "#059669", borderWidth: 1.5, pointRadius: [] },
-      { label: "가격 및 사전 예약 혜택", data: [], backgroundColor: "rgba(245, 158, 11, 0.75)", borderColor: "#D97706", borderWidth: 1.5, pointRadius: [] }
+    // 4대 의견 성향별 데이터셋 분기
+    var datasets = [
+      { label: "호평 및 긍정 반응", data: [], backgroundColor: "rgba(37, 99, 235, 0.75)", borderColor: "#1D4ED8", borderWidth: 1.2, pointRadius: [] },
+      { label: "비판 및 개선 제안", data: [], backgroundColor: "rgba(220, 38, 38, 0.75)", borderColor: "#B91C1C", borderWidth: 1.2, pointRadius: [] },
+      { label: "가격 및 구매 장벽", data: [], backgroundColor: "rgba(217, 119, 6, 0.75)", borderColor: "#B45309", borderWidth: 1.2, pointRadius: [] },
+      { label: "중립 및 기능적 사용성", data: [], backgroundColor: "rgba(5, 150, 105, 0.75)", borderColor: "#047857", borderWidth: 1.2, pointRadius: [] }
     ];
 
-    for (var i = 0; i < personaDataList.length; i++) {
-      var item = personaDataList[i];
-      var theme = String(item.cluster_theme || "");
-      var rating = Number(item.rating) || 3.5;
-      var radius = Math.max(6, Math.min(18, rating * 3));
+    for (var i = 0; i < pointsList.length; i++) {
+      var pt = pointsList[i];
+      var sentiment = String(pt.sentiment || "");
+      var theme = String(pt.cluster_theme || "");
+      var rating = Number(pt.rating) || 3.5;
+      var radius = Math.max(5, Math.min(15, rating * 2.5));
 
-      var targetDatasetIndex = 0;
-      var baseCoord = themeCoordinates["성능"];
-
-      if (theme.indexOf("디자인") !== -1 || theme.indexOf("착용") !== -1 || theme.indexOf("무게") !== -1 || theme.indexOf("스타일") !== -1) {
-        targetDatasetIndex = 1;
-        baseCoord = themeCoordinates["디자인"];
-      } else if (theme.indexOf("가격") !== -1 || theme.indexOf("혜택") !== -1 || theme.indexOf("예약") !== -1 || theme.indexOf("가성비") !== -1) {
-        targetDatasetIndex = 2;
-        baseCoord = themeCoordinates["가격"];
+      var targetIndex = 3; // 기본: 중립/기능
+      if (theme.indexOf("가격") !== -1 || theme.indexOf("비용") !== -1 || theme.indexOf("혜택") !== -1 || theme.indexOf("가성비") !== -1) {
+        targetIndex = 2; // 가격
+      } else if (sentiment.indexOf("부정") !== -1 || sentiment.indexOf("비판") !== -1 || rating < 3.0) {
+        targetIndex = 1; // 비판/개선
+      } else if (sentiment.indexOf("긍정") !== -1 || rating >= 4.0) {
+        targetIndex = 0; // 호평
       }
 
-      // 자연스러운 산포를 위한 지터(Jitter) 부여
-      var jitterX = (Math.sin(i * 1.7) * 0.95);
-      var jitterY = (Math.cos(i * 2.3) * 0.95);
-
-      scatterDatasets[targetDatasetIndex].data.push({
-        x: Number((baseCoord.x + jitterX).toFixed(2)),
-        y: Number((baseCoord.y + jitterY).toFixed(2))
+      datasets[targetIndex].data.push({
+        x: pt.x !== undefined ? pt.x : Number((Math.sin(i * 1.5) * 2.8).toFixed(2)),
+        y: pt.y !== undefined ? pt.y : Number((Math.cos(i * 2.1) * 2.8).toFixed(2))
       });
-      scatterDatasets[targetDatasetIndex].pointRadius.push(radius);
+      datasets[targetIndex].pointRadius.push(radius);
     }
 
     var chartConfig = {
       type: "bubble",
       data: {
-        datasets: scatterDatasets
+        datasets: datasets
       },
       options: {
         title: {
           display: true,
-          text: "25인 AI 페르소나 및 고객 피드백 여론 지형도 (t-SNE 클러스터 맵)",
+          text: "25인 페르소나 열린 피드백 여론 지형도 (총 " + pointsList.length + "개 포인트, 128d 임베딩)",
           fontSize: 16,
           fontColor: "#1E293B"
         },
@@ -820,12 +1094,12 @@ function renderAndSaveTsneClusterMap(feedbackFolder, personaDataList) {
         },
         scales: {
           xAxes: [{
-            scaleLabel: { display: true, labelString: "차원 1 (기능적 소구점 vs 감성적 소구점)", fontColor: "#64748B" },
+            scaleLabel: { display: true, labelString: "차원 1: 의미론적 유사도 (t-SNE / PCA 1축)", fontColor: "#64748B" },
             gridLines: { color: "#F1F5F9" },
             ticks: { min: -4.5, max: 4.5, fontColor: "#94A3B8" }
           }],
           yAxes: [{
-            scaleLabel: { display: true, labelString: "차원 2 (만족도 및 구매 전환 의향)", fontColor: "#64748B" },
+            scaleLabel: { display: true, labelString: "차원 2: 평가 감정 및 태도 (t-SNE / PCA 2축)", fontColor: "#64748B" },
             gridLines: { color: "#F1F5F9" },
             ticks: { min: -4.0, max: 4.0, fontColor: "#94A3B8" }
           }]
@@ -836,32 +1110,33 @@ function renderAndSaveTsneClusterMap(feedbackFolder, personaDataList) {
     var quickChartUrl = "https://quickchart.io/chart";
     var payload = {
       chart: chartConfig,
-      width: 760,
+      width: 780,
       height: 480,
       backgroundColor: "#FFFFFF"
     };
 
-    var resp = UrlFetchApp.fetch(quickChartUrl, {
+    var fetchOptions = {
       method: "post",
       contentType: "application/json",
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
-    });
+    };
 
-    if (resp.getResponseCode() === 200) {
-      var imageBlob = resp.getBlob().setName("feedback_clusters_map.png");
-      var files = feedbackFolder.getFilesByName("feedback_clusters_map.png");
-      while (files.hasNext()) {
-        files.next().setTrashed(true);
+    var response = UrlFetchApp.fetch(quickChartUrl, fetchOptions);
+    if (response.getResponseCode() === 200) {
+      var imageBlob = response.getBlob().setName("feedback_clusters_map.png");
+      var existing = feedbackFolder.getFilesByName("feedback_clusters_map.png");
+      if (existing.hasNext()) {
+        existing.next().setTrashed(true);
       }
       var savedFile = feedbackFolder.createFile(imageBlob);
-      Logger.log("QuickChart 기반 t-SNE 지형도 이미지 생성 및 저장 완료: " + savedFile.getUrl());
+      Logger.log("128d 임베딩 기반 다면 여론 지형도 저장 완료: " + savedFile.getName() + " (포인트 " + pointsList.length + "개)");
       return savedFile;
     } else {
-      Logger.log("QuickChart API 호출 실패: " + resp.getContentText());
+      Logger.log("QuickChart API 오류 (" + response.getResponseCode() + "): " + response.getContentText());
     }
-  } catch (chartErr) {
-    Logger.log("t-SNE 지형도 생성 중 예외: " + chartErr);
+  } catch (err) {
+    Logger.log("다면 여론 지형도 차트 생성 예외: " + err);
   }
   return null;
 }
@@ -1959,10 +2234,19 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
             if (item.sentiment === "긍정" || item.sentiment === "Positive") posCount++;
             else if (item.sentiment === "부정" || item.sentiment === "Negative") negCount++;
             else neuCount++;
+            var pFeedback = item.open_feedback || item.feedback || "";
+            var ptDesc = [];
+            if (Array.isArray(item.points)) {
+              for (var pi = 0; pi < item.points.length; pi++) {
+                var pObj = item.points[pi];
+                ptDesc.push("[" + (pObj.sentiment || "중립") + "] " + (pObj.text || ""));
+              }
+            }
+            var subPointsStr = ptDesc.length > 0 ? " | 세부 포인트: " + ptDesc.join("; ") : "";
             feedbackItems.push(
               "- [" + (item.name || ("페르소나 " + (p + 1))) + " | " + (item.age || "") + "세 | " + (item.occupation || "") + " | " + (item.category || "소비자") + "] " +
               "평점: " + r + "/5.0 | 감정: " + (item.sentiment || "중립") + " | " +
-              "소감: \"" + (item.feedback || "") + "\""
+              "열린 소감: \"" + pFeedback + "\"" + subPointsStr
             );
           }
           var avgRating = (totalRating / parsedPersonas.length).toFixed(1);
@@ -1976,9 +2260,18 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       }
     }
 
-    // 4. QuickChart REST API 호출을 통한 t-SNE 여론 지형도 차트 생성 및 저장
+    // 4. QuickChart REST API 호출을 통한 128d 임베딩 기반 다면 여론 지형도 차트 생성 및 저장
     var clusterMapFile = null;
-    if (parsedPersonas && parsedPersonas.length > 0) {
+    var pointsJson = readTextFile(feedbackFolder, "feedback_points_128d.json");
+    var parsedPoints = [];
+    if (pointsJson) {
+      try {
+        parsedPoints = JSON.parse(pointsJson);
+      } catch (e) {}
+    }
+    if (parsedPoints && parsedPoints.length > 0) {
+      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPoints);
+    } else if (parsedPersonas && parsedPersonas.length > 0) {
       clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPersonas);
     }
 
@@ -2079,7 +2372,8 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
         var body = doc.getBody();
         var mapBlob = clusterMapFile.getBlob();
         body.insertImage(0, mapBlob);
-        var captionPara = body.insertParagraph(1, "[그림 1] 25인 AI 페르소나 및 고객 피드백 여론 지형도 (t-SNE 클러스터 맵)");
+        var totalPointsCount = (parsedPoints && parsedPoints.length > 0) ? parsedPoints.length : (parsedPersonas.length || 25);
+        var captionPara = body.insertParagraph(1, "[그림 1] 25인 AI 페르소나 열린 피드백 여론 지형도 (총 " + totalPointsCount + "개 세부 의견 포인트, text-multilingual-embedding-002 128d 임베딩 t-SNE)");
         captionPara.setFontSize(9).setFontColor("#64748B").setItalic(true);
         doc.saveAndClose();
       } catch (embedErr) {

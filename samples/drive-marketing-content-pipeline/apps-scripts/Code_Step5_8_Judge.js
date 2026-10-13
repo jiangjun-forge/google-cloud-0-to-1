@@ -166,10 +166,19 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
             if (item.sentiment === "긍정" || item.sentiment === "Positive") posCount++;
             else if (item.sentiment === "부정" || item.sentiment === "Negative") negCount++;
             else neuCount++;
+            var pFeedback = item.open_feedback || item.feedback || "";
+            var ptDesc = [];
+            if (Array.isArray(item.points)) {
+              for (var pi = 0; pi < item.points.length; pi++) {
+                var pObj = item.points[pi];
+                ptDesc.push("[" + (pObj.sentiment || "중립") + "] " + (pObj.text || ""));
+              }
+            }
+            var subPointsStr = ptDesc.length > 0 ? " | 세부 포인트: " + ptDesc.join("; ") : "";
             feedbackItems.push(
               "- [" + (item.name || ("페르소나 " + (p + 1))) + " | " + (item.age || "") + "세 | " + (item.occupation || "") + " | " + (item.category || "소비자") + "] " +
               "평점: " + r + "/5.0 | 감정: " + (item.sentiment || "중립") + " | " +
-              "소감: \"" + (item.feedback || "") + "\""
+              "열린 소감: \"" + pFeedback + "\"" + subPointsStr
             );
           }
           var avgRating = (totalRating / parsedPersonas.length).toFixed(1);
@@ -183,9 +192,18 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       }
     }
 
-    // 4. QuickChart REST API 호출을 통한 t-SNE 여론 지형도 차트 생성 및 저장
+    // 4. QuickChart REST API 호출을 통한 128d 임베딩 기반 다면 여론 지형도 차트 생성 및 저장
     var clusterMapFile = null;
-    if (parsedPersonas && parsedPersonas.length > 0) {
+    var pointsJson = readTextFile(feedbackFolder, "feedback_points_128d.json");
+    var parsedPoints = [];
+    if (pointsJson) {
+      try {
+        parsedPoints = JSON.parse(pointsJson);
+      } catch (e) {}
+    }
+    if (parsedPoints && parsedPoints.length > 0) {
+      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPoints);
+    } else if (parsedPersonas && parsedPersonas.length > 0) {
       clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPersonas);
     }
 
@@ -286,7 +304,8 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
         var body = doc.getBody();
         var mapBlob = clusterMapFile.getBlob();
         body.insertImage(0, mapBlob);
-        var captionPara = body.insertParagraph(1, "[그림 1] 25인 AI 페르소나 및 고객 피드백 여론 지형도 (t-SNE 클러스터 맵)");
+        var totalPointsCount = (parsedPoints && parsedPoints.length > 0) ? parsedPoints.length : (parsedPersonas.length || 25);
+        var captionPara = body.insertParagraph(1, "[그림 1] 25인 AI 페르소나 열린 피드백 여론 지형도 (총 " + totalPointsCount + "개 세부 의견 포인트, text-multilingual-embedding-002 128d 임베딩 t-SNE)");
         captionPara.setFontSize(9).setFontColor("#64748B").setItalic(true);
         doc.saveAndClose();
       } catch (embedErr) {

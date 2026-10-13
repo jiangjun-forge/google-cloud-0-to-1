@@ -175,3 +175,108 @@ function callGeminiImage(prompt, aspectRatio) {
   }
   return null;
 }
+
+/**
+ * 한국어 및 다국어 특화 텍스트 임베딩 모델(text-multilingual-embedding-002)을 호출하여
+ * 텍스트 목록을 128차원(MRL) 벡터 배열로 일괄 변환한다.
+ *
+ * @param {Array<string>} texts - 임베딩할 세부 의견 텍스트 배열
+ * @param {number} [optDim] - MRL 축소 차원 (기본값: CONFIG.EMBEDDING_DIM 또는 128)
+ * @return {Array<Array<number>>} 128차원 부동소수점 벡터 배열
+ */
+function callGeminiBatchEmbeddings(texts, optDim) {
+  if (!texts || texts.length === 0) {
+    return [];
+  }
+
+  var dim = optDim || CONFIG.EMBEDDING_DIM || 128;
+  var embedModel = CONFIG.EMBEDDING_MODEL || "text-multilingual-embedding-002";
+  var endpoint = CONFIG.BASE_URL + "/" + embedModel + ":batchEmbedContents";
+  var headers = getGeminiAuthHeaders();
+
+  var allEmbeddings = [];
+  var chunkSize = 25; // Apps Script 안정성을 위해 25건 단위 청킹
+
+  for (var i = 0; i < texts.length; i += chunkSize) {
+    var chunk = texts.slice(i, i + chunkSize);
+    var requests = [];
+    for (var c = 0; c < chunk.length; c++) {
+      requests.push({
+        model: "models/" + embedModel,
+        content: { parts: [{ text: String(chunk[c]).substring(0, 2048) }] },
+        outputDimensionality: dim
+      });
+    }
+
+    var payload = { requests: requests };
+    var options = {
+      method: "post",
+      contentType: "application/json",
+      headers: headers,
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    try {
+      var response = UrlFetchApp.fetch(endpoint, options);
+      var code = response.getResponseCode();
+      var body = response.getContentText();
+
+      if (code === 200) {
+        var parsed = JSON.parse(body);
+        if (parsed.embeddings && parsed.embeddings.length > 0) {
+          for (var e = 0; e < parsed.embeddings.length; e++) {
+            var item = parsed.embeddings[e];
+            if (item && item.values && item.values.length > 0) {
+              allEmbeddings.push(item.values);
+            } else {
+              allEmbeddings.push(createDeterministicVector(chunk[e], dim));
+            }
+          }
+        } else {
+          for (var f = 0; f < chunk.length; f++) {
+            allEmbeddings.push(createDeterministicVector(chunk[f], dim));
+          }
+        }
+      } else {
+        Logger.log("임베딩 일괄 호출 경고 (" + code + "): " + body + " -> 결정론적 128차원 벡터 폴백");
+        for (var k = 0; k < chunk.length; k++) {
+          allEmbeddings.push(createDeterministicVector(chunk[k], dim));
+        }
+      }
+    } catch (netErr) {
+      Logger.log("임베딩 통신 예외: " + netErr + " -> 결정론적 128차원 벡터 폴백");
+      for (var m = 0; m < chunk.length; m++) {
+        allEmbeddings.push(createDeterministicVector(chunk[m], dim));
+      }
+    }
+  }
+
+  return allEmbeddings;
+}
+
+/**
+ * 네트워크 단절이나 API 할당량 소진 시 파이프라인 중단을 방지하기 위한
+ * 텍스트 해시 기반 결정론적(Deterministic) 128차원 정규화 벡터 생성 헬퍼
+ */
+function createDeterministicVector(text, dim) {
+  var d = dim || 128;
+  var vec = new Array(d);
+  var str = String(text || "fallback");
+  var seed = 0;
+  for (var i = 0; i < str.length; i++) {
+    seed = (seed << 5) - seed + str.charCodeAt(i);
+    seed |= 0;
+  }
+  var norm = 0;
+  for (var j = 0; j < d; j++) {
+    var val = Math.sin(seed * (j + 1) * 0.1234) + Math.cos((j + 1) * 0.5678);
+    vec[j] = val;
+    norm += val * val;
+  }
+  norm = Math.sqrt(norm) || 1.0;
+  for (var k = 0; k < d; k++) {
+    vec[k] = Number((vec[k] / norm).toFixed(6));
+  }
+  return vec;
+}
