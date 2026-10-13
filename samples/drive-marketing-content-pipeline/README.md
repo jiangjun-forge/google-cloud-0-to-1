@@ -44,7 +44,7 @@ flowchart LR
 
 ---
 
-## 구축 가이드
+## 구축, 사용 가이드
 
 ### 1단계: 구글 시트 생성 및 번들 스크립트 붙여넣기
 1. 구글 드라이브 ( https://drive.google.com )에서 빈 구글 시트(Google Sheets) 문서를 새로 생성한다.
