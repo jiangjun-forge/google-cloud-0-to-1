@@ -13,7 +13,7 @@ All contents, designs, and code examples are subject to change, modification, or
 # 기술 상세 설계서 (TDD): 구글 드라이브 마케팅 콘텐츠 파이프라인 (`drive-marketing-content-pipeline`)
 
 ## 1. 시스템 아키텍처 및 동작 원리
-본 솔루션은 Google Cloud 프로젝트 및 로컬 파이썬 런타임 환경, 별도 API Key 관리에 의존하지 않는 100% 서버리스 웹 네이티브(Web-Native) 무키(Keyless) 아키텍처로 설계되었다. 사용자의 구글 시트(Google Sheets)에 바인딩된 Apps Script 엔진을 컨트롤 타워로 삼아, 구글 드라이브(Drive), 구글 독스(Docs), 구글 폼(Forms) 및 Gemini REST API를 구글 계정 OAuth 2.0 세션 기반으로 유기적으로 조율한다.
+본 솔루션은 Google Cloud 프로젝트 및 로컬 파이썬 런타임 환경, 별도 API Key 관리에 의존하지 않는 100% 서버리스 웹 네이티브(Web-Native) 무키(Keyless) 아키텍처로 설계되었다. 사용자의 Google Sheets에 바인딩된 Apps Script 엔진을 컨트롤 타워로 삼아, Google Drive, Google Docs, Google Forms 및 Gemini REST API를 구글 계정 OAuth 2.0 세션 기반으로 유기적으로 조율한다.
 
 ### 핵심 구성 요소 및 연동 체계
 1. **Google Apps Script 런타임**:

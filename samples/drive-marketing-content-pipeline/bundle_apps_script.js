@@ -2672,7 +2672,7 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 3] 구글 시트 커스텀 메뉴 및 UI 대화상자 (Spreadsheet UI & Menu)
+ * [모듈 3] Google Sheets 커스텀 메뉴 및 UI 대화상자 (Spreadsheet UI & Menu)
  */
 
 function onOpen() {
@@ -2680,11 +2680,11 @@ function onOpen() {
   ui.createMenu(">> 마케팅 콘텐츠 파이프라인 <<")
     .addItem("[0. 타깃 AI 페르소나 패널 맞춤 재설정 (선택 사항)]", "setCustomPersonasPrompt")
     .addSeparator()
-    .addItem("[Step 1] 구글 드라이브 작업 공간 및 25인 페르소나 자동 생성", "createWorkspaceFolderTree")
+    .addItem("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", "createWorkspaceFolderTree")
     .addItem("[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출", "runIdeaToPlanConversion")
     .addItem("[Step 3] 기획서 및 명세서 기반 초판 마케팅 콘텐츠 양산 (rv-00)", "runInitialAssetGeneration")
     .addSeparator()
-    .addItem("[Step 4] 고객 VoC 수집용 구글 폼 자동 생성 (이미지/비디오 업로드)", "createAndLinkGoogleForm")
+    .addItem("[Step 4] 고객 VoC 수집용 Google Forms 자동 생성 (이미지/비디오 업로드)", "createAndLinkGoogleForm")
     .addItem("[Step 5] 25인 AI 페르소나 1차 다면 평가 및 t-SNE 지형도 자동 렌더링 (fb-01)", "runJudgeEvaluationRound1")
     .addItem("[Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)", "runMarketerDecisionPrompt")
     .addItem("[Step 7] 다면 평가 피드백 기반 1차 마케팅 콘텐츠 반자율 보정 (rv-01)", "runReviseAssetsRound1")
