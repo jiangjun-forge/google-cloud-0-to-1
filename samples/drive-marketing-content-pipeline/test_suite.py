@@ -340,8 +340,7 @@ def run_sync_suite(runner):
         "Code_Step5_8_Judge.js",
         "Code_Step6_Decision.js",
         "Code_Step7_9_Refine.js",
-        "Code_Menu.js",
-        "Code_Test_Suite.js"
+        "Code_Menu.js"
     ]
 
     for mod in expected_modules:
@@ -355,7 +354,8 @@ def run_sync_suite(runner):
         "scanManualFeedbackFiles",
         "detectLatestFeedbackRoundNum",
         "detectLatestRevisionRoundNum",
-        "runAllEmulatedUnitTests"
+        "promptAndRunJudgeEvaluation",
+        "promptAndRunReviseAssets"
     ]
     for fn in core_fns:
         runner.record(suite, f"번들 내 핵심 함수 {fn} 정의 검증", fn in bundle_text)

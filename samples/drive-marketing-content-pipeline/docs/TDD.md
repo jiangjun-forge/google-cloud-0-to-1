@@ -18,7 +18,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ### 핵심 구성 요소 및 연동 체계
 1. **Google Apps Script 런타임**:
    - 구글 시트 상단 커스텀 메뉴 (`>> 마케팅 콘텐츠 파이프라인 <<`) 제공
-   - 모듈화된 12개 스크립트 로직(`Code_Config.js`, `Code_Gemini.js`, `Code_Utils.js`, `Code_Step1_Workspace.js`, `Code_Step2_IdeaToPlan.js`, `Code_Step3_ContentGen.js`, `Code_Step4_Form.js`, `Code_Step5_8_Judge.js`, `Code_Step6_Decision.js`, `Code_Step7_9_Refine.js`, `Code_Menu.js`, `Code_Test_Suite.js`) 및 원클릭 배포용 단일 번들(`bundle_apps_script.js`), 로컬 테스트 러너(`test_suite.py`) 지원
+   - 모듈화된 11개 스크립트 로직(`Code_Config.js`, `Code_Gemini.js`, `Code_Utils.js`, `Code_Step1_Workspace.js`, `Code_Step2_IdeaToPlan.js`, `Code_Step3_ContentGen.js`, `Code_Step4_Form.js`, `Code_Step5_8_Judge.js`, `Code_Step6_Decision.js`, `Code_Step7_9_Refine.js`, `Code_Menu.js`) 및 마케터 원클릭 배포용 경량 단일 번들(`bundle_apps_script.js`), 깃 푸시 사전 검증용 로컬 파이썬 테스트 러너(`test_suite.py`) 지원
 2. **구글 계정 기반 Gemini REST 엔드포인트 직접 연동 (태스크별 최적 모델 선정, As of 2026-10-13)**:
    - `generativelanguage.googleapis.com` 호출 시 `ScriptApp.getOAuthToken()`으로 취득한 구글 로그인 계정의 OAuth 2.0 Access Token을 `Authorization: Bearer <token>` 헤더로 자동 주입하여 순수 무키(Keyless) 인증 수행
    - 단일 모델에 의존하지 않고 각 작업의 속도, 처리 용량, 비용 효율성을 고려하여 검증된 모델을 취사선택하여 연동
@@ -51,7 +51,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **FR-10** | **BR-08** | **고객 제출 이미지 VLM 시각 분석 및 수작업 피드백 자료 스캔 엔진** | 25MB 이하 이미지의 Base64 인코딩 및 Gemini VLM 시각 분석(`analyzeImageFeedbackWithVlm`)을 수행하고, `input/{targetRound}/` 폴더 내 시스템 예약 파일을 제외한 모든 파일(이미지, 동영상, Google Docs, 텍스트 메모)의 동적 스캔 및 구조화 데이터 추출(`scanManualFeedbackFiles`)을 지원한다. |
 | **FR-11** | **BR-09** | **다이나믹 N차 회차 탐지 및 99차 무제한 피드백 루프** | Google Drive 폴더 트리를 실시간 스캔하여 최신 회차 번호를 파악(`detectLatestFeedbackRoundNum`, `detectLatestRevisionRoundNum`)하고, 사용자 대화형 UI를 통해 기본값 자동 채택 또는 1~99 범위 내 수기 입력을 처리하여 무제한 리비전 파이프라인 구동을 보장한다. |
 | **FR-12** | **BR-09** | **비차단 실시간 진행 안내 토스트 시스템** | `SpreadsheetApp.getActiveSpreadsheet().toast()`를 활용(`showProcessingToast`)하여 스크립트 실행을 방해하지 않고 화면 우측 하단에 각 단계별 예상 소요 시간(초 단위)과 진행 상태를 즉각 노출하는 비차단 UX를 구현한다. |
-| **FR-13** | **BR-10** | **에뮬레이션 단위 테스트 수이트 및 로컬 CLI 러너** | Apps Script 경량 엔진(`TestRunner`, `Code_Test_Suite.js`)을 통해 8대 단위 테스트 수이트(총 66개 항목)를 브라우저 상단 메뉴 및 Google Sheets `[테스트 결과]` 탭에서 일괄 또는 개별 실행하고, 로컬 터미널에서 `python3 test_suite.py --all` 또는 `--unit` 명령어로 100% 모의(Mocking) 고속 검증을 지원한다. |
+| **FR-13** | **BR-10** | **개발자 사전 검증용 로컬 에뮬레이션 테스트 러너** | 마케터 배포 번들(`bundle_apps_script.js`)의 경량성을 완벽히 보존하기 위해 브라우저 런타임에서 테스트 코드를 전면 배제하고, 개발자가 깃 푸시 전 로컬 터미널에서 `python3 test_suite.py --all` 또는 `--unit` 명령어로 8대 단위 테스트 수이트(총 66개 항목)를 100% 모의(Mocking)하여 고속 검증할 수 있는 독립 파이썬 테스트 러너를 제공한다. |
 
 ---
 
