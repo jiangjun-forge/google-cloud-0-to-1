@@ -42,7 +42,7 @@
 ### (1) AI 거버넌스 및 데이터 학습 배제 (Data Sovereignty)
 - **고객 데이터 비학습 원칙**: Google Cloud 생성형 AI 서비스(Vertex AI, Gemini API, Gemini Enterprise)는 고객이 입력한 프롬프트 및 응답을 파운데이션 모델 재학습에 활용하지 않는다.
 - **인적 검토 원천 배제**: Enterprise 라이선스 환경에서는 구글 내부 인력이나 제3자 평가자의 프롬프트 열람(Human Review)이 시스템적으로 전면 차단된다.
-- **공식 AI 경영시스템 인증**: 글로벌 최고 권위의 인공지능 경영시스템 인증인 `ISO/IEC 42001`을 정식 획득하여 신뢰성을 입증했다.
+- **공식 AI 경영시스템 인증**: 글로벌 최고 권위의 AI 경영시스템 인증인 `ISO/IEC 42001`을 정식 획득하여 신뢰성을 입증했다.
 
 ### (2) 데이터 거주성 및 추론 경계 통제 (Residency & Processing Boundary)
 - **저장 데이터 서울 리전 국소화**: 고객 프롬프트, 튜닝 데이터 및 BigQuery/GCS 적재 데이터는 대한민국 서울 리전(`asia-northeast3`) 내에 100% 저장된다.

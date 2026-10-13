@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기
 
-Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 Cloud NAT 라우팅 정합성을 1분 만에 일괄 진단하는 도구다. (As of 2026-09-09)
+클라우드 런(Cloud Run) 환경에서 Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 Cloud NAT 라우팅 정합성을 1분 만에 일괄 진단하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -30,7 +30,7 @@ Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기
 - 커넥터 유지에 수반되는 고정 가상 머신(e2-micro 등) 인스턴스 비용을 절감하고 Direct VPC Egress 로 전환하고자 하는 경우
 - Cloud Run 컨테이너가 급격히 수평 확장(Auto-scaling)될 때 할당된 서브넷의 사설 IP가 고갈되어 파드가 기동 실패(Crash)하는 위험을 사전에 방지하려는 경우
 - `all-traffic` 옵션 설정 후 Cloud NAT 미구성으로 인해 외부 공용 API(결제 게이트웨이, 서드파티 웹훅) 통신이 차단되는 장애를 진단해야 하는 경우
-- 서브넷의 Private Google Access(PGA) 설정 누락으로 `Cloud Storage`, `BigQuery` 등 구글 사설 API 호출이 실패하는 원인을 규명하려는 경우
+- 서브넷의 Private Google Access(PGA) 설정 누락으로 클라우드 스토리지(Cloud Storage), 빅쿼리(BigQuery) 등 구글 사설 API 호출이 실패하는 원인을 규명하려는 경우
 
 ---
 

@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기
 
-대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 인공 지능 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 효과적으로 예방하는 진단 도구다. (As of 2026-09-10)
+대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 AI 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 효과적으로 예방하는 진단 도구다. (As of 2026-09-10)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`  
@@ -32,8 +32,8 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **FR-01** | 물리적 국내 위치 | `gcp.resourceLocations` 서울 리전 생성 강제 (법 제11조) |
 | **FR-02** | 사외 유출 차단 | RAG 벡터 데이터 저장 차단 IAM Deny 정책 (법 제10조) |
-| **FR-03** | 이중 암호화 의무 | Cloud KMS CMEK 이중 암호화 및 서울 키링 연동 (안내서 제2장) |
-| **FR-04** | 국내 격리 추론 | 추론 리전 국소화 (Vertex AI 서울 엔드포인트 격리) |
+| **FR-03** | 이중 암호화 의무 | 클라우드 KMS(Cloud KMS) CMEK 이중 암호화 및 서울 키링 연동 (안내서 제2장) |
+| **FR-04** | 국내 격리 추론 | 추론 리전 국소화 (버텍스 AI(Vertex AI) 서울 엔드포인트 격리) |
 | **FR-05** | 감사 추적 | Cloud Audit Logs 데이터 접근(DATA_READ/WRITE) 로깅 (법 제10조) |
 | **FR-06** | 외국 기업 배제 | 사외/외국 계정 공유 차단 (`iam.allowedPolicyMemberDomains`) |
 | **FR-07** | 제공자 임의 접근 차단 | 클라우드 제공자 접근 승인/투명성 (Access Approval) |

@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 한국형 인공지능 보안성 심의 20대 핵심 체크리스트 명세서 (Security Checklist Catalog)
+# 한국형 AI 보안성 심의 20대 핵심 체크리스트 명세서 (Security Checklist Catalog)
 
 본 문서는 사내 정보보호팀, CISO 및 금융감독원/금융보안원의 생성형 AI 도입 보안성 심의에 대응하기 위해 대한민국 법령(개인정보보호법, 신용정보법, 산업기술보호법, 전자금융감독규정) 및 글로벌 보안 인증 기준(ISO/IEC 42001, ISO 27001)을 정밀 분석하여 표준화한 **20대 핵심 보안 통제 카탈로그**다.
 

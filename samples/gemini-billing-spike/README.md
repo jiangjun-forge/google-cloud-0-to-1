@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이(Gemini) API 비용 급증 원인 진단 (`gemini-billing-spike`)
 
-데이터 액세스 감사 로그(Audit Logs)가 꺼져 있어도, 구글 클라우드 기본 모니터링 지표를 통해 **어떤 인증 수단(API 키, 서비스 계정, OAuth 등)에서 Gemini 호출 비용이 급증했는지 1분 만에 규명**하는 진단 가이드다. (As of 2026-07-01)
+데이터 액세스 감사 로그(Audit Logs)가 꺼져 있어도, 클라우드 모니터링(Cloud Monitoring) 기본 지표를 통해 **어떤 인증 수단(API 키, 서비스 계정, OAuth 등)에서 Gemini 호출 비용이 급증했는지 1분 만에 규명**하는 진단 가이드다. (As of 2026-07-01)
 
 **Audience**: `#Developer`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#CostSpike`, `#Security`  
@@ -26,8 +26,8 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 이 가이드가 필요한 상황 (증상 체크리스트)
 
-- **비용 급증**: 이번 달 청구서나 예산 알림에서 Gemini (Vertex AI 또는 AI Studio) 비용이 예상보다 갑자기 수 배 이상 급증했을 때
-- **감사 로그 부재**: "누가 호출했는지" 확인하려 했으나, BigQuery 감사 로그 내보내기나 데이터 액세스 감사 로그가 비활성화되어 있어 원인을 파악하기 어려울 때
+- **비용 급증**: 이번 달 청구서나 예산 알림에서 Gemini(버텍스 AI(Vertex AI) 또는 AI Studio) 비용이 예상보다 갑자기 수 배 이상 급증했을 때
+- **감사 로그 부재**: "누가 호출했는지" 확인하려 했으나, 빅쿼리(BigQuery) 감사 로그 내보내기나 데이터 액세스 감사 로그가 비활성화되어 있어 원인을 파악하기 어려울 때
 - **보안 유출 의심**: 개발자가 GitHub나 클라이언트 앱에 API 키 또는 서비스 계정 키를 실수로 노출했는지 신속히 점검하고자 할 때
 
 ---
@@ -162,7 +162,7 @@ python diagnose.py --project your-project-id --days 90
   4. 알 수 없는 키이거나 유출이 확실한 경우 즉시 **삭제(휴지통 아이콘)**한다.
 
 ### 2. `serviceAccount:...`가 상위 점유율을 차지한 경우
-- **원인**: 내부 배치 애플리케이션, Cloud Run 서비스, 또는 CI/CD 파이프라인에서 무한 재시도나 대량 호출 루프가 돌고 있다.
+- **원인**: 내부 배치 애플리케이션, 클라우드 런(Cloud Run) 서비스, 또는 CI/CD 파이프라인에서 무한 재시도나 대량 호출 루프가 돌고 있다.
 - **조치 방법**:
   1. GCP 콘솔 > IAM 및 관리자 > 서비스 계정 ( https://console.cloud.google.com/iam-admin/serviceaccounts )으로 이동한다.
   2. 해당 서비스 계정이 연결된 VM, Cloud Run, GKE 워크로드를 확인한다.

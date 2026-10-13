@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 가드
 
-Gemini Enterprise 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(Cloud Billing)으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 원천 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단·처방하는 종합 비용 가드레일 도구다. (As of 2026-09-22)
+Gemini Enterprise 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(Cloud Billing)으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방하는 종합 비용 가드레일 도구다. (As of 2026-09-22)
 
 **Audience**: `#Architect`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`, `#Resilience`  
@@ -104,7 +104,7 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 - Google Cloud 콘솔에서 `roles/billing.admin` 및 `roles/billing.user` 권한을 회수하고, 사전 프로비저닝된 프로젝트 내 `roles/viewer`만 선별 부여한다.
 
 ### 차단 정책 적용 후 기존 업무 영향도 평가
-- **Gemini Enterprise 웹 앱 (Chat / Search)**: 영향 없음 (자체 관리형 테넌트 및 Vertex AI 엔드포인트를 사용하므로 정상 동작)
+- **Gemini Enterprise 웹 앱 (Chat / Search)**: 영향 없음 (자체 관리형 테넌트 및 버텍스 AI(Vertex AI) 엔드포인트를 사용하므로 정상 동작)
 - **NotebookLM Enterprise**: 영향 없음 (Enterprise 테넌트 격리 영역 내 구동)
 - **Antigravity (Google OAuth 로그인)**: 영향 없음 (사용자 라이선스 기반 인증)
 - **Antigravity (GCP Project 종량제 모드)**: 차단됨 (의도된 통제 목적에 정확히 부합)

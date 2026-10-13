@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 (Standalone & Optional GE App)
 
-45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 BigQuery 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 대화형 분석 에이전트인 Conversational Analytics Data Agent를 단독(Standalone)으로 생성 및 멀티턴 대화 질의를 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 전사 대화 포털 시나리오를 즉시 시연할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-09-14)
+45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 빅쿼리(BigQuery) 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 대화형 분석 에이전트인 Conversational Analytics Data Agent를 단독(Standalone)으로 생성 및 멀티턴 대화 질의를 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 전사 대화 포털 시나리오를 즉시 시연할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-09-14)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#GenAI`, `#Governance`, `#Performance`  

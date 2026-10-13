@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
 
-전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 BigQuery 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다. (As of 2026-09-09)
+전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 빅쿼리(BigQuery) 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`  
@@ -53,7 +53,7 @@ flowchart TD
 ---
 
 ## 3. 필요 IAM 및 관리자 권한
-- **Google Cloud IAM 권한**:
+- **구글 클라우드 IAM(Cloud IAM) 권한**:
   - `roles/bigquery.dataEditor` (테이블 생성 및 데이터 적재)
   - `roles/bigquery.jobUser` (쿼리 및 로드 작업 실행)
 - **Google Workspace / Cloud Identity 권한**:

@@ -13,7 +13,7 @@ All contents, designs, and code examples are subject to change, modification, or
 # 비즈니스 요구 사항 명세서 (BRD): Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 가드
 
 ## 1. 배경 및 목적
-Gemini Enterprise 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(Cloud Billing)으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 원천 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단·처방한다.
+Gemini Enterprise 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(Cloud Billing)으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방한다.
 
 사내 클라우드 운영 환경에서 인프라 담당자와 보안 및 FinOps 실무자가 수동 콘솔 점검에 의존할 경우 설정 누락, 비의도적 유료 과금 발생, 계열사 결제 권한 남용이 발생할 수 있다. 본 미니 프로젝트(`gemini-enterprise-overage-guard`)는 현장 실무에서 즉시 실행 가능한 자동화 진단 및 4대 기술적 조치 가이드를 제공하여 비용 통제 안정성을 체계적으로 확보한다.
 

@@ -18,7 +18,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 1. 비즈니스 개요 및 프로젝트 목적 (Executive Summary)
 
 ### 1.1 배경 및 추진 배경
-엔터프라이즈 기업들은 비즈니스 의사 결정 속도를 높이고 데이터 민주화를 달성하기 위해 생성형 인공 지능(Gen AI) 기반의 **자연어 분석 에이전트(BigQuery Data Agent / NL2SQL)**를 적극 도입하고 있다. 그러나 실제 도입 과정에서 자연어 질문에 대해 잘못된 테이블을 조인하거나 엉터리 SQL을 생성하는 **심각한 환각(Hallucination)** 문제가 빈번히 발생하여 프로젝트가 중단되거나 신뢰를 상실하는 사례가 급증하고 있다.
+엔터프라이즈 기업들은 비즈니스 의사 결정 속도를 높이고 데이터 민주화를 달성하기 위해 생성형 AI(Gen AI) 기반의 **자연어 분석 에이전트(BigQuery Data Agent / NL2SQL)**를 적극 도입하고 있다. 그러나 실제 도입 과정에서 자연어 질문에 대해 잘못된 테이블을 조인하거나 엉터리 SQL을 생성하는 **심각한 환각(Hallucination)** 문제가 빈번히 발생하여 프로젝트가 중단되거나 신뢰를 상실하는 사례가 급증하고 있다.
 
 ### 1.2 비즈니스 난제 (Pain Points)
 1. **메타데이터 부재로 인한 모델 환각**: 대다수 기업의 BigQuery 테이블과 컬럼에는 설명(Description)이 비어 있거나 축약어(예: `amt`, `cd`, `qty_diff`)만 존재하여, LLM이 컬럼의 실제 의미나 단위, 할인 전후 여부를 임의로 추정하여 잘못된 계산을 수행한다.

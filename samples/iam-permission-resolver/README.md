@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # GCP IAM 권한 거부(403) 감사 역추적 및 원클릭 복구 (`iam-permission-resolver`)
 
-GCP 클라우드 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-06-16)
+구글 클라우드 IAM(Cloud IAM) 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-06-16)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Security`  
@@ -120,7 +120,7 @@ python diagnose.py --project your-project-id --days 7 --limit 5
   - 실제 오류 내용: Permission 'aiplatform.endpoints.predict' denied on resource
   [정밀 처방 역할 추천]
     - 권장 역할: roles/aiplatform.user
-    - 역할 상세: Gemini API 호출 및 Vertex AI 파운데이션 모델 추론 권한
+    - 역할 상세: Gemini API 호출 및 버텍스 AI(Vertex AI) 파운데이션 모델 추론 권한
   [즉시 조치 가능한 원클릭 gcloud 해결 명령어]
     gcloud projects add-iam-policy-binding "my-prod-project" \
       --member="user:backend-developer@company.com" \

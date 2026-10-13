@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기
 
-온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 Cloud KMS 암호화 및 무결성 검증을 거쳐 Cloud Storage로 안전하게 이관하는 진단 도구다. (As of 2026-09-09)
+온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 클라우드 KMS(Cloud KMS) 암호화 및 무결성 검증을 거쳐 클라우드 스토리지(Cloud Storage)로 안전하게 이관하는 진단 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Performance`, `#Security`  
@@ -26,7 +26,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 이 가이드가 필요한 상황
 
-- 현장 온프레미스 NAS/SAN 스토리지에 적재된 수백 기가바이트 이상의 영상 데이터를 Vertex AI 멀티모달 분석용으로 클라우드에 이전하고자 할 때
+- 현장 온프레미스 NAS/SAN 스토리지에 적재된 수백 기가바이트 이상의 영상 데이터를 버텍스 AI(Vertex AI) 멀티모달 분석용으로 클라우드에 이전하고자 할 때
 - 네트워크 대역폭 고갈을 방지하기 위해 정밀한 대역폭 제한(Bandwidth Throttling)을 적용하고 전송 에이전트 상태를 실시간 진단해야 하는 경우
 - 국가 핵심 기술 및 기업 보안 규정에 맞추어 사전 비식별화, 전송 중 CRC32c 체크섬 검증, 타깃 버킷 Cloud KMS CMEK 이중 암호화, 공개 접근 차단(PAP)을 일괄 점검하고자 하는 경우
 
