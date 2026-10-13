@@ -31,15 +31,15 @@ var CONFIG = {
   BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models",
   GEMINI_MODEL: "gemini-3.8-flash",
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 양산 모델
-  MODEL_JUDGE: "gemini-3.8-flash",     // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
+  MODEL_JUDGE: "gemini-3.8-flash", // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
   IMAGE_MODEL_NAME: "gemini-2.5-flash-image", // 광고 소재 비주얼 이미지 생성 모델
-  VIDEO_MODEL_NAME: "veo-3.1-generate-001",   // 모바일 숏폼 영상 생성 모델
+  VIDEO_MODEL_NAME: "veo-3.1-generate-001", // 모바일 숏폼 영상 생성 모델
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
-  EMBEDDING_DIM: 128,                         // Matryoshka Representation Learning(MRL) 축소 차원 규격
+  EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
   
   // 구글 드라이브 핵심 기획/명세/콘텐츠 문서 파일명
-  PLAN_DOC_NAME: "PLAN",               // 마케팅 캠페인 기획서 전문
-  SPEC_DOC_NAME: "SPEC",               // 멀티 채널 콘텐츠 제작 명세서 (이미지, 숏폼, 카피 규격)
+  PLAN_DOC_NAME: "PLAN", // 마케팅 캠페인 기획서 전문
+  SPEC_DOC_NAME: "SPEC", // 멀티 채널 콘텐츠 제작 명세서 (이미지, 숏폼, 카피 규격)
   CONTENT_DOC_NAME: "campaign_content", // 멀티 채널 마케팅 콘텐츠 전문 (카피라이팅 및 영상 콘티)
 
   // 멀티 채널 마케팅 콘텐츠 및 소재 기본 규격
