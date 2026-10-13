@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### 핵심 구성 요소 및 연동 체계
 1. **Google Apps Script 런타임**:
-   - 구글 시트 상단 커스텀 메뉴 (`>> 마케팅 콘텐츠 파이프라인 <<`) 제공
+   - 구글 시트 상단 커스텀 메뉴 (`[마케팅 콘텐츠 파이프라인]`) 제공
    - 모듈화된 11개 스크립트 로직(`Code_Config.js`, `Code_Gemini.js`, `Code_Utils.js`, `Code_Step1_Workspace.js`, `Code_Step2_IdeaToPlan.js`, `Code_Step3_ContentGen.js`, `Code_Step4_Form.js`, `Code_Step5_8_Judge.js`, `Code_Step6_Decision.js`, `Code_Step7_9_Refine.js`, `Code_Menu.js`) 및 마케터 원클릭 배포용 경량 단일 번들(`bundle_apps_script.js`), 깃 푸시 사전 검증용 로컬 파이썬 테스트 러너(`test_suite.py`) 지원
 2. **구글 계정 기반 Gemini REST 엔드포인트 직접 연동 (태스크별 최적 모델 선정, As of 2026-10-13)**:
    - `generativelanguage.googleapis.com` 호출 시 `ScriptApp.getOAuthToken()`으로 취득한 구글 로그인 계정의 OAuth 2.0 Access Token을 `Authorization: Bearer <token>` 헤더로 자동 주입하여 순수 무키(Keyless) 인증 수행

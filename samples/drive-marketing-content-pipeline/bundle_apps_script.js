@@ -2904,7 +2904,7 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu(">> 마케팅 콘텐츠 파이프라인 <<")
+  ui.createMenu("[마케팅 콘텐츠 파이프라인]")
     .addItem("[0. 타깃 AI 페르소나 패널 맞춤 재설정 (선택 사항)]", "setCustomPersonasPrompt")
     .addSeparator()
     .addItem("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", "createWorkspaceFolderTree")
