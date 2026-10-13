@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 구글 드라이브 마케팅 콘텐츠 생성 파이프라인 (`drive-marketing-content-pipeline`)
+# Drive 마케팅 콘텐츠 생성 파이프라인 (`drive-marketing-content-pipeline`)
 
-Google Cloud 프로젝트 생성 및 복잡한 로컬 파이썬 개발 환경 설정, 별도 API Key 발급 없이, 현재 로그인된 구글 계정 OAuth 2.0 자동 인증(Keyless Zero-Setup)만으로 구글 드라이브, 구글 시트, Apps Script 기반의 종단간 마케팅 콘텐츠 양산 및 25인 AI 페르소나 다면 평가 파이프라인을 구축하는 경량 자동화 솔루션이다. (As of 2026-10-13)
+Google Cloud 프로젝트 생성 및 복잡한 로컬 파이썬 개발 환경 설정, 별도 API Key 발급 없이, 현재 로그인된 Google 계정 OAuth 2.0 자동 인증(Keyless Zero-Setup)만으로 Drive, Sheets, Apps Script 기반의 종단간 마케팅 콘텐츠 양산 및 25인 AI 페르소나 다면 평가 파이프라인을 구축하는 경량 자동화 솔루션이다. (As of 2026-10-13)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -37,11 +37,11 @@ Google Cloud 프로젝트 생성 및 복잡한 로컬 파이썬 개발 환경 �
 
 ```mermaid
 flowchart TD
-    Start(["시작: 구글 시트 생성 및 번들 스크립트 붙여넣기"]) --> Step1["[Step 1] 드라이브 작업 공간 및 25인 페르소나 자동 생성<br/>(cp-ignite/, input/ai_personas.json, output/)"]
-    Step1 --> Step2["[Step 2] 자연어 아이디어 기반 기획서(PLAN) 및 명세서(SPEC) 도출<br/>(구글 독스 자동 렌더링)"]
+    Start(["시작: Sheets 생성 및 번들 스크립트 붙여넣기"]) --> Step1["[Step 1] Drive 작업 공간 및 25인 페르소나 자동 생성<br/>(cp-ignite/, input/ai_personas.json, output/)"]
+    Step1 --> Step2["[Step 2] 자연어 아이디어 기반 기획서(PLAN) 및 명세서(SPEC) 도출<br/>(Docs 자동 렌더링)"]
     Step2 --> Step3["[Step 3] 기획서(PLAN) 및 명세서(SPEC) 기반 초판 콘텐츠 양산 (rv-00)<br/>(카피라이팅 + 대표 이미지 3종 비율 세트 + 숏폼 영상)"]
-    Step3 --> Step4["[Step 4] 고객 VoC 수집용 구글 폼 연동<br/>(모바일 QR 코드 생성, 시트 응답 탭 바인딩)"]
-    Step4 --> Step5["[Step 5] 25인 AI 페르소나 1차 다면 평가 & t-SNE 지형도 생성 (fb-01)<br/>(LLM as a Judge, QuickChart 시각화)"]
+    Step3 --> Step4["[Step 4] 고객 VoC 수집용 Forms 연동<br/>(모바일 QR 코드 생성, Sheets 응답 탭 바인딩)"]
+    Step4 --> Step5["[Step 5] 25인 AI 페르소나 1차 다면 평가 & t-SNE 지형도 생성 (fb-01)<br/>(LLM as a Judge, 128d 임베딩 QuickChart 시각화)"]
     Step5 --> Step6["[Step 6] 마케터 피드백 검토 및 최종 의사 결정<br/>(Human-in-the-loop 보정 지침 확정)"]
     Step6 --> Step7["[Step 7] 1차 마케팅 콘텐츠 반자율 보정 (rv-01)<br/>(카피 개정본 + 신규 비주얼 3종 생성)"]
     Step7 --> Step8["[Step 8] 2차 다면 평가 및 t-SNE 갱신 (fb-02)<br/>(개정 콘텐츠 심층 검증)"]
@@ -53,27 +53,27 @@ flowchart TD
 
 ## 2단계 퀵스타트 가이드 (Quickstart)
 
-### 1단계: 구글 시트 생성 및 번들 스크립트 붙여넣기
-1. 구글 드라이브 ( https://drive.google.com )에서 빈 구글 시트를 새로 생성한다.
+### 1단계: Sheets 생성 및 번들 스크립트 붙여넣기
+1. Drive ( https://drive.google.com )에서 빈 Sheets 문서를 새로 생성한다.
 2. 상단 메뉴에서 `확장 프로그램` > `Apps Script`를 클릭한다.
 3. 기본 편집창의 기존 코드를 모두 지우고, 본 저장소의 `bundle_apps_script.js` 파일 내용을 전체 복사하여 붙여넣는다.
 4. 좌측 `프로젝트 설정 (톱니바퀴 아이콘)`에서 `편집기에서 "appsscript.json" 매니페스트 파일 표시`를 체크한 뒤, 본 저장소의 `appsscript.json` 내용을 붙여넣고 상단 디스크 아이콘(`프로젝트 저장`)을 누른다.
-5. 구글 시트 브라우저 탭을 새로고침(F5)하면 상단 메뉴 바에 `>> 마케팅 콘텐츠 파이프라인 <<` 커스텀 메뉴가 활성화된다.
+5. Sheets 브라우저 탭을 새로고침(F5)하면 상단 메뉴 바에 `>> 마케팅 콘텐츠 파이프라인 <<` 커스텀 메뉴가 활성화된다.
 
 ### 2단계: 상단 메뉴를 통한 9단계 자동화 순차 실행
 
-1. **[Step 1] 구글 드라이브 작업 공간 및 25인 페르소나 자동 생성**:
-   - 구글 시트 상단 메뉴에서 `>> 마케팅 콘텐츠 파이프라인 <<` > `[Step 1] 구글 드라이브 작업 공간 및 25인 페르소나 자동 생성`을 클릭한다.
-   - 클릭 1번으로 구글 드라이브에 캠페인 루트 폴더(`cp-ignite`), 25인 페르소나 데이터셋(`input/ai_personas.json`), 비디오 샘플을 자동 세팅한다.
-   - 최초 1회 실행 시 구글 계정 권한 승인 팝업이 나타나면 `고급` > `이동`을 클릭한 후 `허용`을 선택한다. (구글 계정 자동 로그인으로 완결 구동)
+1. **[Step 1] Drive 작업 공간 및 25인 페르소나 자동 생성**:
+   - Sheets 상단 메뉴에서 `>> 마케팅 콘텐츠 파이프라인 <<` > `[Step 1] 구글 드라이브 작업 공간 및 25인 페르소나 자동 생성`을 클릭한다.
+   - 클릭 1번으로 Drive에 캠페인 루트 폴더(`cp-ignite`), 25인 페르소나 데이터셋(`input/ai_personas.json`), 비디오 샘플을 자동 세팅한다.
+   - 최초 1회 실행 시 Google 계정 권한 승인 팝업이 나타나면 `고급` > `이동`을 클릭한 후 `허용`을 선택한다. (Google 계정 자동 로그인으로 완결 구동)
 2. **[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 자동 도출**:
-   - 캠페인 아이디어(예: '프리미엄 노이즈 캔슬링 헤드폰 가을 론칭 프로모션')를 자유롭게 입력하면 전문 마케팅 캠페인 기획서(`PLAN`)와 멀티 채널 콘텐츠 제작 명세서(`SPEC`) 구글 독스가 자동 생성된다. 마케터는 브라우저에서 직접 `SPEC` 수치(이미지 비율, 숏폼 길이, 카피 채널)를 수정할 수 있다.
+   - 캠페인 아이디어(예: '프리미엄 노이즈 캔슬링 헤드폰 가을 론칭 프로모션')를 자유롭게 입력하면 전문 마케팅 캠페인 기획서(`PLAN`)와 멀티 채널 콘텐츠 제작 명세서(`SPEC`) Docs 문서가 자동 생성된다. 마케터는 브라우저에서 직접 `SPEC` 수치(이미지 비율, 숏폼 길이, 카피 채널)를 수정할 수 있다.
 3. **[Step 3] 기획서(PLAN) 및 명세서(SPEC) 기반 초판 마케팅 콘텐츠 양산 (rv-00)**:
-   - 마케터가 확정한 `SPEC` 규격에 맞추어 마케팅 카피 구글 독스(`campaign_content`), 대표 비주얼 이미지 3종 비율 세트(16:9, 9:16, 1:1), 세로 9:16 모바일 숏폼 영상(`00_shorts.mp4`)을 콘텐츠 폴더에 자동 일괄 양산한다.
-4. **[Step 4] 고객 VoC 수집용 구글 폼 자동 생성 (이미지/비디오 업로드)**:
-   - 평점, 서술형 의견, 고객 동영상 첨부 문항이 포함된 구글 폼을 생성하고 시트 응답 탭 및 모바일 접속용 QR 코드를 자동 연동한다.
+   - 마케터가 확정한 `SPEC` 규격에 맞추어 마케팅 카피 Docs(`campaign_content`), 대표 비주얼 이미지 3종 비율 세트(16:9, 9:16, 1:1), 세로 9:16 모바일 숏폼 영상(`00_shorts.mp4`)을 콘텐츠 폴더에 자동 일괄 양산한다.
+4. **[Step 4] 고객 VoC 수집용 Forms 자동 생성 (이미지/비디오 업로드)**:
+   - 평점, 서술형 의견, 고객 동영상 첨부 문항이 포함된 Forms 문서를 생성하고 Sheets 응답 탭 및 모바일 접속용 QR 코드를 자동 연동한다.
 5. **[Step 5] 25인 AI 페르소나 1차 다면 평가 및 t-SNE 지형도 자동 렌더링 (fb-01)**:
-   - 25인의 가상 소비자 반응과 고객 비디오 VoC VLM 분석 결과를 결합하여 t-SNE 여론 지형도가 임베드된 다면 평가 보고서(`feedback_summary`) 구글 독스를 완성한다.
+   - 25인의 가상 소비자 반응과 고객 비디오 VoC VLM 분석 결과를 결합하여 t-SNE 여론 지형도가 임베드된 다면 평가 보고서(`feedback_summary`) Docs 문서를 완성한다.
 6. **[Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)**:
    - 마케터 전용 팝업이 표시되며, 평가 보고서를 검토한 마케터가 핵심 개선 방향을 선택하거나 직접 입력하여 최종 보정 지침을 확정한다.
 7. **[Step 7] 다면 평가 피드백 기반 1차 마케팅 콘텐츠 반자율 보정 (rv-01)**:
@@ -95,27 +95,36 @@ flowchart TD
 
 ```text
 My Drive/
-├── 마케팅 콘텐츠 파이프라인 (구글 시트: 9단계 자동화 컨트롤 타워)
+├── 마케팅 콘텐츠 파이프라인 (Sheets: 9단계 자동화 컨트롤 타워)
 ├── cp-autumn-breeze/ (다중 캠페인 독립 격리 폴더 예시 - 아래 상세 접기 참조)
 └── cp-ignite/ (기본 실습 캠페인 폴더)
-    ├── 고객 피드백 설문 (구글 폼: 실시간 고객 VoC 수집 폼)
+    ├── 고객 피드백 설문 (Forms: 실시간 고객 VoC 수집 폼)
     ├── input/ (원천 입력 데이터셋)
-    │   ├── 아이디어 메모 (구글 독스: 마케터 캠페인 아이디어 초안 메모)
+    │   ├── 아이디어 메모 (Docs: 마케터 캠페인 아이디어 초안 메모)
     │   ├── ai_personas.json (해당 캠페인 전용 25인 슬림 페르소나 패널)
     │   ├── fb-01/ (1차 피드백 데이터셋)
     │   │   ├── ai_persona_feedbacks.json (25인 페르소나 실시간 평가 데이터)
-    │   │   ├── feedback_clusters_map.png (QuickChart 기반 t-SNE 여론 지형도 차트)
+    │   │   ├── feedback_clusters_map.png (text-multilingual-embedding-002 기반 128d t-SNE 지형도)
+    │   │   ├── feedback_points_128d.json (128d 임베딩 투영 세부 의견 포인트 목록)
     │   │   ├── feedback_sample.mp4 (고객 직접 촬영 모바일 세로 비디오 VoC)
-    │   │   ├── feedback_summary (구글 독스: VLM 분석과 지형도가 포함된 종합 다면 평가 보고서)
+    │   │   ├── feedback_summary (Docs: VLM 분석과 지형도가 포함된 종합 다면 평가 보고서)
     │   │   └── video_voc_analysis.json (Gemini VLM 멀티모달 표정, 음성 톤, 발화 분석 결과)
     │   └── fb-02/ (2차 피드백 데이터셋 - 아래 상세 접기 참조)
-    ├── output/ (리비전별 마케팅 콘텐츠 - 아래 상세 접기 참조)
-    ├── PLAN (구글 독스: 마케팅 캠페인 기획서 전문)
-    └── SPEC (구글 독스: 멀티 채널 콘텐츠 제작 명세서 - 이미지, 숏폼, 카피 규격)
+    ├── output/ (리비전별 마케팅 콘텐츠)
+    │   ├── rv-00/ (초판 마케팅 콘텐츠)
+    │   │   ├── 00_banner_16x9.png (가로형 디스플레이 배너 16:9)
+    │   │   ├── 00_poster_9x16.png (세로형 모바일 포스터 9:16)
+    │   │   ├── 00_shorts.mp4 (세로 9:16 모바일 숏폼 영상)
+    │   │   ├── 00_sns_1x1.png (정방형 SNS 피드 이미지 1:1)
+    │   │   └── campaign_content (Docs: 멀티 채널 카피 및 영상 콘티)
+    │   ├── rv-01/ (1차 개정본 - 아래 상세 접기 참조)
+    │   └── rv-02/ (2차 완결본 - 아래 상세 접기 참조)
+    ├── PLAN (Docs: 마케팅 캠페인 기획서 전문)
+    └── SPEC (Docs: 멀티 채널 콘텐츠 제작 명세서 - 이미지, 숏폼, 카피 규격)
 ```
 
 <details>
-<summary><strong>1. 기본 캠페인(cp-ignite): 2차 피드백(fb-02) 및 전체 리비전 콘텐츠(rv-00, rv-01, rv-02) 세부 트리 펼치기</strong></summary>
+<summary><strong>1. 기본 캠페인(cp-ignite): 2차 피드백(fb-02) 및 후속 개정본 콘텐츠(rv-01, rv-02) 세부 트리 펼치기</strong></summary>
 
 ```text
 My Drive/
@@ -123,28 +132,23 @@ My Drive/
     ├── input/
     │   └── fb-02/ (2차 피드백 데이터셋)
     │       ├── ai_persona_feedbacks.json (2차 개정본 평가 데이터)
-    │       ├── feedback_clusters_map.png (갱신된 t-SNE 여론 지형도)
-    │       ├── feedback_summary (구글 독스: 2차 종합 평가 보고서)
+    │       ├── feedback_clusters_map.png (갱신된 128d t-SNE 지형도)
+    │       ├── feedback_points_128d.json (2차 128d 임베딩 세부 의견 포인트)
+    │       ├── feedback_summary (Docs: 2차 종합 평가 보고서)
     │       └── video_voc_analysis.json (2차 비디오 VoC 분석 데이터)
     └── output/
-        ├── rv-00/ (초판 마케팅 콘텐츠)
-        │   ├── 00_banner_16x9.png (가로형 디스플레이 배너)
-        │   ├── 00_poster_9x16.png (세로형 모바일 포스터)
-        │   ├── 00_shorts.mp4 (세로 9:16 모바일 숏폼 영상)
-        │   ├── 00_sns_1x1.png (정방형 SNS 피드 이미지)
-        │   └── campaign_content (구글 독스: 멀티 채널 카피 및 영상 콘티)
         ├── rv-01/ (1차 개정본)
         │   ├── 01_banner_16x9.png (보정된 가로형 배너)
         │   ├── 01_poster_9x16.png (보정된 세로형 포스터)
         │   ├── 01_shorts.mp4 (보정된 세로 9:16 모바일 숏폼 영상)
         │   ├── 01_sns_1x1.png (보정된 SNS 피드 이미지)
-        │   └── campaign_content (구글 독스: 1차 피드백 반영 개정 카피)
+        │   └── campaign_content (Docs: 1차 피드백 반영 개정 카피)
         └── rv-02/ (2차 완결본)
             ├── 02_banner_16x9.png (최종 완결형 배너)
             ├── 02_poster_9x16.png (최종 완결형 포스터)
             ├── 02_shorts.mp4 (최종 완결형 모바일 숏폼 영상)
             ├── 02_sns_1x1.png (최종 완결형 SNS 피드 이미지)
-            └── campaign_content (구글 독스: 최종 배포용 마케팅 카피)
+            └── campaign_content (Docs: 최종 완결 배포 카피)
 ```
 
 </details>
@@ -155,15 +159,15 @@ My Drive/
 ```text
 My Drive/
 └── cp-autumn-breeze/ (다중 캠페인 독립 격리 폴더 예시)
-    ├── 고객 피드백 설문 (구글 폼: 2026 가을 오텀 브리즈 고객 설문 폼)
+    ├── 고객 피드백 설문 (Forms: 2026 가을 오텀 브리즈 고객 설문 폼)
     ├── input/
-    │   ├── 아이디어 메모 (구글 독스: 아웃도어 라이프스타일 컬렉션 기획 메모)
+    │   ├── 아이디어 메모 (Docs: 아웃도어 라이프스타일 컬렉션 기획 메모)
     │   ├── ai_personas.json (가을 아웃도어 타깃 25인 맞춤 페르소나 패널)
     │   └── fb-01/ (1차 피드백 데이터셋)
     │       ├── ai_persona_feedbacks.json
     │       ├── feedback_clusters_map.png
     │       ├── feedback_sample.mp4
-    │       ├── feedback_summary (구글 독스)
+    │       ├── feedback_summary (Docs)
     │       └── video_voc_analysis.json
     ├── output/
     │   └── rv-00/ (초판 마케팅 콘텐츠)
@@ -171,9 +175,9 @@ My Drive/
     │       ├── 00_poster_9x16.png
     │       ├── 00_shorts.mp4
     │       ├── 00_sns_1x1.png
-    │       └── campaign_content (구글 독스)
-    ├── PLAN (구글 독스: 오텀 브리즈 캠페인 기획서 전문)
-    └── SPEC (구글 독스: 멀티 채널 콘텐츠 제작 명세서)
+    │       └── campaign_content (Docs)
+    ├── PLAN (Docs: 오텀 브리즈 캠페인 기획서 전문)
+    └── SPEC (Docs: 멀티 채널 콘텐츠 제작 명세서)
 ```
 
 </details>
@@ -216,17 +220,17 @@ My Drive/
 
 ## 핵심 아키텍처 및 차별화 요소
 
-### 1. Zero-GCP & Keyless Zero-Setup
-Google Cloud 프로젝트, 서비스 계정 키, 결제 계정 등록, 별도 API Key 발급이 전혀 필요하지 않다. 현재 구글 시트에 로그인된 구글 계정의 OAuth 2.0 Access Token 기반 자동 인증으로 구글 앱스 스크립트(Apps Script) 상에서 즉시 안전하게 구동된다.
+### 1. Keyless Zero-Setup & Web-Native
+Google Cloud 프로젝트, 서비스 계정 키, 결제 계정 등록, 별도 API Key 발급이 전혀 필요하지 않다. 현재 Sheets에 로그인된 Google 계정의 OAuth 2.0 Access Token 기반 자동 인증으로 Apps Script 상에서 브라우저 단독으로 즉시 안전하게 구동된다.
 
-### 2. No-Python & Web-Native
-로컬 터미널, 파이썬 가상 환경(`.venv`), 외부 패키지 설치(`pip install`)가 일절 존재하지 않는다. 웹 브라우저 안에서 구글 시트 상단 커스텀 메뉴 클릭만으로 전체 9단계 파이프라인(Step 1~Step 9)이 즉시 수행된다.
+### 2. 기획서(PLAN) 및 제작 명세서(SPEC) 기반 엄격한 품질 통제
+아이디어 발상 단계에서 전문 마케팅 기획서(`PLAN`)와 채널별 제작 명세서(`SPEC`)를 Docs 문서로 분리 생성한다. 마케터가 브라우저에서 직접 `SPEC` 문서의 이미지 종횡비, 해상도, 모바일 숏폼 영상 길이(15초~30초), 카피 채널을 수정한 뒤 후속 단계를 실행하면, 인공 지능이 해당 명세를 엄격히 준수하여 콘텐츠를 양산한다.
 
-### 3. 기획서(PLAN) 및 제작 명세서(SPEC) 기반 엄격한 품질 통제
-아이디어 발상 단계에서 전문 마케팅 기획서(`PLAN`)와 채널별 제작 명세서(`SPEC`)를 구글 독스로 분리 생성한다. 마케터가 브라우저에서 직접 `SPEC` 문서의 이미지 종횡비, 해상도, 모바일 숏폼 영상 길이(15초~30초), 카피 채널을 수정한 뒤 후속 단계를 실행하면, 인공 지능이 해당 명세를 엄격히 준수하여 콘텐츠를 양산한다.
-
-### 4. 25인 한국인 마스터 AI 페르소나 다면 평가 및 열린 피드백 원칙
+### 3. 25인 한국인 마스터 AI 페르소나 다면 평가 및 열린 피드백 원칙
 20대부터 50대까지 IT/금융/유통 전문 마케터 12인과 대학생/직장인/자영업자 등 일반 소비자 13인으로 구성된 25인 패널 데이터를 내장하고 있다. 특히 콘텐츠 제작 명세서(`SPEC`)에 특정 설문 문항이 고정되어 있지 않은 한 **'열린 피드백(Open-ended Feedback)' 원칙**을 적용하여 각 페르소나가 제약 없는 관점에서 자유로운 소감을 발화한다. 또한 25명의 페르소나가 1인당 단편적인 1개의 의견만 남기는 것이 아니라, 호평 포인트, 비판/개선 요구 포인트, 가격/구매 혜택 의견 등 **1인당 2~4개의 세부 의견 포인트(Key Feedback Points)**를 도출하여 전체 50~80개 이상의 풍부한 의견 군집을 형성한다.
+
+### 4. 한국어 특화 128d 임베딩 및 다중 포인트 t-SNE 여론 지형도
+도출된 50~80개 이상의 세부 의견 포인트를 한국어 성능이 뛰어난 `text-multilingual-embedding-002` 모델을 통해 128차원 MRL(Matryoshka Representation Learning) 벡터로 일괄 변환한다. Apps Script 환경에서 경량 PCA 2축 투영을 거쳐 2차원 평면 좌표로 변환한 뒤, QuickChart REST API를 호출하여 호평, 비판, 가격, 사용성 등 4개 군집으로 입체적 다면 여론 지형도(`feedback_clusters_map.png`)를 실시간 생성하고 Docs 피드백 보고서 상단에 자동 임베드한다.
 
 ### 5. Gemini VLM 기반 고객 동영상 피드백(비디오 VoC) 심층 분석
 고객이 스마트폰으로 직접 촬영한 동영상 피드백(MP4)을 Gemini VLM 멀티모달 엔진이 분석하여, 고객의 얼굴 표정 변화, 음성 톤, 실제 발화 내용(Transcript), 감정 및 개선 제안을 구조화된 `video_voc_analysis.json` 파일로 자동 추출 및 저장한다. 다면 평가(Judge) 실행 시 이 VLM 분석 데이터가 25인 AI 페르소나 데이터와 함께 종합 분석된다.
@@ -234,41 +238,14 @@ Google Cloud 프로젝트, 서비스 계정 키, 결제 계정 등록, 별도 AP
 ### 6. 모바일 숏폼 영상(MP4) 및 멀티 채널 비주얼 소재 양산
 가로형 디스플레이 배너(16:9), 세로형 모바일 포스터(9:16), 정방형 SNS 피드 이미지(1:1)뿐만 아니라, 인스타그램 릴스와 유튜브 쇼츠에 즉시 활용 가능한 세로 9:16 모바일 숏폼 영상(`*_shorts.mp4`)을 매 리비전마다 완결형으로 양산한다.
 
-### 7. 한국어 특화 128d 임베딩 및 다중 포인트 t-SNE 여론 지형도
-도출된 50~80개 이상의 세부 의견 포인트를 한국어 성능이 뛰어난 `text-multilingual-embedding-002` 모델을 통해 128차원 MRL(Matryoshka Representation Learning) 벡터로 일괄 변환한다. Apps Script 환경에서 경량 PCA 2축 투영을 거쳐 2차원 평면 좌표로 변환한 뒤, QuickChart REST API를 호출하여 호평, 비판, 가격, 사용성 등 4개 군집으로 입체적 다면 여론 지형도(`feedback_clusters_map.png`)를 실시간 생성하고 구글 독스 피드백 보고서 상단에 자동 임베드한다.
-
-### 8. 구글 시트 실시간 실행 대시보드
-구글 드라이브 폴더 탭을 번거롭게 오갈 필요 없이, 작업 중인 구글 시트의 `실행 대시보드` 탭에서 각 단계별 처리 상태와 생성된 산출물(PLAN, SPEC, 초판 콘텐츠 폴더, 구글 폼, 피드백 요약서, 개정본 폴더)의 하이퍼링크를 즉시 클릭하여 열람할 수 있다.
-
-### 9. 태스크별 최적 Gemini 모델 사양 연동 (As of 2026-10-13)
-단일 모델에 고정하지 않고, 각 작업의 특성과 처리 속도, 비용 효율성을 고려하여 최적의 모델을 취사선택하여 연동한다:
-- **텍스트 생성 및 다면 평가**: `gemini-3.8-flash` (기획서 작성, 25인 다면 평가, VLM 비디오 VoC 분석에 적합한 빠른 응답 속도 및 긴 컨텍스트 윈도우)
-- **한국어 특화 텍스트 임베딩**: `text-multilingual-embedding-002` (한국어 정밀 분석 및 128차원 MRL 축소 임베딩을 통한 50~80+개 의견 포인트 벡터화)
-- **비주얼 소재 생성**: `gemini-2.5-flash-image` (채널별 종횡비 이미지 생성에 적합)
-- **모바일 숏폼 영상 콘티 및 제작**: `veo-3.1-generate-001` (15초~30초 세로 숏폼 영상 제작에 적합)
-
-### 10. 모듈화된 11대 핵심 스크립트 및 구글 시트 커스텀 메뉴 매핑
-유지보수성과 가독성을 위해 단발성 래퍼 파일 중복(`Round1`, `Round2`)을 제거하고 기능 단위로 단일화한 11개 스크립트 모듈로 구성되어 있다:
-
-| 파일명 (`apps-scripts/`) | 담당 기능 및 주요 함수 | 구글 시트 커스텀 메뉴 매핑 |
-| :--- | :--- | :--- |
-| `Code_Config.js` | 전역 설정, 태스크별 최적 모델 선정, 규격 명세 | 시스템 전역 설정 |
-| `Code_Gemini.js` | 구글 계정 OAuth 2.0 자동 로그인 REST 클라이언트 | API 통신 엔진 |
-| `Code_Utils.js` | 드라이브/독스/폼 헬퍼, QuickChart, Base64 시딩 | 공통 유틸리티 |
-| `Code_Step1_Workspace.js` | 작업 폴더(`cp-ignite/`), `input/ai_personas.json`, 시트 대시보드 | `[Step 1] 구글 드라이브 작업 공간 및 25인 페르소나 자동 생성` |
-| `Code_Step2_IdeaToPlan.js` | 자연어 아이디어 기반 `PLAN` & `SPEC` 구글 독스 생성 | `[Step 2] 아이디어 기반 기획서 및 명세서 자동 도출` |
-| `Code_Step3_ContentGen.js` | 초판 마케팅 콘텐츠(rv-00) 양산 (카피, 이미지 3종, 숏폼 MP4) | `[Step 3] 초판 마케팅 콘텐츠 양산 (rv-00)` |
-| `Code_Step4_Form.js` | 고객 VoC 수집용 구글 폼 생성 및 모바일 QR 코드 연동 | `[Step 4] 고객 VoC 수집용 구글 폼 자동 생성` |
-| `Code_Step5_8_Judge.js` | 25인 다면 평가 및 t-SNE 지형도 생성/갱신 통합 엔진 | `[Step 5] 1차 다면 평가 (fb-01)` / `[Step 8] 2차 다면 평가 (fb-02)` |
-| `Code_Step6_Decision.js` | 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop) | `[Step 6] 마케터 피드백 검토 및 최종 의사 결정` |
-| `Code_Step7_9_Refine.js` | 피드백 반영 마케팅 콘텐츠 반자율 보정 통합 엔진 | `[Step 7] 1차 보정 (rv-01)` / `[Step 9] 2차 보정 완결 (rv-02)` |
-| `Code_Menu.js` | 시트 상단 메뉴(`onOpen`), 맞춤 페르소나 설정 | 커스텀 메뉴 바 UI 컨트롤러 |
+> [!NOTE]
+> **상세 기술 아키텍처 및 내부 스크립트 모듈 구조**: 11대 스크립트 모듈 구성(`Code_*.js`) 및 REST 엔드포인트 연동 기술 명세는 [TDD](docs/TDD.md), 전체 비즈니스 및 사용자 요구 사항은 [BRD](docs/BRD.md)를 참조한다.
 
 ---
 
 ## 자원 정리 안내 (Teardown)
 
-본 솔루션은 클라우드 가상 머신(VM), 데이터베이스, VPC 등의 유료 클라우드 리소스를 일절 생성하지 않는다. 실습 및 검증을 완료한 후 정리하고자 할 경우 다음 절차를 수행한다:
+본 솔루션은 가상 머신(VM), 데이터베이스, VPC 등의 유료 클라우드 리소스를 일절 생성하지 않는다. 실습 및 검증을 완료한 후 정리하고자 할 경우 다음 절차를 수행한다:
 
-1. **구글 드라이브 산출물 삭제**:
-   - 구글 드라이브 ( https://drive.google.com )에서 생성된 캠페인 루트 폴더(`cp-ignite`)와 구글 시트 파일을 휴지통으로 이동 후 비운다.
+1. **Drive 산출물 삭제**:
+   - Drive ( https://drive.google.com )에서 생성된 캠페인 루트 폴더(`cp-ignite`)와 Sheets 문서를 휴지통으로 이동 후 비운다.
