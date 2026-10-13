@@ -67,11 +67,11 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 4. 개발자 사전 검증: 로컬 에뮬레이션 테스트 러너 명세 (test_suite.py)
+## 4. 개발자 사전 검증: 로컬 에뮬레이션 및 실제 구글 드라이브 라이브 E2E 테스트 러너 명세 (test_suite.py)
 
-마케터 배포용 Apps Script 코드(`bundle_apps_script.js`)의 경량성을 완벽히 보존하기 위해, 브라우저 런타임에는 일체의 무거운 테스트 코드를 포함하지 않는다. 대신 개발자가 깃 푸시(Git Push)를 집행하기 전 로컬 환경에서 8대 핵심 영역(총 66개 항목)을 100% 모의(Mocking)하여 단 0.01초 만에 전수 검증할 수 있는 독립 파이썬 테스트 러너(`test_suite.py`)를 제공한다.
+마케터 배포용 Apps Script 코드(`bundle_apps_script.js`)의 경량성을 완벽히 보존하기 위해, 브라우저 런타임에는 일체의 무거운 테스트 코드를 포함하지 않는다. 대신 개발자가 깃 푸시(Git Push)를 집행하기 전 로컬 환경에서 8대 오프라인 핵심 영역(총 66개 항목) 및 실제 구글 드라이브(Google Drive) REST API 기반의 종단간(E2E) 라이브 연동(8개 항목)을 포함한 총 74개 항목을 고속 검증할 수 있는 독립 파이썬 테스트 러너(`test_suite.py`)를 제공한다.
 
-### 8대 에뮬레이션 단위 테스트 수이트
+### 9대 테스트 수이트 (총 74개 항목 검증)
 
 1. **Config & Manifest Suite (7개 검증)**:
    - Apps Script 매니페스트(`appsscript.json`) 필수 OAuth 스코프 및 런타임 버전 유효성
@@ -91,7 +91,7 @@ All contents, designs, and code examples are subject to change, modification, or
    - 25인 마스터 페르소나 데이터셋 무결성(전문 마케터 12인, 일반 소비자 13인 구성 안배)
    - 7대 필수 필드(`id, name, age, gender, category, occupation, perspective`) 누락 여부 전수 검증
 6. **Form & Judge Logic Suite (3개 검증)**:
-   - Google Forms 질문 규격 및 미디어 파일 업로드 허용 확장자 검증
+   - 구글 폼(Google Forms) 질문 규격 및 미디어 파일 업로드 허용 확장자 검증
    - 4대 가중치(타깃 적합성, 차별성, 브랜드 일관성, 즉각 반응도) 합산 100% 검증
 7. **HITL & Asset Refinement Suite (7개 검증)**:
    - 마케터 피드백 지침 텍스트 유효성 검증
@@ -99,16 +99,29 @@ All contents, designs, and code examples are subject to change, modification, or
 8. **Bundle Synchronization Suite (19개 검증)**:
    - 11개 코어 Apps Script 모듈 헤더 및 파일 분할 정합성 검증
    - 번들 내 7대 핵심 신규 함수(`showProcessingToast`, `analyzeImageFeedbackWithVlm`, `scanManualFeedbackFiles`, `detectLatestFeedbackRoundNum`, `detectLatestRevisionRoundNum`, `promptAndRunJudgeEvaluation`, `promptAndRunReviseAssets`) 누락 여부 전수 검증
+9. **Live Google Drive & Workspace Suite (8개 검증, --live)**:
+   - 실제 Google Drive API 사용자 인증 및 토큰 유효성 검증
+   - 실제 구글 드라이브 임시 루트 폴더(`[LiveTest] cp-ignite-probe`) 및 `input/`, `output/` 서브 폴더 트리 생성
+   - 실제 구글 시트(Google Sheets) 및 구글 독스(Google Docs) 파일 생성
+   - 부모-자식 트리 관계 실시간 조회 및 메타데이터 일치 검증
+   - 검증 완료 직후 테스트 리소스 자동 정리(Teardown)를 통한 구글 드라이브 잔재 0개 보장
 
 ### 로컬 터미널 실행 명령어
 
 ```bash
-# 전체 8대 단위 테스트 수이트 일괄 실행 (All)
+# 전체 8대 오프라인 에뮬레이션 수이트 일괄 실행 (0.01초 소요)
 python3 test_suite.py --all
+
+# 실제 Google Drive 및 Workspace REST API 라이브 연동 E2E 테스트 실행
+python3 test_suite.py --live --token "ya29..."
+
+# 오프라인 8대 수이트 + 실제 드라이브 라이브 연동 E2E 전수 동시 실행
+python3 test_suite.py --all --live --token "ya29..."
 
 # 특정 단위 테스트만 단독 실행
 python3 test_suite.py --unit round     # 동적 회차 탐색기 검증
 python3 test_suite.py --unit vlm       # VLM 분석 및 수작업 스캐너 검증
 python3 test_suite.py --unit persona   # 25인 페르소나 데이터셋 규격 검증
 python3 test_suite.py --unit sync      # 번들과 서브 모듈 간 동기화 검증
+python3 test_suite.py --unit live      # 실제 드라이브 라이브 연동 검증
 ```

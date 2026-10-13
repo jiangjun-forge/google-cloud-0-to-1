@@ -361,16 +361,147 @@ def run_sync_suite(runner):
         runner.record(suite, f"번들 내 핵심 함수 {fn} 정의 검증", fn in bundle_text)
 
 
+def run_live_suite(runner, token=None):
+    """
+    실제 Google Drive 및 Workspace REST API 호출 기반 종단간(E2E) 라이브 검증 수이트.
+    실제 구글 드라이브에 임시 폴더/시트/문서를 생성하고 트리 관계를 조회한 뒤 100% 자동 정리(Teardown)한다.
+    """
+    suite = "Live Google Drive & Workspace Suite"
+    import urllib.request
+    import urllib.error
+
+    resolved_token = (token or "").strip() or os.environ.get("GOOGLE_ACCESS_TOKEN", "").strip()
+
+    if not resolved_token:
+        # gcloud auth print-access-token 시도
+        try:
+            import subprocess
+            proc = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True, timeout=5)
+            if proc.returncode == 0 and proc.stdout.strip():
+                resolved_token = proc.stdout.strip()
+        except Exception:
+            pass
+
+    if not resolved_token:
+        runner.record(suite, "Google OAuth 2.0 Access Token 획득", False, "토큰 부재: --token 인자 또는 GOOGLE_ACCESS_TOKEN 환경 변수를 설정하십시오.")
+        return
+
+    headers = {
+        "Authorization": f"Bearer {resolved_token}",
+        "Content-Type": "application/json"
+    }
+
+    # 1. Drive API 사용자 인증 유효성 검증
+    root_folder_id = None
+    try:
+        req = urllib.request.Request("https://www.googleapis.com/drive/v3/about?fields=user", headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            user = data.get("user", {})
+            user_email = user.get("emailAddress", "Unknown")
+            runner.record(suite, "실제 Google Drive API 사용자 인증 검증", True, f"계정: {user_email}")
+    except urllib.error.HTTPError as e:
+        runner.record(suite, "실제 Google Drive API 사용자 인증 검증", False, f"HTTP {e.code}: {e.reason} (Drive 스코프 토큰 필요)")
+        return
+    except Exception as e:
+        runner.record(suite, "실제 Google Drive API 사용자 인증 검증", False, str(e))
+        return
+
+    try:
+        # 2. 실제 캠페인 임시 루트 폴더 생성 ([LiveTest] cp-ignite-probe)
+        folder_payload = json.dumps({
+            "name": "[LiveTest] cp-ignite-probe",
+            "mimeType": "application/vnd.google-apps.folder"
+        }).encode("utf-8")
+        req = urllib.request.Request("https://www.googleapis.com/drive/v3/files", data=folder_payload, headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            folder_data = json.loads(resp.read().decode("utf-8"))
+            root_folder_id = folder_data.get("id")
+            runner.record(suite, "실제 Google Drive 루트 폴더 생성", bool(root_folder_id), f"폴더 ID: {root_folder_id}")
+
+        if not root_folder_id:
+            return
+
+        # 3. 실제 input/ 서브 폴더 생성
+        input_payload = json.dumps({
+            "name": "input",
+            "mimeType": "application/vnd.google-apps.folder",
+            "parents": [root_folder_id]
+        }).encode("utf-8")
+        req = urllib.request.Request("https://www.googleapis.com/drive/v3/files", data=input_payload, headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            input_data = json.loads(resp.read().decode("utf-8"))
+            runner.record(suite, "실제 input/ 서브 폴더 생성", bool(input_data.get("id")), f"ID: {input_data.get('id')}")
+
+        # 4. 실제 output/ 서브 폴더 생성
+        output_payload = json.dumps({
+            "name": "output",
+            "mimeType": "application/vnd.google-apps.folder",
+            "parents": [root_folder_id]
+        }).encode("utf-8")
+        req = urllib.request.Request("https://www.googleapis.com/drive/v3/files", data=output_payload, headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            output_data = json.loads(resp.read().decode("utf-8"))
+            runner.record(suite, "실제 output/ 서브 폴더 생성", bool(output_data.get("id")), f"ID: {output_data.get('id')}")
+
+        # 5. 실제 Google Sheets(스프레드시트) 생성
+        sheet_payload = json.dumps({
+            "name": "[LiveTest] 마케팅 파이프라인 컨트롤 타워",
+            "mimeType": "application/vnd.google-apps.spreadsheet",
+            "parents": [root_folder_id]
+        }).encode("utf-8")
+        req = urllib.request.Request("https://www.googleapis.com/drive/v3/files", data=sheet_payload, headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            sheet_data = json.loads(resp.read().decode("utf-8"))
+            runner.record(suite, "실제 Google Sheets(스프레드시트) 생성", bool(sheet_data.get("id")), f"ID: {sheet_data.get('id')}")
+
+        # 6. 실제 Google Docs(문서) 생성 (PLAN 기획서)
+        doc_payload = json.dumps({
+            "name": "[LiveTest] PLAN 마케팅 캠페인 기획서",
+            "mimeType": "application/vnd.google-apps.document",
+            "parents": [root_folder_id]
+        }).encode("utf-8")
+        req = urllib.request.Request("https://www.googleapis.com/drive/v3/files", data=doc_payload, headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            doc_data = json.loads(resp.read().decode("utf-8"))
+            runner.record(suite, "실제 Google Docs(기획서 문서) 생성", bool(doc_data.get("id")), f"ID: {doc_data.get('id')}")
+
+        # 7. 생성된 부모-자식 트리 관계 실시간 조회 검증
+        query_url = f"https://www.googleapis.com/drive/v3/files?q='{root_folder_id}'+in+parents+and+trashed=false&fields=files(id,name,mimeType)"
+        req = urllib.request.Request(query_url, headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            tree_data = json.loads(resp.read().decode("utf-8"))
+            files = tree_data.get("files", [])
+            names = [f.get("name") for f in files]
+            tree_valid = len(files) >= 4 and "input" in names and "output" in names
+            runner.record(suite, "실제 Google Drive 부모-자식 트리 실시간 관계 검증", tree_valid, f"생성 자원 {len(files)}개 일치 확인 ({', '.join(names)})")
+
+    finally:
+        # 8. 자동 정리 (Teardown): 생성된 테스트 루트 폴더 영구 삭제
+        if root_folder_id:
+            try:
+                del_url = f"https://www.googleapis.com/drive/v3/files/{root_folder_id}"
+                req_del = urllib.request.Request(del_url, headers=headers, method="DELETE")
+                with urllib.request.urlopen(req_del) as resp_del:
+                    teardown_ok = resp_del.status in (200, 204)
+                    runner.record(suite, "테스트 리소스 Google Drive 자동 정리 (Teardown)", teardown_ok, f"루트 폴더 {root_folder_id} 및 하위 자원 즉시 삭제 완료")
+            except Exception as e:
+                runner.record(suite, "테스트 리소스 Google Drive 자동 정리 (Teardown)", False, f"정리 실패: {str(e)}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="마케팅 콘텐츠 파이프라인 로컬 에뮬레이션 테스트 러너")
     parser.add_argument("--all", action="store_true", help="전체 8대 단위 테스트 수이트 일괄 실행")
-    parser.add_argument("--unit", type=str, choices=["config", "utils", "round", "vlm", "persona", "judge", "refine", "sync"], help="특정 단위 테스트 수이트만 단독 실행")
+    parser.add_argument("--live", action="store_true", help="실제 Google Drive 및 Workspace REST API 라이브 연동 E2E 테스트 실행")
+    parser.add_argument("--token", type=str, default="", help="Google OAuth 2.0 Access Token (ya29...)")
+    parser.add_argument("--unit", type=str, choices=["config", "utils", "round", "vlm", "persona", "judge", "refine", "sync", "live"], help="특정 단위 테스트 수이트만 단독 실행")
     args = parser.parse_args()
 
     runner = EmulationTestResult()
 
     target_unit = args.unit
-    run_all = args.all or (target_unit is None)
+    run_all = args.all or (target_unit is None and not args.live)
+    run_live = args.live or (target_unit == "live")
 
     if run_all:
         print(f"\n{Colors.BOLD}{Colors.BLUE}>> 전체 8대 에뮬레이션 단위 테스트 수이트 일괄 실행 (All) <<{Colors.RESET}")
@@ -382,7 +513,12 @@ def main():
         run_judge_suite(runner)
         run_refine_suite(runner)
         run_sync_suite(runner)
-    else:
+
+    if run_live:
+        print(f"\n{Colors.BOLD}{Colors.YELLOW}>> 실제 Google Drive 및 Workspace REST API 라이브 연동 E2E 테스트 (Live) <<{Colors.RESET}")
+        run_live_suite(runner, token=args.token)
+
+    if target_unit and target_unit != "live" and not args.all:
         print(f"\n{Colors.BOLD}{Colors.BLUE}>> 타깃 단위 테스트 수이트 실행: [{target_unit}] <<{Colors.RESET}")
         if target_unit == "config":
             run_config_suite(runner)
