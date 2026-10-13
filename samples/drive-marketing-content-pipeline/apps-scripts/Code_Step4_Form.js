@@ -8,6 +8,7 @@
 
 function createAndLinkGoogleForm() {
   var ui = SpreadsheetApp.getUi();
+  showProcessingToast("[Step 4] 고객 VoC 수집용 Google Forms 생성 및 연동", 20);
   try {
     var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     var spreadsheetId = spreadsheet.getId();

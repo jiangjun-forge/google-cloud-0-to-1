@@ -20,8 +20,8 @@ function onOpen() {
     .addItem("[Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)", "runMarketerDecisionPrompt")
     .addItem("[Step 7] 다면 평가 피드백 기반 1차 마케팅 콘텐츠 반자율 보정 (rv-01)", "runReviseAssetsRound1")
     .addSeparator()
-    .addItem("[Step 8] 2차 다면 평가 및 t-SNE 지형도 갱신 (fb-02)", "runJudgeEvaluationRound2")
-    .addItem("[Step 9] 2차 마케팅 콘텐츠 반자율 보정 완결 (rv-02)", "runReviseAssetsRound2")
+    .addItem("[Step 8] 다면 평가 및 t-SNE 지형도 갱신 (N차 피드백: fb-02 ~ fb-99)", "promptAndRunJudgeEvaluation")
+    .addItem("[Step 9] 마케팅 콘텐츠 반자율 보정 (N차 리비전: rv-02 ~ rv-99)", "promptAndRunReviseAssets")
     .addToUi();
 }
 
@@ -113,4 +113,76 @@ function setCustomPersonasPrompt() {
   } catch (err) {
     ui.alert("페르소나 재설정 중 오류 발생", err.toString(), ui.ButtonSet.OK);
   }
+}
+
+/**
+ * [Step 8] 다이나믹 다면 평가 및 t-SNE 갱신 런처 (fb-02 ~ fb-99 지원)
+ */
+function promptAndRunJudgeEvaluation() {
+  var ui = SpreadsheetApp.getUi();
+  var latestFb = detectLatestFeedbackRoundNum();
+  var latestRv = detectLatestRevisionRoundNum();
+  var suggestedRound = Math.max(latestFb + 1, latestRv + 1, 2);
+  var suggestedRoundStr = suggestedRound < 10 ? "0" + suggestedRound : "" + suggestedRound;
+
+  var response = ui.prompt(
+    "[Step 8] 다면 평가 회차 선택 (N차: fb-02 ~ fb-99)",
+    "현재 등록된 최신 피드백 회차는 fb-" + (latestFb < 10 ? "0" + latestFb : latestFb) + " (최신 콘텐츠: rv-" + (latestRv < 10 ? "0" + latestRv : latestRv) + ")입니다.\n\n" +
+    "실행할 피드백 회차 번호를 입력하십시오 (1~99 지원, 기본 추천: " + suggestedRound + "):\n" +
+    "(빈칸으로 두고 [확인] 클릭 시 fb-" + suggestedRoundStr + " 회차가 자동 실행됩니다)\n\n" +
+    "* 예상 소요 시간: 약 45초~1분 30초 (VLM 분석 및 t-SNE 지형도 렌더링)",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+
+  var inputVal = response.getResponseText().trim();
+  var targetRoundNum = suggestedRound;
+  if (inputVal) {
+    var parsedNum = parseInt(inputVal.replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(parsedNum) && parsedNum >= 1 && parsedNum <= 99) {
+      targetRoundNum = parsedNum;
+    }
+  }
+
+  var targetRoundStr = "fb-" + (targetRoundNum < 10 ? "0" + targetRoundNum : "" + targetRoundNum);
+  runJudgeEvaluation(targetRoundStr);
+}
+
+/**
+ * [Step 9] 다이나믹 마케팅 콘텐츠 반자율 보정 런처 (rv-02 ~ rv-99 지원)
+ */
+function promptAndRunReviseAssets() {
+  var ui = SpreadsheetApp.getUi();
+  var latestFb = detectLatestFeedbackRoundNum();
+  var latestRv = detectLatestRevisionRoundNum();
+  var suggestedRv = Math.max(latestRv + 1, 2);
+  var suggestedRvStr = suggestedRv < 10 ? "0" + suggestedRv : "" + suggestedRv;
+
+  var response = ui.prompt(
+    "[Step 9] 마케팅 콘텐츠 리비전 선택 (N차: rv-02 ~ rv-99)",
+    "현재 등록된 최신 리비전은 rv-" + (latestRv < 10 ? "0" + latestRv : latestRv) + " (평가 완료 회차: fb-" + (latestFb < 10 ? "0" + latestFb : latestFb) + ")입니다.\n\n" +
+    "생성할 마케팅 콘텐츠 리비전 번호를 입력하십시오 (1~99 지원, 기본 추천: " + suggestedRv + "):\n" +
+    "(빈칸으로 두고 [확인] 클릭 시 rv-" + suggestedRvStr + " 개정본이 자동 양산됩니다)\n\n" +
+    "* 예상 소요 시간: 약 45초~1분 30초 (카피 개정, 비주얼 3종 및 숏폼 영상 생성)",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+
+  var inputVal = response.getResponseText().trim();
+  var targetRvNum = suggestedRv;
+  if (inputVal) {
+    var parsedNum = parseInt(inputVal.replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(parsedNum) && parsedNum >= 1 && parsedNum <= 99) {
+      targetRvNum = parsedNum;
+    }
+  }
+
+  var targetRoundStr = "fb-" + (targetRvNum < 10 ? "0" + targetRvNum : "" + targetRvNum);
+  runReviseAssets(targetRoundStr);
 }

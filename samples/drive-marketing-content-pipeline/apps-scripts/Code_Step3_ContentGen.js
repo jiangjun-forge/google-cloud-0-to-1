@@ -8,6 +8,7 @@
 
 function runInitialAssetGeneration() {
   var ui = SpreadsheetApp.getUi();
+  showProcessingToast("[Step 3] 초판 마케팅 콘텐츠 양산 (rv-00)", 60);
   try {
     var campaignFolder = getCampaignFolder();
     var campaignCode = getCampaignCode();

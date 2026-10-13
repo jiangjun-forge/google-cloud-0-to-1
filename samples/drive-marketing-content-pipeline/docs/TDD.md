@@ -48,6 +48,9 @@ All contents, designs, and code examples are subject to change, modification, or
 | **FR-07** | **BR-04, BR-07** | **Gemini VLM 비디오 VoC 분석 및 128d 임베딩 기반 다중 포인트 t-SNE 지형도 렌더링** | Step 5/Step 8에서 `feedback_sample.mp4`를 Gemini VLM에 전송하여 분석하고(15~30초 숏폼 규격), SPEC에 고정 설문 제약이 없는 한 '열린 피드백(Open-ended Feedback)' 원칙에 따라 25인 페르소나로부터 1인당 2~4개의 세부 의견 포인트(총 50~80개+)를 추출한 뒤, 한국어 특화 `text-multilingual-embedding-002` 모델을 통해 128차원 MRL 임베딩 및 PCA 2축 투영을 거쳐 QuickChart 다면 여론 지형도(`feedback_clusters_map.png`)를 생성하여 종합 평가 Google Docs(`feedback_summary`)에 자동 삽입한다. |
 | **FR-08** | **BR-05** | **인간 참여형(HITL) 의사 결정 및 반자율 마케팅 콘텐츠 보정** | Step 6에서 마케터 전용 검토 모달을 띄워 보정 지침을 입력받아 `feedback_summary`에 기록하고, Step 7(rv-01) 및 Step 9(rv-02)에서 이전 평가 결과와 마케터 지침을 반영하여 카피, 비주얼 이미지, 숏폼 영상을 순차적으로 완결 보정한다. |
 | **FR-09** | **BR-06** | **실시간 대시보드 상태 동기화 및 하이퍼링크 갱신** | 매 단계 완료 시 Google Sheets의 `실행 대시보드` 탭에 진행 상태(`COMPLETED`, `IN_PROGRESS`) 및 생성된 Google Docs, Google Drive 폴더, Google Forms의 직접 링크를 실시간 표기한다. |
+| **FR-10** | **BR-08** | **고객 제출 이미지 VLM 시각 분석 및 수작업 피드백 자료 스캔 엔진** | 25MB 이하 이미지의 Base64 인코딩 및 Gemini VLM 시각 분석(`analyzeImageFeedbackWithVlm`)을 수행하고, `input/{targetRound}/` 폴더 내 시스템 예약 파일을 제외한 모든 파일(이미지, 동영상, Google Docs, 텍스트 메모)의 동적 스캔 및 구조화 데이터 추출(`scanManualFeedbackFiles`)을 지원한다. |
+| **FR-11** | **BR-09** | **다이나믹 N차 회차 탐지 및 99차 무제한 피드백 루프** | Google Drive 폴더 트리를 실시간 스캔하여 최신 회차 번호를 파악(`detectLatestFeedbackRoundNum`, `detectLatestRevisionRoundNum`)하고, 사용자 대화형 UI를 통해 기본값 자동 채택 또는 1~99 범위 내 수기 입력을 처리하여 무제한 리비전 파이프라인 구동을 보장한다. |
+| **FR-12** | **BR-09** | **비차단 실시간 진행 안내 토스트 시스템** | `SpreadsheetApp.getActiveSpreadsheet().toast()`를 활용(`showProcessingToast`)하여 스크립트 실행을 방해하지 않고 화면 우측 하단에 각 단계별 예상 소요 시간(초 단위)과 진행 상태를 즉각 노출하는 비차단 UX를 구현한다. |
 
 ---
 

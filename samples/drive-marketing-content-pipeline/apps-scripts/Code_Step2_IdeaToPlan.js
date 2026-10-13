@@ -8,6 +8,7 @@
 
 function runIdeaToPlanConversion() {
   var ui = SpreadsheetApp.getUi();
+  showProcessingToast("[Step 2] 기획서(PLAN) 및 명세서(SPEC) 자동 도출", 30);
   try {
     var campaignFolder = getCampaignFolder();
 

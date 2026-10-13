@@ -8,6 +8,7 @@
 
 function createWorkspaceFolderTree() {
   var ui = SpreadsheetApp.getUi();
+  showProcessingToast("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", 15);
   try {
     // 1. 캠페인별 독립 폴더 구조 생성 (input, output을 캠페인 폴더 직하위에 격리)
     var campaign = getCampaignFolder();

@@ -21,7 +21,7 @@ function runReviseAssetsRound2() {
 }
 
 /**
- * 마케팅 콘텐츠 반자율 보정 공통 실행 함수
+ * 마케팅 콘텐츠 반자율 보정 공통 실행 함수 (N차 다이나믹 루프 rv-01 ~ rv-99 지원)
  */
 function runReviseAssets(targetRoundOpt, isSilentOpt) {
   var ui = SpreadsheetApp.getUi();
@@ -29,26 +29,21 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
   try {
     var campaignFolder = getCampaignFolder();
 
-    // 1. 피드백 회차(fb-01 -> rv-01, fb-02 -> rv-02) 판별
+    // 1. 피드백 회차(fb-01 ~ fb-99 -> rv-01 ~ rv-99) 판별
     var targetRound = targetRoundOpt;
     if (!targetRound) {
-      var fb02Folder = getCampaignSubFolder(["input", "fb-02"]);
-      var fb02Summary = readGoogleDoc(fb02Folder, "feedback_summary");
-      var rv01Folder = getCampaignSubFolder(["output", "rv-01"]);
-      var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
-      var rv01Asset = readGoogleDoc(rv01Folder, contentDocName) || readGoogleDoc(rv01Folder, "campaign_asset");
-
-      if (fb02Summary && rv01Asset) {
-        targetRound = "fb-02";
-      } else {
-        targetRound = "fb-01";
-      }
+      var latestRv = detectLatestRevisionRoundNum();
+      var autoRound = Math.max(latestRv + 1, 1);
+      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
     }
 
     var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
     var prevRoundNum = roundNum - 1;
     var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
     var targetRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
+
+    // 소요 시간 안내 토스트 즉시 표시
+    showProcessingToast("[Step 7/9] 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")", 75);
 
     var campaignCode = getCampaignCode();
     var prevRvFolder = getCampaignSubFolder(["output", prevRvName]);
@@ -64,8 +59,8 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
       "엄격한 작성 규칙:\n" +
       "1. 상상 및 소설 작성 엄격 금지: 원천 기획서(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)에 실제로 명시된 사실과 수치, 마케터 지침에만 철저히 입각하여 보정하십시오.\n" +
       "2. 원천 기획서(PLAN)의 고유 USP 및 브랜드 본질과 채널별 규격(가로 배너 16:9, 세로 포스터 9:16, 정방형 SNS 1:1, 세로 9:16 모바일 숏폼 영상)을 충실히 유지하십시오.\n" +
-      "3. 이전 콘텐츠(" + prevRvName + ")에서 지적된 고객 피드백 권고 사항을 보정하십시오.\n" +
-      "4. 피드백 요약본 맨 하단의 '## 6. 마케터 최종 의사 결정 및 보정 지침'에 명시된 마케터 코멘트는 최우선 순위 지침이다. 모델 변경, 소구점 변경, 톤앤매너 수정 등 마케터의 명시적 지침을 카피 본문과 비주얼 연출 지시문에 반드시 우선적으로 반영하십시오.\n" +
+      "3. 이전 콘텐츠(" + prevRvName + ")에서 지적된 고객 피드백 권고 사항과 고객 제출 이미지/수작업 자료 분석 결과를 충실히 보정하십시오.\n" +
+      "4. 피드백 요약본의 '마케터 최종 의사 결정 및 보정 지침'에 명시된 마케터 코멘트는 최우선 순위 지침이다. 모델 변경, 소구점 변경, 톤앤매너 수정 등 마케터의 명시적 지침을 카피 본문과 비주얼 연출 지시문에 반드시 우선적으로 반영하십시오.\n" +
       "5. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
       "6. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
       "7. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
@@ -107,10 +102,10 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
     // 7. 저장: output/{targetRvName}/에 campaign_content 구글 독스 단일 저장
     var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, refinedAsset);
 
-    // 8. 구글 시트 실행 대시보드에 개정본 완료 및 링크 기록
-    var stepId = (targetRvName === "rv-01") ? "Step 7" : "Step 9";
-    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : "2차 마케팅 콘텐츠 반자율 보정 (rv-02)";
-    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "구글 드라이브 폴더 열기 (" + targetRvName + ")");
+    // 8. Google Sheets 실행 대시보드에 개정본 완료 및 링크 기록
+    var stepId = (targetRvName === "rv-01") ? "Step 7" : (targetRvName === "rv-02" ? "Step 9" : "Step 9 (" + targetRvName + ")");
+    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : (targetRvName === "rv-02" ? "2차 마케팅 콘텐츠 반자율 보정 (rv-02)" : roundNum + "차 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")");
+    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "Google Drive 폴더 열기 (" + targetRvName + ")");
 
     // 9. 동적 비주얼 프롬프트 도출 및 실시간 이미지 3종 생성
     var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
@@ -125,7 +120,7 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
     if (!isSilent) {
       ui.alert(
         "마케팅 콘텐츠 반자율 보정 완료 (" + targetRvName + ")",
-        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + "), 신규 비주얼 이미지 3종 및 세로 숏폼 영상(" + prefix + "_shorts.mp4) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + "), 신규 비주얼 이미지 3종 및 세로 숏폼 영상(" + prefix + "_shorts.mp4) 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
         ui.ButtonSet.OK
       );
     }

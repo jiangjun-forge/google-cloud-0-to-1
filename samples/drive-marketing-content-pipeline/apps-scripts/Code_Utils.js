@@ -1082,3 +1082,173 @@ function analyzeVideoVocWithVlm(feedbackFolder) {
     return null;
   }
 }
+
+/**
+ * 사용자 대기 피로도 경감을 위한 실시간 토스트 알림 헬퍼
+ */
+function showProcessingToast(stepTitle, estimatedTimeSec) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) {
+      var secText = estimatedTimeSec ? " (예상 소요 시간: 약 " + estimatedTimeSec + "초)" : "";
+      ss.toast("Apps Script 엔진이 작업을 시작했습니다" + secText + ". 잠시만 기다려 주십시오...", stepTitle || "파이프라인 실행 중", estimatedTimeSec || 30);
+    }
+  } catch (e) {
+    Logger.log("토스트 알림 표시 예외: " + e);
+  }
+}
+
+/**
+ * 고객 제출 또는 수작업 투입 이미지 피드백 VLM 심층 분석
+ */
+function analyzeImageFeedbackWithVlm(imageFile) {
+  try {
+    var imgBlob = imageFile.getBlob();
+    var bytes = imgBlob.getBytes();
+    if (bytes.length > 25 * 1024 * 1024) {
+      return "이미지 파일 크기가 25MB를 초과하여 VLM 분석을 건너뛰었습니다. (파일명: " + imageFile.getName() + ")";
+    }
+
+    var prompt =
+      "당신은 엔터프라이즈 크리에이티브 디렉터이자 VLM 시각 분석 인공 지능이다.\n" +
+      "제공된 이미지는 마케팅 캠페인의 고객 피드백 또는 수작업 검토 자료이다.\n" +
+      "이 이미지의 시각적 요소(제품 외관 디자인, 컬러감, 착용 샷 구도, 감성적 무드, 광고 비주얼 장단점)를 분석하여 " +
+      "향후 마케팅 콘텐츠 개정에 반영할 핵심 비주얼 개선 포인트 2~3가지를 단호한 문어체 평서문('-다' 체)으로 간결하게 요약하라.\n" +
+      "한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라.";
+
+    var result = callGeminiMultimodal(prompt, imgBlob, CONFIG.MODEL_JUDGE || "gemini-3.8-flash");
+    return result ? result.trim() : null;
+  } catch (e) {
+    Logger.log("이미지 VLM 분석 실패 (" + imageFile.getName() + "): " + e);
+    return null;
+  }
+}
+
+/**
+ * input/fb-xx/ 폴더 내 수작업 투입 파일(이미지, 추가 영상, 메모 문서) 전수 스캔 및 피드백 추출
+ */
+function scanManualFeedbackFiles(feedbackFolder) {
+  var manualResults = [];
+  if (!feedbackFolder) return manualResults;
+
+  var systemReservedNames = [
+    "ai_persona_feedbacks.json",
+    "feedback_points_128d.json",
+    "feedback_clusters_map.png",
+    "feedback_summary",
+    "video_voc_analysis.json",
+    "feedback_sample.mp4"
+  ];
+
+  try {
+    var files = feedbackFolder.getFiles();
+    while (files.hasNext()) {
+      var file = files.next();
+      var fileName = file.getName();
+
+      // 시스템 기본 생성 산출물은 제외
+      if (systemReservedNames.indexOf(fileName) !== -1) {
+        continue;
+      }
+
+      var mimeType = file.getMimeType();
+
+      // 1. 수작업 투입 이미지 파일 (VLM 분석 실행)
+      if (mimeType.indexOf("image/") === 0 || /\.(png|jpg|jpeg|webp)$/i.test(fileName)) {
+        var imgAnalysis = analyzeImageFeedbackWithVlm(file);
+        if (imgAnalysis) {
+          manualResults.push("- [수작업 투입 이미지 VLM 분석: " + fileName + "]\n  " + imgAnalysis);
+        } else {
+          manualResults.push("- [수작업 투입 이미지 등록: " + fileName + "] (이미지 파일 확인됨)");
+        }
+      }
+      // 2. 수작업 투입 동영상 파일
+      else if (mimeType.indexOf("video/") === 0 || /\.(mp4|mov|webm)$/i.test(fileName)) {
+        manualResults.push("- [수작업 투입 동영상 등록: " + fileName + "] (추가 고객 비디오 VoC 파일)");
+      }
+      // 3. 수작업 투입 Google Docs 문서
+      else if (mimeType === MimeType.GOOGLE_DOCS) {
+        try {
+          var doc = DocumentApp.openById(file.getId());
+          var docText = doc.getBody().getText().trim();
+          if (docText) {
+            var snippet = docText.length > 1500 ? docText.substring(0, 1500) + "..." : docText;
+            manualResults.push("- [수작업 투입 Google Docs 메모: " + fileName + "]\n  \"" + snippet + "\"");
+          }
+        } catch (docErr) {
+          manualResults.push("- [수작업 투입 Google Docs: " + fileName + "] (문서 열람 실패)");
+        }
+      }
+      // 4. 수작업 투입 일반 텍스트 문서 (txt, json, csv, md)
+      else if (mimeType.indexOf("text/") === 0 || /\.(txt|json|csv|md)$/i.test(fileName)) {
+        try {
+          var textContent = file.getBlob().getDataAsString("UTF-8").trim();
+          if (textContent) {
+            var snippet = textContent.length > 1500 ? textContent.substring(0, 1500) + "..." : textContent;
+            manualResults.push("- [수작업 투입 텍스트 메모: " + fileName + "]\n  \"" + snippet + "\"");
+          }
+        } catch (txtErr) {
+          manualResults.push("- [수작업 투입 텍스트: " + fileName + "]");
+        }
+      }
+      // 5. 기타 파일
+      else {
+        manualResults.push("- [수작업 투입 파일: " + fileName + " (" + mimeType + ")]");
+      }
+    }
+  } catch (scanErr) {
+    Logger.log("scanManualFeedbackFiles 예외: " + scanErr);
+  }
+
+  return manualResults;
+}
+
+/**
+ * 드라이브 내 최신 피드백 회차(fb-xx) 번호 자동 탐지
+ */
+function detectLatestFeedbackRoundNum() {
+  var maxRound = 1;
+  try {
+    var inputFolder = getCampaignSubFolder(["input"]);
+    var subFolders = inputFolder.getFolders();
+    while (subFolders.hasNext()) {
+      var folder = subFolders.next();
+      var name = folder.getName();
+      var match = /^fb-(\d+)$/i.exec(name);
+      if (match) {
+        var num = parseInt(match[1], 10);
+        if (num > maxRound) {
+          maxRound = num;
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log("detectLatestFeedbackRoundNum 예외: " + e);
+  }
+  return maxRound;
+}
+
+/**
+ * 드라이브 내 최신 콘텐츠 리비전(rv-xx) 번호 자동 탐지
+ */
+function detectLatestRevisionRoundNum() {
+  var maxRound = 0;
+  try {
+    var outputFolder = getCampaignSubFolder(["output"]);
+    var subFolders = outputFolder.getFolders();
+    while (subFolders.hasNext()) {
+      var folder = subFolders.next();
+      var name = folder.getName();
+      var match = /^rv-(\d+)$/i.exec(name);
+      if (match) {
+        var num = parseInt(match[1], 10);
+        if (num > maxRound) {
+          maxRound = num;
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log("detectLatestRevisionRoundNum 예외: " + e);
+  }
+  return maxRound;
+}

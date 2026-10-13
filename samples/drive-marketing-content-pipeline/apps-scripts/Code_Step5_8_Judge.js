@@ -21,7 +21,7 @@ function runJudgeEvaluationRound2() {
 }
 
 /**
- * 피드백 다면 평가 공통 실행 함수
+ * 피드백 다면 평가 공통 실행 함수 (N차 다이나믹 루프 fb-01 ~ fb-99 지원)
  */
 function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
   var ui = SpreadsheetApp.getUi();
@@ -30,23 +30,17 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
     var campaignFolder = getCampaignFolder();
     var campaignCode = getCampaignCode();
 
-    // 1. 피드백 회차(fb-01, fb-02, fb-03) 판별
+    // 1. 피드백 회차(fb-01 ~ fb-99) 판별
     var targetRound = targetRoundOpt;
     if (!targetRound) {
-      var targetContentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
-      var rv02Folder = getCampaignSubFolder(["output", "rv-02"]);
-      var rv02Asset = readGoogleDoc(rv02Folder, targetContentDocName) || readGoogleDoc(rv02Folder, "campaign_asset");
-      var rv01Folder = getCampaignSubFolder(["output", "rv-01"]);
-      var rv01Asset = readGoogleDoc(rv01Folder, targetContentDocName) || readGoogleDoc(rv01Folder, "campaign_asset");
-
-      if (rv02Asset) {
-        targetRound = "fb-03";
-      } else if (rv01Asset) {
-        targetRound = "fb-02";
-      } else {
-        targetRound = "fb-01";
-      }
+      var latestFb = detectLatestFeedbackRoundNum();
+      var latestRv = detectLatestRevisionRoundNum();
+      var autoRound = Math.max(latestFb + 1, latestRv + 1, 2);
+      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
     }
+
+    // 소요 시간 안내 토스트 즉시 표시
+    showProcessingToast("[Step 5/8] 다면 평가 및 t-SNE 지형도 생성 (" + targetRound + ")", 75);
 
     var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
     var prevRoundNum = Math.max(0, roundNum - 1);
@@ -58,12 +52,18 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
     var videoVocAnalysis = analyzeVideoVocWithVlm(feedbackFolder);
     var hasVideoAnalysis = (videoVocAnalysis !== null && videoVocAnalysis.speaker_analysis !== undefined);
 
-    // 3. 구글 시트에서 사람 응답 데이터 수집
+    // 3. input/{targetRound}/ 폴더 내 수작업 투입 자료(이미지, 추가 영상, 메모/문서) 전수 스캔
+    var manualFeedbackRows = scanManualFeedbackFiles(feedbackFolder);
+    var hasManualFeedback = (manualFeedbackRows.length > 0);
+
+    // 4. Google Sheets에서 사람 설문 응답 및 제출 이미지/비디오 데이터 수집
     var humanFeedbackRows = [];
     var humanVideoRows = [];
+    var humanImageRows = [];
     var humanRatings = [];
     var versionColIndex = -1;
     var videoColIndex = -1;
+    var imageColIndex = -1;
     var ratingColIndex = -1;
 
     try {
@@ -80,6 +80,9 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
           }
           if (headerStr.indexOf("동영상") !== -1 || headerStr.indexOf("영상") !== -1 || headerStr.indexOf("비디오") !== -1 || headerStr.indexOf("Video") !== -1) {
             videoColIndex = h;
+          }
+          if (headerStr.indexOf("이미지") !== -1 || headerStr.indexOf("사진") !== -1 || headerStr.indexOf("Image") !== -1 || headerStr.indexOf("Photo") !== -1) {
+            imageColIndex = h;
           }
           if (headerStr.indexOf("만족도") !== -1 || headerStr.indexOf("평점") !== -1 || headerStr.indexOf("Score") !== -1 || headerStr.indexOf("Rating") !== -1) {
             ratingColIndex = h;
@@ -122,6 +125,29 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
             }
           }
 
+          // 고객 제출 이미지 피드백 파싱 및 VLM 시각 분석 연동
+          if (imageColIndex !== -1) {
+            var rawImage = String(row[imageColIndex] || "").trim();
+            if (rawImage && rawImage !== "-" && rawImage !== "없음" && rawImage !== "None") {
+              var imgIdMatch = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)/.exec(rawImage);
+              if (imgIdMatch) {
+                try {
+                  var imgFile = DriveApp.getFileById(imgIdMatch[1]);
+                  var imgVlm = analyzeImageFeedbackWithVlm(imgFile);
+                  if (imgVlm) {
+                    humanImageRows.push("- [고객 응답 " + i + " 제출 이미지 VLM 분석: " + imgFile.getName() + "]\n  " + imgVlm);
+                  } else {
+                    humanImageRows.push("- [고객 응답 " + i + " 제출 이미지: " + imgFile.getName() + "]");
+                  }
+                } catch (imgFileErr) {
+                  humanImageRows.push("- [고객 응답 " + i + " 제출 이미지 링크: " + rawImage + "]");
+                }
+              } else {
+                humanImageRows.push("- [고객 응답 " + i + " 이미지 피드백 의견]: \"" + rawImage + "\"");
+              }
+            }
+          }
+
           var rowContent = [];
           for (var j = 0; j < headers.length; j++) {
             if (j === versionColIndex) continue;
@@ -142,6 +168,7 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
 
     var hasHumanResponses = (humanFeedbackRows.length > 0);
     var hasVideoFeedback = (humanVideoRows.length > 0) || hasVideoAnalysis;
+    var hasImageFeedback = (humanImageRows.length > 0);
 
     // 3. AI 가상 페르소나 25인 피드백 데이터셋 로드 또는 실시간 생성
     var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
@@ -208,15 +235,14 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
     }
 
     var feedbackSourceDescription = "";
-    if (hasVideoAnalysis && jsonContent) {
-      feedbackSourceDescription = "고객 직접 촬영 동영상 VLM 분석(video_voc_analysis.json) 및 AI 가상 페르소나 25인 다면 평가단";
-    } else if (hasHumanResponses && jsonContent) {
-      feedbackSourceDescription = "구글 폼 실시간 고객 응답 (" + humanFeedbackRows.length + "건) 및 AI 가상 페르소나 25인 다면 평가단";
-    } else if (jsonContent) {
-      feedbackSourceDescription = "AI 가상 페르소나 전문 평가단 25인 실시간 피드백";
-    } else {
-      feedbackSourceDescription = "AI 가상 페르소나 기본 평가단 (25인)";
-    }
+    var sourceParts = [];
+    if (hasVideoAnalysis) sourceParts.push("고객 직접 촬영 동영상 VLM 분석(video_voc_analysis.json)");
+    else if (hasVideoFeedback) sourceParts.push("고객 동영상 제출 링크(" + humanVideoRows.length + "건)");
+    if (hasImageFeedback) sourceParts.push("고객 제출 이미지 VLM 시각 분석(" + humanImageRows.length + "건)");
+    if (hasManualFeedback) sourceParts.push("수작업 투입 피드백 자료(" + manualFeedbackRows.length + "건)");
+    if (hasHumanResponses) sourceParts.push("구글 폼 설문 응답(" + humanFeedbackRows.length + "건)");
+    if (jsonContent) sourceParts.push("AI 가상 페르소나 25인 다면 평가단");
+    feedbackSourceDescription = sourceParts.join(" + ") || "AI 가상 페르소나 기본 평가단 (25인)";
 
     var feedbackInputPayload = "";
     if (hasHumanResponses) {
@@ -242,8 +268,19 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC)]\n- 제출 현황: 동영상 피드백 없음 (0건 미제출).\n- 영상이 제출되지 않았으므로 영상 분석, 표정, 음성 톤, 영상 발화 내용을 절대 상상으로 지어내지 말 것.\n\n";
     }
 
+    // 고객 설문 제출 이미지 피드백 VLM 분석 섹션
+    if (hasImageFeedback) {
+      feedbackInputPayload += "### [3. 고객 설문 제출 이미지 피드백 VLM 심층 분석 (총 " + humanImageRows.length + "건)]\n" + humanImageRows.join("\n\n") + "\n\n";
+    }
+
+    // input/fb-xx/ 폴더 내 수작업 투입 자료 섹션
+    if (hasManualFeedback) {
+      feedbackInputPayload += "### [4. input/" + targetRound + "/ 폴더 수작업 투입 피드백 자료 (총 " + manualFeedbackRows.length + "건)]\n" +
+        manualFeedbackRows.join("\n\n") + "\n\n";
+    }
+
     if (personaListText) {
-      feedbackInputPayload += "### [3. AI 가상 페르소나 25인 실제 평가 데이터 (" + personaSummaryText + ")]\n" + personaListText;
+      feedbackInputPayload += "### [5. AI 가상 페르소나 25인 실제 평가 데이터 (" + personaSummaryText + ")]\n" + personaListText;
     }
 
     var videoRule = hasVideoFeedback
@@ -252,24 +289,26 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
 
     var systemInstruction =
       "당신은 엔터프라이즈 마케팅 인공 지능의 전문 평가 위원장(LLM as a Judge)이다.\n" +
-      "제공된 실제 데이터(AI 페르소나 25인 발화 + 고객 동영상 VLM 분석 JSON + 설문 응답)에만 철저히 근거하여 직전 공개 마케팅 콘텐츠(" + prevRvName + ")에 대한 사실 중심의 다면 평가 요약 보고서(feedback_summary)를 작성하라.\n\n" +
+      "제공된 실제 데이터(AI 페르소나 25인 발화 + 고객 동영상 VLM 분석 JSON + 설문 응답 + 제출/수작업 투입 이미지 및 문서)에만 철저히 근거하여 직전 공개 마케팅 콘텐츠(" + prevRvName + ")에 대한 사실 중심의 다면 평가 요약 보고서(feedback_summary)를 작성하라.\n\n" +
       "### 절대 원칙: 사실 기반 요약 및 환각 전면 배제:\n" +
       "1. 상상 및 소설 작성 엄격 금지: 제공된 데이터에 없는 가상의 인물, 지어낸 발화, 허구의 사건을 절대 날조하지 말 것. 오직 실제 인입된 데이터의 내용과 통계만을 객관적으로 요약하라.\n" +
       "2. 비디오 VoC 규약:\n" +
       videoRule +
-      "3. 사람 설문 응답 및 AI 가상 페르소나 피드백 취합 규약:\n" +
-      "   - 동영상 VoC가 있는 경우, 고객의 생생한 발화(\"...\")와 표정/음성 톤을 보고서 2번에 상세히 기술하라.\n" +
+      "3. 고객 제출 이미지 및 수작업 투입 자료 반영 규약:\n" +
+      "   - 제출된 이미지 VLM 시각 분석 결과나 수작업 투입 문서/메모가 포함되어 있는 경우, 이를 실제 고객과 현장의 생생한 요구 사항으로 간주하여 비주얼/카피 개선 제안에 적극 반영하라.\n" +
+      "4. AI 가상 페르소나 피드백 취합 규약:\n" +
       "   - AI 가상 페르소나 25인의 실제 발화문과 평점 통계를 집계하여 3대 핵심 여론 동향(주류 호평, 비판 및 우려, 개선 제안)을 도출하라.\n" +
-      "4. 필수 보고서 목차 구조:\n" +
-      "   ## 1. 피드백 수집 및 분석 개요 (데이터 소스 건수, 비디오 VoC 제출 여부 명시)\n" +
+      "5. 필수 보고서 목차 구조:\n" +
+      "   ## 1. 피드백 수집 및 분석 개요 (데이터 소스 건수, 비디오/이미지/수작업 자료 현황 명시)\n" +
       "   ## 2. 고객 동영상 VoC 멀티모달(VLM) 심층 분석 (표정, 음성 톤, 발화 전사, video_voc_analysis.json 연동)\n" +
-      "   ## 3. 25인 AI 페르소나 여론 동향 분석 (실제 발화 및 통계 기반 주류 호평, 비판 및 우려, 개선 제안)\n" +
-      "   ## 4. 사실 기반 종합 평가 점수 산출 (" + (hasVideoFeedback ? "정량 50%, 정성 30%, 비디오 VoC 20%" : "정량 50%, 정성 50% / 비디오 VoC 미제출") + ")\n" +
-      "   ## 5. 차기 리비전(" + nextRvName + ") 반영 권고 사항 (Action Items 3대 실행 전략)\n" +
-      "   ## 6. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
-      "5. 산출물 서술 어조: 단호하고 격조 높은 문어체 평서문('-다' 체)을 엄격히 준수한다.\n" +
-      "6. 한글 복합 명사는 철저하게 띄어 쓰고, 이모지와 중간 점을 일절 쓰지 말 것.\n" +
-      "7. 분량 및 가독성: 마케터가 1분 안에 여론 동향을 빠르게 파악하고 의사 결정을 내릴 수 있도록 불릿 포인트 중심의 핵심 요약 리포트로 간결하게 작성하라.";
+      "   ## 3. 고객 제출 이미지 및 수작업 투입 자료 VLM 분석 (시각적 디자인, 실착 샷, 현장 메모 피드백)\n" +
+      "   ## 4. 25인 AI 페르소나 여론 동향 분석 (실제 발화 및 통계 기반 주류 호평, 비판 및 우려, 개선 제안)\n" +
+      "   ## 5. 사실 기반 종합 평가 점수 산출 (" + (hasVideoFeedback ? "정량 50%, 정성 30%, 비디오 VoC 20%" : "정량 50%, 정성 50% / 비디오 VoC 미제출") + ")\n" +
+      "   ## 6. 차기 리비전(" + nextRvName + ") 반영 권고 사항 (Action Items 3대 실행 전략)\n" +
+      "   ## 7. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
+      "6. 산출물 서술 어조: 단호하고 격조 높은 문어체 평서문('-다' 체)을 엄격히 준수한다.\n" +
+      "7. 한글 복합 명사는 철저하게 띄어 쓰고, 이모지와 중간 점을 일절 쓰지 말 것.\n" +
+      "8. 분량 및 가독성: 마케터가 1분 안에 여론 동향을 빠르게 파악하고 의사 결정을 내릴 수 있도록 불릿 포인트 중심의 핵심 요약 리포트로 간결하게 작성하라.";
 
     var userPrompt =
       "다음 피드백 데이터를 분석하여 표준 형식의 사실 기반 종합 요약본(feedback_summary)을 작성하라.\n\n" +
@@ -290,7 +329,7 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       }
 
       summaryResult += "\n\n---\n\n" +
-        "## 6. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
+        "## 7. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
         defaultComment;
     }
 
@@ -313,15 +352,15 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       }
     }
 
-    // 7. 구글 시트 실행 대시보드에 다면 평가 결과 및 링크 기록
-    var stepId = (targetRound === "fb-01") ? "Step 5" : "Step 8";
-    var stepTitle = (targetRound === "fb-01") ? "1차 다면 평가 및 t-SNE 지형도 (fb-01)" : "2차 다면 평가 및 t-SNE 갱신 (fb-02)";
+    // 7. Google Sheets 실행 대시보드에 다면 평가 결과 및 링크 기록 (Step 5, Step 8, 또는 N차 Step 8)
+    var stepId = (targetRound === "fb-01") ? "Step 5" : (targetRound === "fb-02" ? "Step 8" : "Step 8 (" + targetRound + ")");
+    var stepTitle = (targetRound === "fb-01") ? "1차 다면 평가 및 t-SNE 지형도 (fb-01)" : (targetRound === "fb-02" ? "2차 다면 평가 및 t-SNE 갱신 (fb-02)" : roundNum + "차 다면 평가 및 t-SNE 갱신 (" + targetRound + ")");
     recordStepResultToSheet(stepId, stepTitle, "완료", summaryDocFile.getUrl(), "피드백 요약서 열기 (" + targetRound + ")");
 
     if (!isSilent) {
       ui.alert(
         "다면 평가 완료 (" + targetRound + ")",
-        "25인 AI 페르소나 및 고객 피드백 다면 평가 리포트(t-SNE 지형도 포함) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 '피드백 요약서 열기' 링크를 확인하십시오.",
+        "25인 AI 페르소나, 고객 제출 이미지/비디오 및 수작업 자료 다면 평가 리포트(t-SNE 지형도 포함) 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 '피드백 요약서 열기' 링크를 확인하십시오.",
         ui.ButtonSet.OK
       );
     }
