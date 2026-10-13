@@ -35,23 +35,16 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 처리 흐름도 (Activity Diagram)
 
 ```mermaid
-flowchart TD
-    Start(["시작: Google Sheets 생성 및 번들 스크립트 붙여넣기"]) --> Step1["[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성<br/>(cp-ignite/, input/ai_personas.json, output/)"]
-    Step1 --> Step2["[Step 2] 자연어 아이디어 기반 기획서(PLAN) 및 명세서(SPEC) 도출<br/>(Google Docs 자동 렌더링)"]
-    Step2 --> Step3["[Step 3] 기획서(PLAN) 및 명세서(SPEC) 기반 초판 콘텐츠 양산 (rv-00)<br/>(카피라이팅 + 대표 이미지 3종 비율 세트 + 숏폼 영상)"]
-    Step3 --> Step4["[Step 4] 고객 VoC 수집용 Google Forms 연동<br/>(모바일 QR 코드 생성, 이미지/동영상 첨부 문항 바인딩)"]
-    Step4 --> Step5["[Step 5] 25인 AI 페르소나 1차 다면 평가 & t-SNE 지형도 생성 (fb-01)<br/>(LLM as a Judge, VLM 이미지/비디오 분석 및 수작업 자료 병합)"]
-    Step5 --> Step6["[Step 6] 마케터 피드백 검토 및 최종 의사 결정<br/>(Human-in-the-loop 보정 지침 확정)"]
-    Step6 --> Step7["[Step 7] 1차 마케팅 콘텐츠 반자율 보정 (rv-01)<br/>(카피 개정본 + 신규 비주얼 3종 생성)"]
-    Step7 --> Step8["[Step 8] 다면 평가 및 t-SNE 지형도 갱신 (N차 피드백: fb-02 ~ fb-99)<br/>(대화형 다이나믹 런처 & 비차단 토스트 안내)"]
-    Step8 --> Step9["[Step 9] 마케팅 콘텐츠 반자율 보정 (N차 리비전: rv-02 ~ rv-99)<br/>(대화형 다이나믹 런처 & 비차단 토스트 안내)"]
-    Step9 -.->|추가 피드백 수집 및 N차 개정 루프| Step8
-    Step9 --> End(["종료: 최종 마케팅 캠페인 번들 완성"])
+flowchart LR
+    A["1. 아이디어 기획<br/>(PLAN & SPEC)"] --> B["2. 콘텐츠 양산<br/>(카피, 이미지, 영상)"]
+    B --> C["3. 25인 다면 평가<br/>(AI 페르소나 & VoC)"]
+    C --> D["4. 마케터 보정<br/>(인간 참여형 결정)"]
+    D -.->|N차 개정 루프| B
 ```
 
 ---
 
-## 2단계 퀵스타트 가이드 (Quickstart)
+## 가이드
 
 ### 1단계: 구글 시트 생성 및 번들 스크립트 붙여넣기
 1. 구글 드라이브 ( https://drive.google.com )에서 빈 구글 시트(Google Sheets) 문서를 새로 생성한다.
