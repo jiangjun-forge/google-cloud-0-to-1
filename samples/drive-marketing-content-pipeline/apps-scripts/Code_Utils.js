@@ -387,7 +387,7 @@ function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief
     var systemInstruction =
       "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
       "제공된 캠페인 카피와 고객 피드백 요약본(특히 마케터 최종 의사 결정 및 보정 지침)을 정밀 분석하여, " +
-      "이미지 생성 인공 지능(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
+      "이미지 생성 AI(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
       "엄격한 작성 규칙:\n" +
       "1. 마케터 코멘트에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등)이 지정되어 있다면 이를 누락하지 않고 영문(예: 'A stylish 20s Korean female model', 'A chic young Korean woman in Seoul')으로 명시하십시오.\n" +
       "2. 마케터 코멘트에 모델에 대한 별도 언급이 없더라도 한국 시장 타깃 캠페인이므로 한국인(Korean) 모델 및 서울의 현대적인 일상/공간을 기본 배경으로 설정하십시오.\n" +
@@ -448,7 +448,7 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
       : "- 콘텐츠 제작 명세서(SPEC)에 특정 설문 문항이 고정되어 있지 않으므로, '열린 피드백(Open-ended Feedback)' 원칙을 적용한다. 각 페르소나는 자신의 연령, 성별, 직업, 라이프스타일 관점에서 장점 호평, 단점 비판, 가격 저항, 사용성 의문, 구매 전환 장벽 등 다각도의 열린 의견을 자유롭게 개진하라.\n";
 
     var systemInstruction =
-      "당신은 엔터프라이즈 마케팅 리서치 및 소비자 심리 분석 전문 인공 지능이다.\n" +
+      "당신은 엔터프라이즈 마케팅 리서치 및 소비자 심리 분석 전문 AI이다.\n" +
       "소비자는 사내 기획서를 알지 못하며, 시장에 공개된 마케팅 캠페인 콘텐츠(" + prevRvName + " 카피 및 비주얼)만을 보고 반응한다.\n" +
       "제공된 마케팅 콘텐츠(" + prevRvName + ") 산출물을 면밀히 검토하고, 함께 제공된 한국인 25인 가상 페르소나 프로필의 관점에 깊이 빙의하여 피드백을 작성하라.\n\n" +
       "### 핵심 원칙: 열린 피드백 및 복수 의견 포인트(Multi-points) 도출:\n" +
@@ -1110,7 +1110,7 @@ function analyzeImageFeedbackWithVlm(imageFile) {
     }
 
     var prompt =
-      "당신은 엔터프라이즈 크리에이티브 디렉터이자 VLM 시각 분석 인공 지능이다.\n" +
+      "당신은 엔터프라이즈 크리에이티브 디렉터이자 VLM 시각 분석 AI이다.\n" +
       "제공된 이미지는 마케팅 캠페인의 고객 피드백 또는 수작업 검토 자료이다.\n" +
       "이 이미지의 시각적 요소(제품 외관 디자인, 컬러감, 착용 샷 구도, 감성적 무드, 광고 비주얼 장단점)를 분석하여 " +
       "향후 마케팅 콘텐츠 개정에 반영할 핵심 비주얼 개선 포인트 2~3가지를 단호한 문어체 평서문('-다' 체)으로 간결하게 요약하라.\n" +
