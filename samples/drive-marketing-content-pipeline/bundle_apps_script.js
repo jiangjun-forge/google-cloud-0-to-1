@@ -76,94 +76,43 @@ var CONFIG = {
   // QuickChart REST API 엔드포인트 (t-SNE 여론 군집 지형도 렌더링)
   QUICKCHART_ENDPOINT: "https://quickchart.io/chart",
 
-  // 6대 프롬프트 구글 독스 기본 템플릿 정의 (초기화 시 prompts/ 폴더에 구글 독스로 시딩됨)
+  // 6대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
   DEFAULT_PROMPTS: {
     "01_idea_to_plan": {
       title: "01_idea_to_plan",
-      description: "자연어 아이디어로부터 마케팅 캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC)를 자동 도출하는 프롬프트",
+      description: "마케팅 캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 도출 지침",
       systemInstruction:
-        "당신은 엔터프라이즈 브랜드 마케팅 전략 수석 디렉터이다.\n" +
-        "사용자가 입력한 자연어 아이디어 메모를 기반으로, 마케팅 캠페인 기획서(PLAN)와 멀티 채널 콘텐츠 제작 명세서(SPEC)를 전문적이고 체계적인 마크다운 형식으로 도출하라.\n\n" +
-        "엄격한 작성 규칙:\n" +
-        "1. 기획서(PLAN)에는 캠페인 명칭, 목표 타깃 세그먼트, 핵심 가치 제안(USP), 메인 메시지, 채널별 롤아웃 일정을 포함하십시오.\n" +
-        "2. 제작 명세서(SPEC)에는 디스플레이 배너(16:9), 모바일 포스터(9:16), SNS 피드(1:1), 모바일 숏폼 영상(9:16, 15초)의 구체적 규격과 톤앤매너 지침을 명시하십시오.\n" +
-        "3. 이모지와 중간 점을 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
-        "4. 모든 서술은 단호한 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
-        "5. 한글 복합어는 철저하게 띄어 쓰십시오."
+        "당신은 엔터프라이즈 브랜드 마케팅 수석 디렉터이다. 아이디어 메모로부터 마케팅 캠페인 기획서(PLAN)와 제작 명세서(SPEC)를 '===SPEC_DELIMITER===' 구분자로 분리하여 전문적인 마크다운으로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
     "02_content_generation": {
       title: "02_content_generation",
-      description: "기획서(PLAN)와 명세서(SPEC)를 바탕으로 카피라이팅 및 숏폼 영상 콘티가 통합된 campaign_content를 작성하는 프롬프트",
+      description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 양산 지침",
       systemInstruction:
-        "당신은 전문 크리에이티브 마케팅 디렉터이자 카피라이터이다.\n" +
-        "주어진 마케팅 캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)를 바탕으로 단일 캠페인 종합 마케팅 콘텐츠 문서(campaign_content)를 완성도 높은 마케팅 카피 형식으로 작성하라.\n\n" +
-        "필수 구성:\n" +
-        "1. 헤드카피 및 슬로건 (3종)\n" +
-        "2. 인스타그램 카드뉴스 및 피드 카피 (SPEC 규격 준수)\n" +
-        "3. 네이버 블로그 리뷰형 기고문 (SPEC 규격 준수)\n" +
-        "4. 모바일 세로 숏폼 영상 제작 콘티 (SPEC에 명시된 러닝타임 15초 및 세로 9:16 규격, 씬별 화면 연출 및 오디오/나레이션 지시문)\n" +
-        "5. 제미나이 이미지 생성용 비주얼 프롬프트 (가로 16:9, 세로 9:16, 정방형 1:1)\n\n" +
-        "엄격한 작성 규칙:\n" +
-        "1. 콘텐츠 제작 명세서(SPEC)에 정의된 채널 규격, 숏폼 러닝타임, 톤앤매너를 최우선으로 준수하십시오.\n" +
-        "2. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
-        "3. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
-        "4. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
-        "5. 분량 및 가독성: 각 채널별 카피와 콘티는 마케터가 한눈에 읽고 즉시 검토할 수 있도록 명쾌하고 컴팩트하게 작성하십시오."
+        "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content 구글 독스를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
     "03_persona_evaluation": {
       title: "03_persona_evaluation",
-      description: "25인 한국인 마스터 AI 페르소나의 관점에서 공개된 마케팅 콘텐츠(rv-xx)를 다면 평가하고 세부 의견 포인트를 도출하는 프롬프트",
+      description: "25인 한국인 마스터 AI 페르소나 다면 평가 및 세부 의견 포인트 도출 지침",
       systemInstruction:
-        "당신은 엔터프라이즈 마케팅 리서치 및 소비자 심리 분석 전문 AI이다.\n" +
-        "소비자는 사내 기획서를 알지 못하며, 시장에 공개된 마케팅 캠페인 콘텐츠(카피 및 비주얼)만을 보고 반응한다.\n" +
-        "제공된 마케팅 콘텐츠 산출물을 면밀히 검토하고, 한국인 25인 가상 페르소나 프로필의 관점에 깊이 빙의하여 피드백을 작성하라.\n\n" +
-        "### 핵심 원칙: 열린 피드백 및 복수 의견 포인트(Multi-points) 도출:\n" +
-        "- 각 페르소나는 자신의 연령, 성별, 직업, 라이프스타일 관점에서 호평, 비판, 가격 저항, 사용성 의문 등 다각도의 열린 의견을 자유롭게 개진하라.\n" +
-        "- 페르소나 1인당 2개~4개의 구체적인 세부 의견 포인트(points 배열)를 제시하여 50~80개 이상의 다면적 여론 포인트를 도출하라.\n" +
-        "- 출력은 마크다운 코드 블록 없이 순수 JSON 배열만 반환하라."
+        "당신은 엔터프라이즈 마케팅 리서치 분석 AI이다. 공개된 마케팅 콘텐츠를 25인 한국인 가상 페르소나 관점에서 다면 평가하고, 1인당 2~4개의 세부 의견 포인트(points 배열, 총 50~80개)를 포함하는 순수 JSON 배열만 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
     "04_feedback_summary": {
       title: "04_feedback_summary",
-      description: "고객 VoC 설문 응답, 실제 업로드된 영상/이미지 VLM 분석, 25인 다면 평가 지형도를 통합 요약하는 feedback_summary 보고서 프롬프트",
+      description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
-        "당신은 엔터프라이즈 최고 마케팅 책임자(CMO) 전속 수석 분석관이다.\n" +
-        "25인 가상 페르소나 다면 평가 결과와 고객 설문 응답, 제출된 미디어(영상/이미지) 분석 결과를 종합하여 전문적인 피드백 종합 분석 보고서(feedback_summary)를 작성하라.\n\n" +
-        "필수 포함 섹션:\n" +
-        "1. 종합 평가 지수 및 감성 지형 요약\n" +
-        "2. 페르소나 군집별 주요 피드백 분석 (호평 요인 vs 우려 요인)\n" +
-        "3. 고객 제출 미디어 실데이터 VLM 분석 결과 (실제 업로드된 파일이 없는 경우 소설을 쓰지 말고 '미제출'로 명시)\n" +
-        "4. 마케터 최종 의사 결정 및 보정 지침 (마케터가 직접 편집할 수 있도록 명확한 가이드라인 블록 제공)\n\n" +
-        "엄격한 작성 규칙:\n" +
-        "1. 허구의 데이터를 지어내지 말고 실제 수집된 데이터에만 엄격히 입각하여 분석하십시오.\n" +
-        "2. 이모지와 중간 점을 배제하고 단호한 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
-        "3. 한글 복합어는 철저하게 띄어 쓰십시오."
+        "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 마케터 최종 의사 결정 템플릿을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
     "05_content_revision": {
       title: "05_content_revision",
-      description: "고객 피드백 종합 요약본(feedback_summary)과 마케터 최종 의사 결정을 최우선 반영하여 마케팅 콘텐츠(campaign_content)를 완결 보정하는 프롬프트",
+      description: "피드백 요약서 반영 차기 리비전 마케팅 콘텐츠 완결 보정 지침",
       systemInstruction:
-        "당신은 데이터 드리븐 크리에이티브 디렉터이다.\n" +
-        "원천 마케팅 캠페인 기획서(PLAN)의 핵심 비전과 콘텐츠 제작 명세서(SPEC)의 채널별 규격을 충실히 계승하면서, " +
-        "이전 마케팅 콘텐츠와 고객 피드백 종합 요약본(feedback_summary)의 마케터 최종 의사 결정 지침을 충실히 반영하여 개정본(campaign_content) 구글 독스를 완성도 높은 마케팅 카피 형식으로 작성하라.\n\n" +
-        "엄격한 작성 규칙:\n" +
-        "1. 피드백 요약본의 '마케터 최종 의사 결정 및 보정 지침'에 명시된 마케터 코멘트는 최우선 순위 지침이다. 모델 변경, 소구점 변경, 톤앤매너 수정 등 마케터의 명시적 지침을 카피 본문과 숏폼 영상 콘티에 반드시 최우선으로 반영하십시오.\n" +
-        "2. 허구의 소설 작성을 엄격히 금지하며, 원천 기획서와 피드백 문서에 실제로 명시된 사실과 수치에만 입각하여 보정하십시오.\n" +
-        "3. 이모지와 중간 점을 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
-        "4. 모든 서술은 단호한 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
-        "5. 한글 복합어는 철저하게 띄어 쓰십시오."
+        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본의 '마케터 최종 의사 결정 지침'을 최우선 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
     "06_visual_prompt": {
       title: "06_visual_prompt",
-      description: "캠페인 카피와 마케터 의사 결정으로부터 Gemini 이미지 모델(Nano Banana) 및 Veo 비디오 모델에 입력할 최적의 영문 비주얼 프롬프트를 동적 추출하는 프롬프트",
+      description: "비주얼 이미지 3종 및 Veo 숏폼 영상 프롬프트 엔지니어링 지침",
       systemInstruction:
-        "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
-        "제공된 캠페인 카피와 마케터 최종 의사 결정 지침을 정밀 분석하여, " +
-        "이미지 및 비디오 생성 AI(Gemini Nano Banana 2.1 / Veo)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
-        "엄격한 작성 규칙:\n" +
-        "1. 마케터 코멘트에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등)이 지정되어 있다면 이를 누락하지 않고 영문으로 명시하십시오.\n" +
-        "2. 마케터 코멘트에 별도 언급이 없더라도 한국 시장 타깃 캠페인이므로 한국인(Korean) 모델 및 서울의 현대적인 일상/공간을 기본 배경으로 설정하십시오.\n" +
-        "3. 피사체(인물/제품), 공간/조명, 분위기/스타일링을 2~3문장의 자연스러운 영문 묘사로 작성하십시오.\n" +
-        "4. 출력은 설명이나 머리말 없이 오직 영문 프롬프트 텍스트만 출력하십시오."
+        "당신은 AI 아트 디렉터이다. 캠페인 카피와 마케터 의사 결정을 분석하여 Gemini 이미지 모델(Nano Banana 2.1) 및 Veo 비디오 모델에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라. 설명 없이 영문 프롬프트만 출력하라."
     }
   }
 };
@@ -1854,185 +1803,6 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
 }
 
 /**
- * 피드백 폴더 내의 고객 촬영 동영상(MP4)을 탐색하여 Gemini VLM 멀티모달 심층 분석을 실행하고,
- * 그 결과를 video_voc_analysis.json 파일로 저장 및 객체로 반환한다.
- */
-/**
- * 피드백 폴더 내의 모든 고객 동영상(비디오 VoC)을 탐색하여 Gemini VLM 심층 분석 실행
- * - 각 동영상 파일마다 1:1로 [영상파일명]_vlm.json 생성 및 증분 캐싱
- * - 반환값: 각 영상별 VLM 분석 결과 객체들의 배열 (Array of VLM analysis objects)
- */
-function analyzeVideoVocWithVlm(feedbackFolder) {
-  var results = [];
-  try {
-    // 1. 피드백 폴더 내의 모든 동영상 파일 탐색 (*.mp4, *.mov, *.webm, video/*)
-    var videoFiles = [];
-    var allFiles = feedbackFolder.getFiles();
-    while (allFiles.hasNext()) {
-      var f = allFiles.next();
-      var fName = f.getName().toLowerCase();
-      var mime = f.getMimeType();
-      if (fName.indexOf(".mp4") !== -1 || fName.indexOf(".mov") !== -1 || fName.indexOf(".webm") !== -1 || mime.indexOf("video/") === 0) {
-        videoFiles.push(f);
-      }
-    }
-
-    // 동영상 파일이 하나도 없으면 가짜 영상을 생성하지 않고 정직하게 빈 결과 반환
-    if (videoFiles.length === 0) {
-      Logger.log("피드백 폴더 내에 고객 업로드 동영상(MP4/MOV/WEBM)이 없습니다. 동영상 VoC VLM 분석을 건너뜁니다.");
-      return [];
-    }
-
-    // 2. 각 동영상 파일별 VLM 분석 및 1:1 [파일명]_vlm.json 증분 캐싱
-    for (var i = 0; i < videoFiles.length; i++) {
-      var vFile = videoFiles[i];
-      var rawName = vFile.getName();
-      var baseName = rawName.replace(/\.[^/.]+$/, "");
-      var vlmJsonFileName = baseName + "_vlm.json";
-
-      // 이미 유효한 {baseName}_vlm.json이 존재하면 캐시 우선 반환 (증분 처리로 6분 타임아웃 방어 및 API 비용 절감)
-      var existingJson = readTextFile(feedbackFolder, vlmJsonFileName);
-      if (!existingJson && rawName === "feedback_sample.mp4") {
-        existingJson = readTextFile(feedbackFolder, "video_voc_analysis.json");
-      }
-
-      if (existingJson && existingJson.length > 50) {
-        try {
-          var parsed = JSON.parse(existingJson);
-          Logger.log("기존 VLM 캐시 로드 완료: " + vlmJsonFileName + " (" + rawName + ")");
-          results.push(parsed);
-          continue;
-        } catch (pErr) {
-          // 파싱 실패 시 재분석
-        }
-      }
-
-      // Gemini VLM 멀티모달 심층 분석 호출
-      var vlmPrompt =
-        "당신은 엔터프라이즈 마케팅 VLM(비전-언어 멀티모달) 심층 분석관이다.\n" +
-        "제공된 고객 직접 촬영 동영상 피드백(비디오 VoC: " + rawName + ")을 정밀 분석하여, " +
-        "고객의 시각적 행동/표정, 음성 톤, 실제 발화 내용, 제품 개선 요구사항을 추출하라.\n\n" +
-        "절대 주의 사항:\n" +
-        "- 동영상에 실제로 등장하지 않는 허구의 발화나 상황을 임의로 지어내지 마십시오.\n" +
-        "- 동영상 속 인물의 실제 발화(음성 전사), 표정, 음성 톤에만 엄격히 근거하여 작성하십시오.\n\n" +
-        "엄격한 출력 형식:\n" +
-        "반드시 다음 JSON 형식으로만 순수 JSON을 출력하라. 코드 블록(```json) 없이 유효한 JSON만 반환하라:\n" +
-        "{\n" +
-        "  \"video_metadata\": {\n" +
-        "    \"file_name\": \"" + rawName + "\",\n" +
-        "    \"video_type\": \"customer_video_voc\",\n" +
-        "    \"duration_seconds\": 10,\n" +
-        "    \"aspect_ratio\": \"9:16\"\n" +
-        "  },\n" +
-        "  \"speaker_analysis\": {\n" +
-        "    \"role\": \"동영상 내 발화자 역할 (예: 20대 소비자, 직장인 등)\",\n" +
-        "    \"speaker_name\": \"발화자 호칭\",\n" +
-        "    \"transcribed_speech\": \"동영상에서 추출된 실제 음성 전사 텍스트\",\n" +
-        "    \"speech_intent\": \"발화자의 실제 의도 및 핵심 메시지\",\n" +
-        "    \"facial_expression\": {\n" +
-        "      \"primary_emotion\": \"관찰된 주요 표정 및 감정\",\n" +
-        "      \"eye_contact\": \"시선 처리\",\n" +
-        "      \"confidence_score\": 0.9\n" +
-        "    },\n" +
-        "    \"voice_tone\": {\n" +
-        "      \"tempo\": \"음성 빠르기\",\n" +
-        "      \"tone\": \"음성 톤 및 어조\",\n" +
-        "      \"energy_level\": \"에너지 수준\"\n" +
-        "    }\n" +
-        "  },\n" +
-        "  \"multimodal_judging\": {\n" +
-        "    \"text_relevance_score\": 4.5,\n" +
-        "    \"expression_score\": 4.5,\n" +
-        "    \"tone_score\": 4.5,\n" +
-        "    \"overall_weighted_score\": 4.5,\n" +
-        "    \"sentiment\": \"긍정, 중립, 또는 개선 제안\"\n" +
-        "  },\n" +
-        "  \"creative_direction_extracted\": {\n" +
-        "    \"visual_action_items\": [\n" +
-        "      \"영상에서 도출된 비주얼 개선 포인트 1\",\n" +
-        "      \"영상에서 도출된 비주얼 개선 포인트 2\"\n" +
-        "    ],\n" +
-        "    \"copy_action_items\": [\n" +
-        "      \"영상에서 도출된 카피 개선 포인트 1\",\n" +
-        "      \"영상에서 도출된 카피 개선 포인트 2\"\n" +
-        "    ]\n" +
-        "  }\n" +
-        "}";
-
-      var vlmResult = "";
-      try {
-        var videoBlob = vFile.getBlob();
-        vlmResult = callGeminiMultimodal(vlmPrompt, videoBlob, CONFIG.MODEL_JUDGE);
-      } catch (vlmErr) {
-        Logger.log("VLM 직접 호출 예외 (" + rawName + "): " + vlmErr);
-      }
-
-      var finalJsonObj = null;
-      if (vlmResult) {
-        try {
-          var cleanVlm = vlmResult.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-          finalJsonObj = JSON.parse(cleanVlm);
-        } catch (jsonErr) {
-          Logger.log("VLM 응답 JSON 파싱 예외 (" + rawName + "): " + jsonErr);
-        }
-      }
-
-      // 파싱 실패 또는 미수신 시 사실 기반 기본 객체 반환 (허구의 소설 배제)
-      if (!finalJsonObj) {
-        finalJsonObj = {
-          video_metadata: {
-            file_name: rawName,
-            video_type: "customer_video_voc",
-            duration_seconds: 0,
-            aspect_ratio: "unknown"
-          },
-          speaker_analysis: {
-            role: "소비자",
-            speaker_name: "고객",
-            transcribed_speech: "VLM 음성 전사 미완료 또는 무음 영상",
-            speech_intent: "영상 분석 미완료",
-            facial_expression: {
-              primary_emotion: "중립",
-              eye_contact: "정면",
-              confidence_score: 0.5
-            },
-            voice_tone: {
-              tempo: "보통",
-              tone: "중립",
-              energy_level: "보통"
-            }
-          },
-          multimodal_judging: {
-            text_relevance_score: 3.0,
-            expression_score: 3.0,
-            tone_score: 3.0,
-            overall_weighted_score: 3.0,
-            sentiment: "중립"
-          },
-          creative_direction_extracted: {
-            visual_action_items: [
-              "영상 피드백 원본 수동 확인 권장"
-            ],
-            copy_action_items: [
-              "영상 피드백 원본 수동 확인 권장"
-            ]
-          }
-        };
-      }
-
-      var formattedStr = JSON.stringify(finalJsonObj, null, 2);
-      saveTextFile(feedbackFolder, vlmJsonFileName, formattedStr);
-      Logger.log(vlmJsonFileName + " 저장 완료 (" + rawName + ")");
-      results.push(finalJsonObj);
-    }
-    return results;
-  } catch (err) {
-    Logger.log("analyzeVideoVocWithVlm 예외: " + err);
-    return results;
-  }
-}
-
-/**
  * 사용자 대기 피로도 경감을 위한 실시간 토스트 알림 헬퍼
  */
 function showProcessingToast(stepTitle, estimatedTimeSec) {
@@ -2045,111 +1815,6 @@ function showProcessingToast(stepTitle, estimatedTimeSec) {
   } catch (e) {
     Logger.log("토스트 알림 표시 예외: " + e);
   }
-}
-
-/**
- * 고객 제출 또는 수작업 투입 이미지 피드백 VLM 심층 분석
- */
-function analyzeImageFeedbackWithVlm(imageFile) {
-  try {
-    var imgBlob = imageFile.getBlob();
-    var bytes = imgBlob.getBytes();
-    if (bytes.length > 25 * 1024 * 1024) {
-      return "이미지 파일 크기가 25MB를 초과하여 VLM 분석을 건너뛰었습니다. (파일명: " + imageFile.getName() + ")";
-    }
-
-    var prompt =
-      "당신은 엔터프라이즈 크리에이티브 디렉터이자 VLM 시각 분석 AI이다.\n" +
-      "제공된 이미지는 마케팅 캠페인의 고객 피드백 또는 수작업 검토 자료이다.\n" +
-      "이 이미지의 시각적 요소(제품 외관 디자인, 컬러감, 착용 샷 구도, 감성적 무드, 광고 비주얼 장단점)를 분석하여 " +
-      "향후 마케팅 콘텐츠 개정에 반영할 핵심 비주얼 개선 포인트 2~3가지를 단호한 문어체 평서문('-다' 체)으로 간결하게 요약하라.\n" +
-      "한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라.";
-
-    var result = callGeminiMultimodal(prompt, imgBlob, CONFIG.MODEL_JUDGE || "gemini-3.8-flash");
-    return result ? result.trim() : null;
-  } catch (e) {
-    Logger.log("이미지 VLM 분석 실패 (" + imageFile.getName() + "): " + e);
-    return null;
-  }
-}
-
-/**
- * input/fb-xx/ 폴더 내 수작업 투입 파일(이미지, 추가 영상, 메모 문서) 전수 스캔 및 피드백 추출
- */
-function scanManualFeedbackFiles(feedbackFolder) {
-  var manualResults = [];
-  if (!feedbackFolder) return manualResults;
-
-  var systemReservedNames = [
-    "ai_persona_feedbacks.json",
-    "feedback_points_128d.json",
-    "feedback_clusters_map.png",
-    "feedback_summary",
-    "video_voc_analysis.json",
-    "feedback_sample.mp4"
-  ];
-
-  try {
-    var files = feedbackFolder.getFiles();
-    while (files.hasNext()) {
-      var file = files.next();
-      var fileName = file.getName();
-
-      // 시스템 기본 생성 산출물 및 VLM 분석 결과 JSON은 제외
-      if (systemReservedNames.indexOf(fileName) !== -1 || /_vlm\.json$/i.test(fileName)) {
-        continue;
-      }
-
-      var mimeType = file.getMimeType();
-
-      // 1. 수작업 투입 이미지 파일 (VLM 분석 실행)
-      if (mimeType.indexOf("image/") === 0 || /\.(png|jpg|jpeg|webp)$/i.test(fileName)) {
-        var imgAnalysis = analyzeImageFeedbackWithVlm(file);
-        if (imgAnalysis) {
-          manualResults.push("- [수작업 투입 이미지 VLM 분석: " + fileName + "]\n  " + imgAnalysis);
-        } else {
-          manualResults.push("- [수작업 투입 이미지 등록: " + fileName + "] (이미지 파일 확인됨)");
-        }
-      }
-      // 2. 수작업 투입 동영상 파일
-      else if (mimeType.indexOf("video/") === 0 || /\.(mp4|mov|webm)$/i.test(fileName)) {
-        manualResults.push("- [수작업 투입 동영상 등록: " + fileName + "] (추가 고객 비디오 VoC 파일)");
-      }
-      // 3. 수작업 투입 Google Docs 문서
-      else if (mimeType === MimeType.GOOGLE_DOCS) {
-        try {
-          var doc = DocumentApp.openById(file.getId());
-          var docText = doc.getBody().getText().trim();
-          if (docText) {
-            var snippet = docText.length > 1500 ? docText.substring(0, 1500) + "..." : docText;
-            manualResults.push("- [수작업 투입 Google Docs 메모: " + fileName + "]\n  \"" + snippet + "\"");
-          }
-        } catch (docErr) {
-          manualResults.push("- [수작업 투입 Google Docs: " + fileName + "] (문서 열람 실패)");
-        }
-      }
-      // 4. 수작업 투입 일반 텍스트 문서 (txt, json, csv, md)
-      else if (mimeType.indexOf("text/") === 0 || /\.(txt|json|csv|md)$/i.test(fileName)) {
-        try {
-          var textContent = file.getBlob().getDataAsString("UTF-8").trim();
-          if (textContent) {
-            var snippet = textContent.length > 1500 ? textContent.substring(0, 1500) + "..." : textContent;
-            manualResults.push("- [수작업 투입 텍스트 메모: " + fileName + "]\n  \"" + snippet + "\"");
-          }
-        } catch (txtErr) {
-          manualResults.push("- [수작업 투입 텍스트: " + fileName + "]");
-        }
-      }
-      // 5. 기타 파일
-      else {
-        manualResults.push("- [수작업 투입 파일: " + fileName + " (" + mimeType + ")]");
-      }
-    }
-  } catch (scanErr) {
-    Logger.log("scanManualFeedbackFiles 예외: " + scanErr);
-  }
-
-  return manualResults;
 }
 
 /**
