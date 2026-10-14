@@ -2823,23 +2823,35 @@ function getFolderByPath(pathParts) {
 }
 
 /**
- * 폴더 이름으로부터 시스템 내부에서 안전하게 사용할 영문 케밥 케이스 슬러그(예: cp-2026-autumn-breeze)를 자동 생성한다.
- * 한글 마케팅 대표 키워드를 영문으로 자동 매핑하고 영문/숫자/하이픈만 정제 추출한다.
+ * 폴더 이름으로부터 시스템 내부에서 사용할 캠페인 슬러그를 도출한다.
+ * [영문 원형 보존 원칙]:
+ * 1. 폴더 이름이 영문/숫자 기반인 경우: 임의로 접두사(cp-)를 붙이거나 새로 가공하지 않고 마케터가 명명한 영문 이름을 그대로 따른다.
+ * 2. 폴더 이름에 한글이 포함된 경우에만: 마케팅/시즌 키워드를 영문으로 자동 매핑하여 안전한 슬러그를 합성한다.
  *
  * @param {string} rawName - 마케터가 명명한 폴더 이름
- * @return {string} 정규화된 영문 슬러그
+ * @return {string} 캠페인 슬러그
  */
 function generateCampaignSlug(rawName) {
   if (!rawName) return CONFIG.CAMPAIGN_CODE || "cp-ignite";
 
   var text = String(rawName).trim();
 
-  // 이미 cp- 로 시작하고 영문/숫자/하이픈만 있는 경우 그대로 사용
-  if (/^cp-[a-z0-9\-]+$/i.test(text)) {
-    return text.toLowerCase();
+  // 1. [영문 원형 보존 원칙] 한글이 전혀 없는 순수 영문/숫자 폴더명인 경우: 임의 접두사 없이 그대로 채택
+  var hasKorean = /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(text);
+  if (!hasKorean) {
+    // 공백 및 언더스코어만 안전하게 하이픈(-)으로 정규화하고 소문자화하여 마케터가 지은 영문 이름 그대로 보존
+    var pureSlug = text
+      .toLowerCase()
+      .replace(/[\s_]+/g, "-")
+      .replace(/[^a-z0-9\-]+/g, "")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-+/g, "-");
+    if (pureSlug && pureSlug.length >= 2) {
+      return pureSlug;
+    }
   }
 
-  // 자주 사용되는 마케팅 및 시즌 키워드 영문 매핑 사전
+  // 2. 한글이 포함된 경우: 자주 사용되는 마케팅 및 시즌 키워드 영문 매핑 사전 적용
   var dict = {
     "가을": "autumn", "오텀": "autumn",
     "봄": "spring", "스프링": "spring",
