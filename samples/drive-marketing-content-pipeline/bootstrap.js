@@ -193,6 +193,8 @@ function forceSyncEngine() {
 function __staticOAuthScopeDeclarations() {
   if (false) {
     SpreadsheetApp.getActiveSpreadsheet();
+    SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(""), "");
+    HtmlService.createHtmlOutput("");
     DriveApp.getRootFolder();
     DocumentApp.create("dummy");
     FormApp.create("dummy");

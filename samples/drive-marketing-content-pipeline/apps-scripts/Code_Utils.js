@@ -1312,8 +1312,12 @@ function showResultModal(title, message, btnText, btnUrl) {
     "<p style='color:#70757a; font-size:11px; margin-top:14px; word-break:break-all;'>URL: " + btnUrl + "</p>" +
     "</div>";
 
-  var htmlOutput = HtmlService.createHtmlOutput(htmlContent)
-    .setWidth(480)
-    .setHeight(210);
-  ui.showModalDialog(htmlOutput, title);
+  try {
+    var htmlOutput = HtmlService.createHtmlOutput(htmlContent)
+      .setWidth(480)
+      .setHeight(210);
+    ui.showModalDialog(htmlOutput, title);
+  } catch (err) {
+    ui.alert(title, message + "\n\n" + btnText + ": " + btnUrl, ui.ButtonSet.OK);
+  }
 }
