@@ -9,8 +9,6 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu("[마케팅 콘텐츠 파이프라인]")
-    .addItem("[0. 타깃 AI 페르소나 패널 맞춤 재설정 (선택 사항)]", "setCustomPersonasPrompt")
-    .addSeparator()
     .addItem("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", "createWorkspaceFolderTree")
     .addItem("[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출", "runIdeaToPlanConversion")
     .addItem("[Step 3] 기획서 및 명세서 기반 초판 마케팅 콘텐츠 양산 (rv-00)", "runInitialAssetGeneration")
@@ -22,6 +20,8 @@ function onOpen() {
     .addSeparator()
     .addItem("[Step 8] 다면 평가 및 t-SNE 지형도 갱신 (N차 피드백: fb-02 ~ fb-99)", "promptAndRunJudgeEvaluation")
     .addItem("[Step 9] 마케팅 콘텐츠 반자율 보정 (N차 리비전: rv-02 ~ rv-99)", "promptAndRunReviseAssets")
+    .addSeparator()
+    .addItem("[Step 0] 타깃 AI 페르소나 패널 맞춤 재설정 (선택 사항)", "setCustomPersonasPrompt")
     .addToUi();
 }
 
