@@ -4286,6 +4286,107 @@ function saveApiKeyInline(apiKey) {
 }
 
 /**
+ * 마케터의 자연어 질의를 수신하여 현재 파이프라인 상태를 진단하고 안내 및 동적 액션 칩을 반환한다.
+ *
+ * @param {string} userMessage - 마케터가 입력한 자연어 질문 또는 지시
+ * @return {Object} { success: boolean, reply: string, action: string|null, actionLabel: string|null, taskName: string|null }
+ */
+function askPipelineAssistant(userMessage) {
+  if (!userMessage || typeof userMessage !== "string" || !userMessage.trim()) {
+    return {
+      success: false,
+      reply: "질문이나 실행할 작업을 입력해 주십시오.",
+      action: null,
+      actionLabel: null,
+      taskName: null
+    };
+  }
+
+  var apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    return {
+      success: true,
+      reply: "Gemini API Key가 아직 등록되지 않았습니다. 상단 온보딩 배너의 [API Key 등록] 버튼을 눌러 먼저 키를 등록해 주십시오.",
+      action: null,
+      actionLabel: null,
+      taskName: null
+    };
+  }
+
+  var status = getPipelineStatus();
+  var contextSummary = [
+    "- 캠페인 폴더: " + (status.folderUrl ? "연결됨 (" + status.campaignCode + ")" : "미구축 (초기화 필요)"),
+    "- 아이디어 메모: " + (status.ideaDocUrl ? "작성 문서 있음" : "문서 없음 (초기화 필요)"),
+    "- 기획서 (PLAN): " + (status.planDocUrl ? "생성 완료" : "미생성"),
+    "- 제작 명세서 (SPEC): " + (status.specDocUrl ? "생성 완료" : "미생성"),
+    "- 초판/최신 콘텐츠 세트: " + (status.contentDocUrl ? "생성 완료 (" + status.latestRv + ")" : "미생성"),
+    "- 고객 VoC 설문 폼: " + (status.formUrl ? "생성 및 시트 연결 완료" : "미생성"),
+    "- 최신 피드백 종합 보고서: " + (status.summaryDocUrl ? "생성 완료 (" + status.latestFb + ")" : "미생성"),
+    "- t-SNE 여론 지형도 차트: " + (status.mapUrl ? "생성 완료" : "미생성")
+  ].join("\n");
+
+  var systemInstruction = 
+    "당신은 구글 드라이브 마케팅 콘텐츠 파이프라인의 전담 AI 코파일럿 어시스턴트입니다.\n" +
+    "비개발자 마케터가 도구를 원활하게 사용하고 캠페인을 성공적으로 이끌 수 있도록 돕습니다.\n" +
+    "현재 구글 드라이브 및 스프레드시트의 파이프라인 실제 상태는 다음과 같습니다:\n" +
+    contextSummary + "\n\n" +
+    "[파이프라인 지원 가능 액션 식별자 목록]\n" +
+    "- 'initCampaignWorkspace': [초기화] 캠페인 작업 공간 구축 (폴더 감지, 프롬프트 시딩, 아이디어 메모/설문 폼 생성, 누락 복구)\n" +
+    "- 'guardAndRunIdeaToPlan': [1단계] 기획서 및 제작 명세서 생성 (PLAN & SPEC 도출, 25인 맞춤 AI 페르소나 자동 합성)\n" +
+    "- 'guardAndRunInitialContent': [2단계] 초판 콘텐츠 생성 (rv-00: 멀티 채널 카피 독스, 비주얼 이미지 3종, Veo 숏폼 영상)\n" +
+    "- 'promptAndRunPersonaEvaluation': [3단계] 25인 AI 페르소나 다면 평가 (fb-xx: 50~80개 세부 의견 포인트, 128차원 t-SNE 지형도)\n" +
+    "- 'promptAndRunFeedbackSummary': [4단계] 피드백 종합 보고서 생성 (고객 VoC + VLM 분석 + 지형도 종합 독스, 마케터 보정 지침서 독립 보존)\n" +
+    "- 'promptAndRunFeedbackRevision': [5단계] 피드백 반영 콘텐츠 보정 (rv-xx: 마케터 보정 지침 반영 차기 리비전 생성)\n" +
+    "- 'openDashboardSheet': 실행 로그 시트 탭 열기\n" +
+    "- 'refreshStatus': 사이드바 상태 새로고침\n\n" +
+    "[응답 지침]\n" +
+    "1. 마케터의 질문 의도를 정밀하게 파악하십시오.\n" +
+    "   - '지금 뭐 해야 돼?', '다음 단계 알려줘' 등 현재 상태 질의: 현재 완료된 상태와 다음에 진행해야 할 단계를 친절히 안내하고 해당 액션을 제시하십시오.\n" +
+    "   - '기획서 만들어줘', '초판 만들어줘' 등 작업 지시: 바로 실행할 수 있도록 안내하고 액션을 제시하십시오.\n" +
+    "   - 't-SNE 지형도가 뭐야?', '25인 페르소나가 뭐야?' 등 개념 질의: 1~3문장으로 비개발자 마케터 눈높이에 맞추어 핵심 가치를 설명하십시오. (이 경우 action은 null)\n" +
+    "2. 만약 마케터가 특정 단계를 지시했는데 선결 조건(예: 기획서 없이 초판 생성)이 누락되었다면, 친절하게 선행 작업을 먼저 해야 함을 설명하고 선행 작업 액션을 제시하십시오.\n" +
+    "3. 출력은 마크다운 코드블록(```json) 없이 오직 단일 순수 JSON 객체만 반환하십시오:\n" +
+    "{\n" +
+    "  \"reply\": \"마케터에게 전달할 명쾌하고 친절한 존댓말 안내 문장 (1~3문장)\",\n" +
+    "  \"action\": \"위 목록의 액션 식별자 문자열 또는 null\",\n" +
+    "  \"actionLabel\": \"마케터에게 노출할 버튼 칩 텍스트 (예: 기획서 (PLAN) 도출하기) 또는 null\",\n" +
+    "  \"taskName\": \"실행할 작업 명칭 (예: 기획서 및 명세서 생성) 또는 null\"\n" +
+    "}";
+
+  try {
+    var rawResponse = callGemini(systemInstruction, userMessage.trim(), "gemini-3.8-flash", 1024);
+    var cleanJson = (rawResponse || "").trim();
+    if (cleanJson.indexOf("```json") !== -1) {
+      cleanJson = cleanJson.split("```json")[1].split("```")[0].trim();
+    } else if (cleanJson.indexOf("```") !== -1) {
+      cleanJson = cleanJson.split("```")[1].split("```")[0].trim();
+    }
+    var firstBrace = cleanJson.indexOf("{");
+    var lastBrace = cleanJson.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
+    }
+    var parsed = JSON.parse(cleanJson);
+    return {
+      success: true,
+      reply: parsed.reply || "요청하신 내용을 확인했습니다.",
+      action: parsed.action || null,
+      actionLabel: parsed.actionLabel || null,
+      taskName: parsed.taskName || null
+    };
+  } catch (err) {
+    Logger.log("askPipelineAssistant 파싱 실패: " + err + "\nRaw: " + rawResponse);
+    return {
+      success: true,
+      reply: "요청하신 내용을 확인했습니다. 현재 단계에 맞는 작업을 아래 버튼에서 선택하여 실행하실 수 있습니다.",
+      action: null,
+      actionLabel: null,
+      taskName: null
+    };
+  }
+}
+
+/**
  * 구글 시트 우측 패널에 마케팅 콘텐츠 파이프라인 컨트롤 타워를 표시한다.
  */
 function showPipelineSidebar() {
@@ -4715,6 +4816,116 @@ function getPipelineSidebarHtml() {
     "      padding-top: 8px;\n" +
     "      border-top: 1px solid #f1f3f4;\n" +
     "    }\n" +
+    "    .copilot-section {\n" +
+    "      background: #f8f9fa;\n" +
+    "      border: 1px solid #dadce0;\n" +
+    "      border-radius: 8px;\n" +
+    "      padding: 10px 12px;\n" +
+    "      margin-bottom: 14px;\n" +
+    "    }\n" +
+    "    .copilot-header {\n" +
+    "      font-size: 11px;\n" +
+    "      font-weight: 700;\n" +
+    "      color: #1a73e8;\n" +
+    "      margin-bottom: 8px;\n" +
+    "      display: flex;\n" +
+    "      justify-content: space-between;\n" +
+    "      align-items: center;\n" +
+    "    }\n" +
+    "    .chat-log {\n" +
+    "      max-height: 200px;\n" +
+    "      overflow-y: auto;\n" +
+    "      margin-bottom: 8px;\n" +
+    "      display: flex;\n" +
+    "      flex-direction: column;\n" +
+    "      gap: 6px;\n" +
+    "      padding-right: 2px;\n" +
+    "    }\n" +
+    "    .chat-bubble {\n" +
+    "      font-size: 11px;\n" +
+    "      line-height: 1.45;\n" +
+    "      padding: 8px 10px;\n" +
+    "      border-radius: 6px;\n" +
+    "      max-width: 92%;\n" +
+    "      word-break: break-word;\n" +
+    "    }\n" +
+    "    .chat-bubble.bot {\n" +
+    "      align-self: flex-start;\n" +
+    "      background: #ffffff;\n" +
+    "      border: 1px solid #e8eaed;\n" +
+    "      color: #202124;\n" +
+    "      border-top-left-radius: 2px;\n" +
+    "    }\n" +
+    "    .chat-bubble.user {\n" +
+    "      align-self: flex-end;\n" +
+    "      background: #1a73e8;\n" +
+    "      color: #ffffff;\n" +
+    "      border-top-right-radius: 2px;\n" +
+    "    }\n" +
+    "    .chat-action-btn {\n" +
+    "      display: inline-block;\n" +
+    "      margin-top: 6px;\n" +
+    "      padding: 5px 10px;\n" +
+    "      background: #1a73e8;\n" +
+    "      color: #ffffff;\n" +
+    "      border-radius: 12px;\n" +
+    "      font-size: 11px;\n" +
+    "      font-weight: 600;\n" +
+    "      border: none;\n" +
+    "      cursor: pointer;\n" +
+    "      text-decoration: none;\n" +
+    "      transition: background 0.15s ease;\n" +
+    "    }\n" +
+    "    .chat-action-btn:hover { background: #174ea6; }\n" +
+    "    .quick-chips {\n" +
+    "      display: flex;\n" +
+    "      gap: 4px;\n" +
+    "      overflow-x: auto;\n" +
+    "      padding-bottom: 4px;\n" +
+    "      margin-bottom: 6px;\n" +
+    "    }\n" +
+    "    .quick-chip {\n" +
+    "      font-size: 10px;\n" +
+    "      padding: 3px 8px;\n" +
+    "      background: #ffffff;\n" +
+    "      border: 1px solid #dadce0;\n" +
+    "      border-radius: 12px;\n" +
+    "      color: #5f6368;\n" +
+    "      cursor: pointer;\n" +
+    "      white-space: nowrap;\n" +
+    "      transition: all 0.15s ease;\n" +
+    "    }\n" +
+    "    .quick-chip:hover {\n" +
+    "      background: #e8f0fe;\n" +
+    "      border-color: #1a73e8;\n" +
+    "      color: #1a73e8;\n" +
+    "    }\n" +
+    "    .chat-input-box {\n" +
+    "      display: flex;\n" +
+    "      gap: 6px;\n" +
+    "    }\n" +
+    "    .chat-input {\n" +
+    "      flex: 1;\n" +
+    "      padding: 7px 9px;\n" +
+    "      font-size: 11px;\n" +
+    "      border: 1px solid #dadce0;\n" +
+    "      border-radius: 4px;\n" +
+    "      outline: none;\n" +
+    "    }\n" +
+    "    .chat-input:focus { border-color: #1a73e8; }\n" +
+    "    .chat-send-btn {\n" +
+    "      padding: 7px 12px;\n" +
+    "      font-size: 11px;\n" +
+    "      font-weight: 600;\n" +
+    "      background: #1a73e8;\n" +
+    "      color: #ffffff;\n" +
+    "      border: none;\n" +
+    "      border-radius: 4px;\n" +
+    "      cursor: pointer;\n" +
+    "      white-space: nowrap;\n" +
+    "    }\n" +
+    "    .chat-send-btn:hover { background: #174ea6; }\n" +
+    "    .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }\n" +
     "  </style>\n" +
     "</head>\n" +
     "<body>\n" +
@@ -4790,6 +5001,29 @@ function getPipelineSidebarHtml() {
     "    <a id='linkSummary' class='link-card disabled' href='#'>피드백 종합 보고서 열기</a>\n" +
     "    <a id='linkMap' class='link-card disabled' href='#'>t-SNE 여론 지형도 이미지 열기</a>\n" +
     "    <a id='linkFolder' class='link-card disabled' href='#'>캠페인 드라이브 폴더 열기</a>\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div class='copilot-section'>\n" +
+    "    <div class='copilot-header'>\n" +
+    "      <span>AI 코파일럿 대화 및 지시</span>\n" +
+    "      <span class='step-tag'>Gemini 3.8 Flash</span>\n" +
+    "    </div>\n" +
+    "    <div id='chatLog' class='chat-log'>\n" +
+    "      <div class='chat-bubble bot'>\n" +
+    "        반갑습니다! 마케팅 파이프라인 AI 코파일럿입니다. 현재 진행 상황이 궁금하시거나 작업 실행이 필요할 때 언제든 편하게 물어보세요.\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "    <div class='quick-chips'>\n" +
+    "      <span class='quick-chip' onclick=\"quickChat('지금 뭐 해야 돼?')\">지금 뭐 해야 돼?</span>\n" +
+    "      <span class='quick-chip' onclick=\"quickChat('기획서 도출해줘')\">기획서 도출해줘</span>\n" +
+    "      <span class='quick-chip' onclick=\"quickChat('초판 제작해줘')\">초판 제작해줘</span>\n" +
+    "      <span class='quick-chip' onclick=\"quickChat('25인 평가가 뭐야?')\">25인 평가가 뭐야?</span>\n" +
+    "      <span class='quick-chip' onclick=\"quickChat('t-SNE 지형도가 뭐야?')\">t-SNE 지형도가 뭐야?</span>\n" +
+    "    </div>\n" +
+    "    <div class='chat-input-box'>\n" +
+    "      <input id='chatInput' class='chat-input' placeholder='질문하거나 지시하세요... (Enter)' onkeydown='handleChatKey(event)' />\n" +
+    "      <button id='btnChatSend' class='chat-send-btn' onclick='submitChatQuery()'>전송</button>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "\n" +
     "  <div class='section'>\n" +
@@ -5046,6 +5280,79 @@ function getPipelineSidebarHtml() {
     "          setButtonsDisabled(false);\n" +
     "          stopTimer('오류 발생: ' + (err.message || err), true);\n" +
     "        })[fnName]();\n" +
+    "    }\n" +
+    "\n" +
+    "    function appendChatBubble(sender, text, actionBtnHtml) {\n" +
+    "      var log = document.getElementById('chatLog');\n" +
+    "      if (!log) return null;\n" +
+    "      var bubble = document.createElement('div');\n" +
+    "      bubble.className = 'chat-bubble ' + sender;\n" +
+    "      bubble.innerHTML = text + (actionBtnHtml || '');\n" +
+    "      log.appendChild(bubble);\n" +
+    "      log.scrollTop = log.scrollHeight;\n" +
+    "      return bubble;\n" +
+    "    }\n" +
+    "\n" +
+    "    function quickChat(text) {\n" +
+    "      var inp = document.getElementById('chatInput');\n" +
+    "      if (inp) inp.value = text;\n" +
+    "      submitChatQuery();\n" +
+    "    }\n" +
+    "\n" +
+    "    function handleChatKey(e) {\n" +
+    "      if (e.key === 'Enter') {\n" +
+    "        e.preventDefault();\n" +
+    "        submitChatQuery();\n" +
+    "      }\n" +
+    "    }\n" +
+    "\n" +
+    "    function submitChatQuery() {\n" +
+    "      var inp = document.getElementById('chatInput');\n" +
+    "      if (!inp) return;\n" +
+    "      var val = inp.value.trim();\n" +
+    "      if (!val) return;\n" +
+    "      inp.value = '';\n" +
+    "\n" +
+    "      appendChatBubble('user', val);\n" +
+    "      var loadingBubble = appendChatBubble('bot', \"<span class='spinner'></span> 답변 생성 중...\");\n" +
+    "\n" +
+    "      var btn = document.getElementById('btnChatSend');\n" +
+    "      if (btn) btn.disabled = true;\n" +
+    "\n" +
+    "      google.script.run\n" +
+    "        .withSuccessHandler(function(res) {\n" +
+    "          if (btn) btn.disabled = false;\n" +
+    "          var reply = (res && res.reply) || '답변을 생성하지 못했습니다.';\n" +
+    "          var actionHtml = '';\n" +
+    "          if (res && res.action && res.actionLabel) {\n" +
+    "            var task = res.taskName || res.actionLabel;\n" +
+    "            actionHtml = \"<br/><button class='chat-action-btn' onclick=\\\"runChatAction('\" + res.action + \"', '\" + task + \"')\\\">[실행] \" + res.actionLabel + \"</button>\";\n" +
+    "          }\n" +
+    "          if (loadingBubble) {\n" +
+    "            loadingBubble.innerHTML = reply + actionHtml;\n" +
+    "            var log = document.getElementById('chatLog');\n" +
+    "            if (log) log.scrollTop = log.scrollHeight;\n" +
+    "          }\n" +
+    "        })\n" +
+    "        .withFailureHandler(function(err) {\n" +
+    "          if (btn) btn.disabled = false;\n" +
+    "          if (loadingBubble) {\n" +
+    "            loadingBubble.innerHTML = '질문 처리 중 오류: ' + (err.message || err);\n" +
+    "          }\n" +
+    "        })\n" +
+    "        .askPipelineAssistant(val);\n" +
+    "    }\n" +
+    "\n" +
+    "    function runChatAction(actionName, taskName) {\n" +
+    "      if (actionName === 'toggleApiKeyBox') {\n" +
+    "        toggleApiKeyBox(true);\n" +
+    "      } else if (actionName === 'openDashboardSheet') {\n" +
+    "        callServer('openDashboardSheet', '실행 로그 열기');\n" +
+    "      } else if (actionName === 'refreshStatus') {\n" +
+    "        refreshStatus();\n" +
+    "      } else {\n" +
+    "        callServer(actionName, taskName);\n" +
+    "      }\n" +
     "    }\n" +
     "\n" +
     "    // 패널 열림 시 최초 1회 상태 자동 조회\n" +
