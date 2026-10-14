@@ -9,14 +9,8 @@
 
 // ============================================================================
 // FILE: Code_Config.js
+// [모듈 1] 전역 설정 (Global Configuration)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [모듈 1] 전역 설정 (Global Configuration)
- */
 
 var CONFIG = {
   // 기본 캠페인 코드 및 구글 드라이브 루트 폴더명
@@ -77,14 +71,8 @@ var CONFIG = {
 
 // ============================================================================
 // FILE: Code_Gemini.js
+// [모듈 2] Gemini REST API 클라이언트 엔진 (구글 계정 OAuth 2.0 자동 로그인 기반 Keyless 인증)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [모듈 2] Gemini REST API 클라이언트 엔진 (구글 계정 OAuth 2.0 자동 로그인 기반 Keyless 인증)
- */
 
 /**
  * Gemini API 인증 헤더 조회 (현재 구글 로그인 계정의 OAuth 2.0 Access Token 기반 Keyless 인증)
@@ -375,14 +363,8 @@ function createDeterministicVector(text, dim) {
 
 // ============================================================================
 // FILE: Code_Utils.js
+// [모듈 4] 구글 드라이브 파일 탐색, 입출력 및 마크다운 독스 렌더러 (Drive Utils & Document Renderer)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [모듈 4] 구글 드라이브 파일 탐색, 입출력 및 마크다운 독스 렌더러 (Drive Utils & Document Renderer)
- */
 
 function getFolderByPath(pathParts) {
   var currentFolder = DriveApp.getRootFolder();
@@ -1654,14 +1636,8 @@ function detectLatestRevisionRoundNum() {
 
 // ============================================================================
 // FILE: Code_Step1_Workspace.js
+// [Step 1] 구글 드라이브 작업 공간 폴더 구조 및 25인 AI 페르소나 데이터셋 자동 생성 (Workspace Initializer)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [Step 1] 구글 드라이브 작업 공간 폴더 구조 및 25인 AI 페르소나 데이터셋 자동 생성 (Workspace Initializer)
- */
 
 function createWorkspaceFolderTree() {
   var ui = SpreadsheetApp.getUi();
@@ -1967,14 +1943,8 @@ function getMasterPersonas25() {
 
 // ============================================================================
 // FILE: Code_Step2_IdeaToPlan.js
+// [Step 2] 자연어 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출 엔진 (Idea to PLAN & SPEC)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [Step 2] 자연어 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출 엔진 (Idea to PLAN & SPEC)
- */
 
 function runIdeaToPlanConversion() {
   var ui = SpreadsheetApp.getUi();
@@ -2077,14 +2047,8 @@ function runIdeaToPlanConversion() {
 
 // ============================================================================
 // FILE: Code_Step3_ContentGen.js
+// [Step 3] 기획서(PLAN) 및 명세서(SPEC) 기반 초판 마케팅 콘텐츠 양산 엔진 (rv-00 Initial Content Generation)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [Step 3] 기획서(PLAN) 및 명세서(SPEC) 기반 초판 마케팅 콘텐츠 양산 엔진 (rv-00 Initial Content Generation)
- */
 
 function runInitialAssetGeneration() {
   var ui = SpreadsheetApp.getUi();
@@ -2168,14 +2132,8 @@ function runInitialAssetGeneration() {
 
 // ============================================================================
 // FILE: Code_Step4_Form.js
+// [Step 4] 고객 VoC 수집용 구글 폼 자동 생성 및 현재 구글 시트 연동 엔진 (Form Initializer & Linker)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [Step 4] 고객 VoC 수집용 구글 폼 자동 생성 및 현재 구글 시트 연동 엔진 (Form Initializer & Linker)
- */
 
 function createAndLinkGoogleForm() {
   var ui = SpreadsheetApp.getUi();
@@ -2286,14 +2244,8 @@ function createAndLinkGoogleForm() {
 
 // ============================================================================
 // FILE: Code_Step5_8_Judge.js
+// [Step 5 / Step 8] 25인 AI 페르소나 및 고객 피드백 다면 평가 통합 엔진 (Feedback Judge & Synthesizer)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [Step 5 / Step 8] 25인 AI 페르소나 및 고객 피드백 다면 평가 통합 엔진 (Feedback Judge & Synthesizer)
- */
 
 /**
  * [Step 5] 초판 콘텐츠(rv-00) 대상 1차 25인 다면 평가 및 t-SNE 여론 지형도 생성
@@ -2705,14 +2657,8 @@ function resolveDriveAttachmentName(rawVal) {
 
 // ============================================================================
 // FILE: Code_Step6_Decision.js
+// [Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)
- */
 
 /**
  * [Step 6] 마케터 피드백 검토 및 최종 의사 결정 UI 프롬프트 (Human-in-the-loop)
@@ -2782,14 +2728,8 @@ function runMarketerDecisionPrompt() {
 
 // ============================================================================
 // FILE: Code_Step7_9_Refine.js
+// [Step 7 / Step 9] 다면 평가 피드백 기반 마케팅 콘텐츠 반자율 보정 통합 엔진 (Revise Content)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [Step 7 / Step 9] 다면 평가 피드백 기반 마케팅 콘텐츠 반자율 보정 통합 엔진 (Revise Content)
- */
 
 /**
  * [Step 7] 1차 피드백(fb-01) 기반 1차 마케팅 콘텐츠(rv-01) 반자율 보정
@@ -2921,14 +2861,8 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
 
 // ============================================================================
 // FILE: Code_Menu.js
+// [모듈 3] Google Sheets 커스텀 메뉴 및 UI 대화상자 (Spreadsheet UI & Menu)
 // ============================================================================
-/**
- * Copyright 2026 Google LLC. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Drive Marketing Content Pipeline
- * [모듈 3] Google Sheets 커스텀 메뉴 및 UI 대화상자 (Spreadsheet UI & Menu)
- */
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
