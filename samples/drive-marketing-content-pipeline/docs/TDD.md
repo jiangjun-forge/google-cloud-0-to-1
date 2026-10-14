@@ -24,8 +24,8 @@ All contents, designs, and code examples are subject to change, modification, or
    - 취득된 API Key는 Apps Script `UserProperties`에 사용자별로 안전하게 격리 보관되며, 미등록 시 대화상자 프롬프트를 통해 1회 입력받아 자동 영구 유지
    - 단일 모델에 의존하지 않고 각 작업의 속도, 처리 용량, 비용 효율성을 고려하여 검증된 모델을 취사선택하여 연동
    - `gemini-3.8-flash`: 빠른 응답 속도와 긴 컨텍스트 처리를 위한 아이디어 구체화, PLAN 기획서 및 SPEC 명세서 컴파일, 25인 AI 페르소나 다면 평가 및 VLM 비디오 VoC 심층 분석, 복합 피드백 기반 1차(rv-01), 2차(rv-02) 콘텐츠 심층 보정
-   - `imagen-3.0-generate-002`: 16:9 가로 배너, 9:16 모바일 포스터, 1:1 정방형 SNS 피드 이미지 규격에 최적화된 시각화 소재 생성
-   - `veo-3.1-generate-001`: 9:16 모바일 숏폼 영상(shorts) 콘티 및 비디오 소재 생성에 적합
+   - `gemini-nano-banana-2.1`: 16:9 가로 배너, 9:16 모바일 포스터, 1:1 정방형 SNS 피드 이미지 규격에 최적화된 고효율 비주얼 소재 생성 (보조: `gemini-3.1-flash-image`, `imagen-4.0-generate-001`)
+   - `veo-3.1-generate-preview`: 9:16 모바일 숏폼 영상(shorts) 콘티 기반 세로 비디오 소재 생성 (보조: `veo-3.1-fast-generate-preview`)
    - `text-multilingual-embedding-002`: 한국어 및 다국어 특화 텍스트 임베딩 모델로, 128차원 MRL(Matryoshka Representation Learning) 축소 차원을 적용하여 25인 페르소나로부터 도출된 50~80개 이상의 세부 의견 포인트를 고속 임베딩
 3. **외부 경량 시각화 및 데이터 REST API**:
    - QuickChart REST API (`https://quickchart.io/chart`): 128d 임베딩 기반 PCA 2축 투영 좌표를 2D t-SNE 버블 산점도 차트 이미지(`feedback_clusters_map.png`)로 실시간 렌더링

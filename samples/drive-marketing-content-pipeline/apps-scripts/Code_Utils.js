@@ -349,9 +349,9 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
       var base64Data = (typeof imageResult === "object" && imageResult.base64) ? imageResult.base64 : imageResult;
       var mimeType = (typeof imageResult === "object" && imageResult.mimeType) ? imageResult.mimeType : MimeType.PNG;
       saveBinaryFile(targetFolder, item.name, base64Data, mimeType);
-      Logger.log("실시간 Gemini Imagen 3 이미지 생성 및 저장 성공: " + item.name);
+      Logger.log("실시간 Gemini 비주얼 이미지 생성 및 저장 성공: " + item.name);
     } else {
-      Logger.log("Gemini Imagen 3 이미지 생성 응답 없음: " + item.name);
+      Logger.log("Gemini 비주얼 이미지 생성 응답 없음: " + item.name);
     }
   }
 

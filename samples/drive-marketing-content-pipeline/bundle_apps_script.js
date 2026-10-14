@@ -34,8 +34,8 @@ var CONFIG = {
   GEMINI_MODEL: "gemini-3.8-flash",
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 양산 모델
   MODEL_JUDGE: "gemini-3.8-flash", // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
-  IMAGE_MODEL_NAME: "imagen-3.0-generate-002", // 광고 소재 비주얼 이미지 생성 모델 (Imagen 3)
-  VIDEO_MODEL_NAME: "veo-2.0-generate-001", // 모바일 숏폼 영상 생성 모델 (Veo 2)
+  IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
+  VIDEO_MODEL_NAME: "veo-3.1-generate-preview", // 모바일 숏폼 영상 생성 최신 모델 (Veo 3.1 Preview)
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
   EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
   
@@ -76,6 +76,7 @@ var CONFIG = {
   // QuickChart REST API 엔드포인트 (t-SNE 여론 군집 지형도 렌더링)
   QUICKCHART_ENDPOINT: "https://quickchart.io/chart"
 };
+
 
 // ============================================================================
 // FILE: Code_Gemini.js
@@ -265,52 +266,130 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
 }
 
 /**
- * Gemini Imagen 3 이미지 생성 API 호출 (상업용 광고 비주얼 시안 생성)
+ * Gemini 이미지 생성 API 호출 (상업용 광고 비주얼 시안 생성)
+ * 최신 멀티모달 이미지 생성 모델 캐스케이드(Cascade Fallback) 적용:
+ * 1순위: gemini-nano-banana-2.1 (:generateContent, responseModalities: ["IMAGE"])
+ * 2순위: gemini-3.1-flash-image (:generateContent, responseModalities: ["IMAGE"])
+ * 3순위: imagen-4.0-generate-001 (:predict)
+ * 4순위: imagen-3.0-generate (:predict)
  */
 function callGeminiImage(prompt, aspectRatio) {
   try {
     var apiKey = getGeminiApiKey();
-    var imgModel = CONFIG.IMAGE_MODEL_NAME || "imagen-3.0-generate-002";
-    var endpoint = CONFIG.BASE_URL + "/" + imgModel + ":predict?key=" + apiKey;
+    if (!apiKey) {
+      Logger.log("API Key 누락으로 이미지 생성을 건너뜁니다.");
+      return null;
+    }
+
+    var fullPrompt = prompt + ", commercial advertising product photography, professional studio lighting, 8k resolution, photorealistic";
     var ratio = aspectRatio || "1:1";
 
-    var payload = {
-      instances: [
-        { prompt: prompt + ", commercial advertising product photography, professional studio lighting, 8k resolution, photorealistic" }
-      ],
-      parameters: {
-        sampleCount: 1,
-        aspectRatio: ratio
-      }
-    };
+    // 1순위 & 2순위: Gemini 네이티브 이미지 생성 모델 (:generateContent)
+    var nativeModels = [
+      (CONFIG && CONFIG.IMAGE_MODEL_NAME) || "gemini-nano-banana-2.1",
+      "gemini-3.1-flash-image"
+    ];
 
-    var options = {
-      method: "post",
-      contentType: "application/json",
-      headers: {
-        "x-goog-api-key": apiKey
-      },
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    };
-
-    var response = UrlFetchApp.fetch(endpoint, options);
-    var code = response.getResponseCode();
-    var body = response.getContentText();
-
-    if (code === 200) {
-      var result = JSON.parse(body);
-      if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-        return {
-          base64: result.predictions[0].bytesBase64Encoded,
-          mimeType: result.predictions[0].mimeType || "image/jpeg"
+    for (var m = 0; m < nativeModels.length; m++) {
+      var nModel = nativeModels[m];
+      try {
+        var nEndpoint = CONFIG.BASE_URL + "/" + nModel + ":generateContent?key=" + apiKey;
+        var nPayload = {
+          contents: [{
+            parts: [{ text: fullPrompt }]
+          }],
+          generationConfig: {
+            responseModalities: ["IMAGE"]
+          }
         };
+
+        var nOptions = {
+          method: "post",
+          contentType: "application/json",
+          headers: {
+            "x-goog-api-key": apiKey
+          },
+          payload: JSON.stringify(nPayload),
+          muteHttpExceptions: true
+        };
+
+        Logger.log("Gemini 이미지 생성 시도 (모델: " + nModel + ", 종횡비: " + ratio + ")...");
+        var nResp = UrlFetchApp.fetch(nEndpoint, nOptions);
+        var nCode = nResp.getResponseCode();
+        var nBody = nResp.getContentText();
+
+        if (nCode === 200) {
+          var nResult = JSON.parse(nBody);
+          if (nResult.candidates && nResult.candidates.length > 0 && 
+              nResult.candidates[0].content && nResult.candidates[0].content.parts) {
+            var parts = nResult.candidates[0].content.parts;
+            for (var p = 0; p < parts.length; p++) {
+              if (parts[p].inlineData && parts[p].inlineData.data) {
+                Logger.log("Gemini 이미지 생성 성공 (모델: " + nModel + ")");
+                return {
+                  base64: parts[p].inlineData.data,
+                  mimeType: parts[p].inlineData.mimeType || "image/png"
+                };
+              }
+            }
+          }
+        } else {
+          Logger.log("Gemini 이미지 모델(" + nModel + ") 호출 실패 (" + nCode + "): " + nBody);
+        }
+      } catch (nErr) {
+        Logger.log("Gemini 이미지 모델(" + nModel + ") 호출 예외: " + nErr);
       }
-    } else {
-      Logger.log("Imagen 3 이미지 생성 실패 (" + code + "): " + body);
+    }
+
+    // 3순위 & 4순위: Imagen 계열 모델 폴백 (:predict)
+    var imagenModels = ["imagen-4.0-generate-001", "imagen-3.0-generate"];
+    for (var i = 0; i < imagenModels.length; i++) {
+      var imgModel = imagenModels[i];
+      try {
+        var imgEndpoint = CONFIG.BASE_URL + "/" + imgModel + ":predict?key=" + apiKey;
+        var imgPayload = {
+          instances: [
+            { prompt: fullPrompt }
+          ],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: ratio
+          }
+        };
+
+        var imgOptions = {
+          method: "post",
+          contentType: "application/json",
+          headers: {
+            "x-goog-api-key": apiKey
+          },
+          payload: JSON.stringify(imgPayload),
+          muteHttpExceptions: true
+        };
+
+        Logger.log("Imagen 이미지 생성 시도 (모델: " + imgModel + ")...");
+        var imgResp = UrlFetchApp.fetch(imgEndpoint, imgOptions);
+        var imgCode = imgResp.getResponseCode();
+        var imgBody = imgResp.getContentText();
+
+        if (imgCode === 200) {
+          var imgResult = JSON.parse(imgBody);
+          if (imgResult.predictions && imgResult.predictions.length > 0 && imgResult.predictions[0].bytesBase64Encoded) {
+            Logger.log("Imagen 이미지 생성 성공 (모델: " + imgModel + ")");
+            return {
+              base64: imgResult.predictions[0].bytesBase64Encoded,
+              mimeType: imgResult.predictions[0].mimeType || "image/jpeg"
+            };
+          }
+        } else {
+          Logger.log("Imagen 모델(" + imgModel + ") 호출 실패 (" + imgCode + "): " + imgBody);
+        }
+      } catch (imgErr) {
+        Logger.log("Imagen 모델(" + imgModel + ") 예외: " + imgErr);
+      }
     }
   } catch (err) {
-    Logger.log("Imagen 3 이미지 생성 네트워크 예외: " + err);
+    Logger.log("이미지 생성 전체 예외: " + err);
   }
   return null;
 }
@@ -318,6 +397,8 @@ function callGeminiImage(prompt, aspectRatio) {
 /**
  * Gemini Veo 비디오 생성 API 호출 (9:16 모바일 숏폼 영상 생성)
  * Google AI Studio / Gemini Developer API의 predictLongRunning 엔드포인트 및 LRO 폴링
+ * 1순위: veo-3.1-generate-preview (:predictLongRunning)
+ * 2순위: veo-3.1-fast-generate-preview (:predictLongRunning)
  *
  * @param {string} prompt - 영문 비디오 연출 프롬프트
  * @param {string} [aspectRatio] - 종횡비 (기본값: "9:16")
@@ -332,65 +413,69 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
       return null;
     }
 
-    var modelName = (CONFIG && CONFIG.VIDEO_MODEL_NAME) || "veo-2.0-generate-001";
     var ratio = aspectRatio || "9:16";
     var duration = durationSeconds || 5;
 
-    var endpoint = CONFIG.BASE_URL + "/" + modelName + ":predictLongRunning";
+    var candidateModels = [
+      (CONFIG && CONFIG.VIDEO_MODEL_NAME) || "veo-3.1-generate-preview",
+      "veo-3.1-fast-generate-preview"
+    ];
 
-    var payload = {
-      instances: [
-        {
-          prompt: prompt
+    var operationName = null;
+    var activeModel = candidateModels[0];
+
+    for (var m = 0; m < candidateModels.length; m++) {
+      var modelName = candidateModels[m];
+      var endpoint = CONFIG.BASE_URL + "/" + modelName + ":predictLongRunning";
+
+      var payload = {
+        instances: [
+          {
+            prompt: prompt
+          }
+        ],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: ratio,
+          durationSeconds: duration
         }
-      ],
-      parameters: {
-        sampleCount: 1,
-        aspectRatio: ratio,
-        durationSeconds: duration
-      }
-    };
+      };
 
-    var options = {
-      method: "post",
-      contentType: "application/json",
-      headers: {
-        "x-goog-api-key": apiKey
-      },
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    };
+      var options = {
+        method: "post",
+        contentType: "application/json",
+        headers: {
+          "x-goog-api-key": apiKey
+        },
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
 
-    Logger.log("Veo 비디오 생성 요청 시작 (모델: " + modelName + ", 비율: " + ratio + "): " + prompt.substring(0, 100) + "...");
-    var response = UrlFetchApp.fetch(endpoint, options);
-    var code = response.getResponseCode();
-    var body = response.getContentText();
+      Logger.log("Veo 비디오 생성 요청 시작 (모델: " + modelName + ", 비율: " + ratio + "): " + prompt.substring(0, 80) + "...");
+      var response = UrlFetchApp.fetch(endpoint, options);
+      var code = response.getResponseCode();
+      var body = response.getContentText();
 
-    if (code !== 200) {
-      Logger.log("Veo 초기 생성 요청 실패 (" + code + "): " + body);
-      if (modelName !== "veo-2.0-generate-001") {
-        var fallbackEndpoint = CONFIG.BASE_URL + "/veo-2.0-generate-001:predictLongRunning";
-        var fbResp = UrlFetchApp.fetch(fallbackEndpoint, options);
-        if (fbResp.getResponseCode() === 200) {
-          body = fbResp.getContentText();
-          code = 200;
+      if (code === 200) {
+        var initResult = JSON.parse(body);
+        if (initResult.name) {
+          operationName = initResult.name;
+          activeModel = modelName;
+          break;
         }
-      }
-      if (code !== 200) {
-        return null;
+      } else {
+        Logger.log("Veo 초기 생성 요청 실패 (모델: " + modelName + ", 상태 코드: " + code + "): " + body);
       }
     }
 
-    var initResult = JSON.parse(body);
-    var operationName = initResult.name;
     if (!operationName) {
-      Logger.log("Veo 작업 ID(name)를 응답에서 찾을 수 없습니다: " + body);
+      Logger.log("모든 Veo 모델 생성 작업 큐 등록에 실패하여 비디오 생성을 완료하지 못했습니다.");
       return null;
     }
 
-    Logger.log("Veo 장기 실행 작업(LRO) 생성 완료: " + operationName + ". 완료 대기 폴링 시작...");
+    Logger.log("Veo 장기 실행 작업(LRO) 등록 완료 (" + activeModel + "): " + operationName + ". 완료 대기 폴링 시작...");
 
-    // LRO 폴링: Apps Script 런타임 제약(단일 실행 6분) 내에서 5초 간격으로 최대 90초 폴링
+    // LRO 폴링: Apps Script 런타임 제약(단일 실행 6분) 내에서 5초 간격으로 최대 18회(90초) 폴링
     var pollUrl = "https://generativelanguage.googleapis.com/v1beta/" + operationName;
     var pollOptions = {
       method: "get",
@@ -407,7 +492,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
       var pollResp = UrlFetchApp.fetch(pollUrl, pollOptions);
       var pCode = pollResp.getResponseCode();
       if (pCode !== 200) {
-        Logger.log("Veo 폴링 실패 (시도 " + attempt + "/" + maxAttempts + ", 응답 코드: " + pCode + ")");
+        Logger.log("Veo 폴링 응답 오류 (시도 " + attempt + "/" + maxAttempts + ", 응답 코드: " + pCode + ")");
         continue;
       }
 
@@ -418,10 +503,10 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
       }
 
       if (pollData.done === true) {
-        Logger.log("Veo 비디오 생성 작업 완료! (" + (attempt * 5) + "초 소요)");
+        Logger.log("Veo 비디오 렌더링 완료! (" + (attempt * 5) + "초 소요)");
         var respObj = pollData.response || pollData.result;
         if (!respObj) {
-          Logger.log("완료된 작업에 결과 데이터가 없습니다: " + JSON.stringify(pollData));
+          Logger.log("완료된 Veo 작업에 결과 데이터가 없습니다: " + JSON.stringify(pollData));
           return null;
         }
 
@@ -437,14 +522,31 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
             };
           }
           if (vObj.uri) {
-            var downloadUrl = vObj.uri + (vObj.uri.indexOf("?") === -1 ? "?key=" + apiKey : "&key=" + apiKey);
-            var downloadResp = UrlFetchApp.fetch(downloadUrl, { muteHttpExceptions: true });
-            if (downloadResp.getResponseCode() === 200) {
-              var blob = downloadResp.getBlob();
+            Logger.log("Veo 비디오 파일 다운로드 중: " + vObj.uri);
+            // 1차: x-goog-api-key 헤더 포함 다운로드
+            var dlResp = UrlFetchApp.fetch(vObj.uri, {
+              method: "get",
+              headers: { "x-goog-api-key": apiKey },
+              followRedirects: true,
+              muteHttpExceptions: true
+            });
+            // 만약 인증 방식 충돌(400/403) 시 헤더 없이 순수 다운로드 2차 시도
+            if (dlResp.getResponseCode() !== 200) {
+              dlResp = UrlFetchApp.fetch(vObj.uri, {
+                method: "get",
+                followRedirects: true,
+                muteHttpExceptions: true
+              });
+            }
+
+            if (dlResp.getResponseCode() === 200) {
+              var blob = dlResp.getBlob();
               return {
                 base64: Utilities.base64Encode(blob.getBytes()),
                 mimeType: blob.getContentType() || "video/mp4"
               };
+            } else {
+              Logger.log("Veo 비디오 URI 다운로드 실패 (" + dlResp.getResponseCode() + "): " + dlResp.getContentText());
             }
           }
         }
@@ -566,6 +668,7 @@ function createDeterministicVector(text, dim) {
   }
   return vec;
 }
+
 
 // ============================================================================
 // FILE: Code_Menu.js
@@ -761,6 +864,7 @@ function promptAndRunReviseAssets() {
   var targetRoundStr = "fb-" + (targetRvNum < 10 ? "0" + targetRvNum : "" + targetRvNum);
   runReviseAssets(targetRoundStr);
 }
+
 
 // ============================================================================
 // FILE: Code_Step1_Workspace.js
@@ -1074,6 +1178,7 @@ function getMasterPersonas25() {
 };
 }
 
+
 // ============================================================================
 // FILE: Code_Step2_IdeaToPlan.js
 // ============================================================================
@@ -1188,6 +1293,7 @@ function runIdeaToPlanConversion() {
   }
 }
 
+
 // ============================================================================
 // FILE: Code_Step3_ContentGen.js
 // ============================================================================
@@ -1279,6 +1385,7 @@ function runInitialAssetGeneration() {
     ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
 }
+
 
 // ============================================================================
 // FILE: Code_Step4_Form.js
@@ -1398,6 +1505,7 @@ function createAndLinkGoogleForm() {
     ui.alert("구글 폼 생성 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
 }
+
 
 // ============================================================================
 // FILE: Code_Step5_8_Judge.js
@@ -1566,6 +1674,7 @@ function resolveDriveAttachmentName(rawVal) {
 
   return rawVal;
 }
+
 
 // ============================================================================
 // FILE: Code_Step6_Decision.js
@@ -1952,6 +2061,7 @@ function runMarketerDecisionPrompt() {
   runFeedbackSummaryRound1();
 }
 
+
 // ============================================================================
 // FILE: Code_Step7_9_Refine.js
 // ============================================================================
@@ -2092,6 +2202,7 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
     }
   }
 }
+
 
 // ============================================================================
 // FILE: Code_Utils.js
@@ -2448,9 +2559,9 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
       var base64Data = (typeof imageResult === "object" && imageResult.base64) ? imageResult.base64 : imageResult;
       var mimeType = (typeof imageResult === "object" && imageResult.mimeType) ? imageResult.mimeType : MimeType.PNG;
       saveBinaryFile(targetFolder, item.name, base64Data, mimeType);
-      Logger.log("실시간 Gemini Imagen 3 이미지 생성 및 저장 성공: " + item.name);
+      Logger.log("실시간 Gemini 비주얼 이미지 생성 및 저장 성공: " + item.name);
     } else {
-      Logger.log("Gemini Imagen 3 이미지 생성 응답 없음: " + item.name);
+      Logger.log("Gemini 비주얼 이미지 생성 응답 없음: " + item.name);
     }
   }
 
@@ -3367,4 +3478,5 @@ function detectLatestRevisionRoundNum() {
   }
   return maxRound;
 }
+
 
