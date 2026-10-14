@@ -13,7 +13,7 @@ function showPipelineSidebar() {
   var ui = SpreadsheetApp.getUi();
   try {
     var htmlOutput = HtmlService.createHtmlOutput(getPipelineSidebarHtml())
-      .setTitle("마케팅 파이프라인 제어 패널")
+      .setTitle("마케팅 콘텐츠 파이프라인 제어 패널")
       .setWidth(340);
     ui.showSidebar(htmlOutput);
   } catch (err) {

@@ -11,7 +11,7 @@
  */
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu("[마케팅 파이프라인]")
+  ui.createMenu("[마케팅 콘텐츠 파이프라인]")
     .addItem("제어 패널 열기 (Open Panel)", "showPipelineSidebar")
     .addToUi();
 
