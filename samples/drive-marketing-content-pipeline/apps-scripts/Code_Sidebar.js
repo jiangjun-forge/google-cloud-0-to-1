@@ -109,21 +109,19 @@ function getPipelineSidebarHtml() {
     "      font-size: 13px;\n" +
     "      line-height: 1.5;\n" +
     "      color: #202124;\n" +
-    "      background: #f8f9fa;\n" +
-    "      padding: 12px;\n" +
+    "      background: #ffffff;\n" +
+    "      padding: 16px 14px;\n" +
     "    }\n" +
     "    .header {\n" +
-    "      background: #ffffff;\n" +
-    "      border: 1px solid #dadce0;\n" +
-    "      border-radius: 8px;\n" +
-    "      padding: 12px 14px;\n" +
-    "      margin-bottom: 12px;\n" +
+    "      padding-bottom: 12px;\n" +
+    "      margin-bottom: 14px;\n" +
+    "      border-bottom: 1px solid #dadce0;\n" +
     "    }\n" +
     "    .header h2 {\n" +
-    "      font-size: 14px;\n" +
+    "      font-size: 15px;\n" +
     "      font-weight: 700;\n" +
     "      color: #1a73e8;\n" +
-    "      margin-bottom: 4px;\n" +
+    "      margin-bottom: 6px;\n" +
     "      letter-spacing: -0.3px;\n" +
     "    }\n" +
     "    .header-sub {\n" +
@@ -137,7 +135,7 @@ function getPipelineSidebarHtml() {
     "      display: inline-block;\n" +
     "      font-size: 10px;\n" +
     "      font-weight: 600;\n" +
-    "      padding: 2px 6px;\n" +
+    "      padding: 2px 7px;\n" +
     "      border-radius: 4px;\n" +
     "      background: #e8f0fe;\n" +
     "      color: #1967d2;\n" +
@@ -145,16 +143,18 @@ function getPipelineSidebarHtml() {
     "    .badge.active { background: #ceead6; color: #0d652d; }\n" +
     "    .badge.warn { background: #fef7e0; color: #b06000; }\n" +
     "    .section {\n" +
-    "      background: #ffffff;\n" +
-    "      border: 1px solid #dadce0;\n" +
-    "      border-radius: 8px;\n" +
-    "      padding: 12px;\n" +
-    "      margin-bottom: 10px;\n" +
+    "      padding-bottom: 14px;\n" +
+    "      margin-bottom: 14px;\n" +
+    "      border-bottom: 1px solid #f1f3f4;\n" +
+    "    }\n" +
+    "    .section:last-of-type {\n" +
+    "      border-bottom: none;\n" +
+    "      margin-bottom: 6px;\n" +
     "    }\n" +
     "    .section-title {\n" +
     "      font-size: 11px;\n" +
     "      font-weight: 700;\n" +
-    "      color: #70757a;\n" +
+    "      color: #5f6368;\n" +
     "      text-transform: uppercase;\n" +
     "      letter-spacing: 0.5px;\n" +
     "      margin-bottom: 8px;\n" +
@@ -172,20 +172,22 @@ function getPipelineSidebarHtml() {
     "      text-align: left;\n" +
     "      border-radius: 6px;\n" +
     "      border: 1px solid #dadce0;\n" +
-    "      background: #ffffff;\n" +
+    "      background: #f8f9fa;\n" +
     "      color: #3c4043;\n" +
     "      cursor: pointer;\n" +
     "      transition: all 0.15s ease;\n" +
     "    }\n" +
     "    .btn:hover:not(:disabled) {\n" +
-    "      background: #f1f3f4;\n" +
+    "      background: #e8f0fe;\n" +
     "      border-color: #1a73e8;\n" +
     "      color: #1a73e8;\n" +
     "    }\n" +
     "    .btn:disabled {\n" +
-    "      opacity: 0.6;\n" +
+    "      opacity: 0.5;\n" +
     "      cursor: not-allowed;\n" +
-    "      background: #f8f9fa;\n" +
+    "      background: #f1f3f4;\n" +
+    "      border-color: #dadce0;\n" +
+    "      color: #9aa0a6;\n" +
     "    }\n" +
     "    .btn-primary {\n" +
     "      background: #1a73e8;\n" +
@@ -194,6 +196,7 @@ function getPipelineSidebarHtml() {
     "    }\n" +
     "    .btn-primary:hover:not(:disabled) {\n" +
     "      background: #174ea6;\n" +
+    "      border-color: #174ea6;\n" +
     "      color: #ffffff;\n" +
     "    }\n" +
     "    .btn-step {\n" +
@@ -204,40 +207,42 @@ function getPipelineSidebarHtml() {
     "    .step-tag {\n" +
     "      font-size: 10px;\n" +
     "      font-weight: 700;\n" +
-    "      padding: 1px 5px;\n" +
+    "      padding: 1px 6px;\n" +
     "      border-radius: 3px;\n" +
     "      background: #e8eaed;\n" +
     "      color: #5f6368;\n" +
     "    }\n" +
     "    .link-card {\n" +
     "      display: block;\n" +
-    "      padding: 7px 10px;\n" +
-    "      margin-bottom: 5px;\n" +
+    "      padding: 8px 12px;\n" +
+    "      margin-bottom: 6px;\n" +
     "      background: #f8f9fa;\n" +
     "      border: 1px solid #e8eaed;\n" +
-    "      border-radius: 5px;\n" +
+    "      border-radius: 6px;\n" +
     "      text-decoration: none;\n" +
     "      color: #1a73e8;\n" +
     "      font-size: 11px;\n" +
     "      font-weight: 600;\n" +
-    "      transition: background 0.15s ease;\n" +
+    "      transition: all 0.15s ease;\n" +
     "    }\n" +
     "    .link-card:hover {\n" +
     "      background: #e8f0fe;\n" +
+    "      border-color: #d2e3fc;\n" +
     "    }\n" +
     "    .link-card.disabled {\n" +
     "      color: #9aa0a6;\n" +
     "      pointer-events: none;\n" +
-    "      background: #f1f3f4;\n" +
+    "      background: #f8f9fa;\n" +
+    "      border-color: #f1f3f4;\n" +
     "    }\n" +
     "    .status-bar {\n" +
-    "      padding: 8px 10px;\n" +
+    "      padding: 8px 12px;\n" +
     "      background: #e8f0fe;\n" +
     "      border: 1px solid #d2e3fc;\n" +
     "      border-radius: 6px;\n" +
     "      font-size: 11px;\n" +
     "      color: #174ea6;\n" +
-    "      margin-bottom: 10px;\n" +
+    "      margin-bottom: 12px;\n" +
     "      display: none;\n" +
     "    }\n" +
     "    .status-bar.show { display: block; }\n" +
@@ -255,8 +260,8 @@ function getPipelineSidebarHtml() {
     "      flex: 1;\n" +
     "      background: #f8f9fa;\n" +
     "      border: 1px solid #e8eaed;\n" +
-    "      border-radius: 5px;\n" +
-    "      padding: 6px 8px;\n" +
+    "      border-radius: 6px;\n" +
+    "      padding: 8px 6px;\n" +
     "      text-align: center;\n" +
     "    }\n" +
     "    .metric-val {\n" +
@@ -267,11 +272,12 @@ function getPipelineSidebarHtml() {
     "    .metric-lbl {\n" +
     "      font-size: 9px;\n" +
     "      color: #70757a;\n" +
-    "      margin-top: 1px;\n" +
+    "      margin-top: 2px;\n" +
     "    }\n" +
     "    .footer-actions {\n" +
-    "      margin-top: 12px;\n" +
+    "      margin-top: 14px;\n" +
     "      text-align: center;\n" +
+    "      padding-top: 10px;\n" +
     "    }\n" +
     "    .footer-btn {\n" +
     "      background: none;\n" +
