@@ -32,6 +32,7 @@ var CONFIG = {
   MAX_MEDIA_PAYLOAD_MB: 35, // Apps Script 단일 페이로드 안전 상한 (MB)
   
   // 구글 드라이브 핵심 기획/명세/콘텐츠 문서 파일명
+  IDEA_DOC_NAME: "아이디어 메모", // 마케터 원천 아이디어 작성용 구글 독스 (캠페인 루트 직속)
   PLAN_DOC_NAME: "PLAN", // 마케팅 캠페인 기획서 전문
   SPEC_DOC_NAME: "SPEC", // 멀티 채널 콘텐츠 제작 명세서 (이미지, 숏폼, 카피 규격)
   CONTENT_DOC_NAME: "campaign_content", // 멀티 채널 마케팅 콘텐츠 전문 (카피라이팅 및 영상 콘티)
@@ -39,7 +40,7 @@ var CONFIG = {
   PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 구글 독스 보관 폴더명
   DIRECTIVE_DOC_NAME: "마케터 보정 지침", // 마케터 전용 의사 결정 및 보정 지침서 (AI 덮어쓰기 금지)
 
-  // GitHub 퍼블릭 저장소 Raw 베이스 URL (초기화 시 최신 프롬프트 및 페르소나 실시간 인출)
+  // GitHub 퍼블릭 저장소 Raw 베이스 URL (초기화 시 최신 프롬프트 실시간 인출)
   GITHUB_RAW_BASE: "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline",
 
   // 멀티 채널 마케팅 콘텐츠 및 소재 기본 규격
@@ -74,7 +75,7 @@ var CONFIG = {
   // QuickChart REST API 엔드포인트 (t-SNE 여론 군집 지형도 렌더링)
   QUICKCHART_ENDPOINT: "https://quickchart.io/chart",
 
-  // 7대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
+  // 9대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
   DEFAULT_PROMPTS: {
     "01_idea_to_plan": {
       title: "01_idea_to_plan",
@@ -88,32 +89,44 @@ var CONFIG = {
       systemInstruction:
         "당신은 테크니컬 마케팅 스펙 아키텍트이다. 제공된 마케팅 기획서(PLAN)를 바탕으로 비주얼 이미지 3종(16:9, 9:16, 1:1), 15초 모바일 숏폼 영상, 멀티 채널 카피라이팅 및 피드백 설문 가이드라인을 정의한 콘텐츠 제작 명세서(SPEC) 전문을 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
-    "03_content_generation": {
-      title: "03_content_generation",
+    "03_persona_synthesis": {
+      title: "03_persona_synthesis",
+      description: "타깃 맞춤 AI 페르소나 25인 패널 합성 및 Hugging Face 정규화 지침",
+      systemInstruction:
+        "당신은 엔터프라이즈 마케팅 페르소나 엔지니어링 AI이다. 제공된 제작 명세서(SPEC)의 타깃 오디언스 또는 Hugging Face 데이터로부터 전문 마케터 12인과 일반 소비자 13인으로 구성된 25인 슬림 AI 페르소나 패널 JSON 객체(7대 필수 필드: id, name, age, gender, category, occupation, perspective)를 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+    },
+    "04_content_generation": {
+      title: "04_content_generation",
       description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 생성 지침",
       systemInstruction:
         "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content 구글 독스를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
-    "04_persona_evaluation": {
-      title: "04_persona_evaluation",
+    "05_persona_evaluation": {
+      title: "05_persona_evaluation",
       description: "25인 한국인 마스터 AI 페르소나 다면 평가 및 세부 의견 포인트 도출 지침",
       systemInstruction:
         "당신은 엔터프라이즈 마케팅 리서치 분석 AI이다. 공개된 마케팅 콘텐츠를 25인 한국인 가상 페르소나 관점에서 다면 평가하고, 1인당 2~4개의 세부 의견 포인트(points 배열, 총 50~80개)를 포함하는 순수 JSON 배열만 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
-    "05_feedback_summary": {
-      title: "05_feedback_summary",
+    "06_vlm_media_analysis": {
+      title: "06_vlm_media_analysis",
+      description: "고객 피드백 영상 및 이미지 VLM 멀티모달 분석 지침",
+      systemInstruction:
+        "당신은 엔터프라이즈 멀티모달 비디오 및 비주얼 소비자 행동 분석 전문 AI이다. 소비자가 직접 촬영한 피드백 동영상 또는 사진 미디어를 분석하여 표정, 감정 반응, 제품 사용성, 착용감에 대한 핵심 의견을 3~4문장의 객관적 평서문으로 요약하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+    },
+    "07_feedback_summary": {
+      title: "07_feedback_summary",
       description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
         "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
-    "06_content_revision": {
-      title: "06_content_revision",
+    "08_content_revision": {
+      title: "08_content_revision",
       description: "피드백 요약서 및 독립된 마케터 보정 지침서 반영 차기 리비전 콘텐츠 보정 지침",
       systemInstruction:
         "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
-    "07_visual_prompt": {
-      title: "07_visual_prompt",
+    "09_visual_prompt": {
+      title: "09_visual_prompt",
       description: "비주얼 이미지 3종 및 Veo 숏폼 영상 프롬프트 엔지니어링 지침",
       systemInstruction:
         "당신은 AI 아트 디렉터이다. 캠페인 카피와 마케터 의사 결정을 분석하여 Gemini 이미지 모델(Nano Banana 2.1) 및 Veo 비디오 모델에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라. 설명 없이 영문 프롬프트만 출력하라."

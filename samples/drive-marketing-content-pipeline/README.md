@@ -73,8 +73,8 @@ flowchart LR
    - 구글 시트 상단 메뉴에서 `[마케팅 콘텐츠 파이프라인]` > `[초기화] 캠페인 작업 공간 환경 구축 (All-in-one Setup)`을 클릭한다.
    - 단 1번의 클릭으로 다음 필수 환경을 초장에 100% 자동 구축한다:
      - 구글 드라이브 캠페인 루트 폴더(`cp-ignite`) 및 하위 폴더 트리 생성
-     - 캠페인 루트 직속 25인 한국인 마스터 AI 페르소나 패널(`ai_personas.json`) 자동 시딩
-     - 마케터가 브라우저에서 직접 수정 가능한 7대 프롬프트 구글 독스(`prompts/` 폴더) 자동 배포
+     - 캠페인 루트 직속 [아이디어 메모] 구글 독스 및 25인 타깃 AI 페르소나 패널(`ai_personas.json`) 자동 시딩
+     - 마케터가 브라우저에서 직접 수정 가능한 9대 프롬프트 구글 독스(`prompts/` 폴더) 자동 배포
      - 고객 VoC 수집용 구글 폼(Google Forms) 자동 생성, 스프레드시트 응답 탭 연결 및 모바일 QR 코드 바인딩 완료
    - 최초 1회 실행 시 구글 시트 및 드라이브 접근 권한 승인 팝업이 나타나면 `고급` > `이동`을 클릭한 후 `허용`을 선택한다.
 
@@ -122,9 +122,9 @@ flowchart LR
 >   - `소모 토큰 (150px, 우측 정렬)`: Gemini API 실제 소모 토큰 수 (usageMetadata 실시간 캡처 집계, 숫자 우측 정렬)
 >   - `실행 로그 및 상세 내역 (450px, 왼쪽 정렬)`: 생성된 미디어 규격, 누락 보충 내역, 모델 평가 요약 (단일 행 클립 적용)
 > - **GitHub 퍼블릭 저장소 기반 SSOT 자동 동기화**:
->   초기화(`[초기화]`) 실행 시 본 GitHub 저장소의 `prompts/*.md` 파일들과 `data/ai_personas.json`이 Google Apps Script의 `UrlFetchApp`을 통해 실시간으로 인출되어 구글 드라이브 구글 독스 및 캠페인 루트에 자동 시딩된다. 저장소의 마크다운 프롬프트를 갱신하면, Apps Script 코드를 다시 배포할 필요 없이 구글 시트에서 `[초기화]` 메뉴만 누르면 최신 프롬프트와 페르소나가 즉시 동기화된다.
+>   초기화(`[초기화]`) 실행 시 본 GitHub 저장소의 `prompts/*.md` 파일들이 Google Apps Script의 `UrlFetchApp`을 통해 실시간으로 인출되어 구글 드라이브 구글 독스 및 캠페인 루트에 자동 시딩된다. 저장소의 마크다운 프롬프트를 갱신하면, Apps Script 코드를 다시 배포할 필요 없이 구글 시트에서 `[초기화]` 메뉴만 누르면 최신 9대 프롬프트가 즉시 동기화된다.
 > - **프롬프트 외부화 및 마케터 직접 수정 체계**:
->   초기화 완료 후 캠페인 루트 아래 `prompts/` 폴더에 생성된 7대 구글 독스 문서(`01_idea_to_plan` ~ `07_visual_prompt`)를 열어 톤앤매너, 금지어, 평가 가이드라인을 자유롭게 편집할 수 있다. 파이프라인은 문서 최종 수정 시각 기반의 스마트 캐시(`CacheService`)를 적용하여 수정 사항을 실시간 반영한다.
+>   초기화 완료 후 캠페인 루트 아래 `prompts/` 폴더에 생성된 9대 구글 독스 문서(`01_idea_to_plan` ~ `09_visual_prompt`)를 열어 톤앤매너, 금지어, 평가 가이드라인을 자유롭게 편집할 수 있다. 파이프라인은 문서 최종 수정 시각 기반의 스마트 캐시(`CacheService`)를 적용하여 수정 사항을 실시간 반영한다.
 > - **새로운 캠페인을 시작할 때**:
 >   구글 시트 상단 메뉴의 `[파일]` > `[사본 만들기]`를 클릭하면 새 캠페인용 컨트롤 타워 시트가 그대로 복제되어, 추가 코드 설치 없이 새로운 캠페인을 즉시 독립 운영할 수 있다.
 
@@ -138,18 +138,20 @@ flowchart LR
 My Drive/
 └── cp-ignite/ (캠페인 전용 루트 폴더)
     ├── [마케팅 컨트롤 타워] cp-ignite (구글 시트: 실시간 대시보드 및 VoC 집계)
+    ├── [아이디어 메모] (구글 독스: 마케터 캠페인 원천 아이디어 작성 - 캠페인 루트 직속)
     ├── 고객 피드백 설문 (구글 폼: 초기화 시 자동 생성 및 시트 바인딩)
-    ├── ai_personas.json (캠페인 루트 직속 25인 한국인 마스터 AI 페르소나 패널)
-    ├── prompts/ (마케터 직접 편집 가능한 7대 프롬프트 구글 독스)
+    ├── ai_personas.json (캠페인 루트 직속 25인 타깃 AI 페르소나 패널 - SPEC 도출 시 자동 합성)
+    ├── prompts/ (마케터 직접 편집 가능한 9대 프롬프트 구글 독스)
     │   ├── 01_idea_to_plan (기획서 PLAN 전문 도출 지침)
     │   ├── 02_plan_to_spec (기획서 기반 멀티 채널 콘텐츠 제작 명세서 SPEC 도출 지침)
-    │   ├── 03_content_generation (초판 카피 및 모바일 숏폼 콘티 생성 지침)
-    │   ├── 04_persona_evaluation (25인 페르소나 다면 평가 및 의견 포인트 도출 지침)
-    │   ├── 05_feedback_summary (VoC 및 VLM 멀티모달 분석 기반 종합 보고서 지침)
-    │   ├── 06_content_revision (피드백 요약서 반영 차기 리비전 보정 지침)
-    │   └── 07_visual_prompt (이미지 3종 및 Veo 숏폼 영상 생성 프롬프트 엔지니어링 지침)
-    ├── input/ (원천 입력 데이터셋)
-    │   ├── 아이디어 메모 (구글 독스: 마케터 캠페인 아이디어 초안 메모)
+    │   ├── 03_persona_synthesis (타깃 맞춤 AI 페르소나 25인 패널 합성 및 Hugging Face 정규화 지침)
+    │   ├── 04_content_generation (초판 카피 및 모바일 숏폼 콘티 생성 지침)
+    │   ├── 05_persona_evaluation (25인 페르소나 다면 평가 및 의견 포인트 도출 지침)
+    │   ├── 06_vlm_media_analysis (고객 피드백 영상 및 이미지 VLM 멀티모달 분석 지침)
+    │   ├── 07_feedback_summary (VoC 및 VLM 멀티모달 분석 기반 종합 보고서 지침)
+    │   ├── 08_content_revision (피드백 요약서 반영 차기 리비전 보정 지침)
+    │   └── 09_visual_prompt (이미지 3종 및 Veo 숏폼 영상 생성 프롬프트 엔지니어링 지침)
+    ├── input/ (외부 인바운드 피드백 전용 데이터셋)
     │   ├── fb-01/ (1차 피드백 데이터셋)
     │   │   ├── ai_persona_feedbacks.json (25인 페르소나 실시간 다면 평가 데이터)
     │   │   ├── feedback_clusters_map.png (128d 임베딩 기반 t-SNE 다면 여론 지형도)
@@ -170,6 +172,31 @@ My Drive/
     │   └── rv-02/ (2차 개정본: N차 루프 시 자동 증분)
     ├── PLAN (구글 독스: 마케팅 캠페인 기획서 전문)
     └── SPEC (구글 독스: 멀티 채널 콘텐츠 제작 명세서 - 규격 및 설문 가이드)
+```
+
+---
+
+## 로컬 모듈러 테스트 수이트 (Modular Test Suite)
+
+본 솔루션은 실제 Google Apps Script 배포 전, 로컬 터미널 환경에서 마케터의 전체 업무 흐름과 에셋 보존 로직, LLM 비정형 사족 방어 및 실제 REST API 호출 무결성을 0.02초 만에 자체 검증할 수 있는 모듈러 테스트 수이트를 제공한다:
+
+- `tests/test_scenario.py`: 마케터 모킹 기반 5단계 E2E 시나리오 및 에셋 영구 보존 단위 테스트
+- `tests/test_edge_cases.py`: LLM 백틱 감싸임 및 앞뒤 대화형 사족 슬라이싱 방어 단위 테스트
+- `tests/test_live_api.py`: 실제 Google AI Studio 엔드포인트 직접 호출 및 사용 토큰 계측 테스트
+- `test_pipeline.py`: 전수 모듈 통합 실행기 (통합 요약 리포트 자동 출력)
+
+```bash
+# 1. 전체 모듈 종합 검증 (기본 권장, 가상 모킹 모드로 0.02초 만에 완결)
+python3 test_pipeline.py --all
+
+# 2. 마케터 5단계 E2E 시나리오 모듈만 단독 실행
+python3 -m unittest tests/test_scenario.py
+
+# 3. LLM 비정형 사족 방어 파서 모듈만 단독 실행
+python3 -m unittest tests/test_edge_cases.py
+
+# 4. 실제 Google AI Studio API 키를 사용한 라이브 엔드포인트 호출 검증
+python3 test_pipeline.py --live --api-key YOUR_GEMINI_API_KEY
 ```
 
 ---

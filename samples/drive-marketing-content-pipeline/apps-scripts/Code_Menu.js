@@ -353,6 +353,10 @@ function setCustomPersonasPrompt() {
     var campaignCode = getCampaignCode();
     var generatedJson = "";
 
+    var personaInstruction = (typeof getPromptTemplate === "function")
+      ? getPromptTemplate("03_persona_synthesis")
+      : "";
+
     // 1. Hugging Face Server API 연동 여부 판별
     if (criteria.indexOf("hf:") === 0) {
       var datasetRepo = criteria.replace("hf:", "").trim();
@@ -361,37 +365,22 @@ function setCustomPersonasPrompt() {
       if (hfResp.getResponseCode() === 200) {
         var hfData = JSON.parse(hfResp.getContentText());
         var rawRowsText = JSON.stringify(hfData.rows || hfData, null, 2);
-        var normInstruction =
-          "당신은 데이터 엔지니어이다. 제공된 Hugging Face 원본 데이터로부터 25인의 슬림 페르소나 JSON 배열을 추출 및 정규화하라.\n" +
-          "반드시 id(p01~p25), name, age, gender, category(전문 마케터 또는 일반 소비자), occupation, perspective(핵심 관점 및 관심사 1줄) 7개 필드만 포함하는 JSON 배열로 출력하라.";
+        var normInstruction = personaInstruction ||
+          "당신은 데이터 엔지니어이다. 제공된 Hugging Face 원본 데이터로부터 25인의 슬림 페르소나 JSON 객체를 추출 및 정규화하라.\n" +
+          "반드시 id(p01~p25), name, age, gender, category(전문 마케터 또는 일반 소비자), occupation, perspective 7개 필드를 포함하는 유효한 JSON으로 출력하라.";
         generatedJson = callGemini(normInstruction, rawRowsText);
       } else {
         throw new Error("Hugging Face API 호출 실패 (응답 코드: " + hfResp.getResponseCode() + ")");
       }
     } else {
       // 2. Gemini 기반 자연어 타깃 페르소나 25인 즉시 합성
-      var systemInstruction =
+      var systemInstruction = personaInstruction ||
         "당신은 글로벌 소비자 리서치 및 엔터프라이즈 마케팅 페르소나 엔지니어링 AI이다.\n" +
         "사용자가 지정한 타깃 기준에 맞추어 마케팅 캠페인 콘텐츠와 광고 소재를 다면 평가할 25인의 슬림 AI 페르소나 패널을 도출하라.\n\n" +
         "필수 규칙:\n" +
         "1. 총 25인 구성: 전문 마케터 12인 + 일반 소비자 13인으로 안배하십시오.\n" +
-        "2. 반드시 다음 7개 필드만 엄격히 포함하는 순수 JSON 객체로 출력하십시오:\n" +
-        "{\n" +
-        "  \"metadata\": { \"description\": \"타깃 맞춤 AI 페르소나 패널\", \"total\": 25 },\n" +
-        "  \"personas\": [\n" +
-        "    {\n" +
-        "      \"id\": \"p01\",\n" +
-        "      \"name\": \"이름\",\n" +
-        "      \"age\": 30,\n" +
-        "      \"gender\": \"남성/여성\",\n" +
-        "      \"category\": \"전문 마케터 또는 일반 소비자\",\n" +
-        "      \"occupation\": \"직업\",\n" +
-        "      \"perspective\": \"핵심 성향 및 주요 관심사 요약 (1줄)\"\n" +
-        "    }\n" +
-        "  ]\n" +
-        "}\n" +
-        "3. 코드 블록(```json) 없이 유효한 JSON만 반환하십시오.\n" +
-        "4. 불필요하게 긴 텍스트나 중복 필드를 배제하여 토큰 효율을 극대화하십시오.";
+        "2. 반드시 id, name, age, gender, category, occupation, perspective 7개 필드를 엄격히 포함하는 순수 JSON 객체로 출력하십시오.\n" +
+        "3. 코드 블록(```json) 없이 유효한 JSON만 반환하십시오.";
 
       var userPrompt = "타깃 페르소나 기준: " + criteria + "\n\n위 기준에 부합하는 정밀하고 다양한 25인 슬림 페르소나 JSON을 생성하라.";
       generatedJson = callGemini(systemInstruction, userPrompt);

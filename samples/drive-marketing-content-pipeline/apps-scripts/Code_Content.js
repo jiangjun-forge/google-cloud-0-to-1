@@ -18,9 +18,10 @@ function runIdeaToPlanConversion() {
     var campaignFolder = getCampaignFolder();
     var campaignCode = getCampaignCode();
     var inputFolder = getCampaignSubFolder(["input"]);
+    var ideaDocName = (CONFIG && CONFIG.IDEA_DOC_NAME) || "아이디어 메모";
 
-    // 1. input/아이디어 메모 읽기 및 대화상자 확인
-    var existingIdea = readGoogleDoc(inputFolder, "아이디어 메모") || "";
+    // 1. 캠페인 루트 직속 [아이디어 메모] 읽기 (레거시 input/ 폴더도 보조 탐색)
+    var existingIdea = readGoogleDoc(campaignFolder, ideaDocName) || readGoogleDoc(inputFolder, ideaDocName) || "";
     var existingPreview = existingIdea.replace(/\n+/g, " ").trim();
     if (existingPreview.length > 60) {
       existingPreview = existingPreview.substring(0, 60) + "...";
@@ -41,11 +42,11 @@ function runIdeaToPlanConversion() {
     var ideaMemo = inputVal || existingIdea;
 
     if (inputVal) {
-      saveGoogleDoc(inputFolder, "아이디어 메모", inputVal);
+      saveGoogleDoc(campaignFolder, ideaDocName, inputVal);
     }
 
     if (!ideaMemo || ideaMemo.trim().length < 5) {
-      throw new Error("캠페인 아이디어가 입력되지 않아 기획서 생성을 중단합니다. [아이디어 메모] 문서를 확인하십시오.");
+      throw new Error("캠페인 아이디어가 입력되지 않아 기획서 생성을 중단합니다. 캠페인 루트의 [아이디어 메모] 문서를 확인하십시오.");
     }
 
     resetSessionTokens();
@@ -69,6 +70,26 @@ function runIdeaToPlanConversion() {
       "- 15초 세로 9:16 모바일 숏폼 영상 콘티 규격 및 4대 평가 영역 설문 가이드라인 정의";
 
     var specContent = callGemini(specSystemInstruction, specUserPrompt);
+
+    // 2-3단계: 제작 명세서(SPEC)의 타깃 오디언스에 맞춘 25인 AI 페르소나 패널 자동 합성 (온디맨드 동적 갱신)
+    try {
+      var personaSystemInstruction = getPromptTemplate("03_persona_synthesis");
+      var personaUserPrompt =
+        "다음은 이번 캠페인의 콘텐츠 제작 명세서(SPEC) 및 기획서(PLAN)이다.\n\n" +
+        "### [마케팅 제작 명세서 발췌]\n" + (specContent.substring(0, 1800)) + "\n\n" +
+        "위 명세서의 타깃 오디언스 프로파일 및 페인 포인트를 심층 분석하여, 콘텐츠를 다각도로 평가할 25인의 슬림 AI 페르소나 패널 JSON 객체(7대 필수 필드: id, name, age, gender, category, occupation, perspective)를 도출하라.";
+      var synthesizedPersonasRaw = callGemini(personaSystemInstruction, personaUserPrompt);
+      if (synthesizedPersonasRaw) {
+        var parsedPersonas = safeParseJson(synthesizedPersonasRaw, null, false);
+        if (parsedPersonas && (parsedPersonas.personas || Array.isArray(parsedPersonas))) {
+          var personaFileName = (CONFIG && CONFIG.PERSONA_FILE_NAME) || "ai_personas.json";
+          saveTextFile(campaignFolder, personaFileName, JSON.stringify(parsedPersonas, null, 2));
+          Logger.log("제작 명세서 기반 25인 타깃 맞춤 페르소나 자동 합성 완료: " + personaFileName);
+        }
+      }
+    } catch (personaErr) {
+      Logger.log("타깃 페르소나 자동 합성 중 예외 (기존 페르소나 유지): " + personaErr);
+    }
 
     var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
     var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
@@ -204,7 +225,7 @@ function runInitialContentGeneration() {
       );
     } else {
       // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
-      var systemInstruction = getPromptTemplate("03_content_generation");
+      var systemInstruction = getPromptTemplate("04_content_generation");
       var promptText =
         "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
         "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
@@ -384,7 +405,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       );
     } else {
       // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
-      var systemInstruction = getPromptTemplate("06_content_revision");
+      var systemInstruction = getPromptTemplate("08_content_revision");
       var userPrompt =
         "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), " +
         "고객 피드백 종합 요약본(feedback_summary), 그리고 마케터의 최종 의사 결정 및 보정 지침이다.\n\n" +
