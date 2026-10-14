@@ -43,7 +43,8 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
     var targetRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
 
     // 소요 시간 안내 토스트 즉시 표시
-    showProcessingToast("[Step 7/9] 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")", 75);
+    var stepPrefix = (targetRvName === "rv-01") ? "[Step 7]" : "[Step 9]";
+    showProcessingToast(stepPrefix + " 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")", 75);
 
     var campaignCode = getCampaignCode();
     var prevRvFolder = getCampaignSubFolder(["output", prevRvName]);

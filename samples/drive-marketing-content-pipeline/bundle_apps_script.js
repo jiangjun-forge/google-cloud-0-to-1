@@ -1239,7 +1239,8 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
     }
 
     // 소요 시간 안내 토스트 즉시 표시
-    showProcessingToast("[Step 5/8] 다면 평가 및 t-SNE 지형도 생성 (" + targetRound + ")", 75);
+    var stepPrefix = (targetRound === "fb-01") ? "[Step 5]" : "[Step 8]";
+    showProcessingToast(stepPrefix + " 다면 평가 및 t-SNE 지형도 생성 (" + targetRound + ")", 75);
 
     var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
     var prevRoundNum = Math.max(0, roundNum - 1);
@@ -1726,7 +1727,8 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
     var targetRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
 
     // 소요 시간 안내 토스트 즉시 표시
-    showProcessingToast("[Step 7/9] 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")", 75);
+    var stepPrefix = (targetRvName === "rv-01") ? "[Step 7]" : "[Step 9]";
+    showProcessingToast(stepPrefix + " 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")", 75);
 
     var campaignCode = getCampaignCode();
     var prevRvFolder = getCampaignSubFolder(["output", prevRvName]);
