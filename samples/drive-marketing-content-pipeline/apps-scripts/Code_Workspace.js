@@ -54,34 +54,46 @@ function initCampaignWorkspace() {
       Logger.log("캠페인 루트 직속 스타터 아이디어 메모 생성 완료: " + ideaDocName);
     }
 
-    // 5. [핵심] 고객 VoC 수집용 구글 폼(Google Forms) 자동 생성 및 시트 연동 초장 완결
+    // 5. [스마트 보존] 고객 VoC 수집용 구글 폼(Google Forms) 탐색 및 연동 (기존 폼 보존, 부재 시에만 생성)
     var formInfo = setupFeedbackGoogleForm(campaignFolder, campaignCode);
 
-    // 6. 현재 구글 시트를 캠페인 루트 폴더로 안전하게 이동하여 컨트롤 타워 패키징
+    // 6. 현재 구글 시트를 캠페인 루트 폴더로 패키징 및 직관적 명칭 동기화
     try {
       var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
       var sheetFile = DriveApp.getFileById(activeSpreadsheet.getId());
-      sheetFile.moveTo(campaignFolder);
+      var currentParents = sheetFile.getParents();
+      var isAlreadyInFolder = false;
+      while (currentParents.hasNext()) {
+        if (currentParents.next().getId() === campaignFolder.getId()) {
+          isAlreadyInFolder = true;
+          break;
+        }
+      }
+      if (!isAlreadyInFolder) {
+        sheetFile.moveTo(campaignFolder);
+      }
+      var folderDisplayName = campaignFolder.getName();
       var currentTitle = activeSpreadsheet.getName();
-      if (!currentTitle || currentTitle === "제목 없는 스프레드시트" || currentTitle === "마케팅 콘텐츠 파이프라인") {
-        activeSpreadsheet.rename("[마케팅 컨트롤 타워] " + campaignCode);
+      if (!currentTitle || currentTitle === "제목 없는 스프레드시트" || currentTitle === "마케팅 콘텐츠 파이프라인" || currentTitle.indexOf("[마케팅 컨트롤 타워]") === 0) {
+        activeSpreadsheet.rename("[마케팅 컨트롤 타워] " + folderDisplayName);
       }
     } catch (sheetMoveErr) {
       Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
     }
 
-    // 7. 구글 시트 실행 대시보드 표 초기화 및 핵심 리소스 링크 등록
+    // 7. 구글 시트 실행 로그 표 초기화 및 핵심 리소스 링크 등록
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     initDashboardSheet();
+    var folderDisplayName = campaignFolder.getName();
     recordStepResultToSheet(
-      "초기 환경 구축",
-      "작업 공간 및 VoC 설문 폼",
+      "작업 공간 준비",
+      "캠페인 폴더 및 자산 무결성 점검",
       "완료",
       campaignFolder.getUrl(),
-      "구글 드라이브 폴더 열기 (" + campaignCode + ")",
+      "드라이브 폴더 열기 (" + folderDisplayName + ")",
       durationSec,
       "-",
-      "캠페인 폴더 트리 8종 구축, 9대 프롬프트 독스 및 루트 직속 아이디어 메모 적재 완료"
+      "기존 콘텐츠/기획서 100% 안전 보존 및 누락된 필수 폴더 트리/설문 채널 복구 완료"
     );
     if (formInfo && formInfo.publishedUrl) {
       recordStepResultToSheet(
@@ -97,8 +109,11 @@ function initCampaignWorkspace() {
     }
 
     showResultModal(
-      "캠페인 초기 환경 구축 완료 (" + campaignCode + ")",
-      "캠페인 루트 직속 [아이디어 메모], 25인 페르소나, 9대 프롬프트 구글 독스, 고객 VoC 설문 폼이 준비되었습니다.\n아래 버튼을 눌러 캠페인 드라이브 폴더를 즉시 확인하십시오.",
+      "캠페인 작업 공간 준비 완료 (" + folderDisplayName + ")",
+      "캠페인 폴더 내 기존 콘텐츠와 기획서 자산을 100% 안전하게 보존하고, 누락된 필수 리소스 복구를 완료했습니다.\n\n" +
+      "* 캠페인 명칭: " + folderDisplayName + " (" + campaignCode + ")\n" +
+      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n\n" +
+      "아래 버튼을 눌러 캠페인 드라이브 폴더를 즉시 확인하십시오.",
       "캠페인 드라이브 폴더 열기",
       campaignFolder.getUrl()
     );
@@ -132,11 +147,19 @@ function setupFeedbackGoogleForm(campaignFolder, campaignCode) {
     var spreadsheetId = spreadsheet.getId();
     var formTitle = "고객 피드백 설문 (" + campaignCode + ")";
 
-    // 기존에 생성된 폼이 있는지 탐색
+    // 기존에 생성된 폼이 있는지 스마트 탐색 (동일 제목 또는 폴더 내 기존 구글 폼 보존)
     var existingFiles = campaignFolder.getFilesByName(formTitle);
+    if (!existingFiles.hasNext()) {
+      existingFiles = campaignFolder.getFilesByType(MimeType.GOOGLE_FORMS);
+    }
     if (existingFiles.hasNext()) {
       var file = existingFiles.next();
       var existingForm = FormApp.openById(file.getId());
+      try {
+        existingForm.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
+      } catch (destErr) {
+        // 이미 연결되어 있거나 권한 문제 시 무시
+      }
       return {
         publishedUrl: existingForm.getPublishedUrl(),
         editUrl: existingForm.getEditUrl()

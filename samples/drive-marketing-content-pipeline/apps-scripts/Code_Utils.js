@@ -136,35 +136,150 @@ function getFolderByPath(pathParts) {
   return currentFolder;
 }
 
+/**
+ * 폴더 이름으로부터 시스템 내부에서 안전하게 사용할 영문 케밥 케이스 슬러그(예: cp-2026-autumn-breeze)를 자동 생성한다.
+ * 한글 마케팅 대표 키워드를 영문으로 자동 매핑하고 영문/숫자/하이픈만 정제 추출한다.
+ *
+ * @param {string} rawName - 마케터가 명명한 폴더 이름
+ * @return {string} 정규화된 영문 슬러그
+ */
+function generateCampaignSlug(rawName) {
+  if (!rawName) return CONFIG.CAMPAIGN_CODE || "cp-ignite";
+
+  var text = String(rawName).trim();
+
+  // 이미 cp- 로 시작하고 영문/숫자/하이픈만 있는 경우 그대로 사용
+  if (/^cp-[a-z0-9\-]+$/i.test(text)) {
+    return text.toLowerCase();
+  }
+
+  // 자주 사용되는 마케팅 및 시즌 키워드 영문 매핑 사전
+  var dict = {
+    "가을": "autumn", "오텀": "autumn",
+    "봄": "spring", "스프링": "spring",
+    "여름": "summer", "서머": "summer",
+    "겨울": "winter", "윈터": "winter",
+    "캠페인": "camp", "프로모션": "promo", "이벤트": "event",
+    "마케팅": "mkt", "프로젝트": "proj",
+    "신제품": "new", "론칭": "launch", "출시": "launch",
+    "브리즈": "breeze", "블랙": "black", "프라이데이": "friday",
+    "크리스마스": "xmas", "할로윈": "halloween", "설날": "lunar", "추석": "thanksgiving",
+    "세일": "sale", "특가": "deal", "기획": "plan"
+  };
+
+  var lower = text.toLowerCase();
+  for (var k in dict) {
+    if (lower.indexOf(k) !== -1) {
+      lower = lower.split(k).join("-" + dict[k] + "-");
+    }
+  }
+
+  // 영문 소문자, 숫자, 하이픈 외 모든 특수문자/공백/한글 제거
+  var cleaned = lower
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-+/g, "-");
+
+  // 최소 2자 이상의 영문/숫자가 확보된 경우 슬러그 완성
+  if (cleaned && cleaned.length >= 2) {
+    return cleaned.indexOf("cp-") === 0 ? cleaned : "cp-" + cleaned;
+  }
+
+  // 영문/숫자가 없는 순수 한글일 경우 문자열 해시 기반 고유 슬러그 생성
+  var hash = 0;
+  for (var i = 0; i < text.length; i++) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+    hash |= 0;
+  }
+  var hexHash = Math.abs(hash).toString(16).substring(0, 6);
+  return "cp-campaign-" + hexHash;
+}
+
+/**
+ * 마케터가 생성한 캠페인 폴더를 자동 감지하고 폴더 ID로 영구 바인딩한다.
+ * [UX 혁신]: 마케터가 구글 드라이브에서 자유롭게 폴더를 만들고 시트를 넣으면,
+ * 1. 구글 시트의 부모 폴더를 즉시 캠페인 루트 폴더로 자동 채택
+ * 2. 폴더 ID(folder.getId())를 영구 저장하여 마케터가 폴더 이름을 변경해도 완벽 추적
+ * 3. 한글 폴더명을 분석하여 안전한 영문 슬러그를 자동 합성
+ */
 function getCampaignFolder() {
+  var props = PropertiesService.getScriptProperties();
+  var savedFolderId = props.getProperty("CAMPAIGN_FOLDER_ID");
+
+  // 1. 이미 영구 바인딩된 폴더 ID가 유효한지 우선 검증 (폴더명 변경 시에도 100% 추적)
+  if (savedFolderId) {
+    try {
+      var savedFolder = DriveApp.getFolderById(savedFolderId);
+      if (savedFolder && !savedFolder.isTrashed()) {
+        return savedFolder;
+      }
+    } catch (idErr) {
+      Logger.log("기존 바인딩된 폴더 ID 접근 불가 (재탐색 진행): " + idErr);
+    }
+  }
+
+  // 2. 현재 구글 시트가 위치한 부모 폴더 자동 감지
   try {
     var sheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
     var sheetFile = DriveApp.getFileById(sheetId);
     var parents = sheetFile.getParents();
+    var rootFolderId = DriveApp.getRootFolder().getId();
+
     while (parents.hasNext()) {
       var parent = parents.next();
-      var parentName = parent.getName();
-      if (parentName.indexOf("cp-") === 0) {
+      // 내 드라이브 최상위 루트가 아닌 서브폴더에 위치한 경우, 마케터의 캠페인 폴더로 즉시 채택!
+      if (parent.getId() !== rootFolderId && !parent.isTrashed()) {
+        var folderName = parent.getName();
+        var slug = generateCampaignSlug(folderName);
+        props.setProperty("CAMPAIGN_FOLDER_ID", parent.getId());
+        props.setProperty("CAMPAIGN_SLUG", slug);
+        props.setProperty("CAMPAIGN_DISPLAY_NAME", folderName);
+        Logger.log("마케터 캠페인 부모 폴더 자동 감지 및 ID 영구 바인딩: " + folderName + " (ID: " + parent.getId() + ", Slug: " + slug + ")");
         return parent;
       }
     }
-  } catch (e) {
-    Logger.log("부모 캠페인 폴더 감지 중 예외: " + e);
+  } catch (parentErr) {
+    Logger.log("부모 캠페인 폴더 감지 중 예외: " + parentErr);
   }
-  return getFolderByPath([CONFIG.CAMPAIGN_CODE]);
+
+  // 3. 부모 폴더가 루트이거나 미지정된 경우 기본 폴더 생성 및 바인딩
+  var defaultFolder = getFolderByPath([CONFIG.CAMPAIGN_CODE]);
+  props.setProperty("CAMPAIGN_FOLDER_ID", defaultFolder.getId());
+  props.setProperty("CAMPAIGN_SLUG", CONFIG.CAMPAIGN_CODE);
+  props.setProperty("CAMPAIGN_DISPLAY_NAME", CONFIG.CAMPAIGN_CODE);
+  return defaultFolder;
 }
 
+/**
+ * 캠페인 식별용 영문 슬러그를 반환한다.
+ */
 function getCampaignCode() {
   try {
+    var props = PropertiesService.getScriptProperties();
+    var savedSlug = props.getProperty("CAMPAIGN_SLUG");
+    if (savedSlug) return savedSlug;
+
     var folder = getCampaignFolder();
     var folderName = folder.getName();
-    if (folderName.indexOf("cp-") === 0) {
-      return folderName;
-    }
+    var slug = generateCampaignSlug(folderName);
+    props.setProperty("CAMPAIGN_SLUG", slug);
+    return slug;
   } catch (e) {
     Logger.log("캠페인 코드 도출 중 예외: " + e);
   }
   return CONFIG.CAMPAIGN_CODE;
+}
+
+/**
+ * 마케터가 명명한 실제 캠페인 폴더 명칭을 반환한다.
+ */
+function getCampaignDisplayName() {
+  try {
+    var folder = getCampaignFolder();
+    return folder.getName();
+  } catch (e) {
+    return getCampaignCode();
+  }
 }
 
 function getCampaignSubFolder(subPathParts) {

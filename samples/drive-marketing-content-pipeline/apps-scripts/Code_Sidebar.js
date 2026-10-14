@@ -54,38 +54,54 @@ function getPipelineStatus() {
   };
 
   try {
-    var code = getCampaignCode();
-    if (code) status.campaignCode = code;
-
     var folder = getCampaignFolder();
     if (folder) {
       status.folderUrl = folder.getUrl();
+      var folderName = folder.getName();
+      status.campaignCode = folderName.length > 20 ? folderName.substring(0, 18) + "..." : folderName;
 
-      var ideaFiles = folder.getFilesByName("[아이디어 메모] 2026 가을 오텀 브리즈 캠페인");
+      // 1. 아이디어 메모 탐색
+      var ideaName = (CONFIG && CONFIG.IDEA_DOC_NAME) || "아이디어 메모";
+      var ideaFiles = folder.getFilesByName(ideaName);
+      if (!ideaFiles.hasNext()) {
+        ideaFiles = folder.getFilesByName("[아이디어 메모] 2026 가을 오텀 브리즈 캠페인");
+      }
       if (ideaFiles.hasNext()) status.ideaDocUrl = ideaFiles.next().getUrl();
 
-      var planFiles = folder.getFilesByName("PLAN.md");
+      // 2. 기획서 (PLAN) 탐색 (확장자 유무 불문)
+      var planFiles = folder.getFilesByName("PLAN");
+      if (!planFiles.hasNext()) planFiles = folder.getFilesByName("PLAN.md");
+      if (!planFiles.hasNext()) planFiles = folder.getFilesByName("마케팅 캠페인 기획서");
       if (planFiles.hasNext()) status.planDocUrl = planFiles.next().getUrl();
 
-      var specFiles = folder.getFilesByName("SPEC.md");
+      // 3. 제작 명세서 (SPEC) 탐색 (확장자 유무 불문)
+      var specFiles = folder.getFilesByName("SPEC");
+      if (!specFiles.hasNext()) specFiles = folder.getFilesByName("SPEC.md");
       if (specFiles.hasNext()) status.specDocUrl = specFiles.next().getUrl();
 
+      // 4. 고객 VoC 설문 폼 탐색
       var formFiles = folder.getFilesByType(MimeType.GOOGLE_FORMS);
       if (formFiles.hasNext()) status.formUrl = formFiles.next().getUrl();
 
+      // 5. 최신 리비전 콘텐츠 탐색
       var latestRvNum = detectLatestRevisionRoundNum();
       if (latestRvNum >= 0) {
         status.latestRv = "rv-" + (latestRvNum < 10 ? "0" + latestRvNum : latestRvNum);
         var rvFolder = getCampaignSubFolder(["output", status.latestRv]);
-        var contentFiles = rvFolder.getFilesByName("campaign_content.md");
+        var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+        var contentFiles = rvFolder.getFilesByName(contentDocName);
+        if (!contentFiles.hasNext()) contentFiles = rvFolder.getFilesByName("campaign_content.md");
+        if (!contentFiles.hasNext()) contentFiles = rvFolder.getFilesByName("campaign_asset");
         if (contentFiles.hasNext()) status.contentDocUrl = contentFiles.next().getUrl();
       }
 
+      // 6. 최신 피드백 종합 보고서 및 지형도 탐색
       var latestFbNum = detectLatestFeedbackRoundNum();
       if (latestFbNum > 0) {
         status.latestFb = "fb-" + (latestFbNum < 10 ? "0" + latestFbNum : latestFbNum);
         var fbFolder = getCampaignSubFolder(["input", status.latestFb]);
-        var summaryFiles = fbFolder.getFilesByName("feedback_summary.md");
+        var summaryFiles = fbFolder.getFilesByName("feedback_summary");
+        if (!summaryFiles.hasNext()) summaryFiles = fbFolder.getFilesByName("feedback_summary.md");
         if (summaryFiles.hasNext()) status.summaryDocUrl = summaryFiles.next().getUrl();
         var mapFiles = fbFolder.getFilesByName("feedback_clusters_map.png");
         if (mapFiles.hasNext()) status.mapUrl = mapFiles.next().getUrl();
@@ -119,16 +135,9 @@ function getPipelineSidebarHtml() {
     "      padding: 16px 14px;\n" +
     "    }\n" +
     "    .header {\n" +
-    "      padding-bottom: 12px;\n" +
-    "      margin-bottom: 14px;\n" +
+    "      padding-bottom: 8px;\n" +
+    "      margin-bottom: 10px;\n" +
     "      border-bottom: 1px solid #dadce0;\n" +
-    "    }\n" +
-    "    .header h2 {\n" +
-    "      font-size: 15px;\n" +
-    "      font-weight: 700;\n" +
-    "      color: #1a73e8;\n" +
-    "      margin-bottom: 6px;\n" +
-    "      letter-spacing: -0.3px;\n" +
     "    }\n" +
     "    .header-sub {\n" +
     "      font-size: 11px;\n" +
@@ -326,7 +335,6 @@ function getPipelineSidebarHtml() {
     "</head>\n" +
     "<body>\n" +
     "  <div class='header'>\n" +
-    "    <h2>마케팅 콘텐츠 파이프라인</h2>\n" +
     "    <div class='header-sub'>\n" +
     "      <span id='campaignCodeBadge' class='badge'>CAMP-2026-AUTUMN</span>\n" +
     "      <span id='apiKeyBadge' class='badge warn'>API Key 확인 중</span>\n" +

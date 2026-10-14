@@ -1079,34 +1079,46 @@ function initCampaignWorkspace() {
       Logger.log("캠페인 루트 직속 스타터 아이디어 메모 생성 완료: " + ideaDocName);
     }
 
-    // 5. [핵심] 고객 VoC 수집용 구글 폼(Google Forms) 자동 생성 및 시트 연동 초장 완결
+    // 5. [스마트 보존] 고객 VoC 수집용 구글 폼(Google Forms) 탐색 및 연동 (기존 폼 보존, 부재 시에만 생성)
     var formInfo = setupFeedbackGoogleForm(campaignFolder, campaignCode);
 
-    // 6. 현재 구글 시트를 캠페인 루트 폴더로 안전하게 이동하여 컨트롤 타워 패키징
+    // 6. 현재 구글 시트를 캠페인 루트 폴더로 패키징 및 직관적 명칭 동기화
     try {
       var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
       var sheetFile = DriveApp.getFileById(activeSpreadsheet.getId());
-      sheetFile.moveTo(campaignFolder);
+      var currentParents = sheetFile.getParents();
+      var isAlreadyInFolder = false;
+      while (currentParents.hasNext()) {
+        if (currentParents.next().getId() === campaignFolder.getId()) {
+          isAlreadyInFolder = true;
+          break;
+        }
+      }
+      if (!isAlreadyInFolder) {
+        sheetFile.moveTo(campaignFolder);
+      }
+      var folderDisplayName = campaignFolder.getName();
       var currentTitle = activeSpreadsheet.getName();
-      if (!currentTitle || currentTitle === "제목 없는 스프레드시트" || currentTitle === "마케팅 콘텐츠 파이프라인") {
-        activeSpreadsheet.rename("[마케팅 컨트롤 타워] " + campaignCode);
+      if (!currentTitle || currentTitle === "제목 없는 스프레드시트" || currentTitle === "마케팅 콘텐츠 파이프라인" || currentTitle.indexOf("[마케팅 컨트롤 타워]") === 0) {
+        activeSpreadsheet.rename("[마케팅 컨트롤 타워] " + folderDisplayName);
       }
     } catch (sheetMoveErr) {
       Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
     }
 
-    // 7. 구글 시트 실행 대시보드 표 초기화 및 핵심 리소스 링크 등록
+    // 7. 구글 시트 실행 로그 표 초기화 및 핵심 리소스 링크 등록
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     initDashboardSheet();
+    var folderDisplayName = campaignFolder.getName();
     recordStepResultToSheet(
-      "초기 환경 구축",
-      "작업 공간 및 VoC 설문 폼",
+      "작업 공간 준비",
+      "캠페인 폴더 및 자산 무결성 점검",
       "완료",
       campaignFolder.getUrl(),
-      "구글 드라이브 폴더 열기 (" + campaignCode + ")",
+      "드라이브 폴더 열기 (" + folderDisplayName + ")",
       durationSec,
       "-",
-      "캠페인 폴더 트리 8종 구축, 9대 프롬프트 독스 및 루트 직속 아이디어 메모 적재 완료"
+      "기존 콘텐츠/기획서 100% 안전 보존 및 누락된 필수 폴더 트리/설문 채널 복구 완료"
     );
     if (formInfo && formInfo.publishedUrl) {
       recordStepResultToSheet(
@@ -1122,8 +1134,11 @@ function initCampaignWorkspace() {
     }
 
     showResultModal(
-      "캠페인 초기 환경 구축 완료 (" + campaignCode + ")",
-      "캠페인 루트 직속 [아이디어 메모], 25인 페르소나, 9대 프롬프트 구글 독스, 고객 VoC 설문 폼이 준비되었습니다.\n아래 버튼을 눌러 캠페인 드라이브 폴더를 즉시 확인하십시오.",
+      "캠페인 작업 공간 준비 완료 (" + folderDisplayName + ")",
+      "캠페인 폴더 내 기존 콘텐츠와 기획서 자산을 100% 안전하게 보존하고, 누락된 필수 리소스 복구를 완료했습니다.\n\n" +
+      "* 캠페인 명칭: " + folderDisplayName + " (" + campaignCode + ")\n" +
+      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n\n" +
+      "아래 버튼을 눌러 캠페인 드라이브 폴더를 즉시 확인하십시오.",
       "캠페인 드라이브 폴더 열기",
       campaignFolder.getUrl()
     );
@@ -1157,11 +1172,19 @@ function setupFeedbackGoogleForm(campaignFolder, campaignCode) {
     var spreadsheetId = spreadsheet.getId();
     var formTitle = "고객 피드백 설문 (" + campaignCode + ")";
 
-    // 기존에 생성된 폼이 있는지 탐색
+    // 기존에 생성된 폼이 있는지 스마트 탐색 (동일 제목 또는 폴더 내 기존 구글 폼 보존)
     var existingFiles = campaignFolder.getFilesByName(formTitle);
+    if (!existingFiles.hasNext()) {
+      existingFiles = campaignFolder.getFilesByType(MimeType.GOOGLE_FORMS);
+    }
     if (existingFiles.hasNext()) {
       var file = existingFiles.next();
       var existingForm = FormApp.openById(file.getId());
+      try {
+        existingForm.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
+      } catch (destErr) {
+        // 이미 연결되어 있거나 권한 문제 시 무시
+      }
       return {
         publishedUrl: existingForm.getPublishedUrl(),
         editUrl: existingForm.getEditUrl()
@@ -2799,35 +2822,150 @@ function getFolderByPath(pathParts) {
   return currentFolder;
 }
 
+/**
+ * 폴더 이름으로부터 시스템 내부에서 안전하게 사용할 영문 케밥 케이스 슬러그(예: cp-2026-autumn-breeze)를 자동 생성한다.
+ * 한글 마케팅 대표 키워드를 영문으로 자동 매핑하고 영문/숫자/하이픈만 정제 추출한다.
+ *
+ * @param {string} rawName - 마케터가 명명한 폴더 이름
+ * @return {string} 정규화된 영문 슬러그
+ */
+function generateCampaignSlug(rawName) {
+  if (!rawName) return CONFIG.CAMPAIGN_CODE || "cp-ignite";
+
+  var text = String(rawName).trim();
+
+  // 이미 cp- 로 시작하고 영문/숫자/하이픈만 있는 경우 그대로 사용
+  if (/^cp-[a-z0-9\-]+$/i.test(text)) {
+    return text.toLowerCase();
+  }
+
+  // 자주 사용되는 마케팅 및 시즌 키워드 영문 매핑 사전
+  var dict = {
+    "가을": "autumn", "오텀": "autumn",
+    "봄": "spring", "스프링": "spring",
+    "여름": "summer", "서머": "summer",
+    "겨울": "winter", "윈터": "winter",
+    "캠페인": "camp", "프로모션": "promo", "이벤트": "event",
+    "마케팅": "mkt", "프로젝트": "proj",
+    "신제품": "new", "론칭": "launch", "출시": "launch",
+    "브리즈": "breeze", "블랙": "black", "프라이데이": "friday",
+    "크리스마스": "xmas", "할로윈": "halloween", "설날": "lunar", "추석": "thanksgiving",
+    "세일": "sale", "특가": "deal", "기획": "plan"
+  };
+
+  var lower = text.toLowerCase();
+  for (var k in dict) {
+    if (lower.indexOf(k) !== -1) {
+      lower = lower.split(k).join("-" + dict[k] + "-");
+    }
+  }
+
+  // 영문 소문자, 숫자, 하이픈 외 모든 특수문자/공백/한글 제거
+  var cleaned = lower
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-+/g, "-");
+
+  // 최소 2자 이상의 영문/숫자가 확보된 경우 슬러그 완성
+  if (cleaned && cleaned.length >= 2) {
+    return cleaned.indexOf("cp-") === 0 ? cleaned : "cp-" + cleaned;
+  }
+
+  // 영문/숫자가 없는 순수 한글일 경우 문자열 해시 기반 고유 슬러그 생성
+  var hash = 0;
+  for (var i = 0; i < text.length; i++) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+    hash |= 0;
+  }
+  var hexHash = Math.abs(hash).toString(16).substring(0, 6);
+  return "cp-campaign-" + hexHash;
+}
+
+/**
+ * 마케터가 생성한 캠페인 폴더를 자동 감지하고 폴더 ID로 영구 바인딩한다.
+ * [UX 혁신]: 마케터가 구글 드라이브에서 자유롭게 폴더를 만들고 시트를 넣으면,
+ * 1. 구글 시트의 부모 폴더를 즉시 캠페인 루트 폴더로 자동 채택
+ * 2. 폴더 ID(folder.getId())를 영구 저장하여 마케터가 폴더 이름을 변경해도 완벽 추적
+ * 3. 한글 폴더명을 분석하여 안전한 영문 슬러그를 자동 합성
+ */
 function getCampaignFolder() {
+  var props = PropertiesService.getScriptProperties();
+  var savedFolderId = props.getProperty("CAMPAIGN_FOLDER_ID");
+
+  // 1. 이미 영구 바인딩된 폴더 ID가 유효한지 우선 검증 (폴더명 변경 시에도 100% 추적)
+  if (savedFolderId) {
+    try {
+      var savedFolder = DriveApp.getFolderById(savedFolderId);
+      if (savedFolder && !savedFolder.isTrashed()) {
+        return savedFolder;
+      }
+    } catch (idErr) {
+      Logger.log("기존 바인딩된 폴더 ID 접근 불가 (재탐색 진행): " + idErr);
+    }
+  }
+
+  // 2. 현재 구글 시트가 위치한 부모 폴더 자동 감지
   try {
     var sheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
     var sheetFile = DriveApp.getFileById(sheetId);
     var parents = sheetFile.getParents();
+    var rootFolderId = DriveApp.getRootFolder().getId();
+
     while (parents.hasNext()) {
       var parent = parents.next();
-      var parentName = parent.getName();
-      if (parentName.indexOf("cp-") === 0) {
+      // 내 드라이브 최상위 루트가 아닌 서브폴더에 위치한 경우, 마케터의 캠페인 폴더로 즉시 채택!
+      if (parent.getId() !== rootFolderId && !parent.isTrashed()) {
+        var folderName = parent.getName();
+        var slug = generateCampaignSlug(folderName);
+        props.setProperty("CAMPAIGN_FOLDER_ID", parent.getId());
+        props.setProperty("CAMPAIGN_SLUG", slug);
+        props.setProperty("CAMPAIGN_DISPLAY_NAME", folderName);
+        Logger.log("마케터 캠페인 부모 폴더 자동 감지 및 ID 영구 바인딩: " + folderName + " (ID: " + parent.getId() + ", Slug: " + slug + ")");
         return parent;
       }
     }
-  } catch (e) {
-    Logger.log("부모 캠페인 폴더 감지 중 예외: " + e);
+  } catch (parentErr) {
+    Logger.log("부모 캠페인 폴더 감지 중 예외: " + parentErr);
   }
-  return getFolderByPath([CONFIG.CAMPAIGN_CODE]);
+
+  // 3. 부모 폴더가 루트이거나 미지정된 경우 기본 폴더 생성 및 바인딩
+  var defaultFolder = getFolderByPath([CONFIG.CAMPAIGN_CODE]);
+  props.setProperty("CAMPAIGN_FOLDER_ID", defaultFolder.getId());
+  props.setProperty("CAMPAIGN_SLUG", CONFIG.CAMPAIGN_CODE);
+  props.setProperty("CAMPAIGN_DISPLAY_NAME", CONFIG.CAMPAIGN_CODE);
+  return defaultFolder;
 }
 
+/**
+ * 캠페인 식별용 영문 슬러그를 반환한다.
+ */
 function getCampaignCode() {
   try {
+    var props = PropertiesService.getScriptProperties();
+    var savedSlug = props.getProperty("CAMPAIGN_SLUG");
+    if (savedSlug) return savedSlug;
+
     var folder = getCampaignFolder();
     var folderName = folder.getName();
-    if (folderName.indexOf("cp-") === 0) {
-      return folderName;
-    }
+    var slug = generateCampaignSlug(folderName);
+    props.setProperty("CAMPAIGN_SLUG", slug);
+    return slug;
   } catch (e) {
     Logger.log("캠페인 코드 도출 중 예외: " + e);
   }
   return CONFIG.CAMPAIGN_CODE;
+}
+
+/**
+ * 마케터가 명명한 실제 캠페인 폴더 명칭을 반환한다.
+ */
+function getCampaignDisplayName() {
+  try {
+    var folder = getCampaignFolder();
+    return folder.getName();
+  } catch (e) {
+    return getCampaignCode();
+  }
 }
 
 function getCampaignSubFolder(subPathParts) {
@@ -4071,38 +4209,54 @@ function getPipelineStatus() {
   };
 
   try {
-    var code = getCampaignCode();
-    if (code) status.campaignCode = code;
-
     var folder = getCampaignFolder();
     if (folder) {
       status.folderUrl = folder.getUrl();
+      var folderName = folder.getName();
+      status.campaignCode = folderName.length > 20 ? folderName.substring(0, 18) + "..." : folderName;
 
-      var ideaFiles = folder.getFilesByName("[아이디어 메모] 2026 가을 오텀 브리즈 캠페인");
+      // 1. 아이디어 메모 탐색
+      var ideaName = (CONFIG && CONFIG.IDEA_DOC_NAME) || "아이디어 메모";
+      var ideaFiles = folder.getFilesByName(ideaName);
+      if (!ideaFiles.hasNext()) {
+        ideaFiles = folder.getFilesByName("[아이디어 메모] 2026 가을 오텀 브리즈 캠페인");
+      }
       if (ideaFiles.hasNext()) status.ideaDocUrl = ideaFiles.next().getUrl();
 
-      var planFiles = folder.getFilesByName("PLAN.md");
+      // 2. 기획서 (PLAN) 탐색 (확장자 유무 불문)
+      var planFiles = folder.getFilesByName("PLAN");
+      if (!planFiles.hasNext()) planFiles = folder.getFilesByName("PLAN.md");
+      if (!planFiles.hasNext()) planFiles = folder.getFilesByName("마케팅 캠페인 기획서");
       if (planFiles.hasNext()) status.planDocUrl = planFiles.next().getUrl();
 
-      var specFiles = folder.getFilesByName("SPEC.md");
+      // 3. 제작 명세서 (SPEC) 탐색 (확장자 유무 불문)
+      var specFiles = folder.getFilesByName("SPEC");
+      if (!specFiles.hasNext()) specFiles = folder.getFilesByName("SPEC.md");
       if (specFiles.hasNext()) status.specDocUrl = specFiles.next().getUrl();
 
+      // 4. 고객 VoC 설문 폼 탐색
       var formFiles = folder.getFilesByType(MimeType.GOOGLE_FORMS);
       if (formFiles.hasNext()) status.formUrl = formFiles.next().getUrl();
 
+      // 5. 최신 리비전 콘텐츠 탐색
       var latestRvNum = detectLatestRevisionRoundNum();
       if (latestRvNum >= 0) {
         status.latestRv = "rv-" + (latestRvNum < 10 ? "0" + latestRvNum : latestRvNum);
         var rvFolder = getCampaignSubFolder(["output", status.latestRv]);
-        var contentFiles = rvFolder.getFilesByName("campaign_content.md");
+        var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+        var contentFiles = rvFolder.getFilesByName(contentDocName);
+        if (!contentFiles.hasNext()) contentFiles = rvFolder.getFilesByName("campaign_content.md");
+        if (!contentFiles.hasNext()) contentFiles = rvFolder.getFilesByName("campaign_asset");
         if (contentFiles.hasNext()) status.contentDocUrl = contentFiles.next().getUrl();
       }
 
+      // 6. 최신 피드백 종합 보고서 및 지형도 탐색
       var latestFbNum = detectLatestFeedbackRoundNum();
       if (latestFbNum > 0) {
         status.latestFb = "fb-" + (latestFbNum < 10 ? "0" + latestFbNum : latestFbNum);
         var fbFolder = getCampaignSubFolder(["input", status.latestFb]);
-        var summaryFiles = fbFolder.getFilesByName("feedback_summary.md");
+        var summaryFiles = fbFolder.getFilesByName("feedback_summary");
+        if (!summaryFiles.hasNext()) summaryFiles = fbFolder.getFilesByName("feedback_summary.md");
         if (summaryFiles.hasNext()) status.summaryDocUrl = summaryFiles.next().getUrl();
         var mapFiles = fbFolder.getFilesByName("feedback_clusters_map.png");
         if (mapFiles.hasNext()) status.mapUrl = mapFiles.next().getUrl();
@@ -4136,16 +4290,9 @@ function getPipelineSidebarHtml() {
     "      padding: 16px 14px;\n" +
     "    }\n" +
     "    .header {\n" +
-    "      padding-bottom: 12px;\n" +
-    "      margin-bottom: 14px;\n" +
+    "      padding-bottom: 8px;\n" +
+    "      margin-bottom: 10px;\n" +
     "      border-bottom: 1px solid #dadce0;\n" +
-    "    }\n" +
-    "    .header h2 {\n" +
-    "      font-size: 15px;\n" +
-    "      font-weight: 700;\n" +
-    "      color: #1a73e8;\n" +
-    "      margin-bottom: 6px;\n" +
-    "      letter-spacing: -0.3px;\n" +
     "    }\n" +
     "    .header-sub {\n" +
     "      font-size: 11px;\n" +
@@ -4343,7 +4490,6 @@ function getPipelineSidebarHtml() {
     "</head>\n" +
     "<body>\n" +
     "  <div class='header'>\n" +
-    "    <h2>마케팅 콘텐츠 파이프라인</h2>\n" +
     "    <div class='header-sub'>\n" +
     "      <span id='campaignCodeBadge' class='badge'>CAMP-2026-AUTUMN</span>\n" +
     "      <span id='apiKeyBadge' class='badge warn'>API Key 확인 중</span>\n" +
