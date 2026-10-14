@@ -16,9 +16,10 @@ var CONFIG = {
   // 기본 캠페인 코드 및 구글 드라이브 루트 폴더명
   CAMPAIGN_CODE: "cp-ignite",
 
-  // 인증 방식: 현재 로그인된 구글 계정의 OAuth 2.0 Access Token 기반 자동 인증 (Keyless Zero-Setup)
-  // 비개발자 마케터가 API Key를 발급받을 필요 없이 구글 계정 로그인 권한으로 직접 안전하게 호출됨
-  AUTH_MODE: "OAUTH",
+  // 인증 방식: Google AI Studio 무료 API Key 기반 인증 (Zero-GCP Dependency)
+  // GCP 프로젝트, 신용카드 등록, 빌링 계정 없이 개인 구글 계정으로 무료 발급받아 100% 구동됨
+  AUTH_MODE: "API_KEY",
+  API_KEY: "", // 공란 유지 시 PropertiesService.getUserProperties() 또는 실행 시 대화상자에서 자동 취득
   
   // Google AI Studio 엔드포인트 및 태스크별 최적 모델 지정 (As of 2026-10-13)
   // 단일 모델에 의존하지 않고 작업별 특성(속도, 이미지, 영상)에 맞추어 검증된 모델을 취사선택함
@@ -71,37 +72,75 @@ var CONFIG = {
 
 // ============================================================================
 // FILE: Code_Gemini.js
-// [모듈 2] Gemini REST API 클라이언트 엔진 (구글 계정 OAuth 2.0 자동 로그인 기반 Keyless 인증)
+// [모듈 2] Gemini REST API 클라이언트 엔진 (Google AI Studio 무료 API Key 기반 Zero-GCP 인증)
 // ============================================================================
 
 /**
- * Gemini API 인증 헤더 조회 (현재 구글 로그인 계정의 OAuth 2.0 Access Token 기반 Keyless 인증)
- * 비개발자 마케터가 별도 API Key를 발급받을 필요 없이 구글 로그인 세션으로 자동 인증된다.
+ * Google AI Studio Gemini API Key 취득 함수
+ * 1순위: UserProperties (사용자 개인별 안전 보관)
+ * 2순위: ScriptProperties (스크립트 공용 설정)
+ * 3순위: CONFIG.API_KEY (코드 내 직접 설정)
+ * 4순위: 키가 없을 경우 자동으로 대화상자 프롬프트 호출
  */
-function getGeminiAuthHeaders() {
-  try {
-    var oauthToken = ScriptApp.getOAuthToken();
-    if (oauthToken) {
-      return {
-        "Authorization": "Bearer " + oauthToken
-      };
-    }
-  } catch (oauthErr) {
-    Logger.log("OAuth 토큰 취득 예외: " + oauthErr);
+function getGeminiApiKey() {
+  var userProps = PropertiesService.getUserProperties();
+  var key = userProps.getProperty("GEMINI_API_KEY");
+  if (key && key.trim()) {
+    return key.trim();
   }
 
-  throw new Error(
-    "구글 계정 인증 정보를 확인할 수 없습니다. 구글 시트의 계정 권한 승인 창에서 [허용]을 클릭하십시오."
+  var scriptProps = PropertiesService.getScriptProperties();
+  key = scriptProps.getProperty("GEMINI_API_KEY");
+  if (key && key.trim()) {
+    return key.trim();
+  }
+
+  if (CONFIG.API_KEY && CONFIG.API_KEY.trim()) {
+    return CONFIG.API_KEY.trim();
+  }
+
+  return promptForGeminiApiKey();
+}
+
+/**
+ * Google AI Studio Gemini API Key 입력 및 저장 UI 프롬프트
+ */
+function promptForGeminiApiKey() {
+  var ui = SpreadsheetApp.getUi();
+  var userProps = PropertiesService.getUserProperties();
+  var currentKey = userProps.getProperty("GEMINI_API_KEY") || "";
+  var maskedKey = currentKey ? (currentKey.substring(0, 6) + "..." + currentKey.substring(currentKey.length - 4)) : "미등록";
+
+  var response = ui.prompt(
+    "Google AI Studio Gemini API Key 설정 (Zero-GCP)",
+    "Google Cloud 콘솔 및 신용카드 등록 없이 개인 구글 계정으로 100% 무료 구동됩니다.\n\n" +
+    "1. Google AI Studio ( https://aistudio.google.com/app/apikey ) 에서 무료 API Key를 발급받으십시오.\n" +
+    "2. 발급받은 API Key(AIzaSy...)를 아래에 입력하십시오:\n\n" +
+    "(현재 등록된 키: " + maskedKey + ")",
+    ui.ButtonSet.OK_CANCEL
   );
+
+  if (response.getSelectedButton() === ui.Button.OK) {
+    var inputKey = response.getResponseText().trim();
+    if (inputKey) {
+      userProps.setProperty("GEMINI_API_KEY", inputKey);
+      ui.alert("설정 완료", "Gemini API Key가 안전하게 저장되었습니다.\n파이프라인 단계를 계속 진행하십시오.", ui.ButtonSet.OK);
+      return inputKey;
+    } else {
+      ui.alert("입력 오류", "유효한 API Key가 입력되지 않았습니다.", ui.ButtonSet.OK);
+    }
+  }
+
+  throw new Error("Gemini API Key가 설정되지 않아 작업을 중단합니다. 메뉴의 [Gemini API Key 설정]에서 키를 등록하십시오.");
 }
 
 /**
  * Gemini 텍스트 생성 API 호출 (System Instruction 및 User Content)
  */
 function callGemini(systemInstruction, userContent, modelOverride, maxTokensOverride) {
-  var headers = getGeminiAuthHeaders();
+  var apiKey = getGeminiApiKey();
   var targetModel = modelOverride || CONFIG.MODEL_GENERATOR || CONFIG.GEMINI_MODEL || "gemini-3.8-flash";
-  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent";
+  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent?key=" + apiKey;
   var maxTokens = maxTokensOverride || 8192;
 
   var payload = {
@@ -124,7 +163,6 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
   var options = {
     method: "post",
     contentType: "application/json",
-    headers: headers,
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
@@ -150,9 +188,9 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
  * Gemini 멀티모달(VLM) 심층 분석 API 호출 (구글 드라이브 이미지 및 비디오 Blob 직접 처리)
  */
 function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
-  var headers = getGeminiAuthHeaders();
+  var apiKey = getGeminiApiKey();
   var targetModel = modelOverride || CONFIG.MODEL_GENERATOR || "gemini-3.8-flash";
-  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent";
+  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent?key=" + apiKey;
 
   var mimeType = mediaBlob.getContentType();
   var bytes = mediaBlob.getBytes();
@@ -191,7 +229,6 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   var options = {
     method: "post",
     contentType: "application/json",
-    headers: headers,
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
@@ -218,9 +255,9 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
  */
 function callGeminiImage(prompt, aspectRatio) {
   try {
-    var headers = getGeminiAuthHeaders();
+    var apiKey = getGeminiApiKey();
     var imgModel = CONFIG.IMAGE_MODEL_NAME || "gemini-2.5-flash-image";
-    var endpoint = CONFIG.BASE_URL + "/" + imgModel + ":predict";
+    var endpoint = CONFIG.BASE_URL + "/" + imgModel + ":predict?key=" + apiKey;
     var ratio = aspectRatio || "1:1";
 
     var payload = {
@@ -236,7 +273,6 @@ function callGeminiImage(prompt, aspectRatio) {
     var options = {
       method: "post",
       contentType: "application/json",
-      headers: headers,
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     };
@@ -271,8 +307,8 @@ function callGeminiBatchEmbeddings(texts, optDim) {
 
   var dim = optDim || CONFIG.EMBEDDING_DIM || 128;
   var embedModel = CONFIG.EMBEDDING_MODEL || "text-multilingual-embedding-002";
-  var endpoint = CONFIG.BASE_URL + "/" + embedModel + ":batchEmbedContents";
-  var headers = getGeminiAuthHeaders();
+  var apiKey = getGeminiApiKey();
+  var endpoint = CONFIG.BASE_URL + "/" + embedModel + ":batchEmbedContents?key=" + apiKey;
 
   var allEmbeddings = [];
   var chunkSize = 25; // Apps Script 안정성을 위해 25건 단위 청킹
@@ -292,7 +328,6 @@ function callGeminiBatchEmbeddings(texts, optDim) {
     var options = {
       method: "post",
       contentType: "application/json",
-      headers: headers,
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     };
@@ -359,6 +394,1419 @@ function createDeterministicVector(text, dim) {
     vec[k] = Number((vec[k] / norm).toFixed(6));
   }
   return vec;
+}
+
+// ============================================================================
+// FILE: Code_Menu.js
+// [모듈 3] Google Sheets 커스텀 메뉴 및 UI 대화상자 (Spreadsheet UI & Menu)
+// ============================================================================
+
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu("[마케팅 콘텐츠 파이프라인]")
+    .addItem("[Gemini API Key 설정 (Google AI Studio)]", "promptForGeminiApiKey")
+    .addSeparator()
+    .addItem("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", "createWorkspaceFolderTree")
+    .addItem("[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출", "runIdeaToPlanConversion")
+    .addItem("[Step 3] 기획서 및 명세서 기반 초판 마케팅 콘텐츠 양산 (rv-00)", "runInitialAssetGeneration")
+    .addSeparator()
+    .addItem("[Step 4] 고객 VoC 수집용 Google Forms 자동 생성 (이미지/비디오 업로드)", "createAndLinkGoogleForm")
+    .addItem("[Step 5] 25인 AI 페르소나 1차 다면 평가 및 t-SNE 지형도 자동 렌더링 (fb-01)", "runJudgeEvaluationRound1")
+    .addItem("[Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)", "runMarketerDecisionPrompt")
+    .addItem("[Step 7] 다면 평가 피드백 기반 1차 마케팅 콘텐츠 반자율 보정 (rv-01)", "runReviseAssetsRound1")
+    .addSeparator()
+    .addItem("[Step 8] 다면 평가 및 t-SNE 지형도 갱신 (N차 피드백: fb-02 ~ fb-99)", "promptAndRunJudgeEvaluation")
+    .addItem("[Step 9] 마케팅 콘텐츠 반자율 보정 (N차 리비전: rv-02 ~ rv-99)", "promptAndRunReviseAssets")
+    .addSeparator()
+    .addItem("[Step 0] 타깃 AI 페르소나 패널 맞춤 재설정 (선택 사항)", "setCustomPersonasPrompt")
+    .addToUi();
+}
+
+/**
+ * 타깃 AI 페르소나 25인 패널 맞춤 재설정 UI 프롬프트 (Gemini 생성 또는 Hugging Face 동기화)
+ */
+function setCustomPersonasPrompt() {
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.prompt(
+    "타깃 AI 페르소나 25인 패널 맞춤 재설정",
+    "새로 생성하고자 하는 타깃 페르소나 기준을 자유롭게 입력하십시오:\n" +
+    "(예: '일본 20대 여성 뷰티 인플루언서 및 일반 소비자', '미국 실리콘밸리 30대 B2B SaaS 바이어', '한국 4050 골프 입문자')\n\n" +
+    "* Hugging Face 연동: 'hf:nvidia/Nemotron-Personas-Korea' 형식으로 입력 시 공개 데이터셋에서 실시간 동기화합니다.",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+
+  var criteria = response.getResponseText().trim();
+  if (!criteria) {
+    ui.alert("입력 취소", "기준이 입력되지 않아 기존 25인 페르소나 패널을 유지합니다.", ui.ButtonSet.OK);
+    return;
+  }
+
+  try {
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+    var generatedJson = "";
+
+    // 1. Hugging Face Server API 연동 여부 판별
+    if (criteria.indexOf("hf:") === 0) {
+      var datasetRepo = criteria.replace("hf:", "").trim();
+      var hfUrl = "https://datasets-server.huggingface.co/rows?dataset=" + encodeURIComponent(datasetRepo) + "&config=default&split=train&offset=0&limit=25";
+      var hfResp = UrlFetchApp.fetch(hfUrl, { muteHttpExceptions: true });
+      if (hfResp.getResponseCode() === 200) {
+        var hfData = JSON.parse(hfResp.getContentText());
+        var rawRowsText = JSON.stringify(hfData.rows || hfData, null, 2);
+        var normInstruction =
+          "당신은 데이터 엔지니어이다. 제공된 Hugging Face 원본 데이터로부터 25인의 슬림 페르소나 JSON 배열을 추출 및 정규화하라.\n" +
+          "반드시 id(p01~p25), name, age, gender, category(전문 마케터 또는 일반 소비자), occupation, perspective(핵심 관점 및 관심사 1줄) 7개 필드만 포함하는 JSON 배열로 출력하라.";
+        generatedJson = callGemini(normInstruction, rawRowsText);
+      } else {
+        throw new Error("Hugging Face API 호출 실패 (응답 코드: " + hfResp.getResponseCode() + ")");
+      }
+    } else {
+      // 2. Gemini 기반 자연어 타깃 페르소나 25인 즉시 합성
+      var systemInstruction =
+        "당신은 글로벌 소비자 리서치 및 엔터프라이즈 마케팅 페르소나 엔지니어링 AI이다.\n" +
+        "사용자가 지정한 타깃 기준에 맞추어 마케팅 캠페인 콘텐츠와 광고 소재를 다면 평가할 25인의 슬림 AI 페르소나 패널을 도출하라.\n\n" +
+        "필수 규칙:\n" +
+        "1. 총 25인 구성: 전문 마케터 12인 + 일반 소비자 13인으로 안배하십시오.\n" +
+        "2. 반드시 다음 7개 필드만 엄격히 포함하는 순수 JSON 객체로 출력하십시오:\n" +
+        "{\n" +
+        "  \"metadata\": { \"description\": \"타깃 맞춤 AI 페르소나 패널\", \"total\": 25 },\n" +
+        "  \"personas\": [\n" +
+        "    {\n" +
+        "      \"id\": \"p01\",\n" +
+        "      \"name\": \"이름\",\n" +
+        "      \"age\": 30,\n" +
+        "      \"gender\": \"남성/여성\",\n" +
+        "      \"category\": \"전문 마케터 또는 일반 소비자\",\n" +
+        "      \"occupation\": \"직업\",\n" +
+        "      \"perspective\": \"핵심 성향 및 주요 관심사 요약 (1줄)\"\n" +
+        "    }\n" +
+        "  ]\n" +
+        "}\n" +
+        "3. 코드 블록(```json) 없이 유효한 JSON만 반환하십시오.\n" +
+        "4. 불필요하게 긴 텍스트나 중복 필드를 배제하여 토큰 효율을 극대화하십시오.";
+
+      var userPrompt = "타깃 페르소나 기준: " + criteria + "\n\n위 기준에 부합하는 정밀하고 다양한 25인 슬림 페르소나 JSON을 생성하라.";
+      generatedJson = callGemini(systemInstruction, userPrompt);
+    }
+
+    if (generatedJson) {
+      var cleanJson = generatedJson.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+      var parsed = JSON.parse(cleanJson);
+      var formatted = JSON.stringify(parsed, null, 2);
+      var inputFolder = getCampaignSubFolder(["input"]);
+      saveTextFile(inputFolder, "ai_personas.json", formatted);
+
+      ui.alert(
+        "페르소나 패널 재설정 완료",
+        "지정한 기준('" + criteria + "')에 맞추어 25인 맞춤 AI 페르소나 패널 데이터가 성공적으로 갱신되었습니다.\n(저장 경로: " + campaignCode + "/input/ai_personas.json)",
+        ui.ButtonSet.OK
+      );
+    }
+  } catch (err) {
+    ui.alert("페르소나 재설정 중 오류 발생", err.toString(), ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * [Step 8] 다이나믹 다면 평가 및 t-SNE 갱신 런처 (fb-02 ~ fb-99 지원)
+ */
+function promptAndRunJudgeEvaluation() {
+  var ui = SpreadsheetApp.getUi();
+  var latestFb = detectLatestFeedbackRoundNum();
+  var latestRv = detectLatestRevisionRoundNum();
+  var suggestedRound = Math.max(latestFb + 1, latestRv + 1, 2);
+  var suggestedRoundStr = suggestedRound < 10 ? "0" + suggestedRound : "" + suggestedRound;
+
+  var response = ui.prompt(
+    "[Step 8] 다면 평가 회차 선택 (N차: fb-02 ~ fb-99)",
+    "현재 등록된 최신 피드백 회차는 fb-" + (latestFb < 10 ? "0" + latestFb : latestFb) + " (최신 콘텐츠: rv-" + (latestRv < 10 ? "0" + latestRv : latestRv) + ")입니다.\n\n" +
+    "실행할 피드백 회차 번호를 입력하십시오 (1~99 지원, 기본 추천: " + suggestedRound + "):\n" +
+    "(빈칸으로 두고 [확인] 클릭 시 fb-" + suggestedRoundStr + " 회차가 자동 실행됩니다)\n\n" +
+    "* 예상 소요 시간: 약 45초~1분 30초 (VLM 분석 및 t-SNE 지형도 렌더링)",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+
+  var inputVal = response.getResponseText().trim();
+  var targetRoundNum = suggestedRound;
+  if (inputVal) {
+    var parsedNum = parseInt(inputVal.replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(parsedNum) && parsedNum >= 1 && parsedNum <= 99) {
+      targetRoundNum = parsedNum;
+    }
+  }
+
+  var targetRoundStr = "fb-" + (targetRoundNum < 10 ? "0" + targetRoundNum : "" + targetRoundNum);
+  runJudgeEvaluation(targetRoundStr);
+}
+
+/**
+ * [Step 9] 다이나믹 마케팅 콘텐츠 반자율 보정 런처 (rv-02 ~ rv-99 지원)
+ */
+function promptAndRunReviseAssets() {
+  var ui = SpreadsheetApp.getUi();
+  var latestFb = detectLatestFeedbackRoundNum();
+  var latestRv = detectLatestRevisionRoundNum();
+  var suggestedRv = Math.max(latestRv + 1, 2);
+  var suggestedRvStr = suggestedRv < 10 ? "0" + suggestedRv : "" + suggestedRv;
+
+  var response = ui.prompt(
+    "[Step 9] 마케팅 콘텐츠 리비전 선택 (N차: rv-02 ~ rv-99)",
+    "현재 등록된 최신 리비전은 rv-" + (latestRv < 10 ? "0" + latestRv : latestRv) + " (평가 완료 회차: fb-" + (latestFb < 10 ? "0" + latestFb : latestFb) + ")입니다.\n\n" +
+    "생성할 마케팅 콘텐츠 리비전 번호를 입력하십시오 (1~99 지원, 기본 추천: " + suggestedRv + "):\n" +
+    "(빈칸으로 두고 [확인] 클릭 시 rv-" + suggestedRvStr + " 개정본이 자동 양산됩니다)\n\n" +
+    "* 예상 소요 시간: 약 45초~1분 30초 (카피 개정, 비주얼 3종 및 숏폼 영상 생성)",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+
+  var inputVal = response.getResponseText().trim();
+  var targetRvNum = suggestedRv;
+  if (inputVal) {
+    var parsedNum = parseInt(inputVal.replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(parsedNum) && parsedNum >= 1 && parsedNum <= 99) {
+      targetRvNum = parsedNum;
+    }
+  }
+
+  var targetRoundStr = "fb-" + (targetRvNum < 10 ? "0" + targetRvNum : "" + targetRvNum);
+  runReviseAssets(targetRoundStr);
+}
+
+// ============================================================================
+// FILE: Code_Step1_Workspace.js
+// Code_Step1_Workspace.js
+// ============================================================================
+
+function createWorkspaceFolderTree() {
+  var ui = SpreadsheetApp.getUi();
+  showProcessingToast("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", 15);
+  try {
+    // 1. 캠페인별 독립 폴더 구조 생성 (input, output을 캠페인 폴더 직하위에 격리)
+    var campaign = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+    var inputFolder = getCampaignSubFolder(["input"]);
+    var outputFolder = getCampaignSubFolder(["output"]);
+    // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json)
+    var masterPersonas25 = getMasterPersonas25();
+
+    // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json 생성)
+    saveTextFile(inputFolder, "ai_personas.json", JSON.stringify(masterPersonas25, null, 2));
+
+    // fb-01 폴더 초기 생성 및 샘플 고객 동영상(VoC) 자동 시딩 (feedback_{timestamp}.mp4)
+    var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
+    var sampleVideoName = "feedback_" + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyyMMdd_HHmmss") + ".mp4";
+    saveSampleVideoFile(fb01Folder, sampleVideoName);
+
+    // 스타터 아이디어 구글 독스 문서 (input/아이디어 메모) 자동 생성
+    if (!readGoogleDoc(inputFolder, "아이디어 메모")) {
+      var starterIdea = "# 캠페인 아이디어 메모\n\n" +
+        "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (cp-autumn-breeze)\n" +
+        "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 아웃도어 & 라이프스타일 컬렉션\n" +
+        "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 주말 아웃도어 캠퍼\n" +
+        "* **핵심 소구점**: 가볍고 따뜻한 기능성 소재, 모던한 실루엣, 일상과 캠핑을 아우르는 활용성\n" +
+        "* **목표 채널**: 인스타그램 릴스 숏폼, 네이버 블로그 브랜드 스토리, 뉴스레터 이메일 시퀀스\n";
+      saveGoogleDoc(inputFolder, "아이디어 메모", starterIdea);
+    }
+
+    // 3. 현재 구글 시트를 캠페인 폴더 직하위로 자동 이동하여 캠페인 전용 컨트롤 타워로 패키징
+    try {
+      var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+      var sheetFile = DriveApp.getFileById(activeSpreadsheet.getId());
+      sheetFile.moveTo(campaign);
+      var currentTitle = activeSpreadsheet.getName();
+      if (!currentTitle || currentTitle === "제목 없는 스프레드시트" || currentTitle === "마케팅 콘텐츠 파이프라인") {
+        activeSpreadsheet.rename("[마케팅 컨트롤 타워] " + campaignCode);
+      }
+    } catch (sheetMoveErr) {
+      Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
+    }
+
+    // 4. 구글 시트 실행 대시보드 표 초기화 및 Step 1 완료 기록
+    initDashboardSheet();
+    recordStepResultToSheet("Step 1", "작업 공간 초기화", "완료", campaign.getUrl(), "구글 드라이브 폴더 (" + campaignCode + ")");
+
+    var alertMsg = "캠페인 작업 공간(" + campaignCode + ")과 25인 AI 페르소나 데이터셋이 준비되었습니다.\n\n" +
+                   "구글 로그인 계정으로 자동 인증되므로 별도의 API Key 발급 없이 즉시 실행하실 수 있습니다.\n\n" +
+                   "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.";
+
+    ui.alert(
+      "실습 환경 셋업 완료",
+      alertMsg,
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+
+/**
+ * 기본 25인 슬림 AI 페르소나 마스터 데이터셋 반환
+ */
+function getMasterPersonas25() {
+  return {
+  "metadata": {
+    "description": "한국인 25인 다면 평가 슬림 AI 페르소나 패널 (토큰 최적화 경량 규격)",
+    "total": 25
+  },
+  "personas": [
+    {
+      "id": "p01",
+      "name": "강도윤",
+      "age": 28,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "퍼포먼스 마케터",
+      "perspective": "데이터 지향적, 민첩한 의사 결정. 관심: ROAS 지표 하락 및 광고비 삭감에 대한 극심한 압박"
+    },
+    {
+      "id": "p02",
+      "name": "김서아",
+      "age": 32,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "브랜드 마케터",
+      "perspective": "감성적 통찰력, 디테일에 집착하는. 관심: 뻔하고 지루한 B2B 카피를 탈피하고 차별화된 톤앤매너 확립 요구"
+    },
+    {
+      "id": "p03",
+      "name": "이서연",
+      "age": 25,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "콘텐츠 크리에이터",
+      "perspective": "외향적이고 즉흥적인, 스토리텔링에 능한. 관심: 매일 쏟아지는 다채널 숏폼 영상과 인스타그램 릴스 소재 고갈"
+    },
+    {
+      "id": "p04",
+      "name": "김도현",
+      "age": 35,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "그로스 마케터",
+      "perspective": "분석적이고 집요한, 실험 정신이 강한. 관심: 예산 0원으로 3일 안에 전 채널을 동시 장악해야 하는 초단기 런칭 압박"
+    },
+    {
+      "id": "p05",
+      "name": "박지우",
+      "age": 42,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "인하우스 홍보 담당자",
+      "perspective": "신중하고 정무적인 감각, 원만한 대인관계. 관심: 보고서용 데이터 정리와 경영진 설득을 위한 명확한 비용 절감 ROI 증명"
+    },
+    {
+      "id": "p06",
+      "name": "박서준",
+      "age": 38,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "퍼포먼스 리드",
+      "perspective": "글로벌 감각, 도전적이고 대범한. 관심: 광고 피로도 극복을 위한 수십 개 카피의 실시간 다채널 A/B 테스트 요구"
+    },
+    {
+      "id": "p07",
+      "name": "최수아",
+      "age": 28,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "SNS 채널 운영자",
+      "perspective": "트렌드에 극도로 민감한, 사교적이고 발랄한. 관심: Z세대 취향을 저격하는 B급 유머와 키치 네온 스타일 바이럴 릴스 기획"
+    },
+    {
+      "id": "p08",
+      "name": "이도현",
+      "age": 45,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "마케팅 팀장",
+      "perspective": "진중하고 신뢰감 주는, 조직 통솔력. 관심: 보수적인 임원진을 설득할 수 있는 데이터 기반의 정량적 성공 사례 및 신뢰성 입증"
+    },
+    {
+      "id": "p09",
+      "name": "정예준",
+      "age": 32,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "퍼포먼스 AE",
+      "perspective": "추진력 있고 유연한, 위기 대처 능력. 관심: 광고주마다 쏟아지는 다채널 소재 베리에이션 요청으로 인한 만성 야근"
+    },
+    {
+      "id": "p10",
+      "name": "정하은",
+      "age": 25,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "커뮤니티 매니저",
+      "perspective": "공감 능력이 탁월한, 친화적이고 포용적인. 관심: 고객의 생생한 VoC를 반영하여 실시간으로 진화하는 참여형 캠페인 구축"
+    },
+    {
+      "id": "p11",
+      "name": "조하준",
+      "age": 28,
+      "gender": "남성",
+      "category": "전문 마케터",
+      "occupation": "퍼포먼스 마케터",
+      "perspective": "데이터 지향적, 민첩한 의사 결정. 관심: ROAS 지표 하락 및 광고비 삭감에 대한 극심한 압박"
+    },
+    {
+      "id": "p12",
+      "name": "강지유",
+      "age": 32,
+      "gender": "여성",
+      "category": "전문 마케터",
+      "occupation": "브랜드 마케터",
+      "perspective": "감성적 통찰력, 디테일에 집착하는. 관심: 뻔하고 지루한 B2B 카피를 탈피하고 차별화된 톤앤매너 확립 요구"
+    },
+    {
+      "id": "p13",
+      "name": "전기태",
+      "age": 74,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p14",
+      "name": "최은지",
+      "age": 71,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p15",
+      "name": "안상식",
+      "age": 73,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p16",
+      "name": "김다희",
+      "age": 46,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "현실적이고 신중한, 책임감 강한"
+    },
+    {
+      "id": "p17",
+      "name": "설숙자",
+      "age": 50,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "현실적이고 신중한, 책임감 강한"
+    },
+    {
+      "id": "p18",
+      "name": "황혜란",
+      "age": 33,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "정갈하고 독립적인, 일과 쉼의 균형을 중시하는"
+    },
+    {
+      "id": "p19",
+      "name": "김준수",
+      "age": 31,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "정갈하고 독립적인, 일과 쉼의 균형을 중시하는"
+    },
+    {
+      "id": "p20",
+      "name": "곽상길",
+      "age": 76,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p21",
+      "name": "박호철",
+      "age": 44,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "현실적이고 신중한, 책임감 강한"
+    },
+    {
+      "id": "p22",
+      "name": "이태훈",
+      "age": 27,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "트렌드에 민감한, 개성 표현을 두려워하지 않는"
+    },
+    {
+      "id": "p23",
+      "name": "홍희자",
+      "age": 74,
+      "gender": "여성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
+    },
+    {
+      "id": "p24",
+      "name": "고성호",
+      "age": 61,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "우직하고 성실한, 희생적인 가장/어머니"
+    },
+    {
+      "id": "p25",
+      "name": "유준호",
+      "age": 61,
+      "gender": "남성",
+      "category": "일반 소비자",
+      "occupation": "소비자",
+      "perspective": "우직하고 성실한, 희생적인 가장/어머니"
+    }
+  ]
+};
+}
+
+// ============================================================================
+// FILE: Code_Step2_IdeaToPlan.js
+// Code_Step2_IdeaToPlan.js
+// ============================================================================
+
+function runIdeaToPlanConversion() {
+  var ui = SpreadsheetApp.getUi();
+  showProcessingToast("[Step 2] 기획서(PLAN) 및 명세서(SPEC) 자동 도출", 30);
+  try {
+    var campaignFolder = getCampaignFolder();
+
+    // 1. 내장 시스템 지침 (Zero-Prompt No-Code) - PLAN 기획서 도출
+    var planSystemInstruction =
+      "당신은 전문 엔터프라이즈 브랜드 마케팅 전략가이자 크리에이티브 디렉터이다.\n" +
+      "마케터가 제공하는 자연어 캠페인 아이디어를 정밀 분석하여, 완성도 높은 마케팅 캠페인 기획서(PLAN)를 작성하라.\n\n" +
+      "필수 포함 섹션:\n" +
+      "# [마케팅 캠페인 기획서] {캠페인명}\n" +
+      "## 1. 캠페인 배경 및 핵심 목표\n" +
+      "## 2. 타깃 페르소나 및 핵심 소구점 (USP)\n" +
+      "## 3. 멀티 채널 콘텐츠 양산 요구 사항\n" +
+      "## 4. 고객 피드백 수집 및 품질 검증 기준\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 이모지와 중간 점을 일절 사용하지 말고, 나열 시 반드시 쉼표(,)를 사용하십시오.\n" +
+      "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "3. 한글 복합어는 철저하게 띄어 쓰십시오. (예: '마케팅 캠페인 기획서', '오프라인 매장', '의사 결정' 등)\n" +
+      "4. 마케터가 바로 실무에 사용할 수 있을 만큼 구체적인 수치와 명확한 어조로 작성하십시오.\n" +
+      "5. 분량 및 가독성: 청중 마케터가 1분 안에 직관적으로 파악할 수 있도록, 불필요한 장황한 서술을 전면 배제하고 A4 1~2페이지 내외의 핵심 불릿 포인트 중심으로 명쾌하고 컴팩트하게 작성하십시오.";
+
+    // 2. 내장 시스템 지침 - SPEC 콘텐츠 제작 명세서 도출
+    var specSystemInstruction =
+      "당신은 엔터프라이즈 마케팅 콘텐츠 제작 총괄 리드이다.\n" +
+      "마케팅 캠페인 기획서(PLAN)를 분석하여, 각 채널별 멀티 채널 콘텐츠 제작 명세서(SPEC) 구글 독스 문서를 정밀하게 작성하라.\n" +
+      "마케터가 이 문서를 열어 수치(해상도, 비율, 영상 길이, 필수 포함 키워드 등)를 직접 편집할 수 있도록 명료한 규격 명세 형식으로 구성하라.\n\n" +
+      "필수 포함 섹션:\n" +
+      "# [멀티 채널 콘텐츠 제작 명세서] (SPEC)\n" +
+      "## 1. 광고 카피라이팅 채널 규격\n" +
+      "- 헤드카피 (3종, 20자 내외)\n" +
+      "- 인스타그램 피드 및 카드뉴스 카피 (캡션 300자 내외, 필수 해시태그 5개)\n" +
+      "- 네이버 블로그 기고문 (정보성 리뷰 1,500자 내외)\n" +
+      "## 2. 모바일 세로 숏폼 영상 규격 (Shorts / Reels)\n" +
+      "- 화면 비율: 세로 9:16 (해상도 1080x1920)\n" +
+      "- 권장 러닝타임: 15초 내외 (최대 30초)\n" +
+      "- 구성: 초반 3초 후킹(Hook), 문제 제기, 솔루션 제시, CTA\n" +
+      "## 3. 대표 비주얼 이미지 3종 비율 규격\n" +
+      "- 가로형 디스플레이 배너: 16:9 (1920x1080 권장, GDN 및 메인 웹 배너)\n" +
+      "- 세로형 모바일 포스터: 9:16 (1080x1920 권장, 모바일 스토리 및 사이니지)\n" +
+      "- 정방형 SNS 피드 이미지: 1:1 (1080x1080 권장, 인스타그램 피드)\n" +
+      "## 4. 비주얼 연출 톤앤매너 및 네거티브 가이드라인\n" +
+      "- 추천 조명, 색감, 인물 모델 스타일\n" +
+      "- 지양해야 할 표현(과도한 텍스트 침범, 왜곡 등)\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
+      "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "3. 한글 복합어는 철저하게 띄어 쓰십시오.";
+
+    // 3. 마케터에게 자연어 아이디어 입력받기 (input/아이디어 메모 구글 독스 연동)
+    var inputFolder = getCampaignSubFolder(["input"]);
+    var docIdea = readGoogleDoc(inputFolder, "아이디어 메모");
+    var defaultIdea = docIdea ||
+      ("2026 어텀 브리즈 무선 헤드폰 론칭 캠페인. 2534 출퇴근 직장인 타깃. " +
+       "스마트 액티브 노이즈 캔슬링(98% 소음 차단), 180g 초경량 깃털 착용감, 50시간 배터리, 10만 원대 후반 가격. " +
+       "인스타 피드 및 유튜브 쇼츠 콘티, 블로그 리뷰, 배너 프롬프트, 3,000대 사전 예약 조기 마감 목표.");
+
+    var response = ui.prompt(
+      "캠페인 기획 아이디어 발상",
+      "추진하고자 하는 마케팅 아이디어나 신제품 특장점을 자유로운 말(자연어)로 입력하십시오.\n\n" +
+      "[확인]을 누르면 기본 예시 아이디어로 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 구글 독스가 즉시 자동 생성됩니다:",
+      ui.ButtonSet.OK_CANCEL
+    );
+
+    if (response.getSelectedButton() !== ui.Button.OK) {
+      return;
+    }
+
+    var userIdea = response.getResponseText().trim();
+    if (!userIdea) {
+      userIdea = defaultIdea;
+    }
+
+    // 4. Gemini 호출: 1) 기획서(PLAN) 생성
+    var userPrompt = "다음은 마케터가 제공한 캠페인 아이디어이다. 시스템 지침에 따라 정식 마케팅 캠페인 기획서(PLAN)를 완성하라:\n\n" + userIdea;
+    var planContent = callGemini(planSystemInstruction, userPrompt);
+    var planDocFile = saveGoogleDoc(campaignFolder, "PLAN", planContent);
+
+    // 5. Gemini 호출: 2) 콘텐츠 제작 명세서(SPEC) 생성
+    var specPrompt = "다음 작성된 마케팅 캠페인 기획서(PLAN)를 바탕으로, 각 채널별 상세 콘텐츠 제작 명세서(SPEC)를 완성하라:\n\n" + planContent;
+    var specContent = callGemini(specSystemInstruction, specPrompt);
+    var specDocFile = saveGoogleDoc(campaignFolder, "SPEC", specContent);
+
+    // 6. 구글 시트 실행 대시보드에 Step 1 완료 및 링크 기록
+    recordStepResultToSheet("Step 2", "기획서(PLAN) 및 콘텐츠 명세서(SPEC) 도출", "완료", planDocFile.getUrl(), "기획서(PLAN) & 명세서(SPEC) 열기");
+
+    ui.alert(
+      "기획서(PLAN) 및 콘텐츠 명세서(SPEC) 생성 완료",
+      "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 성공적으로 생성되었습니다.\n\n" +
+      "마케터는 브라우저에서 SPEC 문서를 열어 이미지 비율, 숏폼 길이, 카피 채널 규격을 자유롭게 수정한 뒤 [Step 2]를 실행할 수 있습니다.\n\n" +
+      "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("기획서 및 명세서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+// ============================================================================
+// FILE: Code_Step3_ContentGen.js
+// Code_Step3_ContentGen.js
+// ============================================================================
+
+function runInitialAssetGeneration() {
+  var ui = SpreadsheetApp.getUi();
+  showProcessingToast("[Step 3] 초판 마케팅 콘텐츠 양산 (rv-00)", 60);
+  try {
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+    var inputFolder = getCampaignSubFolder(["input"]);
+    var rv00Folder = getCampaignSubFolder(["output", "rv-00"]);
+
+    // 1. 내장 시스템 지침 (Zero-Prompt No-Code)
+    var systemInstruction =
+      "당신은 전문 크리에이티브 마케팅 디렉터이자 카피라이터이다.\n" +
+      "주어진 마케팅 캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)를 바탕으로 단일 캠페인 종합 마케팅 콘텐츠 문서(campaign_content) 1본을 완성도 높은 마케팅 카피 형식으로 작성하라.\n\n" +
+      "필수 구성:\n" +
+      "1. 헤드카피 및 슬로건 (3종)\n" +
+      "2. 인스타그램 카드뉴스 및 피드 카피 (SPEC 규격 준수)\n" +
+      "3. 네이버 블로그 리뷰형 기고문 (SPEC 규격 준수)\n" +
+      "4. 모바일 숏폼 영상 콘티 (SPEC에 명시된 러닝타임 및 세로 9:16 규격, 타임라인별 나레이션 및 화면 연출 지시문)\n" +
+      "5. 제미나이 이미지 생성용 비주얼 프롬프트 (가로 16:9, 세로 9:16, 정방형 1:1)\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 콘텐츠 제작 명세서(SPEC)에 정의된 채널 규격, 숏폼 러닝타임, 톤앤매너를 최우선으로 준수하십시오.\n" +
+      "2. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
+      "3. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "4. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
+      "5. 분량 및 가독성: 각 채널별 카피와 콘티는 마케터가 한눈에 읽고 즉시 검토할 수 있도록, 불필요한 미사여구를 배제하고 핵심 메시지 중심으로 명쾌하고 컴팩트하게 작성하십시오.";
+
+    // 2. 캠페인 루트의 PLAN 및 SPEC 구글 독스 읽기
+    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
+    var planContent = readGoogleDoc(campaignFolder, planDocName);
+    if (!planContent) {
+      planContent = readGoogleDoc(campaignFolder, "BRD");
+    }
+    if (!planContent) {
+      throw new Error("마케팅 캠페인 기획서(PLAN) 구글 독스 문서를 찾을 수 없습니다. [Step 1]을 먼저 실행하여 기획서(PLAN)를 생성하십시오.");
+    }
+
+    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
+    var specContent = readGoogleDoc(campaignFolder, specDocName) || "";
+
+    // 3. Gemini 호출
+    var promptText = "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
+                     "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
+                     "### [1. 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+                     "### [2. 멀티 채널 콘텐츠 제작 명세서 (SPEC)]\n" + (specContent || "기본 규격 준수");
+    var generatedContent = callGemini(systemInstruction, promptText);
+
+    // 4. 저장: output/rv-00/에 campaign_content 구글 독스 단일 저장
+    var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+    saveGoogleDoc(rv00Folder, contentDocName, generatedContent);
+
+    // 5. 실시간 대표 비주얼 이미지 3종 비율 세트 생성 (rv-00: 가로 16:9, 세로 9:16, 정사각 1:1)
+    var visualBrief = extractDynamicVisualPrompt(
+      generatedContent,
+      planContent,
+      "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
+    );
+    Logger.log("동적 도출된 비주얼 프롬프트 (rv-00): " + visualBrief);
+    generateAndSaveVisualAssets(rv00Folder, "00", visualBrief);
+
+    // 6. 실제 캠페인 초판 콘텐츠 기반 25인 가상 페르소나 피드백 실시간 도출
+    try {
+      var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
+      generateLivePersonaFeedbacks(campaignFolder, fb01Folder, "rv-00");
+    } catch (fbGenErr) {
+      Logger.log("25인 가상 페르소나 피드백 실시간 도출 예외: " + fbGenErr);
+    }
+
+    // 7. 구글 시트 실행 대시보드에 Step 2 완료 및 링크 기록
+    recordStepResultToSheet("Step 3", "초판 마케팅 콘텐츠 양산 (rv-00)", "완료", rv00Folder.getUrl(), "구글 드라이브 폴더 열기 (rv-00)");
+
+    ui.alert(
+      "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
+      "초판 마케팅 카피, 대표 비주얼 이미지 3종 및 세로 숏폼 영상(00_shorts.mp4) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+// ============================================================================
+// FILE: Code_Step4_Form.js
+// Code_Step4_Form.js
+// ============================================================================
+
+function createAndLinkGoogleForm() {
+  var ui = SpreadsheetApp.getUi();
+  showProcessingToast("[Step 4] 고객 VoC 수집용 Google Forms 생성 및 연동", 20);
+  try {
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    var spreadsheetId = spreadsheet.getId();
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+
+    // 1. 구글 폼 생성 및 응답 활성화 설정
+    var formTitle = "고객 피드백 설문";
+    var form = FormApp.create(formTitle);
+    form.setAcceptingResponses(true);
+    try {
+      form.setRequireLogin(false);
+    } catch (e) {
+      Logger.log("setRequireLogin 예외: " + e);
+    }
+    try {
+      form.setCollectEmail(false);
+      form.setLimitOneResponsePerUser(false);
+      form.setShowLinkToRespondAgain(true);
+    } catch (e) {
+      Logger.log("폼 옵션 설정 예외: " + e);
+    }
+    var publishedUrl = form.getPublishedUrl();
+
+    form.setDescription(
+      "본 설문은 " + campaignCode + " 캠페인의 고객 만족도와 사용자 직접 촬영 동영상/이미지 피드백을 수집하여 " +
+      "Gemini VLM 다면 평가 및 마케팅 콘텐츠 반자율 보정에 반영하기 위한 설문입니다.\n\n" +
+      "[모바일 즉시 참여 안내]\n" +
+      "스마트폰 카메라로 아래 첫 번째 항목의 QR 코드를 스캔하면 모바일 화면에서 즉시 피드백을 작성하거나 촬영 영상 링크를 제출하실 수 있습니다.\n" +
+      "설문 참여 바로가기 URL: " + publishedUrl
+    );
+
+    // 2. 모바일 참여용 고화질 QR 코드 생성 및 폼 최상단 이미지 아이템 자동 삽입
+    try {
+      var qrApiUrl = "https://quickchart.io/qr?text=" + encodeURIComponent(publishedUrl) + "&size=300&ecLevel=H";
+      var qrResponse = UrlFetchApp.fetch(qrApiUrl, { muteHttpExceptions: true });
+      if (qrResponse.getResponseCode() === 200) {
+        var qrBlob = qrResponse.getBlob().setName("form_qr_code.png");
+        var imageItem = form.addImageItem();
+        imageItem.setTitle("스마트폰 카메라로 QR 코드를 스캔하여 모바일 피드백을 제출하세요!");
+        imageItem.setHelpText("모바일 설문 URL: " + publishedUrl);
+        imageItem.setImage(qrBlob);
+      }
+    } catch (qrError) {
+      Logger.log("QR 코드 이미지 생성 실패: " + qrError);
+    }
+
+    // 3. 질문 항목 자동 구성
+    // 문항 1: 평가 대상 마케팅 콘텐츠 버전
+    var versionItem = form.addMultipleChoiceItem();
+    versionItem.setTitle("평가 대상 마케팅 콘텐츠 버전 (선택 사항)")
+      .setChoiceValues(["초판 (rv-00)", "1차 개정본 (rv-01)", "2차 개정본 (rv-02)"])
+      .setRequired(false);
+
+    // 문항 2: 정량 만족도 평점 (1~5점 선형 배율)
+    form.addScaleItem()
+      .setTitle("제품의 전반적인 만족도는 어떠셨습니까? (선택 사항)")
+      .setBounds(1, 5)
+      .setLabels("매우 불만족", "매우 만족")
+      .setRequired(false);
+
+    // 문항 3: 정성 서술형 피드백
+    form.addParagraphTextItem()
+      .setTitle("제품을 사용하면서 느낀 솔직한 장점이나 아쉬운 점을 자유롭게 적어주십시오. (자유 기술)")
+      .setHelpText("예: 출퇴근 길 지하철 소음 차단은 좋은데, 퇴근 길 힐링 무드 카피나 멀티포인트 페어링 기능도 다뤄주면 좋겠습니다.")
+      .setRequired(false);
+
+    // 문항 4: 고객 촬영 동영상 피드백 소감 또는 파일 링크
+    form.addParagraphTextItem()
+      .setTitle("고객 촬영 동영상 피드백 소감 요약 또는 파일 링크 (선택 사항)")
+      .setHelpText("스마트폰으로 제품을 사용해보며 느낀 소감이나 고객의 생생한 목소리를 한두 줄로 자유롭게 적어주십시오. (동영상 공유 링크나 소감 텍스트 모두 환영하며, 권장 길이는 15~30초 이내 숏폼 영상입니다)")
+      .setRequired(false);
+
+    // 문항 5: 추가 이미지 피드백 소감 또는 링크
+    form.addParagraphTextItem()
+      .setTitle("추가 이미지 피드백 소감 또는 링크 (선택 사항)")
+      .setHelpText("제품 착용 컷, 언박싱 사진에 대한 의견이나 이미지 파일 링크를 입력하십시오.")
+      .setRequired(false);
+
+    // 4. 목적지 구글 시트에 자동 바인딩 (설문지 응답 1 탭 자동 생성)
+    form.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
+
+    // 5. 구글 폼 파일을 캠페인 루트 폴더로 안전하게 이동
+    var oldFormFiles = campaignFolder.getFilesByName(formTitle);
+    while (oldFormFiles.hasNext()) {
+      oldFormFiles.next().setTrashed(true);
+    }
+    var formFile = DriveApp.getFileById(form.getId());
+    campaignFolder.addFile(formFile);
+    DriveApp.getRootFolder().removeFile(formFile);
+
+    // 6. 구글 시트 실행 대시보드에 Step 3 완료 및 링크 기록
+    recordStepResultToSheet("Step 4", "고객 피드백 설문 폼 연동", "완료", publishedUrl, "고객 설문 참여 폼 열기");
+
+    ui.alert(
+      "구글 폼 연동 완료",
+      "캠페인 전용 구글 폼이 생성되어 [설문지 응답 1] 탭과 연결되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 '고객 설문 참여 폼 열기' 링크를 클릭하여 응답을 제출하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("구글 폼 생성 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+// ============================================================================
+// FILE: Code_Step5_8_Judge.js
+// Code_Step5_8_Judge.js
+// ============================================================================
+
+/**
+ * [Step 5] 초판 콘텐츠(rv-00) 대상 1차 25인 다면 평가 및 t-SNE 여론 지형도 생성
+ */
+function runJudgeEvaluationRound1() {
+  runJudgeEvaluation("fb-01");
+}
+
+/**
+ * [Step 8] 1차 개정본 콘텐츠(rv-01) 대상 2차 25인 다면 평가 및 t-SNE 지형도 갱신
+ */
+function runJudgeEvaluationRound2() {
+  runJudgeEvaluation("fb-02");
+}
+
+/**
+ * 피드백 다면 평가 공통 실행 함수 (N차 다이나믹 루프 fb-01 ~ fb-99 지원)
+ */
+function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
+  var ui = SpreadsheetApp.getUi();
+  var isSilent = (isSilentOpt === true);
+  try {
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+
+    // 1. 피드백 회차(fb-01 ~ fb-99) 판별
+    var targetRound = targetRoundOpt;
+    if (!targetRound) {
+      var latestFb = detectLatestFeedbackRoundNum();
+      var latestRv = detectLatestRevisionRoundNum();
+      var autoRound = Math.max(latestFb + 1, latestRv + 1, 2);
+      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
+    }
+
+    // 소요 시간 안내 토스트 즉시 표시
+    showProcessingToast("[Step 5/8] 다면 평가 및 t-SNE 지형도 생성 (" + targetRound + ")", 75);
+
+    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+    var prevRoundNum = Math.max(0, roundNum - 1);
+    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+    var nextRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
+    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+    // 2. 피드백 동영상(비디오 VoC) 감지 및 Gemini VLM 심층 분석 실행 -> [영상파일명]_vlm.json 1:1 저장
+    var videoVocAnalyses = analyzeVideoVocWithVlm(feedbackFolder);
+    var hasVideoAnalysis = (Array.isArray(videoVocAnalyses) && videoVocAnalyses.length > 0);
+
+    // 3. input/{targetRound}/ 폴더 내 수작업 투입 자료(이미지, 추가 영상, 메모/문서) 전수 스캔
+    var manualFeedbackRows = scanManualFeedbackFiles(feedbackFolder);
+    var hasManualFeedback = (manualFeedbackRows.length > 0);
+
+    // 4. Google Sheets에서 사람 설문 응답 및 제출 이미지/비디오 데이터 수집
+    var humanFeedbackRows = [];
+    var humanVideoRows = [];
+    var humanImageRows = [];
+    var humanRatings = [];
+    var versionColIndex = -1;
+    var videoColIndex = -1;
+    var imageColIndex = -1;
+    var ratingColIndex = -1;
+
+    try {
+      var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+      var responseSheet = spreadsheet.getSheetByName("설문지 응답 1") || spreadsheet.getActiveSheet();
+      var sheetData = responseSheet.getDataRange().getValues();
+
+      if (sheetData && sheetData.length > 1) {
+        var headers = sheetData[0];
+        for (var h = 0; h < headers.length; h++) {
+          var headerStr = String(headers[h]);
+          if (headerStr.indexOf("버전") !== -1 || headerStr.indexOf("Version") !== -1) {
+            versionColIndex = h;
+          }
+          if (headerStr.indexOf("동영상") !== -1 || headerStr.indexOf("영상") !== -1 || headerStr.indexOf("비디오") !== -1 || headerStr.indexOf("Video") !== -1) {
+            videoColIndex = h;
+          }
+          if (headerStr.indexOf("이미지") !== -1 || headerStr.indexOf("사진") !== -1 || headerStr.indexOf("Image") !== -1 || headerStr.indexOf("Photo") !== -1) {
+            imageColIndex = h;
+          }
+          if (headerStr.indexOf("만족도") !== -1 || headerStr.indexOf("평점") !== -1 || headerStr.indexOf("Score") !== -1 || headerStr.indexOf("Rating") !== -1) {
+            ratingColIndex = h;
+          }
+        }
+
+        for (var i = 1; i < sheetData.length; i++) {
+          var row = sheetData[i];
+
+          if (versionColIndex !== -1) {
+            var rowVersion = String(row[versionColIndex] || "").trim();
+            if (rowVersion) {
+              if (rowVersion.indexOf(prevRvName) === -1) {
+                continue;
+              }
+            } else if (roundNum > 1) {
+              continue;
+            }
+          } else if (roundNum > 1) {
+            continue;
+          }
+
+          if (ratingColIndex !== -1) {
+            var rVal = parseFloat(row[ratingColIndex]);
+            if (!isNaN(rVal) && rVal > 0) {
+              humanRatings.push(rVal);
+            }
+          }
+
+          if (videoColIndex !== -1) {
+            var rawVideo = String(row[videoColIndex] || "").trim();
+            if (rawVideo && rawVideo !== "-" && rawVideo !== "없음" && rawVideo !== "None") {
+              var isUrl = /^(?:https?:\/\/|\bwww\.)/i.test(rawVideo);
+              var resolvedVideo = resolveDriveAttachmentName(rawVideo);
+              if (isUrl) {
+                humanVideoRows.push("- [고객 응답 " + i + " 동영상 첨부/공유 링크]: " + resolvedVideo);
+              } else {
+                humanVideoRows.push("- [고객 응답 " + i + " 동영상 VoC 생생 소감 발화]: \"" + rawVideo + "\"");
+              }
+            }
+          }
+
+          // 고객 제출 이미지 피드백 파싱 및 VLM 시각 분석 연동
+          if (imageColIndex !== -1) {
+            var rawImage = String(row[imageColIndex] || "").trim();
+            if (rawImage && rawImage !== "-" && rawImage !== "없음" && rawImage !== "None") {
+              var imgIdMatch = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)/.exec(rawImage);
+              if (imgIdMatch) {
+                try {
+                  var imgFile = DriveApp.getFileById(imgIdMatch[1]);
+                  var imgVlm = analyzeImageFeedbackWithVlm(imgFile);
+                  if (imgVlm) {
+                    humanImageRows.push("- [고객 응답 " + i + " 제출 이미지 VLM 분석: " + imgFile.getName() + "]\n  " + imgVlm);
+                  } else {
+                    humanImageRows.push("- [고객 응답 " + i + " 제출 이미지: " + imgFile.getName() + "]");
+                  }
+                } catch (imgFileErr) {
+                  humanImageRows.push("- [고객 응답 " + i + " 제출 이미지 링크: " + rawImage + "]");
+                }
+              } else {
+                humanImageRows.push("- [고객 응답 " + i + " 이미지 피드백 의견]: \"" + rawImage + "\"");
+              }
+            }
+          }
+
+          var rowContent = [];
+          for (var j = 0; j < headers.length; j++) {
+            if (j === versionColIndex) continue;
+            var val = row[j];
+            if (val !== "" && val !== null && val !== undefined) {
+              var resolvedVal = resolveDriveAttachmentName(val);
+              rowContent.push(headers[j] + ": " + resolvedVal);
+            }
+          }
+          if (rowContent.length > 0) {
+            humanFeedbackRows.push("- [고객 응답 " + i + "] " + rowContent.join(" | "));
+          }
+        }
+      }
+    } catch (sheetErr) {
+      Logger.log("구글 시트 응답 수집 생략: " + sheetErr);
+    }
+
+    var hasHumanResponses = (humanFeedbackRows.length > 0);
+    var hasVideoFeedback = (humanVideoRows.length > 0) || hasVideoAnalysis;
+    var hasImageFeedback = (humanImageRows.length > 0);
+
+    // 3. AI 가상 페르소나 25인 피드백 데이터셋 로드 또는 실시간 생성
+    var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
+    if (!jsonContent) {
+      jsonContent = generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName);
+    }
+
+    var personaSummaryText = "";
+    var personaListText = "";
+    var parsedPersonas = [];
+    if (jsonContent) {
+      try {
+        parsedPersonas = JSON.parse(jsonContent);
+        if (Array.isArray(parsedPersonas) && parsedPersonas.length > 0) {
+          var totalRating = 0;
+          var posCount = 0, neuCount = 0, negCount = 0;
+          var feedbackItems = [];
+          for (var p = 0; p < parsedPersonas.length; p++) {
+            var item = parsedPersonas[p];
+            var r = Number(item.rating) || 3.0;
+            totalRating += r;
+            if (item.sentiment === "긍정" || item.sentiment === "Positive") posCount++;
+            else if (item.sentiment === "부정" || item.sentiment === "Negative") negCount++;
+            else neuCount++;
+            var pFeedback = item.open_feedback || item.feedback || "";
+            var ptDesc = [];
+            if (Array.isArray(item.points)) {
+              for (var pi = 0; pi < item.points.length; pi++) {
+                var pObj = item.points[pi];
+                ptDesc.push("[" + (pObj.sentiment || "중립") + "] " + (pObj.text || ""));
+              }
+            }
+            var subPointsStr = ptDesc.length > 0 ? " | 세부 포인트: " + ptDesc.join("; ") : "";
+            feedbackItems.push(
+              "- [" + (item.name || ("페르소나 " + (p + 1))) + " | " + (item.age || "") + "세 | " + (item.occupation || "") + " | " + (item.category || "소비자") + "] " +
+              "평점: " + r + "/5.0 | 감정: " + (item.sentiment || "중립") + " | " +
+              "열린 소감: \"" + pFeedback + "\"" + subPointsStr
+            );
+          }
+          var avgRating = (totalRating / parsedPersonas.length).toFixed(1);
+          personaSummaryText = "AI 가상 페르소나 " + parsedPersonas.length + "인 통계 (평균 평점: " + avgRating + "/5.0, 긍정: " + posCount + "명, 중립: " + neuCount + "명, 부정: " + negCount + "명)";
+          personaListText = feedbackItems.join("\n");
+        }
+      } catch (parseErr) {
+        Logger.log("페르소나 파싱 예외: " + parseErr);
+        personaSummaryText = "AI 가상 페르소나 데이터";
+        personaListText = jsonContent;
+      }
+    }
+
+    // 4. QuickChart REST API 호출을 통한 128d 임베딩 기반 다면 여론 지형도 차트 생성 및 저장
+    var clusterMapFile = null;
+    var pointsJson = readTextFile(feedbackFolder, "feedback_points_128d.json");
+    var parsedPoints = [];
+    if (pointsJson) {
+      try {
+        parsedPoints = JSON.parse(pointsJson);
+      } catch (e) {}
+    }
+    if (parsedPoints && parsedPoints.length > 0) {
+      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPoints);
+    } else if (parsedPersonas && parsedPersonas.length > 0) {
+      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPersonas);
+    }
+
+    var feedbackSourceDescription = "";
+    var sourceParts = [];
+    if (hasVideoAnalysis) sourceParts.push("고객 직접 촬영 동영상 VLM 분석(" + videoVocAnalyses.length + "건, [영상파일명]_vlm.json)");
+    else if (hasVideoFeedback) sourceParts.push("고객 동영상 제출 링크(" + humanVideoRows.length + "건)");
+    if (hasImageFeedback) sourceParts.push("고객 제출 이미지 VLM 시각 분석(" + humanImageRows.length + "건)");
+    if (hasManualFeedback) sourceParts.push("수작업 투입 피드백 자료(" + manualFeedbackRows.length + "건)");
+    if (hasHumanResponses) sourceParts.push("구글 폼 설문 응답(" + humanFeedbackRows.length + "건)");
+    if (jsonContent) sourceParts.push("AI 가상 페르소나 25인 다면 평가단");
+    feedbackSourceDescription = sourceParts.join(" + ") || "AI 가상 페르소나 기본 평가단 (25인)";
+
+    var feedbackInputPayload = "";
+    if (hasHumanResponses) {
+      feedbackInputPayload += "### [1. 구글 폼 사람이 직접 제출한 실시간 설문 응답 (총 " + humanFeedbackRows.length + "건)]\n" + humanFeedbackRows.join("\n") + "\n\n";
+    } else {
+      feedbackInputPayload += "### [1. 구글 폼 사람이 직접 제출한 실시간 설문 응답]\n- 제출 현황: 사람이 제출한 설문 응답 없음 (0건). 허구의 사람 응답을 절대 지어내지 말 것.\n\n";
+    }
+
+    if (hasVideoAnalysis) {
+      feedbackInputPayload += "### [2. 실제 고객 촬영 동영상 피드백 VLM 심층 분석 데이터 (비디오 VoC, 총 " + videoVocAnalyses.length + "건, [영상파일명]_vlm.json 연동)]\n";
+      for (var vi = 0; vi < videoVocAnalyses.length; vi++) {
+        var vAnalysis = videoVocAnalyses[vi];
+        feedbackInputPayload += "- [영상 " + (vi + 1) + ": " + (vAnalysis.video_metadata ? vAnalysis.video_metadata.file_name : "video.mp4") + "]\n" +
+          "  * 화자 및 역할: " + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.role : "고객") + "\n" +
+          "  * 실제 발화 전사(Transcript): \"" + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.transcribed_speech : "") + "\"\n" +
+          "  * 발화 의도: " + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.speech_intent : "") + "\n" +
+          "  * 얼굴 표정 및 감정: " + (vAnalysis.speaker_analysis && vAnalysis.speaker_analysis.facial_expression ? vAnalysis.speaker_analysis.facial_expression.primary_emotion : "기대 및 호기심") + "\n" +
+          "  * 음성 톤 및 어조: " + (vAnalysis.speaker_analysis && vAnalysis.speaker_analysis.voice_tone ? vAnalysis.speaker_analysis.voice_tone.tone : "친근하고 솔직함") + "\n" +
+          "  * VLM 종합 평가 점수: " + (vAnalysis.multimodal_judging ? vAnalysis.multimodal_judging.overall_weighted_score : 4.77) + "/5.0\n" +
+          "  * 비주얼 액션 아이템: " + (vAnalysis.creative_direction_extracted && vAnalysis.creative_direction_extracted.visual_action_items ? vAnalysis.creative_direction_extracted.visual_action_items.join(", ") : "") + "\n" +
+          "  * 카피 액션 아이템: " + (vAnalysis.creative_direction_extracted && vAnalysis.creative_direction_extracted.copy_action_items ? vAnalysis.creative_direction_extracted.copy_action_items.join(", ") : "") + "\n\n";
+      }
+    } else if (hasVideoFeedback) {
+      feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC, 총 " + humanVideoRows.length + "건)]\n" + humanVideoRows.join("\n") + "\n\n";
+    } else {
+      feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC)]\n- 제출 현황: 동영상 피드백 없음 (0건 미제출).\n- 영상이 제출되지 않았으므로 영상 분석, 표정, 음성 톤, 영상 발화 내용을 절대 상상으로 지어내지 말 것.\n\n";
+    }
+
+    // 고객 설문 제출 이미지 피드백 VLM 분석 섹션
+    if (hasImageFeedback) {
+      feedbackInputPayload += "### [3. 고객 설문 제출 이미지 피드백 VLM 심층 분석 (총 " + humanImageRows.length + "건)]\n" + humanImageRows.join("\n\n") + "\n\n";
+    }
+
+    // input/fb-xx/ 폴더 내 수작업 투입 자료 섹션
+    if (hasManualFeedback) {
+      feedbackInputPayload += "### [4. input/" + targetRound + "/ 폴더 수작업 투입 피드백 자료 (총 " + manualFeedbackRows.length + "건)]\n" +
+        manualFeedbackRows.join("\n\n") + "\n\n";
+    }
+
+    if (personaListText) {
+      feedbackInputPayload += "### [5. AI 가상 페르소나 25인 실제 평가 데이터 (" + personaSummaryText + ")]\n" + personaListText;
+    }
+
+    var videoRule = hasVideoFeedback
+      ? "- 비디오 VoC 반영: 실제 분석된 동영상 피드백(video_voc_analysis.json)의 실제 발화 전사문, 고객의 얼굴 표정, 음성 톤을 본문에 충실히 인용하고, [정량 50%, 정성 30%, 비디오 VoC 20%] 가중치로 종합 점수를 산출하라.\n"
+      : "- 비디오 VoC 미제출: 실제 제출된 동영상 피드백이 0건이다. 비디오 VoC 섹션에는 '제출된 동영상 피드백 없음 (미제출)'으로만 기록하고, 종합 점수 가중치는 [정량 평점 50%, 정성 의견 50%]로 산정하라.\n";
+
+    var systemInstruction =
+      "당신은 엔터프라이즈 마케팅 AI의 전문 평가 위원장(LLM as a Judge)이다.\n" +
+      "제공된 실제 데이터(AI 페르소나 25인 발화 + 고객 동영상 VLM 분석 JSON + 설문 응답 + 제출/수작업 투입 이미지 및 문서)에만 철저히 근거하여 직전 공개 마케팅 콘텐츠(" + prevRvName + ")에 대한 사실 중심의 다면 평가 요약 보고서(feedback_summary)를 작성하라.\n\n" +
+      "### 절대 원칙: 사실 기반 요약 및 환각 전면 배제:\n" +
+      "1. 상상 및 소설 작성 엄격 금지: 제공된 데이터에 없는 가상의 인물, 지어낸 발화, 허구의 사건을 절대 날조하지 말 것. 오직 실제 인입된 데이터의 내용과 통계만을 객관적으로 요약하라.\n" +
+      "2. 비디오 VoC 규약:\n" +
+      videoRule +
+      "3. 고객 제출 이미지 및 수작업 투입 자료 반영 규약:\n" +
+      "   - 제출된 이미지 VLM 시각 분석 결과나 수작업 투입 문서/메모가 포함되어 있는 경우, 이를 실제 고객과 현장의 생생한 요구 사항으로 간주하여 비주얼/카피 개선 제안에 적극 반영하라.\n" +
+      "4. AI 가상 페르소나 피드백 취합 규약:\n" +
+      "   - AI 가상 페르소나 25인의 실제 발화문과 평점 통계를 집계하여 3대 핵심 여론 동향(주류 호평, 비판 및 우려, 개선 제안)을 도출하라.\n" +
+      "5. 필수 보고서 목차 구조:\n" +
+      "   ## 1. 피드백 수집 및 분석 개요 (데이터 소스 건수, 비디오/이미지/수작업 자료 현황 명시)\n" +
+      "   ## 2. 고객 동영상 VoC 멀티모달(VLM) 심층 분석 (표정, 음성 톤, 발화 전사, [영상파일명]_vlm.json 연동)\n" +
+      "   ## 3. 고객 제출 이미지 및 수작업 투입 자료 VLM 분석 (시각적 디자인, 실착 샷, 현장 메모 피드백)\n" +
+      "   ## 4. 25인 AI 페르소나 여론 동향 분석 (실제 발화 및 통계 기반 주류 호평, 비판 및 우려, 개선 제안)\n" +
+      "   ## 5. 사실 기반 종합 평가 점수 산출 (" + (hasVideoFeedback ? "정량 50%, 정성 30%, 비디오 VoC 20%" : "정량 50%, 정성 50% / 비디오 VoC 미제출") + ")\n" +
+      "   ## 6. 차기 리비전(" + nextRvName + ") 반영 권고 사항 (Action Items 3대 실행 전략)\n" +
+      "   ## 7. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
+      "6. 산출물 서술 어조: 단호하고 격조 높은 문어체 평서문('-다' 체)을 엄격히 준수한다.\n" +
+      "7. 한글 복합 명사는 철저하게 띄어 쓰고, 이모지와 중간 점을 일절 쓰지 말 것.\n" +
+      "8. 분량 및 가독성: 마케터가 1분 안에 여론 동향을 빠르게 파악하고 의사 결정을 내릴 수 있도록 불릿 포인트 중심의 핵심 요약 리포트로 간결하게 작성하라.";
+
+    var userPrompt =
+      "다음 피드백 데이터를 분석하여 표준 형식의 사실 기반 종합 요약본(feedback_summary)을 작성하라.\n\n" +
+      "[평가 대상 직전 공개 마케팅 콘텐츠: " + prevRvName + "]\n" +
+      "[피드백 회차: " + targetRound + "]\n" +
+      "[피드백 데이터 소스: " + feedbackSourceDescription + "]\n\n" +
+      feedbackInputPayload;
+
+    // 5. Gemini 호출
+    var summaryResult = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_JUDGE);
+
+    if (summaryResult.indexOf("마케터 최종 의사 결정") === -1) {
+      var defaultComment = "> **마케터 코멘트**: 출퇴근 피로감보다 주말 카페 힐링 감성을 강조하고, 180g 초경량 착용감을 헤드카피로 올릴 것. 노이즈 캔슬링 98% 차단 스펙은 본문 첫 단락에 신뢰성 있게 기술할 것.\n";
+      if (roundNum === 2) {
+        defaultComment = "> **마케터 코멘트**: 20대 한국인 여성 모델이 세련된 서울 카페에서 초경량 노이즈 캔슬링을 켜고 몰입하는 순간을 헤드카피와 비주얼로 전면에 내세울 것. 스펙 나열보다 감성적 힐링 공감을 극대화할 것.\n";
+      } else if (roundNum >= 3) {
+        defaultComment = "> **마케터 코멘트**: 그랜드 론칭 한정 얼리버드 혜택(고급 가죽 트래블 파우치 증정)을 볼드하게 명시하고, 한국인 20대 여성 모델과 5종 시그니처 파스텔 컬러 라인업을 담은 론칭 완결형 비주얼을 도출할 것.\n";
+      }
+
+      summaryResult += "\n\n---\n\n" +
+        "## 7. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
+        defaultComment;
+    }
+
+    // 6. 구글 드라이브 input/{targetRound}/feedback_summary 구글 독스 저장
+    var summaryDocFile = saveGoogleDoc(feedbackFolder, "feedback_summary", summaryResult);
+
+    // t-SNE 지형도 이미지가 생성된 경우 구글 독스 문서 본문 맨 상단에 임베드
+    if (clusterMapFile) {
+      try {
+        var doc = DocumentApp.openById(summaryDocFile.getId());
+        var body = doc.getBody();
+        var mapBlob = clusterMapFile.getBlob();
+        body.insertImage(0, mapBlob);
+        var totalPointsCount = (parsedPoints && parsedPoints.length > 0) ? parsedPoints.length : (parsedPersonas.length || 25);
+        var captionPara = body.insertParagraph(1, "[그림 1] 25인 AI 페르소나 열린 피드백 여론 지형도 (총 " + totalPointsCount + "개 세부 의견 포인트, text-multilingual-embedding-002 128d 임베딩 t-SNE)");
+        captionPara.setFontSize(9).setFontColor("#64748B").setItalic(true);
+        doc.saveAndClose();
+      } catch (embedErr) {
+        Logger.log("독스 내 지형도 이미지 임베드 예외: " + embedErr);
+      }
+    }
+
+    // 7. Google Sheets 실행 대시보드에 다면 평가 결과 및 링크 기록 (Step 5, Step 8, 또는 N차 Step 8)
+    var stepId = (targetRound === "fb-01") ? "Step 5" : (targetRound === "fb-02" ? "Step 8" : "Step 8 (" + targetRound + ")");
+    var stepTitle = (targetRound === "fb-01") ? "1차 다면 평가 및 t-SNE 지형도 (fb-01)" : (targetRound === "fb-02" ? "2차 다면 평가 및 t-SNE 갱신 (fb-02)" : roundNum + "차 다면 평가 및 t-SNE 갱신 (" + targetRound + ")");
+    recordStepResultToSheet(stepId, stepTitle, "완료", summaryDocFile.getUrl(), "피드백 요약서 열기 (" + targetRound + ")");
+
+    if (!isSilent) {
+      ui.alert(
+        "다면 평가 완료 (" + targetRound + ")",
+        "25인 AI 페르소나, 고객 제출 이미지/비디오 및 수작업 자료 다면 평가 리포트(t-SNE 지형도 포함) 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 '피드백 요약서 열기' 링크를 확인하십시오.",
+        ui.ButtonSet.OK
+      );
+    }
+    return summaryResult;
+  } catch (e) {
+    if (!isSilent) {
+      ui.alert("평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+    } else {
+      throw e;
+    }
+  }
+}
+
+function resolveDriveAttachmentName(rawVal) {
+  if (typeof rawVal !== "string") {
+    return rawVal;
+  }
+
+  var drivePattern = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)/g;
+  var match = drivePattern.exec(rawVal);
+  if (!match) {
+    return rawVal;
+  }
+
+  var found = false;
+  var resolvedTexts = [];
+
+  var regex = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)[^\s,]*/g;
+  var m;
+  while ((m = regex.exec(rawVal)) !== null) {
+    found = true;
+    var fileId = m[1];
+    var fullUrl = m[0];
+    try {
+      var file = DriveApp.getFileById(fileId);
+      var fileName = file.getName();
+      var mimeType = file.getMimeType();
+      resolvedTexts.push(fileName + " (" + mimeType + ", 자동 첨부 링크: " + fullUrl + ")");
+    } catch (driveErr) {
+      resolvedTexts.push(fullUrl);
+    }
+  }
+
+  if (found && resolvedTexts.length > 0) {
+    return resolvedTexts.join(", ");
+  }
+
+  return rawVal;
+}
+
+// ============================================================================
+// FILE: Code_Step6_Decision.js
+// Code_Step6_Decision.js
+// ============================================================================
+
+/**
+ * [Step 6] 마케터 피드백 검토 및 최종 의사 결정 UI 프롬프트 (Human-in-the-loop)
+ */
+function runMarketerDecisionPrompt() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var campaignFolder = getCampaignFolder();
+    var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
+    var summaryContent = readGoogleDoc(fb01Folder, "feedback_summary");
+
+    if (!summaryContent) {
+      ui.alert(
+        "선행 단계 필요",
+        "먼저 [Step 5] 25인 AI 페르소나 다면 평가 및 t-SNE 지형도 생성을 실행하여 피드백 보고서를 도출하십시오.",
+        ui.ButtonSet.OK
+      );
+      return;
+    }
+
+    var defaultComment = "20대 한국인 여성 모델이 세련된 서울 카페에서 초경량 노이즈 캔슬링을 켜고 몰입하는 순간을 헤드카피와 비주얼 전면에 내세울 것. 스펙 나열보다 감성적 힐링 공감을 극대화할 것.";
+
+    var response = ui.prompt(
+      "[Step 6] 마케터 최종 의사 결정 및 보정 지침 입력 (Human-in-the-loop)",
+      "피드백 다면 평가 보고서와 t-SNE 여론 지형도를 검토한 후, 차기 마케팅 콘텐츠(rv-01)에 반영할 마케터 최종 보정 지침을 입력하십시오:\n\n" +
+      "[확인]을 누르면 기본 지침으로 피드백 요약서(feedback_summary)가 즉시 갱신됩니다:",
+      ui.ButtonSet.OK_CANCEL
+    );
+
+    if (response.getSelectedButton() !== ui.Button.OK) {
+      return;
+    }
+
+    var marketerComment = response.getResponseText().trim();
+    if (!marketerComment) {
+      marketerComment = defaultComment;
+    }
+
+    // feedback_summary 문서의 마케터 최종 의사 결정 섹션 갱신
+    var updatedSummary = summaryContent;
+    var sectionHeader = (updatedSummary.indexOf("## 6. 마케터 최종 의사 결정") !== -1)
+      ? "## 6. 마케터 최종 의사 결정 및 보정 지침"
+      : "## 5. 마케터 최종 의사 결정 및 보정 지침";
+    var commentBlock = "\n> **마케터 코멘트**: " + marketerComment + "\n";
+
+    if (updatedSummary.indexOf(sectionHeader) !== -1) {
+      var parts = updatedSummary.split(sectionHeader);
+      updatedSummary = parts[0] + sectionHeader + " (Human-in-the-loop)\n" + commentBlock;
+    } else {
+      updatedSummary += "\n\n---\n\n" + sectionHeader + " (Human-in-the-loop)\n" + commentBlock;
+    }
+
+    var summaryDocFile = saveGoogleDoc(fb01Folder, "feedback_summary", updatedSummary);
+
+    // 구글 시트 대시보드에 Step 6 완료 기록
+    recordStepResultToSheet("Step 6", "마케터 피드백 검토 및 의사 결정", "완료", summaryDocFile.getUrl(), "피드백 요약서 열기 (마케터 지침 반영)");
+
+    ui.alert(
+      "마케터 의사 결정 반영 완료",
+      "마케터 보정 지침이 피드백 요약서(feedback_summary)에 성공적으로 저장되었습니다.\n\n이제 [Step 7] 1차 마케팅 콘텐츠 반자율 보정(rv-01)을 실행하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("마케터 의사 결정 반영 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+// ============================================================================
+// FILE: Code_Step7_9_Refine.js
+// Code_Step7_9_Refine.js
+// ============================================================================
+
+/**
+ * [Step 7] 1차 피드백(fb-01) 기반 1차 마케팅 콘텐츠(rv-01) 반자율 보정
+ */
+function runReviseAssetsRound1() {
+  runReviseAssets("fb-01");
+}
+
+/**
+ * [Step 9] 2차 피드백(fb-02) 기반 최종 완결본 마케팅 콘텐츠(rv-02) 반자율 보정 완결
+ */
+function runReviseAssetsRound2() {
+  runReviseAssets("fb-02");
+}
+
+/**
+ * 마케팅 콘텐츠 반자율 보정 공통 실행 함수 (N차 다이나믹 루프 rv-01 ~ rv-99 지원)
+ */
+function runReviseAssets(targetRoundOpt, isSilentOpt) {
+  var ui = SpreadsheetApp.getUi();
+  var isSilent = (isSilentOpt === true);
+  try {
+    var campaignFolder = getCampaignFolder();
+
+    // 1. 피드백 회차(fb-01 ~ fb-99 -> rv-01 ~ rv-99) 판별
+    var targetRound = targetRoundOpt;
+    if (!targetRound) {
+      var latestRv = detectLatestRevisionRoundNum();
+      var autoRound = Math.max(latestRv + 1, 1);
+      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
+    }
+
+    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+    var prevRoundNum = roundNum - 1;
+    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+    var targetRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
+
+    // 소요 시간 안내 토스트 즉시 표시
+    showProcessingToast("[Step 7/9] 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")", 75);
+
+    var campaignCode = getCampaignCode();
+    var prevRvFolder = getCampaignSubFolder(["output", prevRvName]);
+    var targetRvFolder = getCampaignSubFolder(["output", targetRvName]);
+    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+    // 2. 내장 시스템 지침 (Zero-Prompt No-Code)
+    var systemInstruction =
+      "당신은 데이터 드리븐 크리에이티브 디렉터이다.\n" +
+      "원천 마케팅 캠페인 기획서(PLAN)의 핵심 비전과 콘텐츠 제작 명세서(SPEC)의 채널별 규격을 충실히 계승하면서, " +
+      "이전 버전의 마케팅 콘텐츠(" + prevRvName + ")와 고객 피드백 종합 요약본(feedback_summary)의 마케터 최종 의사 결정 지침을 충실히 반영하여 " +
+      targetRvName + " 개정본(campaign_content) 구글 독스를 완성도 높은 마케팅 카피 형식으로 작성하라.\n\n" +
+      "엄격한 작성 규칙:\n" +
+      "1. 상상 및 소설 작성 엄격 금지: 원천 기획서(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)에 실제로 명시된 사실과 수치, 마케터 지침에만 철저히 입각하여 보정하십시오.\n" +
+      "2. 원천 기획서(PLAN)의 고유 USP 및 브랜드 본질과 채널별 규격(가로 배너 16:9, 세로 포스터 9:16, 정방형 SNS 1:1, 세로 9:16 모바일 숏폼 영상)을 충실히 유지하십시오.\n" +
+      "3. 이전 콘텐츠(" + prevRvName + ")에서 지적된 고객 피드백 권고 사항과 고객 제출 이미지/수작업 자료 분석 결과를 충실히 보정하십시오.\n" +
+      "4. 피드백 요약본의 '마케터 최종 의사 결정 및 보정 지침'에 명시된 마케터 코멘트는 최우선 순위 지침이다. 모델 변경, 소구점 변경, 톤앤매너 수정 등 마케터의 명시적 지침을 카피 본문과 비주얼 연출 지시문에 반드시 우선적으로 반영하십시오.\n" +
+      "5. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
+      "6. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
+      "7. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
+      "8. 분량 및 가독성: 마케터가 신속하게 검토할 수 있도록, 불필요한 장황한 서술을 배제하고 각 채널별 핵심 카피와 연출 지시문을 명쾌하고 컴팩트하게 작성하십시오.";
+
+    // 3. 이전 리비전 output/{prevRvName}/campaign_content 읽기
+    var targetContentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+    var previousAsset = readGoogleDoc(prevRvFolder, targetContentDocName) || readGoogleDoc(prevRvFolder, "campaign_asset");
+    if (!previousAsset) {
+      throw new Error("이전 마케팅 콘텐츠(" + prevRvName + ")를 찾을 수 없습니다. 이전 단계의 콘텐츠 생성을 먼저 실행하십시오.");
+    }
+
+    // 4. input/{target_round}/feedback_summary 읽기
+    var summaryContent = readGoogleDoc(feedbackFolder, "feedback_summary");
+    if (!summaryContent) {
+      throw new Error("input/" + targetRound + "/feedback_summary 피드백 요약본을 찾을 수 없습니다. 피드백 다면 평가를 먼저 실행하십시오.");
+    }
+
+    // 5. 원천 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 읽기
+    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
+    var planContent = readGoogleDoc(campaignFolder, planDocName);
+    if (!planContent) {
+      planContent = readGoogleDoc(campaignFolder, "BRD") || "마케팅 캠페인 기획서";
+    }
+
+    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
+    var specContent = readGoogleDoc(campaignFolder, specDocName) || "콘텐츠 제작 명세서";
+
+    var userPrompt =
+      "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)이다.\n\n" +
+      "### [1. 원천 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+      "### [2. 콘텐츠 제작 명세서 (SPEC)]\n" + specContent + "\n\n" +
+      "### [3. 직전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + previousAsset + "\n\n" +
+      "### [4. 고객 및 AI 페르소나 피드백 요약본 (feedback_summary)]\n" + summaryContent;
+
+    // 6. Gemini 호출
+    var refinedAsset = callGemini(systemInstruction, userPrompt);
+
+    // 7. 저장: output/{targetRvName}/에 campaign_content 구글 독스 단일 저장
+    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, refinedAsset);
+
+    // 8. Google Sheets 실행 대시보드에 개정본 완료 및 링크 기록
+    var stepId = (targetRvName === "rv-01") ? "Step 7" : (targetRvName === "rv-02" ? "Step 9" : "Step 9 (" + targetRvName + ")");
+    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : (targetRvName === "rv-02" ? "2차 마케팅 콘텐츠 반자율 보정 (rv-02)" : roundNum + "차 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")");
+    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "Google Drive 폴더 열기 (" + targetRvName + ")");
+
+    // 9. 동적 비주얼 프롬프트 도출 및 실시간 이미지 3종 생성
+    var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
+    var dynamicBrief = extractDynamicVisualPrompt(
+      refinedAsset,
+      summaryContent,
+      "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+    );
+    Logger.log("동적 도출된 비주얼 프롬프트 (" + targetRvName + "): " + dynamicBrief);
+    generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief);
+
+    if (!isSilent) {
+      ui.alert(
+        "마케팅 콘텐츠 반자율 보정 완료 (" + targetRvName + ")",
+        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + "), 신규 비주얼 이미지 3종 및 세로 숏폼 영상(" + prefix + "_shorts.mp4) 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+        ui.ButtonSet.OK
+      );
+    }
+    return refinedAsset;
+  } catch (e) {
+    if (!isSilent) {
+      ui.alert("콘텐츠 보정 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+    } else {
+      throw e;
+    }
+  }
 }
 
 // ============================================================================
@@ -1632,1415 +3080,4 @@ function detectLatestRevisionRoundNum() {
     Logger.log("detectLatestRevisionRoundNum 예외: " + e);
   }
   return maxRound;
-}
-
-// ============================================================================
-// FILE: Code_Step1_Workspace.js
-// [Step 1] 구글 드라이브 작업 공간 폴더 구조 및 25인 AI 페르소나 데이터셋 자동 생성 (Workspace Initializer)
-// ============================================================================
-
-function createWorkspaceFolderTree() {
-  var ui = SpreadsheetApp.getUi();
-  showProcessingToast("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", 15);
-  try {
-    // 1. 캠페인별 독립 폴더 구조 생성 (input, output을 캠페인 폴더 직하위에 격리)
-    var campaign = getCampaignFolder();
-    var campaignCode = getCampaignCode();
-    var inputFolder = getCampaignSubFolder(["input"]);
-    var outputFolder = getCampaignSubFolder(["output"]);
-    // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json)
-    var masterPersonas25 = getMasterPersonas25();
-
-    // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json 생성)
-    saveTextFile(inputFolder, "ai_personas.json", JSON.stringify(masterPersonas25, null, 2));
-
-    // fb-01 폴더 초기 생성 및 샘플 고객 동영상(VoC) 자동 시딩 (feedback_{timestamp}.mp4)
-    var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
-    var sampleVideoName = "feedback_" + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyyMMdd_HHmmss") + ".mp4";
-    saveSampleVideoFile(fb01Folder, sampleVideoName);
-
-    // 스타터 아이디어 구글 독스 문서 (input/아이디어 메모) 자동 생성
-    if (!readGoogleDoc(inputFolder, "아이디어 메모")) {
-      var starterIdea = "# 캠페인 아이디어 메모\n\n" +
-        "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (cp-autumn-breeze)\n" +
-        "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 아웃도어 & 라이프스타일 컬렉션\n" +
-        "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 주말 아웃도어 캠퍼\n" +
-        "* **핵심 소구점**: 가볍고 따뜻한 기능성 소재, 모던한 실루엣, 일상과 캠핑을 아우르는 활용성\n" +
-        "* **목표 채널**: 인스타그램 릴스 숏폼, 네이버 블로그 브랜드 스토리, 뉴스레터 이메일 시퀀스\n";
-      saveGoogleDoc(inputFolder, "아이디어 메모", starterIdea);
-    }
-
-    // 3. 현재 구글 시트를 캠페인 폴더 직하위로 자동 이동하여 캠페인 전용 컨트롤 타워로 패키징
-    try {
-      var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-      var sheetFile = DriveApp.getFileById(activeSpreadsheet.getId());
-      sheetFile.moveTo(campaign);
-      var currentTitle = activeSpreadsheet.getName();
-      if (!currentTitle || currentTitle === "제목 없는 스프레드시트" || currentTitle === "마케팅 콘텐츠 파이프라인") {
-        activeSpreadsheet.rename("[마케팅 컨트롤 타워] " + campaignCode);
-      }
-    } catch (sheetMoveErr) {
-      Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
-    }
-
-    // 4. 구글 시트 실행 대시보드 표 초기화 및 Step 1 완료 기록
-    initDashboardSheet();
-    recordStepResultToSheet("Step 1", "작업 공간 초기화", "완료", campaign.getUrl(), "구글 드라이브 폴더 (" + campaignCode + ")");
-
-    var alertMsg = "캠페인 작업 공간(" + campaignCode + ")과 25인 AI 페르소나 데이터셋이 준비되었습니다.\n\n" +
-                   "구글 로그인 계정으로 자동 인증되므로 별도의 API Key 발급 없이 즉시 실행하실 수 있습니다.\n\n" +
-                   "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.";
-
-    ui.alert(
-      "실습 환경 셋업 완료",
-      alertMsg,
-      ui.ButtonSet.OK
-    );
-  } catch (e) {
-    ui.alert("오류 발생", e.toString(), ui.ButtonSet.OK);
-  }
-}
-
-
-/**
- * 기본 25인 슬림 AI 페르소나 마스터 데이터셋 반환
- */
-function getMasterPersonas25() {
-  return {
-  "metadata": {
-    "description": "한국인 25인 다면 평가 슬림 AI 페르소나 패널 (토큰 최적화 경량 규격)",
-    "total": 25
-  },
-  "personas": [
-    {
-      "id": "p01",
-      "name": "강도윤",
-      "age": 28,
-      "gender": "남성",
-      "category": "전문 마케터",
-      "occupation": "퍼포먼스 마케터",
-      "perspective": "데이터 지향적, 민첩한 의사 결정. 관심: ROAS 지표 하락 및 광고비 삭감에 대한 극심한 압박"
-    },
-    {
-      "id": "p02",
-      "name": "김서아",
-      "age": 32,
-      "gender": "여성",
-      "category": "전문 마케터",
-      "occupation": "브랜드 마케터",
-      "perspective": "감성적 통찰력, 디테일에 집착하는. 관심: 뻔하고 지루한 B2B 카피를 탈피하고 차별화된 톤앤매너 확립 요구"
-    },
-    {
-      "id": "p03",
-      "name": "이서연",
-      "age": 25,
-      "gender": "여성",
-      "category": "전문 마케터",
-      "occupation": "콘텐츠 크리에이터",
-      "perspective": "외향적이고 즉흥적인, 스토리텔링에 능한. 관심: 매일 쏟아지는 다채널 숏폼 영상과 인스타그램 릴스 소재 고갈"
-    },
-    {
-      "id": "p04",
-      "name": "김도현",
-      "age": 35,
-      "gender": "남성",
-      "category": "전문 마케터",
-      "occupation": "그로스 마케터",
-      "perspective": "분석적이고 집요한, 실험 정신이 강한. 관심: 예산 0원으로 3일 안에 전 채널을 동시 장악해야 하는 초단기 런칭 압박"
-    },
-    {
-      "id": "p05",
-      "name": "박지우",
-      "age": 42,
-      "gender": "여성",
-      "category": "전문 마케터",
-      "occupation": "인하우스 홍보 담당자",
-      "perspective": "신중하고 정무적인 감각, 원만한 대인관계. 관심: 보고서용 데이터 정리와 경영진 설득을 위한 명확한 비용 절감 ROI 증명"
-    },
-    {
-      "id": "p06",
-      "name": "박서준",
-      "age": 38,
-      "gender": "남성",
-      "category": "전문 마케터",
-      "occupation": "퍼포먼스 리드",
-      "perspective": "글로벌 감각, 도전적이고 대범한. 관심: 광고 피로도 극복을 위한 수십 개 카피의 실시간 다채널 A/B 테스트 요구"
-    },
-    {
-      "id": "p07",
-      "name": "최수아",
-      "age": 28,
-      "gender": "여성",
-      "category": "전문 마케터",
-      "occupation": "SNS 채널 운영자",
-      "perspective": "트렌드에 극도로 민감한, 사교적이고 발랄한. 관심: Z세대 취향을 저격하는 B급 유머와 키치 네온 스타일 바이럴 릴스 기획"
-    },
-    {
-      "id": "p08",
-      "name": "이도현",
-      "age": 45,
-      "gender": "남성",
-      "category": "전문 마케터",
-      "occupation": "마케팅 팀장",
-      "perspective": "진중하고 신뢰감 주는, 조직 통솔력. 관심: 보수적인 임원진을 설득할 수 있는 데이터 기반의 정량적 성공 사례 및 신뢰성 입증"
-    },
-    {
-      "id": "p09",
-      "name": "정예준",
-      "age": 32,
-      "gender": "남성",
-      "category": "전문 마케터",
-      "occupation": "퍼포먼스 AE",
-      "perspective": "추진력 있고 유연한, 위기 대처 능력. 관심: 광고주마다 쏟아지는 다채널 소재 베리에이션 요청으로 인한 만성 야근"
-    },
-    {
-      "id": "p10",
-      "name": "정하은",
-      "age": 25,
-      "gender": "여성",
-      "category": "전문 마케터",
-      "occupation": "커뮤니티 매니저",
-      "perspective": "공감 능력이 탁월한, 친화적이고 포용적인. 관심: 고객의 생생한 VoC를 반영하여 실시간으로 진화하는 참여형 캠페인 구축"
-    },
-    {
-      "id": "p11",
-      "name": "조하준",
-      "age": 28,
-      "gender": "남성",
-      "category": "전문 마케터",
-      "occupation": "퍼포먼스 마케터",
-      "perspective": "데이터 지향적, 민첩한 의사 결정. 관심: ROAS 지표 하락 및 광고비 삭감에 대한 극심한 압박"
-    },
-    {
-      "id": "p12",
-      "name": "강지유",
-      "age": 32,
-      "gender": "여성",
-      "category": "전문 마케터",
-      "occupation": "브랜드 마케터",
-      "perspective": "감성적 통찰력, 디테일에 집착하는. 관심: 뻔하고 지루한 B2B 카피를 탈피하고 차별화된 톤앤매너 확립 요구"
-    },
-    {
-      "id": "p13",
-      "name": "전기태",
-      "age": 74,
-      "gender": "남성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
-    },
-    {
-      "id": "p14",
-      "name": "최은지",
-      "age": 71,
-      "gender": "여성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
-    },
-    {
-      "id": "p15",
-      "name": "안상식",
-      "age": 73,
-      "gender": "남성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
-    },
-    {
-      "id": "p16",
-      "name": "김다희",
-      "age": 46,
-      "gender": "여성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "현실적이고 신중한, 책임감 강한"
-    },
-    {
-      "id": "p17",
-      "name": "설숙자",
-      "age": 50,
-      "gender": "여성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "현실적이고 신중한, 책임감 강한"
-    },
-    {
-      "id": "p18",
-      "name": "황혜란",
-      "age": 33,
-      "gender": "여성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "정갈하고 독립적인, 일과 쉼의 균형을 중시하는"
-    },
-    {
-      "id": "p19",
-      "name": "김준수",
-      "age": 31,
-      "gender": "남성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "정갈하고 독립적인, 일과 쉼의 균형을 중시하는"
-    },
-    {
-      "id": "p20",
-      "name": "곽상길",
-      "age": 76,
-      "gender": "남성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
-    },
-    {
-      "id": "p21",
-      "name": "박호철",
-      "age": 44,
-      "gender": "남성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "현실적이고 신중한, 책임감 강한"
-    },
-    {
-      "id": "p22",
-      "name": "이태훈",
-      "age": 27,
-      "gender": "남성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "트렌드에 민감한, 개성 표현을 두려워하지 않는"
-    },
-    {
-      "id": "p23",
-      "name": "홍희자",
-      "age": 74,
-      "gender": "여성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "소탈하고 정이 넘치는, 과묵하고 인내심 강한"
-    },
-    {
-      "id": "p24",
-      "name": "고성호",
-      "age": 61,
-      "gender": "남성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "우직하고 성실한, 희생적인 가장/어머니"
-    },
-    {
-      "id": "p25",
-      "name": "유준호",
-      "age": 61,
-      "gender": "남성",
-      "category": "일반 소비자",
-      "occupation": "소비자",
-      "perspective": "우직하고 성실한, 희생적인 가장/어머니"
-    }
-  ]
-};
-}
-
-// ============================================================================
-// FILE: Code_Step2_IdeaToPlan.js
-// [Step 2] 자연어 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출 엔진 (Idea to PLAN & SPEC)
-// ============================================================================
-
-function runIdeaToPlanConversion() {
-  var ui = SpreadsheetApp.getUi();
-  showProcessingToast("[Step 2] 기획서(PLAN) 및 명세서(SPEC) 자동 도출", 30);
-  try {
-    var campaignFolder = getCampaignFolder();
-
-    // 1. 내장 시스템 지침 (Zero-Prompt No-Code) - PLAN 기획서 도출
-    var planSystemInstruction =
-      "당신은 전문 엔터프라이즈 브랜드 마케팅 전략가이자 크리에이티브 디렉터이다.\n" +
-      "마케터가 제공하는 자연어 캠페인 아이디어를 정밀 분석하여, 완성도 높은 마케팅 캠페인 기획서(PLAN)를 작성하라.\n\n" +
-      "필수 포함 섹션:\n" +
-      "# [마케팅 캠페인 기획서] {캠페인명}\n" +
-      "## 1. 캠페인 배경 및 핵심 목표\n" +
-      "## 2. 타깃 페르소나 및 핵심 소구점 (USP)\n" +
-      "## 3. 멀티 채널 콘텐츠 양산 요구 사항\n" +
-      "## 4. 고객 피드백 수집 및 품질 검증 기준\n\n" +
-      "엄격한 작성 규칙:\n" +
-      "1. 이모지와 중간 점을 일절 사용하지 말고, 나열 시 반드시 쉼표(,)를 사용하십시오.\n" +
-      "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
-      "3. 한글 복합어는 철저하게 띄어 쓰십시오. (예: '마케팅 캠페인 기획서', '오프라인 매장', '의사 결정' 등)\n" +
-      "4. 마케터가 바로 실무에 사용할 수 있을 만큼 구체적인 수치와 명확한 어조로 작성하십시오.\n" +
-      "5. 분량 및 가독성: 청중 마케터가 1분 안에 직관적으로 파악할 수 있도록, 불필요한 장황한 서술을 전면 배제하고 A4 1~2페이지 내외의 핵심 불릿 포인트 중심으로 명쾌하고 컴팩트하게 작성하십시오.";
-
-    // 2. 내장 시스템 지침 - SPEC 콘텐츠 제작 명세서 도출
-    var specSystemInstruction =
-      "당신은 엔터프라이즈 마케팅 콘텐츠 제작 총괄 리드이다.\n" +
-      "마케팅 캠페인 기획서(PLAN)를 분석하여, 각 채널별 멀티 채널 콘텐츠 제작 명세서(SPEC) 구글 독스 문서를 정밀하게 작성하라.\n" +
-      "마케터가 이 문서를 열어 수치(해상도, 비율, 영상 길이, 필수 포함 키워드 등)를 직접 편집할 수 있도록 명료한 규격 명세 형식으로 구성하라.\n\n" +
-      "필수 포함 섹션:\n" +
-      "# [멀티 채널 콘텐츠 제작 명세서] (SPEC)\n" +
-      "## 1. 광고 카피라이팅 채널 규격\n" +
-      "- 헤드카피 (3종, 20자 내외)\n" +
-      "- 인스타그램 피드 및 카드뉴스 카피 (캡션 300자 내외, 필수 해시태그 5개)\n" +
-      "- 네이버 블로그 기고문 (정보성 리뷰 1,500자 내외)\n" +
-      "## 2. 모바일 세로 숏폼 영상 규격 (Shorts / Reels)\n" +
-      "- 화면 비율: 세로 9:16 (해상도 1080x1920)\n" +
-      "- 권장 러닝타임: 15초 내외 (최대 30초)\n" +
-      "- 구성: 초반 3초 후킹(Hook), 문제 제기, 솔루션 제시, CTA\n" +
-      "## 3. 대표 비주얼 이미지 3종 비율 규격\n" +
-      "- 가로형 디스플레이 배너: 16:9 (1920x1080 권장, GDN 및 메인 웹 배너)\n" +
-      "- 세로형 모바일 포스터: 9:16 (1080x1920 권장, 모바일 스토리 및 사이니지)\n" +
-      "- 정방형 SNS 피드 이미지: 1:1 (1080x1080 권장, 인스타그램 피드)\n" +
-      "## 4. 비주얼 연출 톤앤매너 및 네거티브 가이드라인\n" +
-      "- 추천 조명, 색감, 인물 모델 스타일\n" +
-      "- 지양해야 할 표현(과도한 텍스트 침범, 왜곡 등)\n\n" +
-      "엄격한 작성 규칙:\n" +
-      "1. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
-      "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
-      "3. 한글 복합어는 철저하게 띄어 쓰십시오.";
-
-    // 3. 마케터에게 자연어 아이디어 입력받기 (input/아이디어 메모 구글 독스 연동)
-    var inputFolder = getCampaignSubFolder(["input"]);
-    var docIdea = readGoogleDoc(inputFolder, "아이디어 메모");
-    var defaultIdea = docIdea ||
-      ("2026 어텀 브리즈 무선 헤드폰 론칭 캠페인. 2534 출퇴근 직장인 타깃. " +
-       "스마트 액티브 노이즈 캔슬링(98% 소음 차단), 180g 초경량 깃털 착용감, 50시간 배터리, 10만 원대 후반 가격. " +
-       "인스타 피드 및 유튜브 쇼츠 콘티, 블로그 리뷰, 배너 프롬프트, 3,000대 사전 예약 조기 마감 목표.");
-
-    var response = ui.prompt(
-      "캠페인 기획 아이디어 발상",
-      "추진하고자 하는 마케팅 아이디어나 신제품 특장점을 자유로운 말(자연어)로 입력하십시오.\n\n" +
-      "[확인]을 누르면 기본 예시 아이디어로 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 구글 독스가 즉시 자동 생성됩니다:",
-      ui.ButtonSet.OK_CANCEL
-    );
-
-    if (response.getSelectedButton() !== ui.Button.OK) {
-      return;
-    }
-
-    var userIdea = response.getResponseText().trim();
-    if (!userIdea) {
-      userIdea = defaultIdea;
-    }
-
-    // 4. Gemini 호출: 1) 기획서(PLAN) 생성
-    var userPrompt = "다음은 마케터가 제공한 캠페인 아이디어이다. 시스템 지침에 따라 정식 마케팅 캠페인 기획서(PLAN)를 완성하라:\n\n" + userIdea;
-    var planContent = callGemini(planSystemInstruction, userPrompt);
-    var planDocFile = saveGoogleDoc(campaignFolder, "PLAN", planContent);
-
-    // 5. Gemini 호출: 2) 콘텐츠 제작 명세서(SPEC) 생성
-    var specPrompt = "다음 작성된 마케팅 캠페인 기획서(PLAN)를 바탕으로, 각 채널별 상세 콘텐츠 제작 명세서(SPEC)를 완성하라:\n\n" + planContent;
-    var specContent = callGemini(specSystemInstruction, specPrompt);
-    var specDocFile = saveGoogleDoc(campaignFolder, "SPEC", specContent);
-
-    // 6. 구글 시트 실행 대시보드에 Step 1 완료 및 링크 기록
-    recordStepResultToSheet("Step 2", "기획서(PLAN) 및 콘텐츠 명세서(SPEC) 도출", "완료", planDocFile.getUrl(), "기획서(PLAN) & 명세서(SPEC) 열기");
-
-    ui.alert(
-      "기획서(PLAN) 및 콘텐츠 명세서(SPEC) 생성 완료",
-      "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 성공적으로 생성되었습니다.\n\n" +
-      "마케터는 브라우저에서 SPEC 문서를 열어 이미지 비율, 숏폼 길이, 카피 채널 규격을 자유롭게 수정한 뒤 [Step 2]를 실행할 수 있습니다.\n\n" +
-      "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
-      ui.ButtonSet.OK
-    );
-  } catch (e) {
-    ui.alert("기획서 및 명세서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
-  }
-}
-
-// ============================================================================
-// FILE: Code_Step3_ContentGen.js
-// [Step 3] 기획서(PLAN) 및 명세서(SPEC) 기반 초판 마케팅 콘텐츠 양산 엔진 (rv-00 Initial Content Generation)
-// ============================================================================
-
-function runInitialAssetGeneration() {
-  var ui = SpreadsheetApp.getUi();
-  showProcessingToast("[Step 3] 초판 마케팅 콘텐츠 양산 (rv-00)", 60);
-  try {
-    var campaignFolder = getCampaignFolder();
-    var campaignCode = getCampaignCode();
-    var inputFolder = getCampaignSubFolder(["input"]);
-    var rv00Folder = getCampaignSubFolder(["output", "rv-00"]);
-
-    // 1. 내장 시스템 지침 (Zero-Prompt No-Code)
-    var systemInstruction =
-      "당신은 전문 크리에이티브 마케팅 디렉터이자 카피라이터이다.\n" +
-      "주어진 마케팅 캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)를 바탕으로 단일 캠페인 종합 마케팅 콘텐츠 문서(campaign_content) 1본을 완성도 높은 마케팅 카피 형식으로 작성하라.\n\n" +
-      "필수 구성:\n" +
-      "1. 헤드카피 및 슬로건 (3종)\n" +
-      "2. 인스타그램 카드뉴스 및 피드 카피 (SPEC 규격 준수)\n" +
-      "3. 네이버 블로그 리뷰형 기고문 (SPEC 규격 준수)\n" +
-      "4. 모바일 숏폼 영상 콘티 (SPEC에 명시된 러닝타임 및 세로 9:16 규격, 타임라인별 나레이션 및 화면 연출 지시문)\n" +
-      "5. 제미나이 이미지 생성용 비주얼 프롬프트 (가로 16:9, 세로 9:16, 정방형 1:1)\n\n" +
-      "엄격한 작성 규칙:\n" +
-      "1. 콘텐츠 제작 명세서(SPEC)에 정의된 채널 규격, 숏폼 러닝타임, 톤앤매너를 최우선으로 준수하십시오.\n" +
-      "2. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
-      "3. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
-      "4. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
-      "5. 분량 및 가독성: 각 채널별 카피와 콘티는 마케터가 한눈에 읽고 즉시 검토할 수 있도록, 불필요한 미사여구를 배제하고 핵심 메시지 중심으로 명쾌하고 컴팩트하게 작성하십시오.";
-
-    // 2. 캠페인 루트의 PLAN 및 SPEC 구글 독스 읽기
-    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
-    var planContent = readGoogleDoc(campaignFolder, planDocName);
-    if (!planContent) {
-      planContent = readGoogleDoc(campaignFolder, "BRD");
-    }
-    if (!planContent) {
-      throw new Error("마케팅 캠페인 기획서(PLAN) 구글 독스 문서를 찾을 수 없습니다. [Step 1]을 먼저 실행하여 기획서(PLAN)를 생성하십시오.");
-    }
-
-    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
-    var specContent = readGoogleDoc(campaignFolder, specDocName) || "";
-
-    // 3. Gemini 호출
-    var promptText = "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
-                     "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
-                     "### [1. 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
-                     "### [2. 멀티 채널 콘텐츠 제작 명세서 (SPEC)]\n" + (specContent || "기본 규격 준수");
-    var generatedContent = callGemini(systemInstruction, promptText);
-
-    // 4. 저장: output/rv-00/에 campaign_content 구글 독스 단일 저장
-    var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
-    saveGoogleDoc(rv00Folder, contentDocName, generatedContent);
-
-    // 5. 실시간 대표 비주얼 이미지 3종 비율 세트 생성 (rv-00: 가로 16:9, 세로 9:16, 정사각 1:1)
-    var visualBrief = extractDynamicVisualPrompt(
-      generatedContent,
-      planContent,
-      "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
-    );
-    Logger.log("동적 도출된 비주얼 프롬프트 (rv-00): " + visualBrief);
-    generateAndSaveVisualAssets(rv00Folder, "00", visualBrief);
-
-    // 6. 실제 캠페인 초판 콘텐츠 기반 25인 가상 페르소나 피드백 실시간 도출
-    try {
-      var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
-      generateLivePersonaFeedbacks(campaignFolder, fb01Folder, "rv-00");
-    } catch (fbGenErr) {
-      Logger.log("25인 가상 페르소나 피드백 실시간 도출 예외: " + fbGenErr);
-    }
-
-    // 7. 구글 시트 실행 대시보드에 Step 2 완료 및 링크 기록
-    recordStepResultToSheet("Step 3", "초판 마케팅 콘텐츠 양산 (rv-00)", "완료", rv00Folder.getUrl(), "구글 드라이브 폴더 열기 (rv-00)");
-
-    ui.alert(
-      "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
-      "초판 마케팅 카피, 대표 비주얼 이미지 3종 및 세로 숏폼 영상(00_shorts.mp4) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
-      ui.ButtonSet.OK
-    );
-  } catch (e) {
-    ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
-  }
-}
-
-// ============================================================================
-// FILE: Code_Step4_Form.js
-// [Step 4] 고객 VoC 수집용 구글 폼 자동 생성 및 현재 구글 시트 연동 엔진 (Form Initializer & Linker)
-// ============================================================================
-
-function createAndLinkGoogleForm() {
-  var ui = SpreadsheetApp.getUi();
-  showProcessingToast("[Step 4] 고객 VoC 수집용 Google Forms 생성 및 연동", 20);
-  try {
-    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    var spreadsheetId = spreadsheet.getId();
-    var campaignFolder = getCampaignFolder();
-    var campaignCode = getCampaignCode();
-
-    // 1. 구글 폼 생성 및 응답 활성화 설정
-    var formTitle = "고객 피드백 설문";
-    var form = FormApp.create(formTitle);
-    form.setAcceptingResponses(true);
-    try {
-      form.setRequireLogin(false);
-    } catch (e) {
-      Logger.log("setRequireLogin 예외: " + e);
-    }
-    try {
-      form.setCollectEmail(false);
-      form.setLimitOneResponsePerUser(false);
-      form.setShowLinkToRespondAgain(true);
-    } catch (e) {
-      Logger.log("폼 옵션 설정 예외: " + e);
-    }
-    var publishedUrl = form.getPublishedUrl();
-
-    form.setDescription(
-      "본 설문은 " + campaignCode + " 캠페인의 고객 만족도와 사용자 직접 촬영 동영상/이미지 피드백을 수집하여 " +
-      "Gemini VLM 다면 평가 및 마케팅 콘텐츠 반자율 보정에 반영하기 위한 설문입니다.\n\n" +
-      "[모바일 즉시 참여 안내]\n" +
-      "스마트폰 카메라로 아래 첫 번째 항목의 QR 코드를 스캔하면 모바일 화면에서 즉시 피드백을 작성하거나 촬영 영상 링크를 제출하실 수 있습니다.\n" +
-      "설문 참여 바로가기 URL: " + publishedUrl
-    );
-
-    // 2. 모바일 참여용 고화질 QR 코드 생성 및 폼 최상단 이미지 아이템 자동 삽입
-    try {
-      var qrApiUrl = "https://quickchart.io/qr?text=" + encodeURIComponent(publishedUrl) + "&size=300&ecLevel=H";
-      var qrResponse = UrlFetchApp.fetch(qrApiUrl, { muteHttpExceptions: true });
-      if (qrResponse.getResponseCode() === 200) {
-        var qrBlob = qrResponse.getBlob().setName("form_qr_code.png");
-        var imageItem = form.addImageItem();
-        imageItem.setTitle("스마트폰 카메라로 QR 코드를 스캔하여 모바일 피드백을 제출하세요!");
-        imageItem.setHelpText("모바일 설문 URL: " + publishedUrl);
-        imageItem.setImage(qrBlob);
-      }
-    } catch (qrError) {
-      Logger.log("QR 코드 이미지 생성 실패: " + qrError);
-    }
-
-    // 3. 질문 항목 자동 구성
-    // 문항 1: 평가 대상 마케팅 콘텐츠 버전
-    var versionItem = form.addMultipleChoiceItem();
-    versionItem.setTitle("평가 대상 마케팅 콘텐츠 버전 (선택 사항)")
-      .setChoiceValues(["초판 (rv-00)", "1차 개정본 (rv-01)", "2차 개정본 (rv-02)"])
-      .setRequired(false);
-
-    // 문항 2: 정량 만족도 평점 (1~5점 선형 배율)
-    form.addScaleItem()
-      .setTitle("제품의 전반적인 만족도는 어떠셨습니까? (선택 사항)")
-      .setBounds(1, 5)
-      .setLabels("매우 불만족", "매우 만족")
-      .setRequired(false);
-
-    // 문항 3: 정성 서술형 피드백
-    form.addParagraphTextItem()
-      .setTitle("제품을 사용하면서 느낀 솔직한 장점이나 아쉬운 점을 자유롭게 적어주십시오. (자유 기술)")
-      .setHelpText("예: 출퇴근 길 지하철 소음 차단은 좋은데, 퇴근 길 힐링 무드 카피나 멀티포인트 페어링 기능도 다뤄주면 좋겠습니다.")
-      .setRequired(false);
-
-    // 문항 4: 고객 촬영 동영상 피드백 소감 또는 파일 링크
-    form.addParagraphTextItem()
-      .setTitle("고객 촬영 동영상 피드백 소감 요약 또는 파일 링크 (선택 사항)")
-      .setHelpText("스마트폰으로 제품을 사용해보며 느낀 소감이나 고객의 생생한 목소리를 한두 줄로 자유롭게 적어주십시오. (동영상 공유 링크나 소감 텍스트 모두 환영하며, 권장 길이는 15~30초 이내 숏폼 영상입니다)")
-      .setRequired(false);
-
-    // 문항 5: 추가 이미지 피드백 소감 또는 링크
-    form.addParagraphTextItem()
-      .setTitle("추가 이미지 피드백 소감 또는 링크 (선택 사항)")
-      .setHelpText("제품 착용 컷, 언박싱 사진에 대한 의견이나 이미지 파일 링크를 입력하십시오.")
-      .setRequired(false);
-
-    // 4. 목적지 구글 시트에 자동 바인딩 (설문지 응답 1 탭 자동 생성)
-    form.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
-
-    // 5. 구글 폼 파일을 캠페인 루트 폴더로 안전하게 이동
-    var oldFormFiles = campaignFolder.getFilesByName(formTitle);
-    while (oldFormFiles.hasNext()) {
-      oldFormFiles.next().setTrashed(true);
-    }
-    var formFile = DriveApp.getFileById(form.getId());
-    campaignFolder.addFile(formFile);
-    DriveApp.getRootFolder().removeFile(formFile);
-
-    // 6. 구글 시트 실행 대시보드에 Step 3 완료 및 링크 기록
-    recordStepResultToSheet("Step 4", "고객 피드백 설문 폼 연동", "완료", publishedUrl, "고객 설문 참여 폼 열기");
-
-    ui.alert(
-      "구글 폼 연동 완료",
-      "캠페인 전용 구글 폼이 생성되어 [설문지 응답 1] 탭과 연결되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 '고객 설문 참여 폼 열기' 링크를 클릭하여 응답을 제출하십시오.",
-      ui.ButtonSet.OK
-    );
-  } catch (e) {
-    ui.alert("구글 폼 생성 중 오류 발생", e.toString(), ui.ButtonSet.OK);
-  }
-}
-
-// ============================================================================
-// FILE: Code_Step5_8_Judge.js
-// [Step 5 / Step 8] 25인 AI 페르소나 및 고객 피드백 다면 평가 통합 엔진 (Feedback Judge & Synthesizer)
-// ============================================================================
-
-/**
- * [Step 5] 초판 콘텐츠(rv-00) 대상 1차 25인 다면 평가 및 t-SNE 여론 지형도 생성
- */
-function runJudgeEvaluationRound1() {
-  runJudgeEvaluation("fb-01");
-}
-
-/**
- * [Step 8] 1차 개정본 콘텐츠(rv-01) 대상 2차 25인 다면 평가 및 t-SNE 지형도 갱신
- */
-function runJudgeEvaluationRound2() {
-  runJudgeEvaluation("fb-02");
-}
-
-/**
- * 피드백 다면 평가 공통 실행 함수 (N차 다이나믹 루프 fb-01 ~ fb-99 지원)
- */
-function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
-  var ui = SpreadsheetApp.getUi();
-  var isSilent = (isSilentOpt === true);
-  try {
-    var campaignFolder = getCampaignFolder();
-    var campaignCode = getCampaignCode();
-
-    // 1. 피드백 회차(fb-01 ~ fb-99) 판별
-    var targetRound = targetRoundOpt;
-    if (!targetRound) {
-      var latestFb = detectLatestFeedbackRoundNum();
-      var latestRv = detectLatestRevisionRoundNum();
-      var autoRound = Math.max(latestFb + 1, latestRv + 1, 2);
-      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
-    }
-
-    // 소요 시간 안내 토스트 즉시 표시
-    showProcessingToast("[Step 5/8] 다면 평가 및 t-SNE 지형도 생성 (" + targetRound + ")", 75);
-
-    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
-    var prevRoundNum = Math.max(0, roundNum - 1);
-    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
-    var nextRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
-    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
-
-    // 2. 피드백 동영상(비디오 VoC) 감지 및 Gemini VLM 심층 분석 실행 -> [영상파일명]_vlm.json 1:1 저장
-    var videoVocAnalyses = analyzeVideoVocWithVlm(feedbackFolder);
-    var hasVideoAnalysis = (Array.isArray(videoVocAnalyses) && videoVocAnalyses.length > 0);
-
-    // 3. input/{targetRound}/ 폴더 내 수작업 투입 자료(이미지, 추가 영상, 메모/문서) 전수 스캔
-    var manualFeedbackRows = scanManualFeedbackFiles(feedbackFolder);
-    var hasManualFeedback = (manualFeedbackRows.length > 0);
-
-    // 4. Google Sheets에서 사람 설문 응답 및 제출 이미지/비디오 데이터 수집
-    var humanFeedbackRows = [];
-    var humanVideoRows = [];
-    var humanImageRows = [];
-    var humanRatings = [];
-    var versionColIndex = -1;
-    var videoColIndex = -1;
-    var imageColIndex = -1;
-    var ratingColIndex = -1;
-
-    try {
-      var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-      var responseSheet = spreadsheet.getSheetByName("설문지 응답 1") || spreadsheet.getActiveSheet();
-      var sheetData = responseSheet.getDataRange().getValues();
-
-      if (sheetData && sheetData.length > 1) {
-        var headers = sheetData[0];
-        for (var h = 0; h < headers.length; h++) {
-          var headerStr = String(headers[h]);
-          if (headerStr.indexOf("버전") !== -1 || headerStr.indexOf("Version") !== -1) {
-            versionColIndex = h;
-          }
-          if (headerStr.indexOf("동영상") !== -1 || headerStr.indexOf("영상") !== -1 || headerStr.indexOf("비디오") !== -1 || headerStr.indexOf("Video") !== -1) {
-            videoColIndex = h;
-          }
-          if (headerStr.indexOf("이미지") !== -1 || headerStr.indexOf("사진") !== -1 || headerStr.indexOf("Image") !== -1 || headerStr.indexOf("Photo") !== -1) {
-            imageColIndex = h;
-          }
-          if (headerStr.indexOf("만족도") !== -1 || headerStr.indexOf("평점") !== -1 || headerStr.indexOf("Score") !== -1 || headerStr.indexOf("Rating") !== -1) {
-            ratingColIndex = h;
-          }
-        }
-
-        for (var i = 1; i < sheetData.length; i++) {
-          var row = sheetData[i];
-
-          if (versionColIndex !== -1) {
-            var rowVersion = String(row[versionColIndex] || "").trim();
-            if (rowVersion) {
-              if (rowVersion.indexOf(prevRvName) === -1) {
-                continue;
-              }
-            } else if (roundNum > 1) {
-              continue;
-            }
-          } else if (roundNum > 1) {
-            continue;
-          }
-
-          if (ratingColIndex !== -1) {
-            var rVal = parseFloat(row[ratingColIndex]);
-            if (!isNaN(rVal) && rVal > 0) {
-              humanRatings.push(rVal);
-            }
-          }
-
-          if (videoColIndex !== -1) {
-            var rawVideo = String(row[videoColIndex] || "").trim();
-            if (rawVideo && rawVideo !== "-" && rawVideo !== "없음" && rawVideo !== "None") {
-              var isUrl = /^(?:https?:\/\/|\bwww\.)/i.test(rawVideo);
-              var resolvedVideo = resolveDriveAttachmentName(rawVideo);
-              if (isUrl) {
-                humanVideoRows.push("- [고객 응답 " + i + " 동영상 첨부/공유 링크]: " + resolvedVideo);
-              } else {
-                humanVideoRows.push("- [고객 응답 " + i + " 동영상 VoC 생생 소감 발화]: \"" + rawVideo + "\"");
-              }
-            }
-          }
-
-          // 고객 제출 이미지 피드백 파싱 및 VLM 시각 분석 연동
-          if (imageColIndex !== -1) {
-            var rawImage = String(row[imageColIndex] || "").trim();
-            if (rawImage && rawImage !== "-" && rawImage !== "없음" && rawImage !== "None") {
-              var imgIdMatch = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)/.exec(rawImage);
-              if (imgIdMatch) {
-                try {
-                  var imgFile = DriveApp.getFileById(imgIdMatch[1]);
-                  var imgVlm = analyzeImageFeedbackWithVlm(imgFile);
-                  if (imgVlm) {
-                    humanImageRows.push("- [고객 응답 " + i + " 제출 이미지 VLM 분석: " + imgFile.getName() + "]\n  " + imgVlm);
-                  } else {
-                    humanImageRows.push("- [고객 응답 " + i + " 제출 이미지: " + imgFile.getName() + "]");
-                  }
-                } catch (imgFileErr) {
-                  humanImageRows.push("- [고객 응답 " + i + " 제출 이미지 링크: " + rawImage + "]");
-                }
-              } else {
-                humanImageRows.push("- [고객 응답 " + i + " 이미지 피드백 의견]: \"" + rawImage + "\"");
-              }
-            }
-          }
-
-          var rowContent = [];
-          for (var j = 0; j < headers.length; j++) {
-            if (j === versionColIndex) continue;
-            var val = row[j];
-            if (val !== "" && val !== null && val !== undefined) {
-              var resolvedVal = resolveDriveAttachmentName(val);
-              rowContent.push(headers[j] + ": " + resolvedVal);
-            }
-          }
-          if (rowContent.length > 0) {
-            humanFeedbackRows.push("- [고객 응답 " + i + "] " + rowContent.join(" | "));
-          }
-        }
-      }
-    } catch (sheetErr) {
-      Logger.log("구글 시트 응답 수집 생략: " + sheetErr);
-    }
-
-    var hasHumanResponses = (humanFeedbackRows.length > 0);
-    var hasVideoFeedback = (humanVideoRows.length > 0) || hasVideoAnalysis;
-    var hasImageFeedback = (humanImageRows.length > 0);
-
-    // 3. AI 가상 페르소나 25인 피드백 데이터셋 로드 또는 실시간 생성
-    var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
-    if (!jsonContent) {
-      jsonContent = generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName);
-    }
-
-    var personaSummaryText = "";
-    var personaListText = "";
-    var parsedPersonas = [];
-    if (jsonContent) {
-      try {
-        parsedPersonas = JSON.parse(jsonContent);
-        if (Array.isArray(parsedPersonas) && parsedPersonas.length > 0) {
-          var totalRating = 0;
-          var posCount = 0, neuCount = 0, negCount = 0;
-          var feedbackItems = [];
-          for (var p = 0; p < parsedPersonas.length; p++) {
-            var item = parsedPersonas[p];
-            var r = Number(item.rating) || 3.0;
-            totalRating += r;
-            if (item.sentiment === "긍정" || item.sentiment === "Positive") posCount++;
-            else if (item.sentiment === "부정" || item.sentiment === "Negative") negCount++;
-            else neuCount++;
-            var pFeedback = item.open_feedback || item.feedback || "";
-            var ptDesc = [];
-            if (Array.isArray(item.points)) {
-              for (var pi = 0; pi < item.points.length; pi++) {
-                var pObj = item.points[pi];
-                ptDesc.push("[" + (pObj.sentiment || "중립") + "] " + (pObj.text || ""));
-              }
-            }
-            var subPointsStr = ptDesc.length > 0 ? " | 세부 포인트: " + ptDesc.join("; ") : "";
-            feedbackItems.push(
-              "- [" + (item.name || ("페르소나 " + (p + 1))) + " | " + (item.age || "") + "세 | " + (item.occupation || "") + " | " + (item.category || "소비자") + "] " +
-              "평점: " + r + "/5.0 | 감정: " + (item.sentiment || "중립") + " | " +
-              "열린 소감: \"" + pFeedback + "\"" + subPointsStr
-            );
-          }
-          var avgRating = (totalRating / parsedPersonas.length).toFixed(1);
-          personaSummaryText = "AI 가상 페르소나 " + parsedPersonas.length + "인 통계 (평균 평점: " + avgRating + "/5.0, 긍정: " + posCount + "명, 중립: " + neuCount + "명, 부정: " + negCount + "명)";
-          personaListText = feedbackItems.join("\n");
-        }
-      } catch (parseErr) {
-        Logger.log("페르소나 파싱 예외: " + parseErr);
-        personaSummaryText = "AI 가상 페르소나 데이터";
-        personaListText = jsonContent;
-      }
-    }
-
-    // 4. QuickChart REST API 호출을 통한 128d 임베딩 기반 다면 여론 지형도 차트 생성 및 저장
-    var clusterMapFile = null;
-    var pointsJson = readTextFile(feedbackFolder, "feedback_points_128d.json");
-    var parsedPoints = [];
-    if (pointsJson) {
-      try {
-        parsedPoints = JSON.parse(pointsJson);
-      } catch (e) {}
-    }
-    if (parsedPoints && parsedPoints.length > 0) {
-      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPoints);
-    } else if (parsedPersonas && parsedPersonas.length > 0) {
-      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPersonas);
-    }
-
-    var feedbackSourceDescription = "";
-    var sourceParts = [];
-    if (hasVideoAnalysis) sourceParts.push("고객 직접 촬영 동영상 VLM 분석(" + videoVocAnalyses.length + "건, [영상파일명]_vlm.json)");
-    else if (hasVideoFeedback) sourceParts.push("고객 동영상 제출 링크(" + humanVideoRows.length + "건)");
-    if (hasImageFeedback) sourceParts.push("고객 제출 이미지 VLM 시각 분석(" + humanImageRows.length + "건)");
-    if (hasManualFeedback) sourceParts.push("수작업 투입 피드백 자료(" + manualFeedbackRows.length + "건)");
-    if (hasHumanResponses) sourceParts.push("구글 폼 설문 응답(" + humanFeedbackRows.length + "건)");
-    if (jsonContent) sourceParts.push("AI 가상 페르소나 25인 다면 평가단");
-    feedbackSourceDescription = sourceParts.join(" + ") || "AI 가상 페르소나 기본 평가단 (25인)";
-
-    var feedbackInputPayload = "";
-    if (hasHumanResponses) {
-      feedbackInputPayload += "### [1. 구글 폼 사람이 직접 제출한 실시간 설문 응답 (총 " + humanFeedbackRows.length + "건)]\n" + humanFeedbackRows.join("\n") + "\n\n";
-    } else {
-      feedbackInputPayload += "### [1. 구글 폼 사람이 직접 제출한 실시간 설문 응답]\n- 제출 현황: 사람이 제출한 설문 응답 없음 (0건). 허구의 사람 응답을 절대 지어내지 말 것.\n\n";
-    }
-
-    if (hasVideoAnalysis) {
-      feedbackInputPayload += "### [2. 실제 고객 촬영 동영상 피드백 VLM 심층 분석 데이터 (비디오 VoC, 총 " + videoVocAnalyses.length + "건, [영상파일명]_vlm.json 연동)]\n";
-      for (var vi = 0; vi < videoVocAnalyses.length; vi++) {
-        var vAnalysis = videoVocAnalyses[vi];
-        feedbackInputPayload += "- [영상 " + (vi + 1) + ": " + (vAnalysis.video_metadata ? vAnalysis.video_metadata.file_name : "video.mp4") + "]\n" +
-          "  * 화자 및 역할: " + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.role : "고객") + "\n" +
-          "  * 실제 발화 전사(Transcript): \"" + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.transcribed_speech : "") + "\"\n" +
-          "  * 발화 의도: " + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.speech_intent : "") + "\n" +
-          "  * 얼굴 표정 및 감정: " + (vAnalysis.speaker_analysis && vAnalysis.speaker_analysis.facial_expression ? vAnalysis.speaker_analysis.facial_expression.primary_emotion : "기대 및 호기심") + "\n" +
-          "  * 음성 톤 및 어조: " + (vAnalysis.speaker_analysis && vAnalysis.speaker_analysis.voice_tone ? vAnalysis.speaker_analysis.voice_tone.tone : "친근하고 솔직함") + "\n" +
-          "  * VLM 종합 평가 점수: " + (vAnalysis.multimodal_judging ? vAnalysis.multimodal_judging.overall_weighted_score : 4.77) + "/5.0\n" +
-          "  * 비주얼 액션 아이템: " + (vAnalysis.creative_direction_extracted && vAnalysis.creative_direction_extracted.visual_action_items ? vAnalysis.creative_direction_extracted.visual_action_items.join(", ") : "") + "\n" +
-          "  * 카피 액션 아이템: " + (vAnalysis.creative_direction_extracted && vAnalysis.creative_direction_extracted.copy_action_items ? vAnalysis.creative_direction_extracted.copy_action_items.join(", ") : "") + "\n\n";
-      }
-    } else if (hasVideoFeedback) {
-      feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC, 총 " + humanVideoRows.length + "건)]\n" + humanVideoRows.join("\n") + "\n\n";
-    } else {
-      feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC)]\n- 제출 현황: 동영상 피드백 없음 (0건 미제출).\n- 영상이 제출되지 않았으므로 영상 분석, 표정, 음성 톤, 영상 발화 내용을 절대 상상으로 지어내지 말 것.\n\n";
-    }
-
-    // 고객 설문 제출 이미지 피드백 VLM 분석 섹션
-    if (hasImageFeedback) {
-      feedbackInputPayload += "### [3. 고객 설문 제출 이미지 피드백 VLM 심층 분석 (총 " + humanImageRows.length + "건)]\n" + humanImageRows.join("\n\n") + "\n\n";
-    }
-
-    // input/fb-xx/ 폴더 내 수작업 투입 자료 섹션
-    if (hasManualFeedback) {
-      feedbackInputPayload += "### [4. input/" + targetRound + "/ 폴더 수작업 투입 피드백 자료 (총 " + manualFeedbackRows.length + "건)]\n" +
-        manualFeedbackRows.join("\n\n") + "\n\n";
-    }
-
-    if (personaListText) {
-      feedbackInputPayload += "### [5. AI 가상 페르소나 25인 실제 평가 데이터 (" + personaSummaryText + ")]\n" + personaListText;
-    }
-
-    var videoRule = hasVideoFeedback
-      ? "- 비디오 VoC 반영: 실제 분석된 동영상 피드백(video_voc_analysis.json)의 실제 발화 전사문, 고객의 얼굴 표정, 음성 톤을 본문에 충실히 인용하고, [정량 50%, 정성 30%, 비디오 VoC 20%] 가중치로 종합 점수를 산출하라.\n"
-      : "- 비디오 VoC 미제출: 실제 제출된 동영상 피드백이 0건이다. 비디오 VoC 섹션에는 '제출된 동영상 피드백 없음 (미제출)'으로만 기록하고, 종합 점수 가중치는 [정량 평점 50%, 정성 의견 50%]로 산정하라.\n";
-
-    var systemInstruction =
-      "당신은 엔터프라이즈 마케팅 AI의 전문 평가 위원장(LLM as a Judge)이다.\n" +
-      "제공된 실제 데이터(AI 페르소나 25인 발화 + 고객 동영상 VLM 분석 JSON + 설문 응답 + 제출/수작업 투입 이미지 및 문서)에만 철저히 근거하여 직전 공개 마케팅 콘텐츠(" + prevRvName + ")에 대한 사실 중심의 다면 평가 요약 보고서(feedback_summary)를 작성하라.\n\n" +
-      "### 절대 원칙: 사실 기반 요약 및 환각 전면 배제:\n" +
-      "1. 상상 및 소설 작성 엄격 금지: 제공된 데이터에 없는 가상의 인물, 지어낸 발화, 허구의 사건을 절대 날조하지 말 것. 오직 실제 인입된 데이터의 내용과 통계만을 객관적으로 요약하라.\n" +
-      "2. 비디오 VoC 규약:\n" +
-      videoRule +
-      "3. 고객 제출 이미지 및 수작업 투입 자료 반영 규약:\n" +
-      "   - 제출된 이미지 VLM 시각 분석 결과나 수작업 투입 문서/메모가 포함되어 있는 경우, 이를 실제 고객과 현장의 생생한 요구 사항으로 간주하여 비주얼/카피 개선 제안에 적극 반영하라.\n" +
-      "4. AI 가상 페르소나 피드백 취합 규약:\n" +
-      "   - AI 가상 페르소나 25인의 실제 발화문과 평점 통계를 집계하여 3대 핵심 여론 동향(주류 호평, 비판 및 우려, 개선 제안)을 도출하라.\n" +
-      "5. 필수 보고서 목차 구조:\n" +
-      "   ## 1. 피드백 수집 및 분석 개요 (데이터 소스 건수, 비디오/이미지/수작업 자료 현황 명시)\n" +
-      "   ## 2. 고객 동영상 VoC 멀티모달(VLM) 심층 분석 (표정, 음성 톤, 발화 전사, [영상파일명]_vlm.json 연동)\n" +
-      "   ## 3. 고객 제출 이미지 및 수작업 투입 자료 VLM 분석 (시각적 디자인, 실착 샷, 현장 메모 피드백)\n" +
-      "   ## 4. 25인 AI 페르소나 여론 동향 분석 (실제 발화 및 통계 기반 주류 호평, 비판 및 우려, 개선 제안)\n" +
-      "   ## 5. 사실 기반 종합 평가 점수 산출 (" + (hasVideoFeedback ? "정량 50%, 정성 30%, 비디오 VoC 20%" : "정량 50%, 정성 50% / 비디오 VoC 미제출") + ")\n" +
-      "   ## 6. 차기 리비전(" + nextRvName + ") 반영 권고 사항 (Action Items 3대 실행 전략)\n" +
-      "   ## 7. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
-      "6. 산출물 서술 어조: 단호하고 격조 높은 문어체 평서문('-다' 체)을 엄격히 준수한다.\n" +
-      "7. 한글 복합 명사는 철저하게 띄어 쓰고, 이모지와 중간 점을 일절 쓰지 말 것.\n" +
-      "8. 분량 및 가독성: 마케터가 1분 안에 여론 동향을 빠르게 파악하고 의사 결정을 내릴 수 있도록 불릿 포인트 중심의 핵심 요약 리포트로 간결하게 작성하라.";
-
-    var userPrompt =
-      "다음 피드백 데이터를 분석하여 표준 형식의 사실 기반 종합 요약본(feedback_summary)을 작성하라.\n\n" +
-      "[평가 대상 직전 공개 마케팅 콘텐츠: " + prevRvName + "]\n" +
-      "[피드백 회차: " + targetRound + "]\n" +
-      "[피드백 데이터 소스: " + feedbackSourceDescription + "]\n\n" +
-      feedbackInputPayload;
-
-    // 5. Gemini 호출
-    var summaryResult = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_JUDGE);
-
-    if (summaryResult.indexOf("마케터 최종 의사 결정") === -1) {
-      var defaultComment = "> **마케터 코멘트**: 출퇴근 피로감보다 주말 카페 힐링 감성을 강조하고, 180g 초경량 착용감을 헤드카피로 올릴 것. 노이즈 캔슬링 98% 차단 스펙은 본문 첫 단락에 신뢰성 있게 기술할 것.\n";
-      if (roundNum === 2) {
-        defaultComment = "> **마케터 코멘트**: 20대 한국인 여성 모델이 세련된 서울 카페에서 초경량 노이즈 캔슬링을 켜고 몰입하는 순간을 헤드카피와 비주얼로 전면에 내세울 것. 스펙 나열보다 감성적 힐링 공감을 극대화할 것.\n";
-      } else if (roundNum >= 3) {
-        defaultComment = "> **마케터 코멘트**: 그랜드 론칭 한정 얼리버드 혜택(고급 가죽 트래블 파우치 증정)을 볼드하게 명시하고, 한국인 20대 여성 모델과 5종 시그니처 파스텔 컬러 라인업을 담은 론칭 완결형 비주얼을 도출할 것.\n";
-      }
-
-      summaryResult += "\n\n---\n\n" +
-        "## 7. 마케터 최종 의사 결정 및 보정 지침 (Human-in-the-loop)\n" +
-        defaultComment;
-    }
-
-    // 6. 구글 드라이브 input/{targetRound}/feedback_summary 구글 독스 저장
-    var summaryDocFile = saveGoogleDoc(feedbackFolder, "feedback_summary", summaryResult);
-
-    // t-SNE 지형도 이미지가 생성된 경우 구글 독스 문서 본문 맨 상단에 임베드
-    if (clusterMapFile) {
-      try {
-        var doc = DocumentApp.openById(summaryDocFile.getId());
-        var body = doc.getBody();
-        var mapBlob = clusterMapFile.getBlob();
-        body.insertImage(0, mapBlob);
-        var totalPointsCount = (parsedPoints && parsedPoints.length > 0) ? parsedPoints.length : (parsedPersonas.length || 25);
-        var captionPara = body.insertParagraph(1, "[그림 1] 25인 AI 페르소나 열린 피드백 여론 지형도 (총 " + totalPointsCount + "개 세부 의견 포인트, text-multilingual-embedding-002 128d 임베딩 t-SNE)");
-        captionPara.setFontSize(9).setFontColor("#64748B").setItalic(true);
-        doc.saveAndClose();
-      } catch (embedErr) {
-        Logger.log("독스 내 지형도 이미지 임베드 예외: " + embedErr);
-      }
-    }
-
-    // 7. Google Sheets 실행 대시보드에 다면 평가 결과 및 링크 기록 (Step 5, Step 8, 또는 N차 Step 8)
-    var stepId = (targetRound === "fb-01") ? "Step 5" : (targetRound === "fb-02" ? "Step 8" : "Step 8 (" + targetRound + ")");
-    var stepTitle = (targetRound === "fb-01") ? "1차 다면 평가 및 t-SNE 지형도 (fb-01)" : (targetRound === "fb-02" ? "2차 다면 평가 및 t-SNE 갱신 (fb-02)" : roundNum + "차 다면 평가 및 t-SNE 갱신 (" + targetRound + ")");
-    recordStepResultToSheet(stepId, stepTitle, "완료", summaryDocFile.getUrl(), "피드백 요약서 열기 (" + targetRound + ")");
-
-    if (!isSilent) {
-      ui.alert(
-        "다면 평가 완료 (" + targetRound + ")",
-        "25인 AI 페르소나, 고객 제출 이미지/비디오 및 수작업 자료 다면 평가 리포트(t-SNE 지형도 포함) 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 '피드백 요약서 열기' 링크를 확인하십시오.",
-        ui.ButtonSet.OK
-      );
-    }
-    return summaryResult;
-  } catch (e) {
-    if (!isSilent) {
-      ui.alert("평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
-    } else {
-      throw e;
-    }
-  }
-}
-
-function resolveDriveAttachmentName(rawVal) {
-  if (typeof rawVal !== "string") {
-    return rawVal;
-  }
-
-  var drivePattern = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)/g;
-  var match = drivePattern.exec(rawVal);
-  if (!match) {
-    return rawVal;
-  }
-
-  var found = false;
-  var resolvedTexts = [];
-
-  var regex = /https:\/\/drive\.google\.com\/(?:open\?id=|file\/d\/)([a-zA-Z0-9_-]+)[^\s,]*/g;
-  var m;
-  while ((m = regex.exec(rawVal)) !== null) {
-    found = true;
-    var fileId = m[1];
-    var fullUrl = m[0];
-    try {
-      var file = DriveApp.getFileById(fileId);
-      var fileName = file.getName();
-      var mimeType = file.getMimeType();
-      resolvedTexts.push(fileName + " (" + mimeType + ", 자동 첨부 링크: " + fullUrl + ")");
-    } catch (driveErr) {
-      resolvedTexts.push(fullUrl);
-    }
-  }
-
-  if (found && resolvedTexts.length > 0) {
-    return resolvedTexts.join(", ");
-  }
-
-  return rawVal;
-}
-
-// ============================================================================
-// FILE: Code_Step6_Decision.js
-// [Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)
-// ============================================================================
-
-/**
- * [Step 6] 마케터 피드백 검토 및 최종 의사 결정 UI 프롬프트 (Human-in-the-loop)
- */
-function runMarketerDecisionPrompt() {
-  var ui = SpreadsheetApp.getUi();
-  try {
-    var campaignFolder = getCampaignFolder();
-    var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
-    var summaryContent = readGoogleDoc(fb01Folder, "feedback_summary");
-
-    if (!summaryContent) {
-      ui.alert(
-        "선행 단계 필요",
-        "먼저 [Step 5] 25인 AI 페르소나 다면 평가 및 t-SNE 지형도 생성을 실행하여 피드백 보고서를 도출하십시오.",
-        ui.ButtonSet.OK
-      );
-      return;
-    }
-
-    var defaultComment = "20대 한국인 여성 모델이 세련된 서울 카페에서 초경량 노이즈 캔슬링을 켜고 몰입하는 순간을 헤드카피와 비주얼 전면에 내세울 것. 스펙 나열보다 감성적 힐링 공감을 극대화할 것.";
-
-    var response = ui.prompt(
-      "[Step 6] 마케터 최종 의사 결정 및 보정 지침 입력 (Human-in-the-loop)",
-      "피드백 다면 평가 보고서와 t-SNE 여론 지형도를 검토한 후, 차기 마케팅 콘텐츠(rv-01)에 반영할 마케터 최종 보정 지침을 입력하십시오:\n\n" +
-      "[확인]을 누르면 기본 지침으로 피드백 요약서(feedback_summary)가 즉시 갱신됩니다:",
-      ui.ButtonSet.OK_CANCEL
-    );
-
-    if (response.getSelectedButton() !== ui.Button.OK) {
-      return;
-    }
-
-    var marketerComment = response.getResponseText().trim();
-    if (!marketerComment) {
-      marketerComment = defaultComment;
-    }
-
-    // feedback_summary 문서의 마케터 최종 의사 결정 섹션 갱신
-    var updatedSummary = summaryContent;
-    var sectionHeader = (updatedSummary.indexOf("## 6. 마케터 최종 의사 결정") !== -1)
-      ? "## 6. 마케터 최종 의사 결정 및 보정 지침"
-      : "## 5. 마케터 최종 의사 결정 및 보정 지침";
-    var commentBlock = "\n> **마케터 코멘트**: " + marketerComment + "\n";
-
-    if (updatedSummary.indexOf(sectionHeader) !== -1) {
-      var parts = updatedSummary.split(sectionHeader);
-      updatedSummary = parts[0] + sectionHeader + " (Human-in-the-loop)\n" + commentBlock;
-    } else {
-      updatedSummary += "\n\n---\n\n" + sectionHeader + " (Human-in-the-loop)\n" + commentBlock;
-    }
-
-    var summaryDocFile = saveGoogleDoc(fb01Folder, "feedback_summary", updatedSummary);
-
-    // 구글 시트 대시보드에 Step 6 완료 기록
-    recordStepResultToSheet("Step 6", "마케터 피드백 검토 및 의사 결정", "완료", summaryDocFile.getUrl(), "피드백 요약서 열기 (마케터 지침 반영)");
-
-    ui.alert(
-      "마케터 의사 결정 반영 완료",
-      "마케터 보정 지침이 피드백 요약서(feedback_summary)에 성공적으로 저장되었습니다.\n\n이제 [Step 7] 1차 마케팅 콘텐츠 반자율 보정(rv-01)을 실행하십시오.",
-      ui.ButtonSet.OK
-    );
-  } catch (e) {
-    ui.alert("마케터 의사 결정 반영 중 오류 발생", e.toString(), ui.ButtonSet.OK);
-  }
-}
-
-// ============================================================================
-// FILE: Code_Step7_9_Refine.js
-// [Step 7 / Step 9] 다면 평가 피드백 기반 마케팅 콘텐츠 반자율 보정 통합 엔진 (Revise Content)
-// ============================================================================
-
-/**
- * [Step 7] 1차 피드백(fb-01) 기반 1차 마케팅 콘텐츠(rv-01) 반자율 보정
- */
-function runReviseAssetsRound1() {
-  runReviseAssets("fb-01");
-}
-
-/**
- * [Step 9] 2차 피드백(fb-02) 기반 최종 완결본 마케팅 콘텐츠(rv-02) 반자율 보정 완결
- */
-function runReviseAssetsRound2() {
-  runReviseAssets("fb-02");
-}
-
-/**
- * 마케팅 콘텐츠 반자율 보정 공통 실행 함수 (N차 다이나믹 루프 rv-01 ~ rv-99 지원)
- */
-function runReviseAssets(targetRoundOpt, isSilentOpt) {
-  var ui = SpreadsheetApp.getUi();
-  var isSilent = (isSilentOpt === true);
-  try {
-    var campaignFolder = getCampaignFolder();
-
-    // 1. 피드백 회차(fb-01 ~ fb-99 -> rv-01 ~ rv-99) 판별
-    var targetRound = targetRoundOpt;
-    if (!targetRound) {
-      var latestRv = detectLatestRevisionRoundNum();
-      var autoRound = Math.max(latestRv + 1, 1);
-      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
-    }
-
-    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
-    var prevRoundNum = roundNum - 1;
-    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
-    var targetRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
-
-    // 소요 시간 안내 토스트 즉시 표시
-    showProcessingToast("[Step 7/9] 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")", 75);
-
-    var campaignCode = getCampaignCode();
-    var prevRvFolder = getCampaignSubFolder(["output", prevRvName]);
-    var targetRvFolder = getCampaignSubFolder(["output", targetRvName]);
-    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
-
-    // 2. 내장 시스템 지침 (Zero-Prompt No-Code)
-    var systemInstruction =
-      "당신은 데이터 드리븐 크리에이티브 디렉터이다.\n" +
-      "원천 마케팅 캠페인 기획서(PLAN)의 핵심 비전과 콘텐츠 제작 명세서(SPEC)의 채널별 규격을 충실히 계승하면서, " +
-      "이전 버전의 마케팅 콘텐츠(" + prevRvName + ")와 고객 피드백 종합 요약본(feedback_summary)의 마케터 최종 의사 결정 지침을 충실히 반영하여 " +
-      targetRvName + " 개정본(campaign_content) 구글 독스를 완성도 높은 마케팅 카피 형식으로 작성하라.\n\n" +
-      "엄격한 작성 규칙:\n" +
-      "1. 상상 및 소설 작성 엄격 금지: 원천 기획서(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)에 실제로 명시된 사실과 수치, 마케터 지침에만 철저히 입각하여 보정하십시오.\n" +
-      "2. 원천 기획서(PLAN)의 고유 USP 및 브랜드 본질과 채널별 규격(가로 배너 16:9, 세로 포스터 9:16, 정방형 SNS 1:1, 세로 9:16 모바일 숏폼 영상)을 충실히 유지하십시오.\n" +
-      "3. 이전 콘텐츠(" + prevRvName + ")에서 지적된 고객 피드백 권고 사항과 고객 제출 이미지/수작업 자료 분석 결과를 충실히 보정하십시오.\n" +
-      "4. 피드백 요약본의 '마케터 최종 의사 결정 및 보정 지침'에 명시된 마케터 코멘트는 최우선 순위 지침이다. 모델 변경, 소구점 변경, 톤앤매너 수정 등 마케터의 명시적 지침을 카피 본문과 비주얼 연출 지시문에 반드시 우선적으로 반영하십시오.\n" +
-      "5. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
-      "6. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
-      "7. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
-      "8. 분량 및 가독성: 마케터가 신속하게 검토할 수 있도록, 불필요한 장황한 서술을 배제하고 각 채널별 핵심 카피와 연출 지시문을 명쾌하고 컴팩트하게 작성하십시오.";
-
-    // 3. 이전 리비전 output/{prevRvName}/campaign_content 읽기
-    var targetContentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
-    var previousAsset = readGoogleDoc(prevRvFolder, targetContentDocName) || readGoogleDoc(prevRvFolder, "campaign_asset");
-    if (!previousAsset) {
-      throw new Error("이전 마케팅 콘텐츠(" + prevRvName + ")를 찾을 수 없습니다. 이전 단계의 콘텐츠 생성을 먼저 실행하십시오.");
-    }
-
-    // 4. input/{target_round}/feedback_summary 읽기
-    var summaryContent = readGoogleDoc(feedbackFolder, "feedback_summary");
-    if (!summaryContent) {
-      throw new Error("input/" + targetRound + "/feedback_summary 피드백 요약본을 찾을 수 없습니다. 피드백 다면 평가를 먼저 실행하십시오.");
-    }
-
-    // 5. 원천 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 읽기
-    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
-    var planContent = readGoogleDoc(campaignFolder, planDocName);
-    if (!planContent) {
-      planContent = readGoogleDoc(campaignFolder, "BRD") || "마케팅 캠페인 기획서";
-    }
-
-    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
-    var specContent = readGoogleDoc(campaignFolder, specDocName) || "콘텐츠 제작 명세서";
-
-    var userPrompt =
-      "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)이다.\n\n" +
-      "### [1. 원천 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
-      "### [2. 콘텐츠 제작 명세서 (SPEC)]\n" + specContent + "\n\n" +
-      "### [3. 직전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + previousAsset + "\n\n" +
-      "### [4. 고객 및 AI 페르소나 피드백 요약본 (feedback_summary)]\n" + summaryContent;
-
-    // 6. Gemini 호출
-    var refinedAsset = callGemini(systemInstruction, userPrompt);
-
-    // 7. 저장: output/{targetRvName}/에 campaign_content 구글 독스 단일 저장
-    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, refinedAsset);
-
-    // 8. Google Sheets 실행 대시보드에 개정본 완료 및 링크 기록
-    var stepId = (targetRvName === "rv-01") ? "Step 7" : (targetRvName === "rv-02" ? "Step 9" : "Step 9 (" + targetRvName + ")");
-    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : (targetRvName === "rv-02" ? "2차 마케팅 콘텐츠 반자율 보정 (rv-02)" : roundNum + "차 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")");
-    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "Google Drive 폴더 열기 (" + targetRvName + ")");
-
-    // 9. 동적 비주얼 프롬프트 도출 및 실시간 이미지 3종 생성
-    var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
-    var dynamicBrief = extractDynamicVisualPrompt(
-      refinedAsset,
-      summaryContent,
-      "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
-    );
-    Logger.log("동적 도출된 비주얼 프롬프트 (" + targetRvName + "): " + dynamicBrief);
-    generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief);
-
-    if (!isSilent) {
-      ui.alert(
-        "마케팅 콘텐츠 반자율 보정 완료 (" + targetRvName + ")",
-        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + "), 신규 비주얼 이미지 3종 및 세로 숏폼 영상(" + prefix + "_shorts.mp4) 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
-        ui.ButtonSet.OK
-      );
-    }
-    return refinedAsset;
-  } catch (e) {
-    if (!isSilent) {
-      ui.alert("콘텐츠 보정 중 오류 발생", e.toString(), ui.ButtonSet.OK);
-    } else {
-      throw e;
-    }
-  }
-}
-
-// ============================================================================
-// FILE: Code_Menu.js
-// [모듈 3] Google Sheets 커스텀 메뉴 및 UI 대화상자 (Spreadsheet UI & Menu)
-// ============================================================================
-
-function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  ui.createMenu("[마케팅 콘텐츠 파이프라인]")
-    .addItem("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", "createWorkspaceFolderTree")
-    .addItem("[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출", "runIdeaToPlanConversion")
-    .addItem("[Step 3] 기획서 및 명세서 기반 초판 마케팅 콘텐츠 양산 (rv-00)", "runInitialAssetGeneration")
-    .addSeparator()
-    .addItem("[Step 4] 고객 VoC 수집용 Google Forms 자동 생성 (이미지/비디오 업로드)", "createAndLinkGoogleForm")
-    .addItem("[Step 5] 25인 AI 페르소나 1차 다면 평가 및 t-SNE 지형도 자동 렌더링 (fb-01)", "runJudgeEvaluationRound1")
-    .addItem("[Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)", "runMarketerDecisionPrompt")
-    .addItem("[Step 7] 다면 평가 피드백 기반 1차 마케팅 콘텐츠 반자율 보정 (rv-01)", "runReviseAssetsRound1")
-    .addSeparator()
-    .addItem("[Step 8] 다면 평가 및 t-SNE 지형도 갱신 (N차 피드백: fb-02 ~ fb-99)", "promptAndRunJudgeEvaluation")
-    .addItem("[Step 9] 마케팅 콘텐츠 반자율 보정 (N차 리비전: rv-02 ~ rv-99)", "promptAndRunReviseAssets")
-    .addSeparator()
-    .addItem("[Step 0] 타깃 AI 페르소나 패널 맞춤 재설정 (선택 사항)", "setCustomPersonasPrompt")
-    .addToUi();
-}
-
-/**
- * 타깃 AI 페르소나 25인 패널 맞춤 재설정 UI 프롬프트 (Gemini 생성 또는 Hugging Face 동기화)
- */
-function setCustomPersonasPrompt() {
-  var ui = SpreadsheetApp.getUi();
-  var response = ui.prompt(
-    "타깃 AI 페르소나 25인 패널 맞춤 재설정",
-    "새로 생성하고자 하는 타깃 페르소나 기준을 자유롭게 입력하십시오:\n" +
-    "(예: '일본 20대 여성 뷰티 인플루언서 및 일반 소비자', '미국 실리콘밸리 30대 B2B SaaS 바이어', '한국 4050 골프 입문자')\n\n" +
-    "* Hugging Face 연동: 'hf:nvidia/Nemotron-Personas-Korea' 형식으로 입력 시 공개 데이터셋에서 실시간 동기화합니다.",
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (response.getSelectedButton() !== ui.Button.OK) {
-    return;
-  }
-
-  var criteria = response.getResponseText().trim();
-  if (!criteria) {
-    ui.alert("입력 취소", "기준이 입력되지 않아 기존 25인 페르소나 패널을 유지합니다.", ui.ButtonSet.OK);
-    return;
-  }
-
-  try {
-    var campaignFolder = getCampaignFolder();
-    var campaignCode = getCampaignCode();
-    var generatedJson = "";
-
-    // 1. Hugging Face Server API 연동 여부 판별
-    if (criteria.indexOf("hf:") === 0) {
-      var datasetRepo = criteria.replace("hf:", "").trim();
-      var hfUrl = "https://datasets-server.huggingface.co/rows?dataset=" + encodeURIComponent(datasetRepo) + "&config=default&split=train&offset=0&limit=25";
-      var hfResp = UrlFetchApp.fetch(hfUrl, { muteHttpExceptions: true });
-      if (hfResp.getResponseCode() === 200) {
-        var hfData = JSON.parse(hfResp.getContentText());
-        var rawRowsText = JSON.stringify(hfData.rows || hfData, null, 2);
-        var normInstruction =
-          "당신은 데이터 엔지니어이다. 제공된 Hugging Face 원본 데이터로부터 25인의 슬림 페르소나 JSON 배열을 추출 및 정규화하라.\n" +
-          "반드시 id(p01~p25), name, age, gender, category(전문 마케터 또는 일반 소비자), occupation, perspective(핵심 관점 및 관심사 1줄) 7개 필드만 포함하는 JSON 배열로 출력하라.";
-        generatedJson = callGemini(normInstruction, rawRowsText);
-      } else {
-        throw new Error("Hugging Face API 호출 실패 (응답 코드: " + hfResp.getResponseCode() + ")");
-      }
-    } else {
-      // 2. Gemini 기반 자연어 타깃 페르소나 25인 즉시 합성
-      var systemInstruction =
-        "당신은 글로벌 소비자 리서치 및 엔터프라이즈 마케팅 페르소나 엔지니어링 AI이다.\n" +
-        "사용자가 지정한 타깃 기준에 맞추어 마케팅 캠페인 콘텐츠와 광고 소재를 다면 평가할 25인의 슬림 AI 페르소나 패널을 도출하라.\n\n" +
-        "필수 규칙:\n" +
-        "1. 총 25인 구성: 전문 마케터 12인 + 일반 소비자 13인으로 안배하십시오.\n" +
-        "2. 반드시 다음 7개 필드만 엄격히 포함하는 순수 JSON 객체로 출력하십시오:\n" +
-        "{\n" +
-        "  \"metadata\": { \"description\": \"타깃 맞춤 AI 페르소나 패널\", \"total\": 25 },\n" +
-        "  \"personas\": [\n" +
-        "    {\n" +
-        "      \"id\": \"p01\",\n" +
-        "      \"name\": \"이름\",\n" +
-        "      \"age\": 30,\n" +
-        "      \"gender\": \"남성/여성\",\n" +
-        "      \"category\": \"전문 마케터 또는 일반 소비자\",\n" +
-        "      \"occupation\": \"직업\",\n" +
-        "      \"perspective\": \"핵심 성향 및 주요 관심사 요약 (1줄)\"\n" +
-        "    }\n" +
-        "  ]\n" +
-        "}\n" +
-        "3. 코드 블록(```json) 없이 유효한 JSON만 반환하십시오.\n" +
-        "4. 불필요하게 긴 텍스트나 중복 필드를 배제하여 토큰 효율을 극대화하십시오.";
-
-      var userPrompt = "타깃 페르소나 기준: " + criteria + "\n\n위 기준에 부합하는 정밀하고 다양한 25인 슬림 페르소나 JSON을 생성하라.";
-      generatedJson = callGemini(systemInstruction, userPrompt);
-    }
-
-    if (generatedJson) {
-      var cleanJson = generatedJson.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-      var parsed = JSON.parse(cleanJson);
-      var formatted = JSON.stringify(parsed, null, 2);
-      var inputFolder = getCampaignSubFolder(["input"]);
-      saveTextFile(inputFolder, "ai_personas.json", formatted);
-
-      ui.alert(
-        "페르소나 패널 재설정 완료",
-        "지정한 기준('" + criteria + "')에 맞추어 25인 맞춤 AI 페르소나 패널 데이터가 성공적으로 갱신되었습니다.\n(저장 경로: " + campaignCode + "/input/ai_personas.json)",
-        ui.ButtonSet.OK
-      );
-    }
-  } catch (err) {
-    ui.alert("페르소나 재설정 중 오류 발생", err.toString(), ui.ButtonSet.OK);
-  }
-}
-
-/**
- * [Step 8] 다이나믹 다면 평가 및 t-SNE 갱신 런처 (fb-02 ~ fb-99 지원)
- */
-function promptAndRunJudgeEvaluation() {
-  var ui = SpreadsheetApp.getUi();
-  var latestFb = detectLatestFeedbackRoundNum();
-  var latestRv = detectLatestRevisionRoundNum();
-  var suggestedRound = Math.max(latestFb + 1, latestRv + 1, 2);
-  var suggestedRoundStr = suggestedRound < 10 ? "0" + suggestedRound : "" + suggestedRound;
-
-  var response = ui.prompt(
-    "[Step 8] 다면 평가 회차 선택 (N차: fb-02 ~ fb-99)",
-    "현재 등록된 최신 피드백 회차는 fb-" + (latestFb < 10 ? "0" + latestFb : latestFb) + " (최신 콘텐츠: rv-" + (latestRv < 10 ? "0" + latestRv : latestRv) + ")입니다.\n\n" +
-    "실행할 피드백 회차 번호를 입력하십시오 (1~99 지원, 기본 추천: " + suggestedRound + "):\n" +
-    "(빈칸으로 두고 [확인] 클릭 시 fb-" + suggestedRoundStr + " 회차가 자동 실행됩니다)\n\n" +
-    "* 예상 소요 시간: 약 45초~1분 30초 (VLM 분석 및 t-SNE 지형도 렌더링)",
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (response.getSelectedButton() !== ui.Button.OK) {
-    return;
-  }
-
-  var inputVal = response.getResponseText().trim();
-  var targetRoundNum = suggestedRound;
-  if (inputVal) {
-    var parsedNum = parseInt(inputVal.replace(/[^0-9]/g, ""), 10);
-    if (!isNaN(parsedNum) && parsedNum >= 1 && parsedNum <= 99) {
-      targetRoundNum = parsedNum;
-    }
-  }
-
-  var targetRoundStr = "fb-" + (targetRoundNum < 10 ? "0" + targetRoundNum : "" + targetRoundNum);
-  runJudgeEvaluation(targetRoundStr);
-}
-
-/**
- * [Step 9] 다이나믹 마케팅 콘텐츠 반자율 보정 런처 (rv-02 ~ rv-99 지원)
- */
-function promptAndRunReviseAssets() {
-  var ui = SpreadsheetApp.getUi();
-  var latestFb = detectLatestFeedbackRoundNum();
-  var latestRv = detectLatestRevisionRoundNum();
-  var suggestedRv = Math.max(latestRv + 1, 2);
-  var suggestedRvStr = suggestedRv < 10 ? "0" + suggestedRv : "" + suggestedRv;
-
-  var response = ui.prompt(
-    "[Step 9] 마케팅 콘텐츠 리비전 선택 (N차: rv-02 ~ rv-99)",
-    "현재 등록된 최신 리비전은 rv-" + (latestRv < 10 ? "0" + latestRv : latestRv) + " (평가 완료 회차: fb-" + (latestFb < 10 ? "0" + latestFb : latestFb) + ")입니다.\n\n" +
-    "생성할 마케팅 콘텐츠 리비전 번호를 입력하십시오 (1~99 지원, 기본 추천: " + suggestedRv + "):\n" +
-    "(빈칸으로 두고 [확인] 클릭 시 rv-" + suggestedRvStr + " 개정본이 자동 양산됩니다)\n\n" +
-    "* 예상 소요 시간: 약 45초~1분 30초 (카피 개정, 비주얼 3종 및 숏폼 영상 생성)",
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (response.getSelectedButton() !== ui.Button.OK) {
-    return;
-  }
-
-  var inputVal = response.getResponseText().trim();
-  var targetRvNum = suggestedRv;
-  if (inputVal) {
-    var parsedNum = parseInt(inputVal.replace(/[^0-9]/g, ""), 10);
-    if (!isNaN(parsedNum) && parsedNum >= 1 && parsedNum <= 99) {
-      targetRvNum = parsedNum;
-    }
-  }
-
-  var targetRoundStr = "fb-" + (targetRvNum < 10 ? "0" + targetRvNum : "" + targetRvNum);
-  runReviseAssets(targetRoundStr);
 }

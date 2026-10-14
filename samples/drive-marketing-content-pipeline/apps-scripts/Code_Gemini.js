@@ -3,37 +3,75 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 2] Gemini REST API 클라이언트 엔진 (구글 계정 OAuth 2.0 자동 로그인 기반 Keyless 인증)
+ * [모듈 2] Gemini REST API 클라이언트 엔진 (Google AI Studio 무료 API Key 기반 Zero-GCP 인증)
  */
 
 /**
- * Gemini API 인증 헤더 조회 (현재 구글 로그인 계정의 OAuth 2.0 Access Token 기반 Keyless 인증)
- * 비개발자 마케터가 별도 API Key를 발급받을 필요 없이 구글 로그인 세션으로 자동 인증된다.
+ * Google AI Studio Gemini API Key 취득 함수
+ * 1순위: UserProperties (사용자 개인별 안전 보관)
+ * 2순위: ScriptProperties (스크립트 공용 설정)
+ * 3순위: CONFIG.API_KEY (코드 내 직접 설정)
+ * 4순위: 키가 없을 경우 자동으로 대화상자 프롬프트 호출
  */
-function getGeminiAuthHeaders() {
-  try {
-    var oauthToken = ScriptApp.getOAuthToken();
-    if (oauthToken) {
-      return {
-        "Authorization": "Bearer " + oauthToken
-      };
-    }
-  } catch (oauthErr) {
-    Logger.log("OAuth 토큰 취득 예외: " + oauthErr);
+function getGeminiApiKey() {
+  var userProps = PropertiesService.getUserProperties();
+  var key = userProps.getProperty("GEMINI_API_KEY");
+  if (key && key.trim()) {
+    return key.trim();
   }
 
-  throw new Error(
-    "구글 계정 인증 정보를 확인할 수 없습니다. 구글 시트의 계정 권한 승인 창에서 [허용]을 클릭하십시오."
+  var scriptProps = PropertiesService.getScriptProperties();
+  key = scriptProps.getProperty("GEMINI_API_KEY");
+  if (key && key.trim()) {
+    return key.trim();
+  }
+
+  if (CONFIG.API_KEY && CONFIG.API_KEY.trim()) {
+    return CONFIG.API_KEY.trim();
+  }
+
+  return promptForGeminiApiKey();
+}
+
+/**
+ * Google AI Studio Gemini API Key 입력 및 저장 UI 프롬프트
+ */
+function promptForGeminiApiKey() {
+  var ui = SpreadsheetApp.getUi();
+  var userProps = PropertiesService.getUserProperties();
+  var currentKey = userProps.getProperty("GEMINI_API_KEY") || "";
+  var maskedKey = currentKey ? (currentKey.substring(0, 6) + "..." + currentKey.substring(currentKey.length - 4)) : "미등록";
+
+  var response = ui.prompt(
+    "Google AI Studio Gemini API Key 설정 (Zero-GCP)",
+    "Google Cloud 콘솔 및 신용카드 등록 없이 개인 구글 계정으로 100% 무료 구동됩니다.\n\n" +
+    "1. Google AI Studio ( https://aistudio.google.com/app/apikey ) 에서 무료 API Key를 발급받으십시오.\n" +
+    "2. 발급받은 API Key(AIzaSy...)를 아래에 입력하십시오:\n\n" +
+    "(현재 등록된 키: " + maskedKey + ")",
+    ui.ButtonSet.OK_CANCEL
   );
+
+  if (response.getSelectedButton() === ui.Button.OK) {
+    var inputKey = response.getResponseText().trim();
+    if (inputKey) {
+      userProps.setProperty("GEMINI_API_KEY", inputKey);
+      ui.alert("설정 완료", "Gemini API Key가 안전하게 저장되었습니다.\n파이프라인 단계를 계속 진행하십시오.", ui.ButtonSet.OK);
+      return inputKey;
+    } else {
+      ui.alert("입력 오류", "유효한 API Key가 입력되지 않았습니다.", ui.ButtonSet.OK);
+    }
+  }
+
+  throw new Error("Gemini API Key가 설정되지 않아 작업을 중단합니다. 메뉴의 [Gemini API Key 설정]에서 키를 등록하십시오.");
 }
 
 /**
  * Gemini 텍스트 생성 API 호출 (System Instruction 및 User Content)
  */
 function callGemini(systemInstruction, userContent, modelOverride, maxTokensOverride) {
-  var headers = getGeminiAuthHeaders();
+  var apiKey = getGeminiApiKey();
   var targetModel = modelOverride || CONFIG.MODEL_GENERATOR || CONFIG.GEMINI_MODEL || "gemini-3.8-flash";
-  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent";
+  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent?key=" + apiKey;
   var maxTokens = maxTokensOverride || 8192;
 
   var payload = {
@@ -56,7 +94,6 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
   var options = {
     method: "post",
     contentType: "application/json",
-    headers: headers,
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
@@ -82,9 +119,9 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
  * Gemini 멀티모달(VLM) 심층 분석 API 호출 (구글 드라이브 이미지 및 비디오 Blob 직접 처리)
  */
 function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
-  var headers = getGeminiAuthHeaders();
+  var apiKey = getGeminiApiKey();
   var targetModel = modelOverride || CONFIG.MODEL_GENERATOR || "gemini-3.8-flash";
-  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent";
+  var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent?key=" + apiKey;
 
   var mimeType = mediaBlob.getContentType();
   var bytes = mediaBlob.getBytes();
@@ -123,7 +160,6 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   var options = {
     method: "post",
     contentType: "application/json",
-    headers: headers,
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
@@ -150,9 +186,9 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
  */
 function callGeminiImage(prompt, aspectRatio) {
   try {
-    var headers = getGeminiAuthHeaders();
+    var apiKey = getGeminiApiKey();
     var imgModel = CONFIG.IMAGE_MODEL_NAME || "gemini-2.5-flash-image";
-    var endpoint = CONFIG.BASE_URL + "/" + imgModel + ":predict";
+    var endpoint = CONFIG.BASE_URL + "/" + imgModel + ":predict?key=" + apiKey;
     var ratio = aspectRatio || "1:1";
 
     var payload = {
@@ -168,7 +204,6 @@ function callGeminiImage(prompt, aspectRatio) {
     var options = {
       method: "post",
       contentType: "application/json",
-      headers: headers,
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     };
@@ -203,8 +238,8 @@ function callGeminiBatchEmbeddings(texts, optDim) {
 
   var dim = optDim || CONFIG.EMBEDDING_DIM || 128;
   var embedModel = CONFIG.EMBEDDING_MODEL || "text-multilingual-embedding-002";
-  var endpoint = CONFIG.BASE_URL + "/" + embedModel + ":batchEmbedContents";
-  var headers = getGeminiAuthHeaders();
+  var apiKey = getGeminiApiKey();
+  var endpoint = CONFIG.BASE_URL + "/" + embedModel + ":batchEmbedContents?key=" + apiKey;
 
   var allEmbeddings = [];
   var chunkSize = 25; // Apps Script 안정성을 위해 25건 단위 청킹
@@ -224,7 +259,6 @@ function callGeminiBatchEmbeddings(texts, optDim) {
     var options = {
       method: "post",
       contentType: "application/json",
-      headers: headers,
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     };

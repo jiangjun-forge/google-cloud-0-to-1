@@ -10,9 +10,10 @@ var CONFIG = {
   // 기본 캠페인 코드 및 구글 드라이브 루트 폴더명
   CAMPAIGN_CODE: "cp-ignite",
 
-  // 인증 방식: 현재 로그인된 구글 계정의 OAuth 2.0 Access Token 기반 자동 인증 (Keyless Zero-Setup)
-  // 비개발자 마케터가 API Key를 발급받을 필요 없이 구글 계정 로그인 권한으로 직접 안전하게 호출됨
-  AUTH_MODE: "OAUTH",
+  // 인증 방식: Google AI Studio 무료 API Key 기반 인증 (Zero-GCP Dependency)
+  // GCP 프로젝트, 신용카드 등록, 빌링 계정 없이 개인 구글 계정으로 무료 발급받아 100% 구동됨
+  AUTH_MODE: "API_KEY",
+  API_KEY: "", // 공란 유지 시 PropertiesService.getUserProperties() 또는 실행 시 대화상자에서 자동 취득
   
   // Google AI Studio 엔드포인트 및 태스크별 최적 모델 지정 (As of 2026-10-13)
   // 단일 모델에 의존하지 않고 작업별 특성(속도, 이미지, 영상)에 맞추어 검증된 모델을 취사선택함

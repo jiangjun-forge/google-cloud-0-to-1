@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 구글 드라이브(Google Drive) 마케팅 콘텐츠 생성 파이프라인 (`drive-marketing-content-pipeline`)
 
-구글 클라우드(Google Cloud) 프로젝트 생성 및 복잡한 로컬 파이썬 개발 환경 설정, 별도 API Key 발급 없이, 현재 로그인된 구글 계정 OAuth 2.0 자동 인증(Keyless Zero-Setup)만으로 구글 드라이브(Google Drive), 구글 시트(Google Sheets), Apps Script 기반의 종단간 마케팅 콘텐츠 양산 및 25인 AI 페르소나 다면 평가 파이프라인을 구축하는 경량 자동화 솔루션이다. (As of 2026-10-13)
+구글 클라우드(Google Cloud) 프로젝트 생성, 신용카드 등록, 복잡한 로컬 파이썬 개발 환경 설정 없이, 개인 구글 계정으로 100% 무료 발급받는 Google AI Studio API Key 1회 등록만으로 구글 드라이브(Google Drive), 구글 시트(Google Sheets), Apps Script 기반의 종단간 마케팅 콘텐츠 양산 및 25인 AI 페르소나 다면 평가 파이프라인을 구축하는 경량 자동화 솔루션이다. (As of 2026-10-14)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -52,13 +52,17 @@ flowchart LR
 3. 기본 편집창의 기존 코드를 모두 지우고, 본 저장소의 [bundle_apps_script.js](bundle_apps_script.js) 파일 내용을 전체 복사하여 붙여넣는다.
 4. 좌측 `프로젝트 설정 (톱니바퀴 아이콘)`에서 `편집기에서 "appsscript.json" 매니페스트 파일 표시`를 체크한 뒤, 본 저장소의 [appsscript.json](appsscript.json) 파일 내용을 붙여넣고 상단 디스크 아이콘(`프로젝트 저장`)을 누른다.
 5. 구글 시트 브라우저 탭을 새로고침(F5)하면 상단 메뉴 바에 `[마케팅 콘텐츠 파이프라인]` 커스텀 메뉴가 활성화된다.
+6. **Gemini API Key 1회 등록**: Google AI Studio ( https://aistudio.google.com/app/apikey ) 에서 개인 구글 계정으로 무료 API Key를 발급받은 뒤, 상단 메뉴에서 `[Gemini API Key 설정 (Google AI Studio)]`을 클릭하여 등록한다. (미등록 상태에서 파이프라인 단계를 실행하더라도 자동으로 키 입력 팝업이 호출된다)
 
-### 2단계: 상단 메뉴를 통한 9단계 자동화 순차 실행
+### 2단계: 상단 메뉴를 통한 자동화 순차 실행
 
+0. `[Gemini API Key 설정 (Google AI Studio)] (사전 1회 등록)`:
+   - Google Cloud 콘솔 프로젝트 생성이나 신용카드 등록 없이, 개인 구글 계정으로 무료 발급받은 Google AI Studio API Key를 등록한다.
+   - 키는 Apps Script의 `UserProperties`에 사용자별로 안전하게 보관되며, 이후 실행 시 자동으로 로드된다. (미등록 상태에서 Step 2 등을 실행하더라도 키 입력 대화상자가 자동으로 뜬다)
 1. `[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성`:
    - 구글 시트 상단 메뉴에서 `[마케팅 콘텐츠 파이프라인]` > `[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성`을 클릭한다.
    - 클릭 1번으로 구글 드라이브에 캠페인 루트 폴더(`cp-ignite`), 25인 페르소나 데이터셋(`input/ai_personas.json`), 비디오 샘플을 자동 세팅한다.
-   - 최초 1회 실행 시 구글 계정 권한 승인 팝업이 나타나면 `고급` > `이동`을 클릭한 후 `허용`을 선택한다. (구글 계정 자동 로그인으로 완결 구동)
+   - 최초 1회 실행 시 구글 시트 및 드라이브 접근 권한 승인 팝업이 나타나면 `고급` > `이동`을 클릭한 후 `허용`을 선택한다.
 2. `[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 자동 도출`:
    - 구글 시트 상단 메뉴에서 `[마케팅 콘텐츠 파이프라인]` > `[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출`을 클릭한다.
    - 캠페인 아이디어(예: '프리미엄 노이즈 캔슬링 헤드폰 가을 론칭 프로모션')를 자유롭게 입력하면 전문 마케팅 캠페인 기획서(`PLAN`)와 멀티 채널 콘텐츠 제작 명세서(`SPEC`) 구글 독스(Google Docs) 문서가 자동 생성된다. 마케터는 브라우저에서 직접 `SPEC` 수치(이미지 비율, 숏폼 길이, 카피 채널)를 수정할 수 있다.

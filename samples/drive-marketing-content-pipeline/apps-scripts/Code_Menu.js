@@ -9,6 +9,8 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu("[마케팅 콘텐츠 파이프라인]")
+    .addItem("[Gemini API Key 설정 (Google AI Studio)]", "promptForGeminiApiKey")
+    .addSeparator()
     .addItem("[Step 1] Google Drive 작업 공간 및 25인 페르소나 자동 생성", "createWorkspaceFolderTree")
     .addItem("[Step 2] 아이디어 기반 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 자동 도출", "runIdeaToPlanConversion")
     .addItem("[Step 3] 기획서 및 명세서 기반 초판 마케팅 콘텐츠 양산 (rv-00)", "runInitialAssetGeneration")

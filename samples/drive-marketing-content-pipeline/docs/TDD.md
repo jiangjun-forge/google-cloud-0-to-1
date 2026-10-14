@@ -13,14 +13,15 @@ All contents, designs, and code examples are subject to change, modification, or
 # 기술 상세 설계서 (TDD): 구글 드라이브 마케팅 콘텐츠 파이프라인 (`drive-marketing-content-pipeline`)
 
 ## 1. 시스템 아키텍처 및 동작 원리
-본 솔루션은 Google Cloud 프로젝트 및 로컬 파이썬 런타임 환경, 별도 API Key 관리에 의존하지 않는 100% 서버리스 웹 네이티브(Web-Native) 무키(Keyless) 아키텍처로 설계되었다. 사용자의 Google Sheets에 바인딩된 Apps Script 엔진을 컨트롤 타워로 삼아, Google Drive, Google Docs, Google Forms 및 Gemini REST API를 구글 계정 OAuth 2.0 세션 기반으로 유기적으로 조율한다.
+본 솔루션은 Google Cloud 프로젝트 및 로컬 파이썬 런타임 환경에 의존하지 않는 100% 서버리스 웹 네이티브(Web-Native) Zero-GCP 아키텍처로 설계되었다. 사용자의 Google Sheets에 바인딩된 Apps Script 엔진을 컨트롤 타워로 삼아, Google Drive, Google Docs, Google Forms 및 Google AI Studio 무료 API Key 기반 Gemini REST API를 유기적으로 조율한다.
 
 ### 핵심 구성 요소 및 연동 체계
 1. **Google Apps Script 런타임**:
    - 구글 시트 상단 커스텀 메뉴 (`[마케팅 콘텐츠 파이프라인]`) 제공
    - 모듈화된 11개 스크립트 로직(`Code_Config.js`, `Code_Gemini.js`, `Code_Utils.js`, `Code_Step1_Workspace.js`, `Code_Step2_IdeaToPlan.js`, `Code_Step3_ContentGen.js`, `Code_Step4_Form.js`, `Code_Step5_8_Judge.js`, `Code_Step6_Decision.js`, `Code_Step7_9_Refine.js`, `Code_Menu.js`) 및 마케터 원클릭 배포용 경량 단일 번들(`bundle_apps_script.js`), 깃 푸시 사전 검증용 로컬 파이썬 테스트 러너(`test_suite.py`) 지원
-2. **구글 계정 기반 Gemini REST 엔드포인트 직접 연동 (태스크별 최적 모델 선정, As of 2026-10-13)**:
-   - `generativelanguage.googleapis.com` 호출 시 `ScriptApp.getOAuthToken()`으로 취득한 구글 로그인 계정의 OAuth 2.0 Access Token을 `Authorization: Bearer <token>` 헤더로 자동 주입하여 순수 무키(Keyless) 인증 수행
+2. **Google AI Studio 무료 API Key 기반 Gemini REST 엔드포인트 직접 연동 (태스크별 최적 모델 선정, As of 2026-10-14)**:
+   - Google Cloud 콘솔 프로젝트 및 결제 계정 등록 없이, 개인 구글 계정으로 Google AI Studio에서 무료 발급받은 API Key(`?key=...`)를 통해 `generativelanguage.googleapis.com` 엔드포인트를 직접 호출 (Zero-GCP Dependency)
+   - 취득된 API Key는 Apps Script `UserProperties`에 사용자별로 안전하게 격리 보관되며, 미등록 시 대화상자 프롬프트를 통해 1회 입력받아 자동 영구 유지
    - 단일 모델에 의존하지 않고 각 작업의 속도, 처리 용량, 비용 효율성을 고려하여 검증된 모델을 취사선택하여 연동
    - `gemini-3.8-flash`: 빠른 응답 속도와 긴 컨텍스트 처리를 위한 아이디어 구체화, PLAN 기획서 및 SPEC 명세서 컴파일, 25인 AI 페르소나 다면 평가 및 VLM 비디오 VoC 심층 분석, 복합 피드백 기반 1차(rv-01), 2차(rv-02) 콘텐츠 심층 보정
    - `gemini-2.5-flash-image`: 16:9 가로 배너, 9:16 모바일 포스터, 1:1 정방형 SNS 피드 이미지 규격에 최적화된 시각화 소재 생성
@@ -39,7 +40,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
-| **FR-01** | **BR-01** | **Zero-GCP 런타임 및 무키(Keyless) OAuth 2.0 자동 인증** | 별도의 API Key 발급 절차 없이, 구글 시트에 로그인된 현재 계정의 OAuth 2.0 Access Token(`ScriptApp.getOAuthToken()`)을 `Authorization: Bearer <token>` 헤더로 자동 주입하여 비개발자 마케터의 진입 장벽을 완전히 제거하고 보안성을 보장한다. |
+| **FR-01** | **BR-01** | **Zero-GCP 런타임 및 Google AI Studio 무료 API Key 인증** | Google Cloud 프로젝트 생성이나 결제 카드 등록 없이, 개인 구글 계정으로 무료 발급받은 Google AI Studio API Key(`?key=...`)를 Apps Script `UserProperties`에 1회 등록하여 엔드포인트를 호출함으로써 비개발자 마케터의 진입 장벽을 완전히 제거하고 Zero-GCP 자율 구동을 보장한다. |
 | **FR-02** | **BR-01, BR-03** | **구글 드라이브 작업 폴더 및 리소스 자동 시딩** | Step 1 실행 시 캠페인 루트 폴더(`cp-ignite/`), `input/`, `output/` 트리를 생성하고, 스크립트 내장 데이터를 기반으로 25인 마스터 페르소나(`input/ai_personas.json`), 마케터 아이디어 초안(`input/아이디어 메모`), 비디오 VoC 샘플(`input/fb-01/feedback_sample.mp4`)을 Base64로부터 자동 복원 시딩한다. |
 | **FR-03** | **BR-02** | **명세 주도 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 자동 도출** | Step 2에서 자연어 아이디어를 구글 독스 `PLAN` 및 `SPEC`으로 변환하여 캠페인 배경, 타깃 USP, 채널별 양산 명세(배너 16:9, 포스터 9:16, SNS 1:1, 모바일 숏폼 9:16)를 확정한다. 마케터가 `SPEC` 문서를 수정한 내용은 후속 단계에 즉시 반영된다. |
 | **FR-04** | **BR-02** | **멀티 채널 마케팅 콘텐츠(카피, 이미지, 세로 숏폼 영상) 자동 양산** | Step 3에서 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)에 따라 광고 카피 구글 독스(`campaign_content`), 3개 종횡비 이미지(`00_banner_16x9.png`, `00_poster_9x16.png`, `00_sns_1x1.png`), 그리고 세로 9:16 모바일 숏폼 영상(`00_shorts.mp4`)을 콘텐츠 폴더에 자동 생성한다. |
@@ -60,7 +61,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |
 | **NFR-01** | **브라우저 실행 성능 및 타임아웃 방어** | Apps Script의 단일 실행 시간 제약(6분)을 초과하지 않도록 전체 파이프라인을 9개 독립 메뉴 단계(Step 1~Step 9)로 분할하고, 이미지 및 텍스트 생성 API 호출 시 실패 재시도 지수 백오프 로직을 적용한다. |
-| **NFR-02** | **보안 및 무키(Keyless) 자격 증명 안전성** | 사용자 API Key 발급 및 수동 관리 부담을 전면 배제하고, 구글 계정 OAuth 2.0 Access Token(`Authorization: Bearer <token>` 헤더) 자동 주입 방식을 디폴트로 채택하여 자격 증명 탈취 위험을 원천 방어한다. |
+| **NFR-02** | **보안 및 자격 증명 안전성** | 사용자 API Key는 클라이언트 코드에 하드코딩되지 않고 Apps Script의 사용자별 격리 저장소(`PropertiesService.getUserProperties()`)에 안전하게 보관되며, Google Cloud 콘솔이나 프로젝트 결제 정보 노출 위험을 원천 방어한다. |
 | **NFR-03** | **한글 맞춤법 복합어 띄어쓰기 및 문서 표준 준수** | 모든 생성 문서(PLAN, SPEC, 피드백 보고서, 카피라이팅)와 코드 주석은 한글 맞춤법 복합 명사 띄어쓰기 규정을 철저히 준수하고, 일체의 이모지 및 중간 점을 배제한다. |
 | **NFR-04** | **자원 격리 및 원클릭 무잔재 정리 (Teardown)** | 모든 산출물은 단일 캠페인 루트 폴더(`cp-ignite/`) 내에 격리 생성되어, 테스트 완료 후 해당 폴더 1개만 휴지통으로 이동하면 100% 무잔재 정리가 가능해야 한다. |
 | **NFR-05** | **비디오 처리 제약 방어 및 Google Cloud 엔터프라이즈 확장 경로** | Apps Script의 단일 실행 시간 제한(6분) 및 `UrlFetchApp`의 페이로드 제한(최대 50MB, Base64 직렬화 시 실질 35MB)을 고려하여 브라우저 내에서는 15~30초 이내(30MB 이하) 숏폼 영상으로 크기를 사전 검증하고 초과 시 즉시 안내 예외를 반환한다. 1분 이상의 장문 인터뷰나 대용량 고해상도 영상을 다루어야 하는 엔터프라이즈 환경에서는 Google Cloud 환경으로의 이관을 위해 Google Cloud에 연락하여 전문 컨설팅을 받도록 안내한다. |
