@@ -9,6 +9,7 @@
 
 import os
 import shutil
+import tempfile
 import unittest
 from typing import Dict, List
 
@@ -19,7 +20,7 @@ class MarketingWorkflowScenarioTest(unittest.TestCase):
     """마케터 실제 업무 흐름 및 에셋 보존 E2E 시나리오 모킹 테스트 수이트."""
 
     def setUp(self):
-        self.test_root = "test_scenario_workspace"
+        self.test_root = os.path.join(tempfile.gettempdir(), "test_scenario_workspace")
         os.makedirs(os.path.join(self.test_root, "prompts"), exist_ok=True)
         os.makedirs(os.path.join(self.test_root, "input", "fb-01"), exist_ok=True)
         os.makedirs(os.path.join(self.test_root, "output", "rv-00"), exist_ok=True)

@@ -10,6 +10,7 @@
 import base64
 import json
 import os
+import tempfile
 import unittest
 import urllib.error
 import urllib.request
@@ -49,8 +50,9 @@ def probe_live_gemini_text(api_key: str) -> Optional[str]:
         return None
 
 
-def probe_live_nano_banana_image(api_key: str, out_dir: str = "test_output") -> Optional[str]:
+def probe_live_nano_banana_image(api_key: str, out_dir: Optional[str] = None) -> Optional[str]:
     """Gemini Nano Banana 2.1 이미지 모델 직접 호출 프로브."""
+    target_dir = out_dir or tempfile.gettempdir()
     url = f"{BASE_URL}/models/gemini-nano-banana-2.1:generateContent?key={api_key}"
     prompt = "A modern lightweight ANC headphone sitting on an aesthetic wooden cafe table in warm autumn afternoon light, 16:9 banner"
     payload = {
@@ -72,8 +74,8 @@ def probe_live_nano_banana_image(api_key: str, out_dir: str = "test_output") -> 
             if "inlineData" in part:
                 b64 = part["inlineData"]["data"]
                 img_bytes = base64.b64decode(b64)
-                os.makedirs(out_dir, exist_ok=True)
-                out_path = os.path.join(out_dir, "test_banner_16x9.png")
+                os.makedirs(target_dir, exist_ok=True)
+                out_path = os.path.join(target_dir, "live_test_banner_16x9.png")
                 with open(out_path, "wb") as f:
                     f.write(img_bytes)
                 print(f"  성공: gemini-nano-banana-2.1 이미지 생성 완료 ({len(img_bytes):,} bytes) -> {out_path}")
