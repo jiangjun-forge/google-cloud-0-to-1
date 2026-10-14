@@ -37,9 +37,9 @@ class MarketingWorkflowScenarioTest(unittest.TestCase):
         # 1단계: 기획서 도출 모의
         mock_plan = (
             "# 마케팅 캠페인 기획서 (PLAN)\n\n"
-            "## 1. 캠페인 배경 및 시장 기회 분석\n도심 출퇴근 통근자를 위한 초경량 프리미엄 ANC 헤드폰 론칭.\n\n"
+            "## 1. 캠페인 배경 및 시장 기회 분석\n도심 출퇴근 통근자를 위한 경량 프리미엄 ANC 헤드폰 론칭.\n\n"
             "## 2. 타깃 오디언스 프로파일\n20대~40대 직장인, 대중교통 이용자, 업무 몰입과 힐링을 추구하는 소비자.\n\n"
-            "## 3. 핵심 소구점 (USP)\n180g 초경량 착용감, 45dB 소음 차단, 감성적 힐링 몰입 무드."
+            "## 3. 핵심 소구점 (USP)\n180g 경량 착용감, 45dB 소음 차단, 감성적 힐링 몰입 무드."
         )
         plan_path = os.path.join(self.test_root, "PLAN.md")
         with open(plan_path, "w", encoding="utf-8") as f:

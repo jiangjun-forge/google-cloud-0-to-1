@@ -18,7 +18,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ### 핵심 구성 요소 및 연동 체계
 1. **Google Apps Script 런타임**:
    - 구글 시트 상단 액션 중심 커스텀 메뉴 (`[마케팅 콘텐츠 파이프라인]`) 제공
-   - 도메인별 책임 분리 기반 8대 코어 모듈(`Code_Config.js`, `Code_Gemini.js`, `Code_Prompts.js`, `Code_Utils.js`, `Code_Workspace.js`, `Code_Content.js`, `Code_Feedback.js`, `Code_Menu.js`) 및 마케터 원클릭 배포용 단일 번들(`bundle_apps_script.js`), 초경량 무수정 부트스트랩(`bootstrap.js`), 로컬 고속 사전 검증기 지원
+   - 도메인별 책임 분리 기반 8대 코어 모듈(`Code_Config.js`, `Code_Gemini.js`, `Code_Prompts.js`, `Code_Utils.js`, `Code_Workspace.js`, `Code_Content.js`, `Code_Feedback.js`, `Code_Menu.js`) 및 마케터 원클릭 배포용 단일 번들(`bundle_apps_script.js`), 경량 무수정 부트스트랩(`bootstrap.js`), 로컬 고속 사전 검증기 지원
 2. **Google AI Studio 무료 API Key 기반 Gemini REST 엔드포인트 직접 연동 (태스크별 최적 모델 선정, As of 2026-10-14)**:
    - Google Cloud 콘솔 프로젝트 및 결제 계정 등록 없이, 개인 구글 계정으로 Google AI Studio에서 무료 발급받은 API Key(`?key=...`)를 통해 `generativelanguage.googleapis.com` 엔드포인트를 직접 호출 (Zero-GCP Dependency)
    - 취득된 API Key는 Apps Script `UserProperties`에 사용자별로 안전하게 격리 보관되며, 미등록 시 대화상자 프롬프트를 통해 1회 입력받아 자동 영구 유지
@@ -57,7 +57,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **FR-15** | **BR-12** | **실사용 솔루션 액션 중심 메뉴 및 선결 가드레일 체계** | 워크숍용 순차 단계를 탈피하여 초기화, 설정, 기획, 생성, 평가, 보고서, 보정 메뉴를 순서 없이 자유롭게 호출할 수 있도록 하고, 필수 선결 산출물(기획서 누락, 초판 콘텐츠 누락, 다면 평가 데이터 누락 등)이 없을 때 프로세스 멈춤 없이 친절한 모달 알럿으로 선행 작업을 안내하는 가드레일을 제공한다. |
 | **FR-16** | **BR-13** | **캠페인 루트 직속 아이디어 메모, 페르소나 및 구글 폼 올인원 세팅 엔진** | 초기화 한 번으로 캠페인 루트 폴더 직속에 `[아이디어 메모]` 구글 독스와 25인 타깃 AI 페르소나 패널(`ai_personas.json`)을 즉시 배포하고, 고객 VoC 설문 폼(Google Forms) 생성, 스프레드시트 응답 탭 연결 및 모바일 QR 코드 생성을 10초 만에 완결한다. |
 | **FR-17** | **BR-14** | **GitHub Raw 기반 9대 프롬프트 실시간 인출 및 온디맨드 페르소나 합성 엔진** | 초기화(`initCampaignWorkspace`, `seedDefaultPrompts`) 실행 시 GitHub 퍼블릭 저장소의 Raw 엔드포인트를 호출하여 `prompts/*.md` 마크다운 파일 9종을 실시간 인출하여 구글 독스로 자동 시딩하고, 제작 명세서(SPEC)로부터 타깃 페르소나를 온디맨드로 자동 합성하여 `data/` 정적 폴더 의존성을 100% 제거한다. |
-| **FR-18** | **BR-14** | **초경량 자동 갱신 부트스트랩 로더 (Dynamic Bootstrap Loader)** | 사용자가 Google Sheets Apps Script 편집기에 단 100줄의 `bootstrap.js`만 붙여넣으면, 간접 eval 및 90KB 청크 캐싱(`CacheService`) 기반 프록시 디스패처를 통해 GitHub 최신 번들 엔진을 실시간 자동 로드하여 구동함으로써 이후 기능 추가나 패치 시에도 사용자 측의 수동 코드 재배포를 완전히 불필요하게 만든다. |
+| **FR-18** | **BR-14** | **경량 자동 갱신 부트스트랩 로더 (Dynamic Bootstrap Loader)** | 사용자가 Google Sheets Apps Script 편집기에 단 100줄의 `bootstrap.js`만 붙여넣으면, 간접 eval 및 90KB 청크 캐싱(`CacheService`) 기반 프록시 디스패처를 통해 GitHub 최신 번들 엔진을 실시간 자동 로드하여 구동함으로써 이후 기능 추가나 패치 시에도 사용자 측의 수동 코드 재배포를 완전히 불필요하게 만든다. |
 
 ---
 

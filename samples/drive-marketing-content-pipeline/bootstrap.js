@@ -4,7 +4,7 @@
  *
  * Drive Marketing Content Pipeline - Ultra-light Bootstrap Loader
  *
- * [초경량 자동 갱신 부트스트랩 로더]
+ * [경량 자동 갱신 부트스트랩 로더]
  * 사용자가 Google Sheets Apps Script 편집기에 단 1회만 붙여넣으면,
  * GitHub 퍼블릭 저장소의 최신 bundle_apps_script.js를 실시간으로 자동 동기화하여 구동합니다.
  * 이후 기능 개선이나 버그 패치가 발생해도 사용자는 Apps Script 코드를 다시 수정할 필요가 없습니다.
@@ -17,7 +17,7 @@ var BOOTSTRAP_CONFIG = {
   PROP_SYNC_DATE: "ENGINE_LAST_SYNCED"
 };
 
-// 단일 실행 세션 내 초고속 재사용을 위한 인메모리 캐시 (0ms)
+// 단일 실행 세션 내 고속 재사용을 위한 인메모리 캐시 (0ms)
 var __PIPELINE_IN_MEMORY_CODE__ = null;
 
 /**

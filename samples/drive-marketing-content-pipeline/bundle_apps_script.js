@@ -26,7 +26,7 @@ var CONFIG = {
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 생성 모델
   MODEL_JUDGE: "gemini-3.8-flash", // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
-  VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 초고속 모델 (Veo 3.1 Fast)
+  VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 모델 (Veo 3.1 Fast)
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
   EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
 
@@ -1075,7 +1075,7 @@ function initCampaignWorkspace() {
         "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (" + campaignCode + ")\n" +
         "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 노이즈 캔슬링(ANC) 헤드폰 일상 탈출 컬렉션\n" +
         "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 통근자\n" +
-        "* **핵심 소구점**: 180g 초경량 착용감, 45dB 차음 성능, 감성적 힐링 몰입 무드\n" +
+        "* **핵심 소구점**: 180g 경량 착용감, 45dB 차음 성능, 감성적 힐링 몰입 무드\n" +
         "* **목표 채널**: 유튜브 쇼츠 및 인스타그램 릴스(9:16), 디스플레이 배너(16:9), 블로그 브랜드 기고문\n";
 
       saveGoogleDoc(campaignFolder, ideaDocName, starterIdea);
@@ -3207,7 +3207,7 @@ function ensureShortsScriptInCampaignContent(rawContent, prefix, visualBrief) {
     "* **타깃 채널**: 유튜브 쇼츠, 인스타그램 릴스, 틱톡\n" +
     "* **타임라인별 씬 및 연출 지시문**:\n" +
     "  - **[00~03초 훅(Hook)]**: " + brief + " (도심 소음이 일시에 멈추는 직관적 차음 연출과 배경음 전환)\n" +
-    "  - **[04~10초 본문]**: 180g 초경량 착용감과 감성적 몰입 무드 부각 (자연스러운 미소와 서울 카페/지하철 일상 풍경)\n" +
+    "  - **[04~10초 본문]**: 180g 경량 착용감과 감성적 몰입 무드 부각 (자연스러운 미소와 서울 카페/지하철 일상 풍경)\n" +
     "  - **[11~15초 엔딩]**: 브랜드 시그니처 로고 노출 및 얼리버드 한정 혜택 자막 명시\n\n" +
     "* **실제 영상 운영 안내**:\n" +
     "  - Google AI Studio 유료 결제 계정 연동 API Key 환경에서는 Gemini Veo 모델이 위 콘티를 바탕으로 실제 비디오(" + videoFileName + ")를 자동 생성하여 폴더에 함께 저장합니다.\n" +
