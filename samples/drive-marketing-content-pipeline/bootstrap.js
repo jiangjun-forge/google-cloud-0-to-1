@@ -126,6 +126,8 @@ function dispatch(fnName, args) {
 function renderPipelineMenu() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu("[마케팅 콘텐츠 파이프라인]")
+    .addItem("[제어 패널] 마케팅 파이프라인 우측 패널 열기 (Sidebar)", "showPipelineSidebar")
+    .addSeparator()
     .addItem("[초기화] 캠페인 작업 공간 환경 구축 (All-in-one Setup)", "initCampaignWorkspace")
     .addItem("[설정] 캠페인 환경 설정 및 재설정 (Configure)", "runConfigureCampaignSettings")
     .addSeparator()
@@ -151,6 +153,8 @@ function onOpen() {
 }
 
 // 액션 메뉴 디스패치 프록시 함수들 (사용자 클릭 시 지연 로드 및 실행)
+function showPipelineSidebar() { dispatch("showPipelineSidebar"); }
+function getPipelineStatus() { return dispatch("getPipelineStatus"); }
 function initCampaignWorkspace() { dispatch("initCampaignWorkspace"); }
 function runConfigureCampaignSettings() { dispatch("runConfigureCampaignSettings"); }
 function guardAndRunIdeaToPlan() { dispatch("guardAndRunIdeaToPlan"); }
@@ -193,6 +197,7 @@ function forceSyncEngine() {
 function __staticOAuthScopeDeclarations() {
   if (false) {
     SpreadsheetApp.getActiveSpreadsheet();
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput(""));
     SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(""), "");
     HtmlService.createHtmlOutput("");
     DriveApp.getRootFolder();
