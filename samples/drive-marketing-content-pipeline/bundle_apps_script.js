@@ -140,6 +140,50 @@ var CONFIG = {
  * [모듈 2] Gemini REST API 클라이언트 엔진 (Google AI Studio 무료 API Key 기반 Zero-GCP 인증)
  */
 
+// 세션 단위 API 토큰 소모량 실시간 추적기
+var __SESSION_TOKEN_STATS__ = {
+  promptTokens: 0,
+  candidatesTokens: 0,
+  totalTokens: 0
+};
+
+/**
+ * 현재 작업 단계의 세션 누적 토큰 카운터를 초기화한다.
+ */
+function resetSessionTokens() {
+  __SESSION_TOKEN_STATS__ = {
+    promptTokens: 0,
+    candidatesTokens: 0,
+    totalTokens: 0
+  };
+}
+
+/**
+ * Gemini API 응답의 usageMetadata를 세션 통계에 누적 합산한다.
+ */
+function recordUsageMetadata(usageMetadata) {
+  if (usageMetadata) {
+    if (typeof usageMetadata.totalTokenCount === "number") {
+      __SESSION_TOKEN_STATS__.totalTokens += usageMetadata.totalTokenCount;
+    }
+    if (typeof usageMetadata.promptTokenCount === "number") {
+      __SESSION_TOKEN_STATS__.promptTokens += usageMetadata.promptTokenCount;
+    }
+    if (typeof usageMetadata.candidatesTokenCount === "number") {
+      __SESSION_TOKEN_STATS__.candidatesTokens += usageMetadata.candidatesTokenCount;
+    }
+  }
+}
+
+/**
+ * 현재 단계에서 누적 소모된 총 토큰 수를 반환한다.
+ *
+ * @return {number} 총 소모 토큰 수
+ */
+function getSessionTotalTokens() {
+  return __SESSION_TOKEN_STATS__.totalTokens || 0;
+}
+
 /**
  * Google AI Studio Gemini API Key 취득 함수
  * 1순위: UserProperties (사용자 개인별 안전 보관)
@@ -329,6 +373,9 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
   }
 
   var result = JSON.parse(responseBody);
+  if (result.usageMetadata) {
+    recordUsageMetadata(result.usageMetadata);
+  }
   if (result.candidates && result.candidates.length > 0 && 
       result.candidates[0].content && result.candidates[0].content.parts) {
     return result.candidates[0].content.parts[0].text;
@@ -396,6 +443,9 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   }
 
   var result = JSON.parse(responseBody);
+  if (result.usageMetadata) {
+    recordUsageMetadata(result.usageMetadata);
+  }
   if (result.candidates && result.candidates.length > 0 && 
       result.candidates[0].content && result.candidates[0].content.parts) {
     return result.candidates[0].content.parts[0].text;
@@ -2022,18 +2072,30 @@ function formatDuration(secOrMs) {
   return remSec > 0 ? min + "분 " + remSec + "초" : min + "분";
 }
 
+/**
+ * 소모된 토큰 수를 사람이 읽기 편한 문자열(예: '2,450 tokens')로 포맷팅한다.
+ */
+function formatTokenCount(tokens) {
+  if (tokens === null || tokens === undefined || tokens === "" || tokens === 0) return "-";
+  if (typeof tokens === "string") return tokens;
+  var num = parseInt(tokens, 10);
+  if (isNaN(num) || num <= 0) return "-";
+  return num.toLocaleString() + " tokens";
+}
+
 function initDashboardSheet() {
   var sheet = getDashboardSheet();
   if (!sheet) return;
 
   try {
     var val = sheet.getRange("A2").getValue();
-    if (val === "실행 단계") return;
+    var lastCol = sheet.getLastColumn();
+    if (val === "실행 단계" && lastCol >= 7) return;
 
     sheet.clear();
 
-    // 상단 타이틀 배너 (A1:F1)
-    sheet.getRange("A1:F1").merge();
+    // 상단 타이틀 배너 (A1:G1)
+    sheet.getRange("A1:G1").merge();
     sheet.getRange("A1").setValue("Google Drive 마케팅 콘텐츠 파이프라인 실행 대시보드");
     sheet.getRange("A1")
       .setFontWeight("bold")
@@ -2045,10 +2107,10 @@ function initDashboardSheet() {
       .setWrap(false);
     sheet.setRowHeight(1, 38);
 
-    // 컬럼 헤더 행 (A2:F2)
-    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각", "소요 시간", "실행 로그 및 상세 내역"]];
-    sheet.getRange("A2:F2").setValues(headers);
-    sheet.getRange("A2:F2")
+    // 컬럼 헤더 행 (A2:G2) - 7대 핵심 컬럼
+    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각", "소요 시간", "소모 토큰", "실행 로그 및 상세 내역"]];
+    sheet.getRange("A2:G2").setValues(headers);
+    sheet.getRange("A2:G2")
       .setFontWeight("bold")
       .setFontSize(10)
       .setBackground("#F1F5F9")
@@ -2058,15 +2120,16 @@ function initDashboardSheet() {
       .setWrap(false);
     sheet.setRowHeight(2, 28);
 
-    // 컬럼 너비 설정 (사용자 지정: 150, 100, 300, 150, 100, 450)
+    // 컬럼 너비 설정 (사용자 지정: 150, 100, 300, 150, 100, 150, 450)
     sheet.setColumnWidth(1, 150);
     sheet.setColumnWidth(2, 100);
     sheet.setColumnWidth(3, 300);
     sheet.setColumnWidth(4, 150);
     sheet.setColumnWidth(5, 100);
-    sheet.setColumnWidth(6, 450);
+    sheet.setColumnWidth(6, 150); // 소요 시간 다음 칼럼: 소모 토큰 (150px)
+    sheet.setColumnWidth(7, 450); // 실행 로그 및 상세 내역 (450px)
 
-    sheet.getRange("A2:F2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
+    sheet.getRange("A2:G2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
   } catch (e) {
     Logger.log("대시보드 시트 초기화 예외: " + e);
   }
@@ -2081,9 +2144,10 @@ function initDashboardSheet() {
  * @param {string} linkUrl - 산출물 링크 URL
  * @param {string} linkText - 링크 표시 텍스트
  * @param {number|string} [durationSec] - 소요 시간 (초 단위 숫자 또는 문자열)
- * @param {string} [logDetail] - 실행 로그 및 상세 내역
+ * @param {number|string} [tokensOrLog] - 소모 토큰 수 또는 로그 (오버로딩 방어)
+ * @param {string} [logDetailOpt] - 실행 로그 및 상세 내역
  */
-function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, durationSec, logDetail) {
+function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, durationSec, tokensOrLog, logDetailOpt) {
   var sheet = getDashboardSheet();
   if (!sheet) return;
 
@@ -2095,6 +2159,16 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
     var targetRow = Math.max(3, lastRow + 1);
 
     sheet.setRowHeight(targetRow, 28);
+
+    var tokenVal = "-";
+    var detailText = "";
+    if (logDetailOpt !== undefined) {
+      tokenVal = formatTokenCount(tokensOrLog);
+      detailText = logDetailOpt || (status === "완료" ? "정상 처리 완료" : "");
+    } else {
+      tokenVal = "-";
+      detailText = tokensOrLog || (status === "완료" ? "정상 처리 완료" : "");
+    }
 
     // 1열: 실행 단계 (150)
     sheet.getRange(targetRow, 1)
@@ -2144,17 +2218,24 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
 
-    // 6열: 실행 로그 및 상세 내역 (450)
-    var detailText = logDetail || (status === "완료" ? "정상 처리 완료" : "");
+    // 6열: 소모 토큰 (150)
     sheet.getRange(targetRow, 6)
+      .setValue(tokenVal)
+      .setFontSize(9)
+      .setFontColor("#334155")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+
+    // 7열: 실행 로그 및 상세 내역 (450)
+    sheet.getRange(targetRow, 7)
       .setValue(detailText)
       .setFontSize(9)
       .setFontColor("#475569")
       .setHorizontalAlignment("left")
       .setVerticalAlignment("middle");
 
-    // 라인 랩 방지 (CLIP) 및 테두리 설정
-    var rowRange = sheet.getRange(targetRow, 1, 1, 6);
+    // 라인 랩 방지 (CLIP) 및 테두리 설정 (1~7열)
+    var rowRange = sheet.getRange(targetRow, 1, 1, 7);
     rowRange.setWrap(false);
     rowRange.setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
   } catch (e) {
@@ -2374,6 +2455,7 @@ function initCampaignWorkspace() {
       campaignFolder.getUrl(),
       "구글 드라이브 폴더 열기 (" + campaignCode + ")",
       durationSec,
+      "-",
       "캠페인 폴더 트리 8종 구축, 6대 프롬프트 독스 및 25인 페르소나 직속 적재 완료"
     );
     if (formInfo && formInfo.publishedUrl) {
@@ -2384,6 +2466,7 @@ function initCampaignWorkspace() {
         formInfo.publishedUrl,
         "온라인 설문지 열기",
         durationSec,
+        "-",
         "Google Forms 연동 완료 (현재 시트에 설문 응답 실시간 수신 대기)"
       );
     }
@@ -2624,6 +2707,8 @@ function runIdeaToPlanConversion() {
       throw new Error("캠페인 아이디어가 입력되지 않아 기획서 생성을 중단합니다. [아이디어 메모] 문서를 확인하십시오.");
     }
 
+    resetSessionTokens();
+
     // 2. 구글 독스 기반 프롬프트 템플릿 로드 (마케터 수정분 자동 반영)
     var systemInstruction = getPromptTemplate("01_idea_to_plan");
     var userPrompt =
@@ -2662,8 +2747,10 @@ function runIdeaToPlanConversion() {
     var specFile = saveGoogleDoc(campaignFolder, specDocName, specContent);
 
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+    var planTokens = getSessionTotalTokens();
+    var halfTokens = Math.round(planTokens / 2);
 
-    // 4. 대시보드 시트에 링크 및 소요 시간, 실행 로그 기록
+    // 4. 대시보드 시트에 링크 및 소요 시간, 소모 토큰, 실행 로그 기록
     recordStepResultToSheet(
       "기획서 (PLAN)",
       "마케팅 캠페인 기획서",
@@ -2671,6 +2758,7 @@ function runIdeaToPlanConversion() {
       planFile.getUrl(),
       "구글 독스 열기 (PLAN)",
       durationSec,
+      halfTokens,
       "마케터 아이디어 분석 기반 기획서(PLAN) 독스 자동 생성 완료"
     );
     recordStepResultToSheet(
@@ -2680,6 +2768,7 @@ function runIdeaToPlanConversion() {
       specFile.getUrl(),
       "구글 독스 열기 (SPEC)",
       durationSec,
+      halfTokens,
       "16:9 배너, 9:16 포스터, 1:1 SNS, 15초 숏폼 규격 명세서(SPEC) 독스 생성 완료"
     );
 
@@ -2773,6 +2862,8 @@ function runInitialContentGeneration() {
     var finalizedContent = "";
     var visualBrief = "";
 
+    resetSessionTokens();
+
     if (onlyMissing && folderStatus.hasDoc) {
       // 카피 독스가 이미 존재하면 기존 문서를 읽어 마케터의 수정본을 존중
       finalizedContent = readGoogleDoc(rv00Folder, contentDocName) || "";
@@ -2828,6 +2919,7 @@ function runInitialContentGeneration() {
       rv00Folder.getUrl(),
       "구글 드라이브 폴더 열기 (rv-00)",
       durationSec,
+      getSessionTotalTokens(),
       logDetail
     );
 
@@ -2949,6 +3041,8 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     var finalizedContent = "";
     var dynamicBrief = "";
 
+    resetSessionTokens();
+
     if (onlyMissing && folderStatus.hasDoc) {
       // 카피 독스가 이미 있으면 기존 독스를 유지하고 비주얼 프롬프트만 재도출
       finalizedContent = readGoogleDoc(targetRvFolder, targetContentDocName) || "";
@@ -3012,6 +3106,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       targetRvFolder.getUrl(),
       "구글 드라이브 폴더 열기 (" + targetRvName + ")",
       durationSec,
+      getSessionTotalTokens(),
       logDetail
     );
 
@@ -3078,6 +3173,8 @@ function runPersonaEvaluation(targetRoundOpt) {
 
       var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
 
+      resetSessionTokens();
+
       // 1. 25인 페르소나 피드백 데이터셋 로드 또는 실시간 생성 (50~80개 세부 의견 포인트 + 128d 임베딩)
       var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
       if (!jsonContent) {
@@ -3115,6 +3212,7 @@ function runPersonaEvaluation(targetRoundOpt) {
         clusterMapFile.getUrl(),
         "t-SNE 지형도 이미지 열기 (" + targetRound + ")",
         durationSec,
+        getSessionTotalTokens(),
         logDetail
       );
 
@@ -3162,6 +3260,8 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       showProcessingToast("피드백 종합 분석 보고서 도출 중 (" + targetRound + ")...", 60);
 
     var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+    resetSessionTokens();
 
     // 선결 조건 검사: 25인 페르소나 피드백 확인 (없으면 자동 평가)
     var personaFeedbacksRaw = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
@@ -3302,6 +3402,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       summaryFile.getUrl(),
       "구글 독스 보고서 열기 (" + targetRound + ")",
       durationSec,
+      getSessionTotalTokens(),
       logDetail
     );
 
@@ -3312,6 +3413,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       directiveFile.getUrl(),
       "마케터 보정 지침 열기 (" + directiveDocName + ")",
       durationSec,
+      "-",
       isDirectiveNew ? "AI 추천 보정 초안 템플릿 자동 생성 완료 (마케터 편집 대기)" : "기존 마케터 작성 지침 안전 보존됨"
     );
 

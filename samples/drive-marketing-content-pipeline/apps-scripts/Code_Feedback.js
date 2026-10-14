@@ -35,6 +35,8 @@ function runPersonaEvaluation(targetRoundOpt) {
 
       var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
 
+      resetSessionTokens();
+
       // 1. 25인 페르소나 피드백 데이터셋 로드 또는 실시간 생성 (50~80개 세부 의견 포인트 + 128d 임베딩)
       var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
       if (!jsonContent) {
@@ -72,6 +74,7 @@ function runPersonaEvaluation(targetRoundOpt) {
         clusterMapFile.getUrl(),
         "t-SNE 지형도 이미지 열기 (" + targetRound + ")",
         durationSec,
+        getSessionTotalTokens(),
         logDetail
       );
 
@@ -119,6 +122,8 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       showProcessingToast("피드백 종합 분석 보고서 도출 중 (" + targetRound + ")...", 60);
 
     var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+    resetSessionTokens();
 
     // 선결 조건 검사: 25인 페르소나 피드백 확인 (없으면 자동 평가)
     var personaFeedbacksRaw = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
@@ -259,6 +264,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       summaryFile.getUrl(),
       "구글 독스 보고서 열기 (" + targetRound + ")",
       durationSec,
+      getSessionTotalTokens(),
       logDetail
     );
 
@@ -269,6 +275,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       directiveFile.getUrl(),
       "마케터 보정 지침 열기 (" + directiveDocName + ")",
       durationSec,
+      "-",
       isDirectiveNew ? "AI 추천 보정 초안 템플릿 자동 생성 완료 (마케터 편집 대기)" : "기존 마케터 작성 지침 안전 보존됨"
     );
 

@@ -6,6 +6,50 @@
  * [모듈 2] Gemini REST API 클라이언트 엔진 (Google AI Studio 무료 API Key 기반 Zero-GCP 인증)
  */
 
+// 세션 단위 API 토큰 소모량 실시간 추적기
+var __SESSION_TOKEN_STATS__ = {
+  promptTokens: 0,
+  candidatesTokens: 0,
+  totalTokens: 0
+};
+
+/**
+ * 현재 작업 단계의 세션 누적 토큰 카운터를 초기화한다.
+ */
+function resetSessionTokens() {
+  __SESSION_TOKEN_STATS__ = {
+    promptTokens: 0,
+    candidatesTokens: 0,
+    totalTokens: 0
+  };
+}
+
+/**
+ * Gemini API 응답의 usageMetadata를 세션 통계에 누적 합산한다.
+ */
+function recordUsageMetadata(usageMetadata) {
+  if (usageMetadata) {
+    if (typeof usageMetadata.totalTokenCount === "number") {
+      __SESSION_TOKEN_STATS__.totalTokens += usageMetadata.totalTokenCount;
+    }
+    if (typeof usageMetadata.promptTokenCount === "number") {
+      __SESSION_TOKEN_STATS__.promptTokens += usageMetadata.promptTokenCount;
+    }
+    if (typeof usageMetadata.candidatesTokenCount === "number") {
+      __SESSION_TOKEN_STATS__.candidatesTokens += usageMetadata.candidatesTokenCount;
+    }
+  }
+}
+
+/**
+ * 현재 단계에서 누적 소모된 총 토큰 수를 반환한다.
+ *
+ * @return {number} 총 소모 토큰 수
+ */
+function getSessionTotalTokens() {
+  return __SESSION_TOKEN_STATS__.totalTokens || 0;
+}
+
 /**
  * Google AI Studio Gemini API Key 취득 함수
  * 1순위: UserProperties (사용자 개인별 안전 보관)
@@ -195,6 +239,9 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
   }
 
   var result = JSON.parse(responseBody);
+  if (result.usageMetadata) {
+    recordUsageMetadata(result.usageMetadata);
+  }
   if (result.candidates && result.candidates.length > 0 && 
       result.candidates[0].content && result.candidates[0].content.parts) {
     return result.candidates[0].content.parts[0].text;
@@ -262,6 +309,9 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   }
 
   var result = JSON.parse(responseBody);
+  if (result.usageMetadata) {
+    recordUsageMetadata(result.usageMetadata);
+  }
   if (result.candidates && result.candidates.length > 0 && 
       result.candidates[0].content && result.candidates[0].content.parts) {
     return result.candidates[0].content.parts[0].text;

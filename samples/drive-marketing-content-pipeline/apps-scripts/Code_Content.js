@@ -48,6 +48,8 @@ function runIdeaToPlanConversion() {
       throw new Error("캠페인 아이디어가 입력되지 않아 기획서 생성을 중단합니다. [아이디어 메모] 문서를 확인하십시오.");
     }
 
+    resetSessionTokens();
+
     // 2. 구글 독스 기반 프롬프트 템플릿 로드 (마케터 수정분 자동 반영)
     var systemInstruction = getPromptTemplate("01_idea_to_plan");
     var userPrompt =
@@ -86,8 +88,10 @@ function runIdeaToPlanConversion() {
     var specFile = saveGoogleDoc(campaignFolder, specDocName, specContent);
 
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+    var planTokens = getSessionTotalTokens();
+    var halfTokens = Math.round(planTokens / 2);
 
-    // 4. 대시보드 시트에 링크 및 소요 시간, 실행 로그 기록
+    // 4. 대시보드 시트에 링크 및 소요 시간, 소모 토큰, 실행 로그 기록
     recordStepResultToSheet(
       "기획서 (PLAN)",
       "마케팅 캠페인 기획서",
@@ -95,6 +99,7 @@ function runIdeaToPlanConversion() {
       planFile.getUrl(),
       "구글 독스 열기 (PLAN)",
       durationSec,
+      halfTokens,
       "마케터 아이디어 분석 기반 기획서(PLAN) 독스 자동 생성 완료"
     );
     recordStepResultToSheet(
@@ -104,6 +109,7 @@ function runIdeaToPlanConversion() {
       specFile.getUrl(),
       "구글 독스 열기 (SPEC)",
       durationSec,
+      halfTokens,
       "16:9 배너, 9:16 포스터, 1:1 SNS, 15초 숏폼 규격 명세서(SPEC) 독스 생성 완료"
     );
 
@@ -197,6 +203,8 @@ function runInitialContentGeneration() {
     var finalizedContent = "";
     var visualBrief = "";
 
+    resetSessionTokens();
+
     if (onlyMissing && folderStatus.hasDoc) {
       // 카피 독스가 이미 존재하면 기존 문서를 읽어 마케터의 수정본을 존중
       finalizedContent = readGoogleDoc(rv00Folder, contentDocName) || "";
@@ -252,6 +260,7 @@ function runInitialContentGeneration() {
       rv00Folder.getUrl(),
       "구글 드라이브 폴더 열기 (rv-00)",
       durationSec,
+      getSessionTotalTokens(),
       logDetail
     );
 
@@ -373,6 +382,8 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     var finalizedContent = "";
     var dynamicBrief = "";
 
+    resetSessionTokens();
+
     if (onlyMissing && folderStatus.hasDoc) {
       // 카피 독스가 이미 있으면 기존 독스를 유지하고 비주얼 프롬프트만 재도출
       finalizedContent = readGoogleDoc(targetRvFolder, targetContentDocName) || "";
@@ -436,6 +447,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       targetRvFolder.getUrl(),
       "구글 드라이브 폴더 열기 (" + targetRvName + ")",
       durationSec,
+      getSessionTotalTokens(),
       logDetail
     );
 

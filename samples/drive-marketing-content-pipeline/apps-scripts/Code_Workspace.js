@@ -115,6 +115,7 @@ function initCampaignWorkspace() {
       campaignFolder.getUrl(),
       "구글 드라이브 폴더 열기 (" + campaignCode + ")",
       durationSec,
+      "-",
       "캠페인 폴더 트리 8종 구축, 6대 프롬프트 독스 및 25인 페르소나 직속 적재 완료"
     );
     if (formInfo && formInfo.publishedUrl) {
@@ -125,6 +126,7 @@ function initCampaignWorkspace() {
         formInfo.publishedUrl,
         "온라인 설문지 열기",
         durationSec,
+        "-",
         "Google Forms 연동 완료 (현재 시트에 설문 응답 실시간 수신 대기)"
       );
     }

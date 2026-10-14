@@ -1057,18 +1057,30 @@ function formatDuration(secOrMs) {
   return remSec > 0 ? min + "분 " + remSec + "초" : min + "분";
 }
 
+/**
+ * 소모된 토큰 수를 사람이 읽기 편한 문자열(예: '2,450 tokens')로 포맷팅한다.
+ */
+function formatTokenCount(tokens) {
+  if (tokens === null || tokens === undefined || tokens === "" || tokens === 0) return "-";
+  if (typeof tokens === "string") return tokens;
+  var num = parseInt(tokens, 10);
+  if (isNaN(num) || num <= 0) return "-";
+  return num.toLocaleString() + " tokens";
+}
+
 function initDashboardSheet() {
   var sheet = getDashboardSheet();
   if (!sheet) return;
 
   try {
     var val = sheet.getRange("A2").getValue();
-    if (val === "실행 단계") return;
+    var lastCol = sheet.getLastColumn();
+    if (val === "실행 단계" && lastCol >= 7) return;
 
     sheet.clear();
 
-    // 상단 타이틀 배너 (A1:F1)
-    sheet.getRange("A1:F1").merge();
+    // 상단 타이틀 배너 (A1:G1)
+    sheet.getRange("A1:G1").merge();
     sheet.getRange("A1").setValue("Google Drive 마케팅 콘텐츠 파이프라인 실행 대시보드");
     sheet.getRange("A1")
       .setFontWeight("bold")
@@ -1080,10 +1092,10 @@ function initDashboardSheet() {
       .setWrap(false);
     sheet.setRowHeight(1, 38);
 
-    // 컬럼 헤더 행 (A2:F2)
-    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각", "소요 시간", "실행 로그 및 상세 내역"]];
-    sheet.getRange("A2:F2").setValues(headers);
-    sheet.getRange("A2:F2")
+    // 컬럼 헤더 행 (A2:G2) - 7대 핵심 컬럼
+    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각", "소요 시간", "소모 토큰", "실행 로그 및 상세 내역"]];
+    sheet.getRange("A2:G2").setValues(headers);
+    sheet.getRange("A2:G2")
       .setFontWeight("bold")
       .setFontSize(10)
       .setBackground("#F1F5F9")
@@ -1093,15 +1105,16 @@ function initDashboardSheet() {
       .setWrap(false);
     sheet.setRowHeight(2, 28);
 
-    // 컬럼 너비 설정 (사용자 지정: 150, 100, 300, 150, 100, 450)
+    // 컬럼 너비 설정 (사용자 지정: 150, 100, 300, 150, 100, 150, 450)
     sheet.setColumnWidth(1, 150);
     sheet.setColumnWidth(2, 100);
     sheet.setColumnWidth(3, 300);
     sheet.setColumnWidth(4, 150);
     sheet.setColumnWidth(5, 100);
-    sheet.setColumnWidth(6, 450);
+    sheet.setColumnWidth(6, 150); // 소요 시간 다음 칼럼: 소모 토큰 (150px)
+    sheet.setColumnWidth(7, 450); // 실행 로그 및 상세 내역 (450px)
 
-    sheet.getRange("A2:F2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
+    sheet.getRange("A2:G2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
   } catch (e) {
     Logger.log("대시보드 시트 초기화 예외: " + e);
   }
@@ -1116,9 +1129,10 @@ function initDashboardSheet() {
  * @param {string} linkUrl - 산출물 링크 URL
  * @param {string} linkText - 링크 표시 텍스트
  * @param {number|string} [durationSec] - 소요 시간 (초 단위 숫자 또는 문자열)
- * @param {string} [logDetail] - 실행 로그 및 상세 내역
+ * @param {number|string} [tokensOrLog] - 소모 토큰 수 또는 로그 (오버로딩 방어)
+ * @param {string} [logDetailOpt] - 실행 로그 및 상세 내역
  */
-function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, durationSec, logDetail) {
+function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, durationSec, tokensOrLog, logDetailOpt) {
   var sheet = getDashboardSheet();
   if (!sheet) return;
 
@@ -1130,6 +1144,16 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
     var targetRow = Math.max(3, lastRow + 1);
 
     sheet.setRowHeight(targetRow, 28);
+
+    var tokenVal = "-";
+    var detailText = "";
+    if (logDetailOpt !== undefined) {
+      tokenVal = formatTokenCount(tokensOrLog);
+      detailText = logDetailOpt || (status === "완료" ? "정상 처리 완료" : "");
+    } else {
+      tokenVal = "-";
+      detailText = tokensOrLog || (status === "완료" ? "정상 처리 완료" : "");
+    }
 
     // 1열: 실행 단계 (150)
     sheet.getRange(targetRow, 1)
@@ -1179,17 +1203,24 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
 
-    // 6열: 실행 로그 및 상세 내역 (450)
-    var detailText = logDetail || (status === "완료" ? "정상 처리 완료" : "");
+    // 6열: 소모 토큰 (150)
     sheet.getRange(targetRow, 6)
+      .setValue(tokenVal)
+      .setFontSize(9)
+      .setFontColor("#334155")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+
+    // 7열: 실행 로그 및 상세 내역 (450)
+    sheet.getRange(targetRow, 7)
       .setValue(detailText)
       .setFontSize(9)
       .setFontColor("#475569")
       .setHorizontalAlignment("left")
       .setVerticalAlignment("middle");
 
-    // 라인 랩 방지 (CLIP) 및 테두리 설정
-    var rowRange = sheet.getRange(targetRow, 1, 1, 6);
+    // 라인 랩 방지 (CLIP) 및 테두리 설정 (1~7열)
+    var rowRange = sheet.getRange(targetRow, 1, 1, 7);
     rowRange.setWrap(false);
     rowRange.setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
   } catch (e) {
