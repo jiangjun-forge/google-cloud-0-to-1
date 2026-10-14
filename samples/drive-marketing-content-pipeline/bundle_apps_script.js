@@ -880,7 +880,7 @@ function createDeterministicVector(text, dim) {
  */
 
 /**
- * 캠페인 루트의 prompts/ 폴더 내에 6대 프롬프트 구글 독스를 자동 시딩한다.
+ * 캠페인 루트의 prompts/ 폴더 내에 9대 프롬프트 구글 독스를 자동 시딩한다.
  * GitHub 퍼블릭 저장소(GitHub Raw)에서 최신 프롬프트 마크다운 파일을 실시간 인출하여 생성하며,
  * 마케터가 이미 수정한 구글 독스가 존재할 경우 기존 내용을 안전하게 보존한다.
  *
@@ -1035,7 +1035,7 @@ function renderPromptTemplate(template, variables) {
  */
 
 /**
- * [캠페인 초기화] 구글 드라이브 폴더 트리, 루트 직속 25인 페르소나, 6대 프롬프트 구글 독스,
+ * [캠페인 초기화] 구글 드라이브 폴더 트리, 루트 직속 [아이디어 메모], 25인 페르소나, 9대 프롬프트 구글 독스,
  * 그리고 고객 VoC 수집용 Google Forms 생성 및 시트 바인딩까지 초장에 100% 완결한다.
  */
 function initCampaignWorkspace() {
@@ -1126,7 +1126,7 @@ function initCampaignWorkspace() {
 
     showResultModal(
       "캠페인 초기 환경 구축 완료 (" + campaignCode + ")",
-      "캠페인 루트 직속 25인 페르소나, 6대 프롬프트 구글 독스, 고객 VoC 설문 폼이 준비되었습니다.\n아래 버튼을 눌러 캠페인 드라이브 폴더를 즉시 확인하십시오.",
+      "캠페인 루트 직속 [아이디어 메모], 25인 페르소나, 9대 프롬프트 구글 독스, 고객 VoC 설문 폼이 준비되었습니다.\n아래 버튼을 눌러 캠페인 드라이브 폴더를 즉시 확인하십시오.",
       "캠페인 드라이브 폴더 열기",
       campaignFolder.getUrl()
     );
