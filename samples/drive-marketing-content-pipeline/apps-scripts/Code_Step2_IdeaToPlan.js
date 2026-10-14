@@ -90,14 +90,17 @@ function runIdeaToPlanConversion() {
     var specContent = callGemini(specSystemInstruction, specPrompt);
     var specDocFile = saveGoogleDoc(campaignFolder, "SPEC", specContent);
 
-    // 6. 구글 시트 실행 대시보드에 Step 1 완료 및 링크 기록
-    recordStepResultToSheet("Step 2", "기획서(PLAN) 및 콘텐츠 명세서(SPEC) 도출", "완료", planDocFile.getUrl(), "기획서(PLAN) & 명세서(SPEC) 열기");
+    // 6. 구글 시트 실행 대시보드에 기획서(PLAN) 및 콘텐츠 명세서(SPEC) 링크 각각 분리 기록
+    recordStepResultToSheet("Step 2 (기획서)", "마케팅 캠페인 기획서(PLAN) 도출", "완료", planDocFile.getUrl(), "기획서(PLAN) 구글 독스 열기");
+    recordStepResultToSheet("Step 2 (명세서)", "콘텐츠 제작 명세서(SPEC) 도출", "완료", specDocFile.getUrl(), "명세서(SPEC) 구글 독스 열기");
 
     ui.alert(
       "기획서(PLAN) 및 콘텐츠 명세서(SPEC) 생성 완료",
       "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 성공적으로 생성되었습니다.\n\n" +
-      "마케터는 브라우저에서 SPEC 문서를 열어 이미지 비율, 숏폼 길이, 카피 채널 규격을 자유롭게 수정한 뒤 [Step 2]를 실행할 수 있습니다.\n\n" +
-      "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+      "1. 기획서(PLAN): " + planDocFile.getUrl() + "\n" +
+      "2. 명세서(SPEC): " + specDocFile.getUrl() + "\n\n" +
+      "마케터는 브라우저에서 SPEC 문서를 열어 이미지 비율, 숏폼 길이, 카피 채널 규격을 자유롭게 수정한 뒤 [Step 3]을 실행할 수 있습니다.\n\n" +
+      "구글 시트의 [실행 대시보드] 표에서 각 문서의 바로가기 링크를 확인하십시오.",
       ui.ButtonSet.OK
     );
   } catch (e) {

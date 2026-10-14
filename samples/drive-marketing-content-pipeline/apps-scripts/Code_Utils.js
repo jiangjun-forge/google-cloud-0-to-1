@@ -851,7 +851,8 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
     if (lastRow >= 3) {
       var stepValues = sheet.getRange(3, 1, lastRow - 2, 1).getValues();
       for (var i = 0; i < stepValues.length; i++) {
-        if (stepValues[i][0] === stepId) {
+        var currentStep = stepValues[i][0];
+        if (currentStep === stepId || (stepId === "Step 2 (기획서)" && currentStep === "Step 2")) {
           targetRow = i + 3;
           break;
         }
