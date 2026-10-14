@@ -110,14 +110,11 @@ function initCampaignWorkspace() {
       recordStepResultToSheet("고객 피드백 채널", "VoC 구글 폼 및 모바일 QR", "활성", formInfo.publishedUrl, "온라인 설문지 열기");
     }
 
-    ui.alert(
-      "캠페인 초기 환경 구축 완료 (All-in-one)",
-      "캠페인 작업 공간(" + campaignCode + ")이 완벽하게 준비되었습니다:\n\n" +
-      "1. 캠페인 루트 직속 25인 페르소나(ai_personas.json) 완비\n" +
-      "2. prompts/ 폴더 내 6대 프롬프트 구글 독스 시딩 완료 (언제든 직접 수정 가능)\n" +
-      "3. 고객 VoC 수집용 구글 폼 생성 및 모바일 QR 코드 바인딩 완료\n\n" +
-      "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
-      ui.ButtonSet.OK
+    showResultModal(
+      "캠페인 초기 환경 구축 완료 (" + campaignCode + ")",
+      "캠페인 루트 직속 25인 페르소나, 6대 프롬프트 구글 독스, 고객 VoC 설문 폼이 준비되었습니다.\n아래 버튼을 눌러 캠페인 드라이브 폴더를 즉시 확인하십시오.",
+      "캠페인 드라이브 폴더 열기",
+      campaignFolder.getUrl()
     );
   } catch (e) {
     ui.alert("초기화 중 오류 발생", e.toString(), ui.ButtonSet.OK);

@@ -17,20 +17,29 @@ function runIdeaToPlanConversion() {
     var campaignCode = getCampaignCode();
     var inputFolder = getCampaignSubFolder(["input"]);
 
-    // 1. input/아이디어 메모 읽기 또는 대화상자 프롬프트
-    var ideaMemo = readGoogleDoc(inputFolder, "아이디어 메모");
-    if (!ideaMemo || ideaMemo.trim().length < 10) {
-      var promptResp = ui.prompt(
-        "마케팅 캠페인 아이디어 입력",
-        "캠페인 컨셉이나 아이디어 초안을 자유롭게 입력하십시오 (예: 2026 프리미엄 노이즈 캔슬링 헤드폰 론칭 프로모션):",
-        ui.ButtonSet.OK_CANCEL
-      );
-      if (promptResp.getSelectedButton() === ui.Button.OK) {
-        ideaMemo = promptResp.getResponseText().trim();
-        if (ideaMemo) {
-          saveGoogleDoc(inputFolder, "아이디어 메모", ideaMemo);
-        }
-      }
+    // 1. input/아이디어 메모 읽기 및 대화상자 확인
+    var existingIdea = readGoogleDoc(inputFolder, "아이디어 메모") || "";
+    var existingPreview = existingIdea.replace(/\n+/g, " ").trim();
+    if (existingPreview.length > 60) {
+      existingPreview = existingPreview.substring(0, 60) + "...";
+    }
+
+    var promptMsg = existingPreview
+      ? "현재 등록된 아이디어 메모:\n[" + existingPreview + "]\n\n" +
+        "새로운 캠페인 아이디어를 입력하십시오:\n" +
+        "(빈칸으로 두고 [확인]을 누르면 기존 아이디어 메모를 그대로 사용합니다)"
+      : "캠페인 컨셉이나 아이디어 초안을 자유롭게 입력하십시오:\n(예: 2026 프리미엄 노이즈 캔슬링 헤드폰 론칭 프로모션)";
+
+    var promptResp = ui.prompt("마케팅 캠페인 아이디어 확인", promptMsg, ui.ButtonSet.OK_CANCEL);
+    if (promptResp.getSelectedButton() !== ui.Button.OK) {
+      return;
+    }
+
+    var inputVal = promptResp.getResponseText().trim();
+    var ideaMemo = inputVal || existingIdea;
+
+    if (inputVal) {
+      saveGoogleDoc(inputFolder, "아이디어 메모", inputVal);
     }
 
     if (!ideaMemo || ideaMemo.trim().length < 5) {
@@ -78,11 +87,11 @@ function runIdeaToPlanConversion() {
     recordStepResultToSheet("기획서 (PLAN)", "마케팅 캠페인 기획서", "완료", planFile.getUrl(), "구글 독스 열기 (PLAN)");
     recordStepResultToSheet("제작 명세서 (SPEC)", "멀티 채널 콘텐츠 제작 명세서", "완료", specFile.getUrl(), "구글 독스 열기 (SPEC)");
 
-    ui.alert(
+    showResultModal(
       "기획서 및 명세서 생성 완료",
-      "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 캠페인 폴더에 자동 생성되었습니다.\n\n" +
-      "마케터는 브라우저에서 직접 SPEC 수치(해상도, 숏폼 길이 등)를 수정한 뒤 다음 단계를 진행할 수 있습니다.",
-      ui.ButtonSet.OK
+      "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 생성되었습니다.\n아래 버튼을 클릭하여 기획서를 검토하거나 SPEC 수치를 직접 수정하십시오.",
+      "기획서 구글 독스 열기 (PLAN)",
+      planFile.getUrl()
     );
   } catch (e) {
     ui.alert("기획서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
@@ -152,11 +161,11 @@ function runInitialContentGeneration() {
     // 5. 실행 대시보드에 링크 기록
     recordStepResultToSheet("초판 마케팅 콘텐츠", "카피 및 비주얼 (rv-00)", "완료", rv00Folder.getUrl(), "구글 드라이브 폴더 열기 (rv-00)");
 
-    ui.alert(
+    showResultModal(
       "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
-      "초판 마케팅 카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종 비율 세트 생성이 완료되었습니다.\n\n" +
-      "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
-      ui.ButtonSet.OK
+      "카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오 생성이 완료되었습니다.\n아래 버튼을 눌러 초판 콘텐츠 폴더를 확인하십시오.",
+      "초판 콘텐츠 폴더 열기 (rv-00)",
+      rv00Folder.getUrl()
     );
   } catch (e) {
     ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
@@ -241,10 +250,11 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief);
 
     if (!isSilent) {
-      ui.alert(
-        "마케팅 콘텐츠 반자율 보정 완료 (" + targetRvName + ")",
-        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + ") 및 신규 비주얼 이미지 3종 비율 세트 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
-        ui.ButtonSet.OK
+      showResultModal(
+        "마케팅 콘텐츠 보정 완료 (" + targetRvName + ")",
+        "피드백 분석 보고서와 마케터 보정 지침이 반영된 개정본(" + targetRvName + ") 및 신규 비주얼 3종, Veo 영상이 생성되었습니다.\n아래 버튼을 눌러 개정본 콘텐츠 폴더를 확인하십시오.",
+        "개정본 콘텐츠 폴더 열기 (" + targetRvName + ")",
+        targetRvFolder.getUrl()
       );
     }
     return finalizedContent;

@@ -72,11 +72,11 @@ function runPersonaEvaluation(targetRoundOpt) {
       "t-SNE 지형도 이미지 열기 (" + targetRound + ")"
     );
 
-    ui.alert(
+    showResultModal(
       "25인 페르소나 다면 평가 및 지형도 생성 완료 (" + targetRound + ")",
-      "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n\n" +
-      "이어서 [피드백 종합 분석 보고서 생성]을 실행하여 전체 데이터를 통합하십시오.",
-      ui.ButtonSet.OK
+      "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
+      "t-SNE 지형도 차트 보기",
+      chartFile ? chartFile.getUrl() : feedbackFolder.getUrl()
     );
   } catch (e) {
     ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
@@ -213,13 +213,11 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       "구글 독스 보고서 열기 (" + targetRound + ")"
     );
 
-    ui.alert(
+    showResultModal(
       "피드백 종합 분석 보고서 도출 완료 (" + targetRound + ")",
-      "피드백 종합 요약서(feedback_summary) 구글 독스가 생성되었습니다:\n\n" +
-      "1. 상단에 t-SNE 2D 여론 지형도 차트가 자동 삽입되었습니다.\n" +
-      "2. 실제 업로드된 영상/이미지 VLM 분석과 25인 평가가 종합되었습니다.\n" +
-      "3. [실행 대시보드]에서 구글 독스를 직접 열어 문서 하단의 [마케터 최종 의사 결정] 지침을 검토 및 수정한 뒤 [콘텐츠 보정]을 진행하십시오.",
-      ui.ButtonSet.OK
+      "피드백 종합 보고서(feedback_summary) 구글 독스가 생성되었습니다.\n문서 하단의 [마케터 최종 의사 결정] 지침을 브라우저에서 직접 검토 및 수정한 뒤 [보정] 메뉴를 진행하십시오.",
+      "피드백 요약서 구글 독스 열기",
+      summaryFile.getUrl()
     );
   } catch (e) {
     ui.alert("피드백 보고서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);

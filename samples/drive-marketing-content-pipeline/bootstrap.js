@@ -121,3 +121,21 @@ function forceSyncEngine() {
     SpreadsheetApp.getUi().ButtonSet.OK
   );
 }
+
+/**
+ * [자동 스코프 감지용 정적 더미 함수]
+ * 사용자가 appsscript.json 매니페스트 설정을 실수로 건너뛰더라도,
+ * Google Apps Script 엔진이 정적으로 필요한 OAuth 권한(Drive, Docs, Forms, Sheets, UrlFetch)을
+ * 자동으로 감지하여 최초 1회 승인 팝업에 모두 포함하도록 보장한다.
+ */
+function __staticOAuthScopeDeclarations() {
+  if (false) {
+    SpreadsheetApp.getActiveSpreadsheet();
+    DriveApp.getRootFolder();
+    DocumentApp.create("dummy");
+    FormApp.create("dummy");
+    UrlFetchApp.fetch("https://raw.githubusercontent.com");
+    PropertiesService.getUserProperties();
+    CacheService.getScriptCache();
+  }
+}

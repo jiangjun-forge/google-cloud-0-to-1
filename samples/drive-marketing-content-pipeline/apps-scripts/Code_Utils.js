@@ -468,6 +468,19 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
       var campaignDataFolder = getCampaignSubFolder(["data"]);
       personasText = readTextFile(campaignDataFolder, "ai_personas.json");
     }
+    // 마케터 파일 삭제 또는 파싱 실패 시 기본 25인 마스터 페르소나로 자동 복구
+    if (!personasText || personasText.trim().length < 20) {
+      try {
+        var masterPersonas = (typeof getMasterPersonas25 === "function") ? getMasterPersonas25() : null;
+        if (masterPersonas) {
+          personasText = JSON.stringify(masterPersonas, null, 2);
+          saveTextFile(campaignFolder, "ai_personas.json", personasText);
+          Logger.log("ai_personas.json 누락 감지 -> 25인 기본 마스터 페르소나 자동 복구 완료");
+        }
+      } catch (recErr) {
+        Logger.log("페르소나 자동 복구 예외: " + recErr);
+      }
+    }
 
     var specContent = readGoogleDoc(campaignFolder, CONFIG.SPEC_DOC_NAME || "SPEC") || "";
     var hasSpecificSurvey = (specContent.indexOf("설문 문항") !== -1 || specContent.indexOf("피드백 설문") !== -1);
@@ -1283,4 +1296,30 @@ function detectLatestRevisionRoundNum() {
     Logger.log("detectLatestRevisionRoundNum 예외: " + e);
   }
   return maxRound;
+}
+
+/**
+ * 마케터가 클릭 한 번으로 결과물(구글 독스, 구글 드라이브 폴더)을 즉시 열 수 있는 결과 안내 모달을 띄운다.
+ */
+function showResultModal(title, message, btnText, btnUrl) {
+  var ui = SpreadsheetApp.getUi();
+  if (!btnUrl) {
+    ui.alert(title, message, ui.ButtonSet.OK);
+    return;
+  }
+
+  var htmlContent =
+    "<div style='font-family:sans-serif; padding:18px; line-height:1.6;'>" +
+    "<h3 style='margin:0 0 10px 0; color:#1a73e8; font-size:16px;'>" + title + "</h3>" +
+    "<p style='color:#3c4043; font-size:13px; margin:0 0 16px 0; white-space:pre-line;'>" + message + "</p>" +
+    "<div style='margin-top:16px;'>" +
+    "<a href='" + btnUrl + "' target='_blank' style='display:inline-block; padding:10px 20px; background:#1a73e8; color:#ffffff; text-decoration:none; border-radius:4px; font-weight:bold; font-size:13px;'>" + btnText + "</a>" +
+    "</div>" +
+    "<p style='color:#70757a; font-size:11px; margin-top:14px; word-break:break-all;'>URL: " + btnUrl + "</p>" +
+    "</div>";
+
+  var htmlOutput = HtmlService.createHtmlOutput(htmlContent)
+    .setWidth(480)
+    .setHeight(210);
+  ui.showModalDialog(htmlOutput, title);
 }
