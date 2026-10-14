@@ -16,7 +16,7 @@ function onOpen() {
     .addItem("[설정] 캠페인 환경 설정 및 재설정 (Configure)", "runConfigureCampaignSettings")
     .addSeparator()
     .addItem("[기획] 기획서 및 콘텐츠 명세서 생성 (PLAN & SPEC)", "guardAndRunIdeaToPlan")
-    .addItem("[양산] 초판 마케팅 콘텐츠 양산 (rv-00)", "guardAndRunInitialContent")
+    .addItem("[생성] 초판 마케팅 콘텐츠 생성 (rv-00)", "guardAndRunInitialContent")
     .addItem("[평가] 25인 AI 페르소나 다면 평가 실행 (fb-xx)", "promptAndRunJudgeEvaluation")
     .addItem("[보고서] 피드백 종합 분석 보고서 생성 (feedback_summary)", "promptAndRunFeedbackSummary")
     .addItem("[보정] 피드백 반영 콘텐츠 보정 (rv-xx)", "promptAndRunReviseAssets")
@@ -61,7 +61,7 @@ function guardAndRunIdeaToPlan() {
 }
 
 /**
- * [가드레일] 초판 마케팅 콘텐츠 양산 선결 조건 검증 후 실행
+ * [가드레일] 초판 마케팅 콘텐츠 생성 선결 조건 검증 후 실행
  */
 function guardAndRunInitialContent() {
   var ui = SpreadsheetApp.getUi();
@@ -83,7 +83,7 @@ function guardAndRunInitialContent() {
       var confirmResp = ui.alert(
         "기획서(PLAN) 누락 경고",
         "캠페인 폴더 내 기획서(PLAN) 문서가 아직 생성되지 않았습니다.\n" +
-        "기획서 없이 진행할 경우 기본 설정 템플릿으로 양산됩니다.\n\n" +
+        "기획서 없이 진행할 경우 기본 설정 템플릿으로 생성됩니다.\n\n" +
         "계속 진행하시겠습니까? (권장: [아니오] 선택 후 [기획] 메뉴 먼저 실행)",
         ui.ButtonSet.YES_NO
       );
@@ -133,7 +133,7 @@ function promptAndRunJudgeEvaluation() {
       ui.alert(
         "평가 대상 콘텐츠 누락",
         "다면 평가를 수행할 마케팅 콘텐츠(rv-00)가 존재하지 않습니다.\n" +
-        "[양산] 초판 마케팅 콘텐츠 양산 메뉴를 먼저 실행하여 초판을 제작하십시오.",
+        "[생성] 초판 마케팅 콘텐츠 생성 메뉴를 먼저 실행하여 초판을 제작하십시오.",
         ui.ButtonSet.OK
       );
       return;
@@ -262,7 +262,7 @@ function promptAndRunReviseAssets() {
     "마케팅 콘텐츠 개정본(rv-xx) 생성 회차 선택",
     "현재 등록된 최신 리비전은 rv-" + (latestRv < 10 ? "0" + latestRv : latestRv) + " (피드백 회차: fb-" + (latestFb < 10 ? "0" + latestFb : latestFb) + ")입니다.\n\n" +
     "생성할 마케팅 콘텐츠 리비전 번호를 입력하십시오 (1~99 지원, 추천: " + suggestedRv + "):\n" +
-    "(빈칸으로 두고 [확인] 클릭 시 rv-" + suggestedRvStr + " 개정본이 자동 양산됩니다)\n\n" +
+    "(빈칸으로 두고 [확인] 클릭 시 rv-" + suggestedRvStr + " 개정본이 자동 생성됩니다)\n\n" +
     "* 피드백 요약서 및 마케터 코멘트를 반영하여 카피 개정본과 비주얼 3종 및 Veo 비디오가 생성됩니다.",
     ui.ButtonSet.OK_CANCEL
   );

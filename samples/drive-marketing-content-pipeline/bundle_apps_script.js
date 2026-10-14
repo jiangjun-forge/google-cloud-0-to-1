@@ -32,7 +32,7 @@ var CONFIG = {
   // 단일 모델에 의존하지 않고 작업별 특성(속도, 이미지, 영상)에 맞추어 검증된 모델을 취사선택함
   BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models",
   GEMINI_MODEL: "gemini-3.8-flash",
-  MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 양산 모델
+  MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 생성 모델
   MODEL_JUDGE: "gemini-3.8-flash", // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 초고속 모델 (Veo 3.1 Fast)
@@ -92,7 +92,7 @@ var CONFIG = {
     },
     "02_content_generation": {
       title: "02_content_generation",
-      description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 양산 지침",
+      description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 생성 지침",
       systemInstruction:
         "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content 구글 독스를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
@@ -122,7 +122,6 @@ var CONFIG = {
     }
   }
 };
-
 
 // ============================================================================
 // FILE: Code_Gemini.js
@@ -712,7 +711,6 @@ function createDeterministicVector(text, dim) {
   return vec;
 }
 
-
 // ============================================================================
 // FILE: Code_Prompts.js
 // ============================================================================
@@ -866,7 +864,6 @@ function renderPromptTemplate(template, variables) {
   }
   return rendered;
 }
-
 
 // ============================================================================
 // FILE: Code_Utils.js
@@ -2162,7 +2159,6 @@ function showResultModal(title, message, btnText, btnUrl) {
   ui.showModalDialog(htmlOutput, title);
 }
 
-
 // ============================================================================
 // FILE: Code_Workspace.js
 // ============================================================================
@@ -2480,7 +2476,6 @@ function getMasterPersonas25() {
   };
 }
 
-
 // ============================================================================
 // FILE: Code_Content.js
 // ============================================================================
@@ -2490,7 +2485,7 @@ function getMasterPersonas25() {
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 5] 기획서(PLAN/SPEC) 도출 및 멀티 채널 콘텐츠 양산/보정 엔진 (Content Engine)
+ * [모듈 5] 기획서(PLAN/SPEC) 도출 및 멀티 채널 콘텐츠 생성/보정 엔진 (Content Engine)
  */
 
 /**
@@ -2609,13 +2604,13 @@ function runIdeaToPlanConversion() {
 }
 
 /**
- * [액션 2] 기획서(PLAN) 및 명세서(SPEC)를 기반으로 초판 마케팅 콘텐츠(rv-00)를 일괄 양산한다.
+ * [액션 2] 기획서(PLAN) 및 명세서(SPEC)를 기반으로 초판 마케팅 콘텐츠(rv-00)를 생성한다.
  */
 function runInitialContentGeneration() {
   return withUserLock("content_generation", function() {
     var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
-  showProcessingToast("초판 마케팅 콘텐츠 양산 중 (rv-00)...", 60);
+  showProcessingToast("초판 마케팅 콘텐츠 생성 중 (rv-00)...", 60);
   try {
     var campaignFolder = getCampaignFolder();
     var campaignCode = getCampaignCode();
@@ -2728,7 +2723,7 @@ function runInitialContentGeneration() {
       logDetail = "미완성 에셋 선별 보충 완료 (신규 이미지 " + visResult.genImageCount + "건 생성, 기존 에셋 " + totalSkipped + "건 보존)";
     } else {
       var videoDesc = visResult.videoStatus === "generated" ? "Veo 비디오 1건" : "숏폼 콘티 독스 수록";
-      logDetail = "통합 카피 독스 1건, 대표 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 정상 양산 완료";
+      logDetail = "통합 카피 독스 1건, 대표 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 정상 생성 완료";
     }
 
     // 6. 실행 대시보드에 링크 기록
@@ -2743,7 +2738,7 @@ function runInitialContentGeneration() {
     );
 
     showResultModal(
-      "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
+      "초판 마케팅 콘텐츠 생성 완료 (rv-00)",
       "카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오가 준비되었습니다.\n\n" +
       "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
       "* 실행 상세 내역: " + logDetail + "\n\n" +
@@ -2752,7 +2747,7 @@ function runInitialContentGeneration() {
       rv00Folder.getUrl()
     );
   } catch (e) {
-    ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+    ui.alert("초판 콘텐츠 생성 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
 }
@@ -2839,7 +2834,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     var targetContentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
     var previousAsset = readGoogleDoc(prevRvFolder, targetContentDocName) || readGoogleDoc(prevRvFolder, "campaign_asset");
     if (!previousAsset) {
-      throw new Error("이전 마케팅 콘텐츠(" + prevRvName + ")를 찾을 수 없습니다. [초판 콘텐츠 양산]을 먼저 실행하십시오.");
+      throw new Error("이전 마케팅 콘텐츠(" + prevRvName + ")를 찾을 수 없습니다. [초판 콘텐츠 생성]을 먼저 실행하십시오.");
     }
 
     // 선결 조건 2: feedback_summary 확인
@@ -2911,7 +2906,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     } else {
       var videoDesc = visResult.videoStatus === "generated" ? "Veo 비디오 1건" : "숏폼 콘티 독스 수록";
       var directiveDesc = marketerDirective ? "마케터 지침서 100% 반영" : "권장 보정안 반영";
-      logDetail = "개정본 독스 1건(" + directiveDesc + "), 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 양산 완료";
+      logDetail = "개정본 독스 1건(" + directiveDesc + "), 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 생성 완료";
     }
 
     // 6. 대시보드 시트에 링크 기록
@@ -2947,7 +2942,6 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
   }
   });
 }
-
 
 // ============================================================================
 // FILE: Code_Feedback.js
@@ -3182,7 +3176,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       var starterDirective =
         "# " + roundNum + "차 마케팅 콘텐츠 보정 지침 (마케터 최종 의사 결정)\n\n" +
         "> **안내**: 본 문서는 마케터 전용 의사 결정 문서입니다. 피드백 종합 분석 보고서(feedback_summary)를 참고하여 " +
-        "차기 개정본 양산 시 AI 모델이 최우선으로 반영해야 할 지침을 자유롭게 작성하거나 수정하십시오. " +
+        "차기 개정본 생성 시 AI 모델이 최우선으로 반영해야 할 지침을 자유롭게 작성하거나 수정하십시오. " +
         "AI가 보고서를 재생성하더라도 본 문서는 절대 덮어써지지 않고 영구 보존됩니다.\n\n" +
         "## 1. 타깃 오디언스 및 페르소나 소구점 보정\n" +
         "* **핵심 타깃**: 2030 직장인 및 대학생\n" +
@@ -3294,7 +3288,6 @@ function loadGoogleFormResponsesText() {
   }
 }
 
-
 // ============================================================================
 // FILE: Code_Menu.js
 // ============================================================================
@@ -3317,7 +3310,7 @@ function onOpen() {
     .addItem("[설정] 캠페인 환경 설정 및 재설정 (Configure)", "runConfigureCampaignSettings")
     .addSeparator()
     .addItem("[기획] 기획서 및 콘텐츠 명세서 생성 (PLAN & SPEC)", "guardAndRunIdeaToPlan")
-    .addItem("[양산] 초판 마케팅 콘텐츠 양산 (rv-00)", "guardAndRunInitialContent")
+    .addItem("[생성] 초판 마케팅 콘텐츠 생성 (rv-00)", "guardAndRunInitialContent")
     .addItem("[평가] 25인 AI 페르소나 다면 평가 실행 (fb-xx)", "promptAndRunJudgeEvaluation")
     .addItem("[보고서] 피드백 종합 분석 보고서 생성 (feedback_summary)", "promptAndRunFeedbackSummary")
     .addItem("[보정] 피드백 반영 콘텐츠 보정 (rv-xx)", "promptAndRunReviseAssets")
@@ -3362,7 +3355,7 @@ function guardAndRunIdeaToPlan() {
 }
 
 /**
- * [가드레일] 초판 마케팅 콘텐츠 양산 선결 조건 검증 후 실행
+ * [가드레일] 초판 마케팅 콘텐츠 생성 선결 조건 검증 후 실행
  */
 function guardAndRunInitialContent() {
   var ui = SpreadsheetApp.getUi();
@@ -3384,7 +3377,7 @@ function guardAndRunInitialContent() {
       var confirmResp = ui.alert(
         "기획서(PLAN) 누락 경고",
         "캠페인 폴더 내 기획서(PLAN) 문서가 아직 생성되지 않았습니다.\n" +
-        "기획서 없이 진행할 경우 기본 설정 템플릿으로 양산됩니다.\n\n" +
+        "기획서 없이 진행할 경우 기본 설정 템플릿으로 생성됩니다.\n\n" +
         "계속 진행하시겠습니까? (권장: [아니오] 선택 후 [기획] 메뉴 먼저 실행)",
         ui.ButtonSet.YES_NO
       );
@@ -3434,7 +3427,7 @@ function promptAndRunJudgeEvaluation() {
       ui.alert(
         "평가 대상 콘텐츠 누락",
         "다면 평가를 수행할 마케팅 콘텐츠(rv-00)가 존재하지 않습니다.\n" +
-        "[양산] 초판 마케팅 콘텐츠 양산 메뉴를 먼저 실행하여 초판을 제작하십시오.",
+        "[생성] 초판 마케팅 콘텐츠 생성 메뉴를 먼저 실행하여 초판을 제작하십시오.",
         ui.ButtonSet.OK
       );
       return;
@@ -3563,7 +3556,7 @@ function promptAndRunReviseAssets() {
     "마케팅 콘텐츠 개정본(rv-xx) 생성 회차 선택",
     "현재 등록된 최신 리비전은 rv-" + (latestRv < 10 ? "0" + latestRv : latestRv) + " (피드백 회차: fb-" + (latestFb < 10 ? "0" + latestFb : latestFb) + ")입니다.\n\n" +
     "생성할 마케팅 콘텐츠 리비전 번호를 입력하십시오 (1~99 지원, 추천: " + suggestedRv + "):\n" +
-    "(빈칸으로 두고 [확인] 클릭 시 rv-" + suggestedRvStr + " 개정본이 자동 양산됩니다)\n\n" +
+    "(빈칸으로 두고 [확인] 클릭 시 rv-" + suggestedRvStr + " 개정본이 자동 생성됩니다)\n\n" +
     "* 피드백 요약서 및 마케터 코멘트를 반영하여 카피 개정본과 비주얼 3종 및 Veo 비디오가 생성됩니다.",
     ui.ButtonSet.OK_CANCEL
   );
@@ -3751,5 +3744,4 @@ function forceSyncEngine() {
     ui.alert("동기화 실패", "엔진 동기화 중 오류가 발생했습니다: " + err.toString(), ui.ButtonSet.OK);
   }
 }
-
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 5] 기획서(PLAN/SPEC) 도출 및 멀티 채널 콘텐츠 양산/보정 엔진 (Content Engine)
+ * [모듈 5] 기획서(PLAN/SPEC) 도출 및 멀티 채널 콘텐츠 생성/보정 엔진 (Content Engine)
  */
 
 /**
@@ -122,13 +122,13 @@ function runIdeaToPlanConversion() {
 }
 
 /**
- * [액션 2] 기획서(PLAN) 및 명세서(SPEC)를 기반으로 초판 마케팅 콘텐츠(rv-00)를 일괄 양산한다.
+ * [액션 2] 기획서(PLAN) 및 명세서(SPEC)를 기반으로 초판 마케팅 콘텐츠(rv-00)를 생성한다.
  */
 function runInitialContentGeneration() {
   return withUserLock("content_generation", function() {
     var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
-  showProcessingToast("초판 마케팅 콘텐츠 양산 중 (rv-00)...", 60);
+  showProcessingToast("초판 마케팅 콘텐츠 생성 중 (rv-00)...", 60);
   try {
     var campaignFolder = getCampaignFolder();
     var campaignCode = getCampaignCode();
@@ -241,7 +241,7 @@ function runInitialContentGeneration() {
       logDetail = "미완성 에셋 선별 보충 완료 (신규 이미지 " + visResult.genImageCount + "건 생성, 기존 에셋 " + totalSkipped + "건 보존)";
     } else {
       var videoDesc = visResult.videoStatus === "generated" ? "Veo 비디오 1건" : "숏폼 콘티 독스 수록";
-      logDetail = "통합 카피 독스 1건, 대표 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 정상 양산 완료";
+      logDetail = "통합 카피 독스 1건, 대표 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 정상 생성 완료";
     }
 
     // 6. 실행 대시보드에 링크 기록
@@ -256,7 +256,7 @@ function runInitialContentGeneration() {
     );
 
     showResultModal(
-      "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
+      "초판 마케팅 콘텐츠 생성 완료 (rv-00)",
       "카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오가 준비되었습니다.\n\n" +
       "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
       "* 실행 상세 내역: " + logDetail + "\n\n" +
@@ -265,7 +265,7 @@ function runInitialContentGeneration() {
       rv00Folder.getUrl()
     );
   } catch (e) {
-    ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+    ui.alert("초판 콘텐츠 생성 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
 }
@@ -352,7 +352,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     var targetContentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
     var previousAsset = readGoogleDoc(prevRvFolder, targetContentDocName) || readGoogleDoc(prevRvFolder, "campaign_asset");
     if (!previousAsset) {
-      throw new Error("이전 마케팅 콘텐츠(" + prevRvName + ")를 찾을 수 없습니다. [초판 콘텐츠 양산]을 먼저 실행하십시오.");
+      throw new Error("이전 마케팅 콘텐츠(" + prevRvName + ")를 찾을 수 없습니다. [초판 콘텐츠 생성]을 먼저 실행하십시오.");
     }
 
     // 선결 조건 2: feedback_summary 확인
@@ -424,7 +424,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     } else {
       var videoDesc = visResult.videoStatus === "generated" ? "Veo 비디오 1건" : "숏폼 콘티 독스 수록";
       var directiveDesc = marketerDirective ? "마케터 지침서 100% 반영" : "권장 보정안 반영";
-      logDetail = "개정본 독스 1건(" + directiveDesc + "), 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 양산 완료";
+      logDetail = "개정본 독스 1건(" + directiveDesc + "), 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 생성 완료";
     }
 
     // 6. 대시보드 시트에 링크 기록

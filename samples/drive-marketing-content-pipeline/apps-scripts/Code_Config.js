@@ -19,7 +19,7 @@ var CONFIG = {
   // 단일 모델에 의존하지 않고 작업별 특성(속도, 이미지, 영상)에 맞추어 검증된 모델을 취사선택함
   BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models",
   GEMINI_MODEL: "gemini-3.8-flash",
-  MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 양산 모델
+  MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 생성 모델
   MODEL_JUDGE: "gemini-3.8-flash", // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 초고속 모델 (Veo 3.1 Fast)
@@ -79,7 +79,7 @@ var CONFIG = {
     },
     "02_content_generation": {
       title: "02_content_generation",
-      description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 양산 지침",
+      description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 생성 지침",
       systemInstruction:
         "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content 구글 독스를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },

@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 구글 드라이브(Google Drive) 마케팅 콘텐츠 생성 파이프라인 (`drive-marketing-content-pipeline`)
 
-구글 클라우드(Google Cloud) 프로젝트 생성, 신용카드 등록, 복잡한 로컬 파이썬 개발 환경 설정 없이, 개인 구글 계정으로 100% 무료 발급받는 Google AI Studio API Key 1회 등록만으로 구글 드라이브(Google Drive), 구글 시트(Google Sheets), Apps Script 기반의 종단간 마케팅 콘텐츠 양산 및 25인 AI 페르소나 다면 평가 파이프라인을 구축하는 경량 자동화 솔루션이다. (As of 2026-10-14)
+구글 클라우드(Google Cloud) 프로젝트 생성, 신용카드 등록, 복잡한 로컬 파이썬 개발 환경 설정 없이, 개인 구글 계정으로 100% 무료 발급받는 Google AI Studio API Key 1회 등록만으로 구글 드라이브(Google Drive), 구글 시트(Google Sheets), Apps Script 기반의 종단간 마케팅 콘텐츠 생성 및 25인 AI 페르소나 다면 평가 파이프라인을 구축하는 경량 자동화 솔루션이다. (As of 2026-10-14)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -28,7 +28,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 - 구글 클라우드 프로젝트 승인이나 파이썬 개발 환경 없이 브라우저에서 AI 마케팅 자동화를 즉시 검증하고 싶을 때
 - 신제품 출시 전 25인 다면 소비자 반응 및 정량 평점, 정성 의견, 이미지/비디오 VoC를 사전 통합 분석하고 싶을 때
-- 단순 1회성 생성을 넘어, 기획서(PLAN)와 제작 명세서(SPEC)에 맞춘 엄격한 콘텐츠 양산 및 마케터 피드백 보정 루프가 필요할 때
+- 단순 1회성 생성을 넘어, 기획서(PLAN)와 제작 명세서(SPEC)에 맞춘 엄격한 콘텐츠 생성 및 마케터 피드백 보정 루프가 필요할 때
 
 ---
 
@@ -36,7 +36,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart LR
-    A["1. 아이디어 기획<br/>(PLAN & SPEC)"] --> B["2. 콘텐츠 양산<br/>(카피, 이미지, 영상)"]
+    A["1. 아이디어 기획<br/>(PLAN & SPEC)"] --> B["2. 콘텐츠 생성<br/>(카피, 이미지, 영상)"]
     B --> C["3. 25인 다면 평가<br/>(AI 페르소나 & VoC)"]
     C --> D["4. 마케터 보정<br/>(인간 참여형 결정)"]
     D -.->|N차 개정 루프| B
@@ -85,8 +85,8 @@ flowchart LR
    - 캠페인 아이디어를 입력하면 `prompts/01_idea_to_plan` 지침에 따라 전문 마케팅 기획서(`PLAN`)와 멀티 채널 콘텐츠 제작 명세서(`SPEC`) 구글 독스가 자동 도출된다.
    - 마케터는 브라우저에서 직접 `SPEC` 수치(배너 규격, 숏폼 길이, 카피 채널 등)를 자유롭게 수정할 수 있다.
 
-4. `[양산] 초판 마케팅 콘텐츠 양산 (rv-00)`:
-   - `SPEC` 규격과 `prompts/02_content_generation` 지침에 맞추어 다음 산출물을 `output/rv-00/`에 일괄 양산한다:
+4. `[생성] 초판 마케팅 콘텐츠 생성 (rv-00)`:
+   - `SPEC` 규격과 `prompts/02_content_generation` 지침에 맞추어 다음 산출물을 `output/rv-00/`에 생성한다:
      - 광고 카피라이팅 및 모바일 숏폼 영상 콘티가 통합된 단일 구글 독스(`campaign_content`)
      - Gemini Nano Banana 2.1 기반 3대 대표 비주얼 이미지 세트(16:9 가로 배너, 9:16 세로 포스터, 1:1 SNS 피드)
      - Gemini Veo 3.1 Fast 모델을 호출하여 렌더링한 9:16 모바일 숏폼 실제 영상 바이너리(`00_shorts.mp4`)
@@ -103,7 +103,7 @@ flowchart LR
    - **마케터 자산 영구 보존 원칙**: 인간 마케터의 최종 의사 결정 문서인 `마케터 보정 지침` 구글 독스를 독립 파일로 분리 생성한다. 마케터가 작성한 보정 지침은 향후 보고서(`feedback_summary`)를 몇 번 재생성하더라도 절대 덮어써지지 않고 100% 안전하게 보존된다.
 
 7. `[보정] 피드백 반영 콘텐츠 보정 (rv-xx)`:
-   - 마케터가 `마케터 보정 지침` 독스에 작성한 최종 의사 결정 지침(최우선 구속력)과 다면 피드백을 반영하여 개정된 완결 카피 및 숏폼 콘티(`campaign_content`), 새로운 비주얼 이미지 3종 세트, 그리고 Gemini Veo 신규 숏폼 영상(`xx_shorts.mp4`)이 패키징된 차기 리비전(`output/rv-01/` 등)을 양산한다.
+   - 마케터가 `마케터 보정 지침` 독스에 작성한 최종 의사 결정 지침(최우선 구속력)과 다면 피드백을 반영하여 개정된 완결 카피 및 숏폼 콘티(`campaign_content`), 새로운 비주얼 이미지 3종 세트, 그리고 Gemini Veo 신규 숏폼 영상(`xx_shorts.mp4`)이 패키징된 차기 리비전(`output/rv-01/` 등)을 생성한다.
    - **리비전 안전 가드레일**: 기존 회차 폴더에 모든 파일이 완비되어 있으면 기존 성과물을 파괴하지 않고 차기 리비전(rv-xx+1)으로 자동 승격 생성할 수 있도록 안내한다.
 
 8. 부가 유틸리티 메뉴:
@@ -114,12 +114,12 @@ flowchart LR
 > [!TIP]
 > - **구글 시트 컨트롤 타워 6대 실행 대시보드 및 타임라인 이력**:
 >   구글 시트 첫 번째 탭의 실행 대시보드는 파이프라인의 모든 작업을 누적 추가(Append-only) 방식으로 실시간 기록한다:
->   - `실행 단계 (150px)`: 초기 환경 구축, 기획서, 초판 양산, 피드백 평가, 개정본 보정 등 식별자
+>   - `실행 단계 (150px)`: 초기 환경 구축, 기획서, 초판 생성, 피드백 평가, 개정본 보정 등 식별자
 >   - `진행 상태 (100px)`: 완료(초록 배지), 진행 중(노란 배지)
 >   - `산출물 바로가기 (300px)`: 클릭 시 해당 드라이브 폴더 또는 구글 독스로 1초 직행 하이퍼링크
 >   - `완료 시각 (150px)`: 작업 완료 타임스탬프 (한국 표준시 기준)
 >   - `소요 시간 (100px)`: 엔진 실제 처리 시간 (초/분 단위)
->   - `실행 로그 및 상세 내역 (450px)`: 양산된 미디어 규격, 누락 보충 내역, 모델 평가 요약 (단일 행 클립 적용)
+>   - `실행 로그 및 상세 내역 (450px)`: 생성된 미디어 규격, 누락 보충 내역, 모델 평가 요약 (단일 행 클립 적용)
 > - **GitHub 퍼블릭 저장소 기반 SSOT 자동 동기화**:
 >   초기화(`[초기화]`) 실행 시 본 GitHub 저장소의 `prompts/*.md` 파일들과 `data/ai_personas.json`이 Google Apps Script의 `UrlFetchApp`을 통해 실시간으로 인출되어 구글 드라이브 구글 독스 및 캠페인 루트에 자동 시딩된다. 저장소의 마크다운 프롬프트를 갱신하면, Apps Script 코드를 다시 배포할 필요 없이 구글 시트에서 `[초기화]` 메뉴만 누르면 최신 프롬프트와 페르소나가 즉시 동기화된다.
 > - **프롬프트 외부화 및 마케터 직접 수정 체계**:
@@ -141,7 +141,7 @@ My Drive/
     ├── ai_personas.json (캠페인 루트 직속 25인 한국인 마스터 AI 페르소나 패널)
     ├── prompts/ (마케터 직접 편집 가능한 6대 프롬프트 구글 독스)
     │   ├── 01_idea_to_plan (기획서 PLAN 및 명세서 SPEC 도출 지침)
-    │   ├── 02_content_generation (초판 카피 및 모바일 숏폼 콘티 양산 지침)
+    │   ├── 02_content_generation (초판 카피 및 모바일 숏폼 콘티 생성 지침)
     │   ├── 03_persona_evaluation (25인 페르소나 다면 평가 및 의견 포인트 도출 지침)
     │   ├── 04_feedback_summary (VoC 및 VLM 멀티모달 분석 기반 종합 보고서 지침)
     │   ├── 05_content_revision (피드백 요약서 반영 차기 리비전 보정 지침)
