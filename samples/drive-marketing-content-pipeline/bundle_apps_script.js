@@ -2118,6 +2118,8 @@ function initDashboardSheet() {
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle")
       .setWrap(false);
+    // 숫자 컬럼(소요 시간, 소모 토큰) 헤더 우측 정렬
+    sheet.getRange("E2:F2").setHorizontalAlignment("right");
     sheet.setRowHeight(2, 28);
 
     // 컬럼 너비 설정 (사용자 지정: 150, 100, 300, 150, 100, 150, 450)
@@ -2209,21 +2211,21 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
 
-    // 5열: 소요 시간 (100)
+    // 5열: 소요 시간 (100) - 숫자 메트릭 우측 정렬
     var durText = formatDuration(durationSec);
     sheet.getRange(targetRow, 5)
       .setValue(durText)
       .setFontSize(9)
       .setFontColor("#334155")
-      .setHorizontalAlignment("center")
+      .setHorizontalAlignment("right")
       .setVerticalAlignment("middle");
 
-    // 6열: 소모 토큰 (150)
+    // 6열: 소모 토큰 (150) - 숫자 메트릭 우측 정렬
     sheet.getRange(targetRow, 6)
       .setValue(tokenVal)
       .setFontSize(9)
       .setFontColor("#334155")
-      .setHorizontalAlignment("center")
+      .setHorizontalAlignment("right")
       .setVerticalAlignment("middle");
 
     // 7열: 실행 로그 및 상세 내역 (450)
