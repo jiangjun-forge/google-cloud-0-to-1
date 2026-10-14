@@ -333,8 +333,8 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
     var duration = durationSeconds || 5;
 
     var candidateModels = [
-      (CONFIG && CONFIG.VIDEO_MODEL_NAME) || "veo-3.1-generate-preview",
-      "veo-3.1-fast-generate-preview"
+      (CONFIG && CONFIG.VIDEO_MODEL_NAME) || "veo-3.1-fast-generate-preview",
+      "veo-3.1-generate-preview"
     ];
 
     var operationName = null;
@@ -437,16 +437,15 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
           }
           if (vObj.uri) {
             Logger.log("Veo 비디오 파일 다운로드 중: " + vObj.uri);
-            // 1차: x-goog-api-key 헤더 포함 다운로드
-            var dlResp = UrlFetchApp.fetch(vObj.uri, {
+            var downloadUrl = vObj.uri + (vObj.uri.indexOf("?") === -1 ? "?key=" + apiKey : "&key=" + apiKey);
+            var dlResp = UrlFetchApp.fetch(downloadUrl, {
               method: "get",
               headers: { "x-goog-api-key": apiKey },
               followRedirects: true,
               muteHttpExceptions: true
             });
-            // 만약 인증 방식 충돌(400/403) 시 헤더 없이 순수 다운로드 2차 시도
             if (dlResp.getResponseCode() !== 200) {
-              dlResp = UrlFetchApp.fetch(vObj.uri, {
+              dlResp = UrlFetchApp.fetch(downloadUrl, {
                 method: "get",
                 followRedirects: true,
                 muteHttpExceptions: true

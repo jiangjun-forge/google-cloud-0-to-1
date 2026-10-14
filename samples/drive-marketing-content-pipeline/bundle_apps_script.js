@@ -35,7 +35,7 @@ var CONFIG = {
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 양산 모델
   MODEL_JUDGE: "gemini-3.8-flash", // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
-  VIDEO_MODEL_NAME: "veo-3.1-generate-preview", // 모바일 숏폼 영상 생성 최신 모델 (Veo 3.1 Preview)
+  VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 초고속 모델 (Veo 3.1 Fast)
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
   EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
   
@@ -417,8 +417,8 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
     var duration = durationSeconds || 5;
 
     var candidateModels = [
-      (CONFIG && CONFIG.VIDEO_MODEL_NAME) || "veo-3.1-generate-preview",
-      "veo-3.1-fast-generate-preview"
+      (CONFIG && CONFIG.VIDEO_MODEL_NAME) || "veo-3.1-fast-generate-preview",
+      "veo-3.1-generate-preview"
     ];
 
     var operationName = null;
@@ -521,16 +521,15 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
           }
           if (vObj.uri) {
             Logger.log("Veo 비디오 파일 다운로드 중: " + vObj.uri);
-            // 1차: x-goog-api-key 헤더 포함 다운로드
-            var dlResp = UrlFetchApp.fetch(vObj.uri, {
+            var downloadUrl = vObj.uri + (vObj.uri.indexOf("?") === -1 ? "?key=" + apiKey : "&key=" + apiKey);
+            var dlResp = UrlFetchApp.fetch(downloadUrl, {
               method: "get",
               headers: { "x-goog-api-key": apiKey },
               followRedirects: true,
               muteHttpExceptions: true
             });
-            // 만약 인증 방식 충돌(400/403) 시 헤더 없이 순수 다운로드 2차 시도
             if (dlResp.getResponseCode() !== 200) {
-              dlResp = UrlFetchApp.fetch(vObj.uri, {
+              dlResp = UrlFetchApp.fetch(downloadUrl, {
                 method: "get",
                 followRedirects: true,
                 muteHttpExceptions: true

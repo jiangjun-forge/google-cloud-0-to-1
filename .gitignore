@@ -241,6 +241,7 @@ scratch/
 
 # Temporary Folder
 tmp/
+test_output/
 
 # Generated diagnostic and sample files
 dataplex_glossary_terms*.yaml
