@@ -3938,10 +3938,18 @@ function showResultModal(title, message, btnText, btnUrl) {
  */
 function showPipelineSidebar() {
   var ui = SpreadsheetApp.getUi();
-  var htmlOutput = HtmlService.createHtmlOutput(getPipelineSidebarHtml())
-    .setTitle("마케팅 파이프라인 제어 패널")
-    .setWidth(340);
-  ui.showSidebar(htmlOutput);
+  try {
+    var htmlOutput = HtmlService.createHtmlOutput(getPipelineSidebarHtml())
+      .setTitle("마케팅 파이프라인 제어 패널")
+      .setWidth(340);
+    ui.showSidebar(htmlOutput);
+  } catch (err) {
+    ui.alert(
+      "사이드바 실행 오류",
+      "우측 패널(사이드바)을 여는 중 오류가 발생했습니다:\n" + err.toString(),
+      ui.ButtonSet.OK
+    );
+  }
 }
 
 /**

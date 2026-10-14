@@ -92,25 +92,56 @@ function loadPipelineEngine(forceRefresh) {
 }
 
 /**
+ * 전역 스코프에서 타깃 함수를 안전하게 탐색한다.
+ */
+function findTargetFunction(fnName) {
+  if (typeof globalThis !== "undefined" && typeof globalThis[fnName] === "function") {
+    return globalThis[fnName];
+  }
+  if (typeof this !== "undefined" && typeof this[fnName] === "function") {
+    return this[fnName];
+  }
+  try {
+    var fn = eval(fnName);
+    if (typeof fn === "function") return fn;
+  } catch (e) {
+    // 무시
+  }
+  return null;
+}
+
+/**
  * 부트스트랩 프록시 디스패처 (런타임 함수 동적 호출)
- * 지연 로딩(Lazy Loading): 사용자가 메뉴를 클릭할 때 최신 코드를 로드하므로 단순 트리거(onOpen)의 권한 제약을 완벽히 우회한다.
+ * [자가 치유(Self-Healing) 엔진]:
+ * 1. 로컬 캐시에서 코드를 로드하여 실행을 시도한다.
+ * 2. 만약 해당 함수가 로컬 캐시에 없다면(신규 기능 추가 등), 즉시 GitHub에서 최신 엔진을 1회 자동 다운로드하여 자가 치유 갱신 후 실행한다.
+ * 3. 예외 발생 시 구글 시트 알림 대화상자로 명확한 원인을 즉각 안내한다.
  */
 function dispatch(fnName, args) {
-  loadPipelineEngine(false);
-  var targetFn = (typeof globalThis !== "undefined" && typeof globalThis[fnName] === "function") ? globalThis[fnName]
-               : (typeof this !== "undefined" && typeof this[fnName] === "function") ? this[fnName]
-               : null;
-  if (!targetFn) {
-    try {
-      targetFn = eval(fnName);
-    } catch (e) {
-      targetFn = null;
+  try {
+    loadPipelineEngine(false);
+    var targetFn = findTargetFunction(fnName);
+
+    // [핵심] 캐시된 로컬 코드에 해당 함수가 없는 경우, GitHub 최신 코드를 즉시 자동 갱신!
+    if (!targetFn) {
+      Logger.log("함수 [" + fnName + "] 미발견, GitHub 최신 엔진 자동 동기화 시도...");
+      loadPipelineEngine(true);
+      targetFn = findTargetFunction(fnName);
     }
-  }
-  if (typeof targetFn === "function") {
-    return targetFn.apply(this, args || []);
-  } else {
-    throw new Error("파이프라인 엔진 내에 함수 [" + fnName + "]가 정의되지 않았습니다.");
+
+    if (typeof targetFn === "function") {
+      return targetFn.apply(this, args || []);
+    } else {
+      throw new Error("파이프라인 엔진 내에 함수 [" + fnName + "]가 정의되지 않았습니다.");
+    }
+  } catch (err) {
+    var ui = SpreadsheetApp.getUi();
+    ui.alert(
+      "기능 실행 오류",
+      "[" + fnName + "] 실행 중 오류가 발생했습니다:\n" + err.toString() + "\n\n상단 메뉴의 [엔진 동기화]를 1회 실행해주십시오.",
+      ui.ButtonSet.OK
+    );
+    throw err;
   }
 }
 
