@@ -459,8 +459,11 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
     }
 
     var personasText = "";
-    var inputFolder = getCampaignSubFolder(["input"]);
-    personasText = readTextFile(inputFolder, "ai_personas.json") || readTextFile(campaignFolder, "ai_personas.json");
+    personasText = readTextFile(campaignFolder, "ai_personas.json");
+    if (!personasText) {
+      var inputFolder = getCampaignSubFolder(["input"]);
+      personasText = readTextFile(inputFolder, "ai_personas.json");
+    }
     if (!personasText) {
       var campaignDataFolder = getCampaignSubFolder(["data"]);
       personasText = readTextFile(campaignDataFolder, "ai_personas.json");
@@ -472,7 +475,8 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
       ? "- 콘텐츠 제작 명세서(SPEC)에 정의된 피드백 설문 항목을 충실히 반영하여 의견을 개진하라.\n"
       : "- 콘텐츠 제작 명세서(SPEC)에 특정 설문 문항이 고정되어 있지 않으므로, '열린 피드백(Open-ended Feedback)' 원칙을 적용한다. 각 페르소나는 자신의 연령, 성별, 직업, 라이프스타일 관점에서 장점 호평, 단점 비판, 가격 저항, 사용성 의문, 구매 전환 장벽 등 다각도의 열린 의견을 자유롭게 개진하라.\n";
 
-    var systemInstruction =
+    var promptDocTemplate = (typeof getPromptTemplate === "function") ? getPromptTemplate("03_persona_evaluation") : "";
+    var systemInstruction = promptDocTemplate || (
       "당신은 엔터프라이즈 마케팅 리서치 및 소비자 심리 분석 전문 AI이다.\n" +
       "소비자는 사내 기획서를 알지 못하며, 시장에 공개된 마케팅 캠페인 콘텐츠(" + prevRvName + " 카피 및 비주얼)만을 보고 반응한다.\n" +
       "제공된 마케팅 콘텐츠(" + prevRvName + ") 산출물을 면밀히 검토하고, 함께 제공된 한국인 25인 가상 페르소나 프로필의 관점에 깊이 빙의하여 피드백을 작성하라.\n\n" +
@@ -514,7 +518,8 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
       "1. 이모지와 중간 점을 일절 쓰지 말고 쉼표(,)를 사용하십시오.\n" +
       "2. 모든 서술은 단호하고 격조 높은 문어체/평서문('-다' 체)으로 작성하십시오.\n" +
       "3. 한글 복합어는 철저하게 띄어 쓰십시오.\n" +
-      "4. 반드시 25인의 한국인 프로필 정보를 충실히 반영하여 25개 객체와 총 50개 이상의 세부 포인트를 완성하십시오.";
+      "4. 반드시 25인의 한국인 프로필 정보를 충실히 반영하여 25개 객체와 총 50개 이상의 세부 포인트를 완성하십시오."
+    );
 
     var userPrompt =
       "[대중에게 공개된 마케팅 캠페인 콘텐츠 (" + prevRvName + ")]\n" +

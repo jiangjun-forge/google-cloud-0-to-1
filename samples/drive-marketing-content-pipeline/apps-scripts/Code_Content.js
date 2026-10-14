@@ -1,0 +1,258 @@
+/**
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 5] 기획서(PLAN/SPEC) 도출 및 멀티 채널 콘텐츠 양산/보정 엔진 (Content Engine)
+ */
+
+/**
+ * [액션 1] 마케터 자연어 아이디어를 기반으로 캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC)를 자동 도출한다.
+ */
+function runIdeaToPlanConversion() {
+  var ui = SpreadsheetApp.getUi();
+  showProcessingToast("아이디어 기반 기획서(PLAN) 및 명세서(SPEC) 자동 도출 중...", 30);
+  try {
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+    var inputFolder = getCampaignSubFolder(["input"]);
+
+    // 1. input/아이디어 메모 읽기 또는 대화상자 프롬프트
+    var ideaMemo = readGoogleDoc(inputFolder, "아이디어 메모");
+    if (!ideaMemo || ideaMemo.trim().length < 10) {
+      var promptResp = ui.prompt(
+        "마케팅 캠페인 아이디어 입력",
+        "캠페인 컨셉이나 아이디어 초안을 자유롭게 입력하십시오 (예: 2026 프리미엄 노이즈 캔슬링 헤드폰 론칭 프로모션):",
+        ui.ButtonSet.OK_CANCEL
+      );
+      if (promptResp.getSelectedButton() === ui.Button.OK) {
+        ideaMemo = promptResp.getResponseText().trim();
+        if (ideaMemo) {
+          saveGoogleDoc(inputFolder, "아이디어 메모", ideaMemo);
+        }
+      }
+    }
+
+    if (!ideaMemo || ideaMemo.trim().length < 5) {
+      throw new Error("캠페인 아이디어가 입력되지 않아 기획서 생성을 중단합니다. [아이디어 메모] 문서를 확인하십시오.");
+    }
+
+    // 2. 구글 독스 기반 프롬프트 템플릿 로드 (마케터 수정분 자동 반영)
+    var systemInstruction = getPromptTemplate("01_idea_to_plan");
+    var userPrompt =
+      "다음은 마케터가 작성한 캠페인 아이디어 초안 메모이다.\n\n" +
+      "### [마케터 아이디어 메모]\n" + ideaMemo + "\n\n" +
+      "위 아이디어를 정밀 분석하여 다음 두 개의 독립된 문서 본문을 마크다운으로 작성하라:\n\n" +
+      "===DOCUMENT_SPLIT_PLAN===\n" +
+      "(여기에 마케팅 캠페인 기획서 PLAN 본문 작성)\n\n" +
+      "===DOCUMENT_SPLIT_SPEC===\n" +
+      "(여기에 멀티 채널 콘텐츠 제작 명세서 SPEC 본문 작성: 가로 16:9 배너, 세로 9:16 포스터, 정사각 1:1 SNS 피드, 세로 9:16 모바일 숏폼 영상 15초 규격 포함)";
+
+    var rawResponse = callGemini(systemInstruction, userPrompt);
+
+    // 3. 기획서(PLAN)와 제작 명세서(SPEC) 분리 저장
+    var planContent = "";
+    var specContent = "";
+
+    if (rawResponse.indexOf("===DOCUMENT_SPLIT_PLAN===") !== -1 && rawResponse.indexOf("===DOCUMENT_SPLIT_SPEC===") !== -1) {
+      var parts = rawResponse.split("===DOCUMENT_SPLIT_SPEC===");
+      planContent = parts[0].replace("===DOCUMENT_SPLIT_PLAN===", "").trim();
+      specContent = parts[1].trim();
+    } else {
+      planContent = rawResponse;
+      specContent =
+        "# 콘텐츠 제작 명세서 (SPEC)\n\n" +
+        "* 가로 배너: 16:9 (1920x1080) - 구글 디스플레이 네트워크\n" +
+        "* 세로 포스터: 9:16 (1080x1920) - 모바일 스토리\n" +
+        "* 정방형 SNS: 1:1 (1080x1080) - 인스타그램 피드\n" +
+        "* 모바일 숏폼: 9:16 (1080x1920, 15초) - 유튜브 쇼츠, 인스타그램 릴스\n";
+    }
+
+    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
+    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
+
+    var planFile = saveGoogleDoc(campaignFolder, planDocName, planContent);
+    var specFile = saveGoogleDoc(campaignFolder, specDocName, specContent);
+
+    // 4. 대시보드 시트에 링크 기록
+    recordStepResultToSheet("기획서 (PLAN)", "마케팅 캠페인 기획서", "완료", planFile.getUrl(), "구글 독스 열기 (PLAN)");
+    recordStepResultToSheet("제작 명세서 (SPEC)", "멀티 채널 콘텐츠 제작 명세서", "완료", specFile.getUrl(), "구글 독스 열기 (SPEC)");
+
+    ui.alert(
+      "기획서 및 명세서 생성 완료",
+      "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 캠페인 폴더에 자동 생성되었습니다.\n\n" +
+      "마케터는 브라우저에서 직접 SPEC 수치(해상도, 숏폼 길이 등)를 수정한 뒤 다음 단계를 진행할 수 있습니다.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("기획서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * [액션 2] 기획서(PLAN) 및 명세서(SPEC)를 기반으로 초판 마케팅 콘텐츠(rv-00)를 일괄 양산한다.
+ */
+function runInitialContentGeneration() {
+  var ui = SpreadsheetApp.getUi();
+  showProcessingToast("초판 마케팅 콘텐츠 양산 중 (rv-00)...", 60);
+  try {
+    var campaignFolder = getCampaignFolder();
+    var campaignCode = getCampaignCode();
+    var rv00Folder = getCampaignSubFolder(["output", "rv-00"]);
+
+    // 선결 조건 검사: PLAN 문서 확인
+    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
+    var planContent = readGoogleDoc(campaignFolder, planDocName);
+    if (!planContent) {
+      planContent = readGoogleDoc(campaignFolder, "BRD");
+    }
+    if (!planContent) {
+      var confirmGen = ui.alert(
+        "기획서(PLAN) 누락 안내",
+        "캠페인 기획서(PLAN) 문서를 찾을 수 없습니다.\n지금 [기획서 및 명세서 생성]을 먼저 실행하시겠습니까?",
+        ui.ButtonSet.YES_NO
+      );
+      if (confirmGen === ui.Button.YES) {
+        runIdeaToPlanConversion();
+        return;
+      } else {
+        return;
+      }
+    }
+
+    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
+    var specContent = readGoogleDoc(campaignFolder, specDocName) || "";
+
+    // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
+    var systemInstruction = getPromptTemplate("02_content_generation");
+    var promptText =
+      "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
+      "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
+      "### [1. 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+      "### [2. 멀티 채널 콘텐츠 제작 명세서 (SPEC)]\n" + (specContent || "기본 규격 준수");
+
+    var generatedContent = callGemini(systemInstruction, promptText);
+
+    // 2. 동적 비주얼 프롬프트 도출 및 숏폼 영상 콘티 완전 통합
+    var visualBrief = extractDynamicVisualPrompt(
+      generatedContent,
+      planContent,
+      "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
+    );
+    var finalizedContent = ensureShortsScriptInCampaignContent(generatedContent, "00", visualBrief);
+
+    // 3. campaign_content 단일 구글 독스 문서 저장
+    var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+    var contentDocFile = saveGoogleDoc(rv00Folder, contentDocName, finalizedContent);
+
+    // 4. 실시간 대표 비주얼 이미지 3종 및 Veo 비디오 생성
+    Logger.log("동적 도출된 비주얼 프롬프트 (rv-00): " + visualBrief);
+    generateAndSaveVisualAssets(rv00Folder, "00", visualBrief);
+
+    // 5. 실행 대시보드에 링크 기록
+    recordStepResultToSheet("초판 마케팅 콘텐츠", "카피 및 비주얼 (rv-00)", "완료", rv00Folder.getUrl(), "구글 드라이브 폴더 열기 (rv-00)");
+
+    ui.alert(
+      "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
+      "초판 마케팅 카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종 비율 세트 생성이 완료되었습니다.\n\n" +
+      "구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * [액션 3] 피드백 요약본(feedback_summary)과 마케터 지침을 반영하여 N차 개정본 마케팅 콘텐츠를 완결 보정한다.
+ */
+function runReviseContent(targetRoundOpt, isSilentOpt) {
+  var ui = SpreadsheetApp.getUi();
+  var isSilent = (isSilentOpt === true);
+  try {
+    var campaignFolder = getCampaignFolder();
+
+    // 회차 판별 (fb-01 -> rv-01, fb-02 -> rv-02 ...)
+    var targetRound = targetRoundOpt;
+    if (!targetRound) {
+      var latestRv = detectLatestRevisionRoundNum();
+      var autoRound = Math.max(latestRv + 1, 1);
+      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
+    }
+
+    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+    var prevRoundNum = roundNum - 1;
+    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+    var targetRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
+
+    showProcessingToast("피드백 반영 마케팅 콘텐츠 보정 중 (" + targetRvName + ")...", 75);
+
+    var prevRvFolder = getCampaignSubFolder(["output", prevRvName]);
+    var targetRvFolder = getCampaignSubFolder(["output", targetRvName]);
+    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+    // 선결 조건 1: 이전 콘텐츠 확인
+    var targetContentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+    var previousAsset = readGoogleDoc(prevRvFolder, targetContentDocName) || readGoogleDoc(prevRvFolder, "campaign_asset");
+    if (!previousAsset) {
+      throw new Error("이전 마케팅 콘텐츠(" + prevRvName + ")를 찾을 수 없습니다. [초판 콘텐츠 양산]을 먼저 실행하십시오.");
+    }
+
+    // 선결 조건 2: feedback_summary 확인
+    var summaryContent = readGoogleDoc(feedbackFolder, "feedback_summary");
+    if (!summaryContent) {
+      throw new Error("피드백 요약본(" + targetRound + "/feedback_summary)을 찾을 수 없습니다. [피드백 종합 분석 보고서 생성]을 먼저 실행하십시오.");
+    }
+
+    var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
+    var planContent = readGoogleDoc(campaignFolder, planDocName) || readGoogleDoc(campaignFolder, "BRD") || "마케팅 캠페인 기획서";
+    var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
+    var specContent = readGoogleDoc(campaignFolder, specDocName) || "콘텐츠 제작 명세서";
+
+    // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
+    var systemInstruction = getPromptTemplate("05_content_revision");
+    var userPrompt =
+      "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)이다.\n\n" +
+      "### [1. 원천 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+      "### [2. 콘텐츠 제작 명세서 (SPEC)]\n" + specContent + "\n\n" +
+      "### [3. 직전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + previousAsset + "\n\n" +
+      "### [4. 고객 및 AI 페르소나 피드백 요약본 (feedback_summary)]\n" + summaryContent;
+
+    var refinedAsset = callGemini(systemInstruction, userPrompt);
+
+    // 2. 동적 비주얼 프롬프트 도출 및 숏폼 영상 콘티 완전 통합
+    var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
+    var dynamicBrief = extractDynamicVisualPrompt(
+      refinedAsset,
+      summaryContent,
+      "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+    );
+    var finalizedContent = ensureShortsScriptInCampaignContent(refinedAsset, prefix, dynamicBrief);
+
+    // 3. campaign_content 단일 구글 독스 문서 저장
+    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, finalizedContent);
+
+    // 4. 대시보드 시트에 링크 기록
+    var stepTitle = roundNum + "차 마케팅 콘텐츠 개정본 (" + targetRvName + ")";
+    recordStepResultToSheet(targetRvName, stepTitle, "완료", targetRvFolder.getUrl(), "구글 드라이브 폴더 열기 (" + targetRvName + ")");
+
+    // 5. 신규 비주얼 이미지 3종 및 Veo 비디오 생성
+    Logger.log("동적 도출된 비주얼 프롬프트 (" + targetRvName + "): " + dynamicBrief);
+    generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief);
+
+    if (!isSilent) {
+      ui.alert(
+        "마케팅 콘텐츠 반자율 보정 완료 (" + targetRvName + ")",
+        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + ") 및 신규 비주얼 이미지 3종 비율 세트 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+        ui.ButtonSet.OK
+      );
+    }
+    return finalizedContent;
+  } catch (e) {
+    if (!isSilent) {
+      ui.alert("콘텐츠 보정 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+    } else {
+      throw e;
+    }
+  }
+}
