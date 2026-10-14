@@ -30,6 +30,159 @@ function saveApiKeyInline(apiKey) {
 }
 
 /**
+ * Gemini API 호출 실패 또는 파싱 오류 시 100% 무중단 안내를 보장하는 결정론적 룰 기반 폴백 엔진
+ *
+ * @param {string} userMessage - 마케터의 질문 텍스트
+ * @param {Object} status - 현재 파이프라인 실제 상태 객체
+ * @return {Object} { success: boolean, reply: string, action: string|null, actionLabel: string|null, taskName: string|null }
+ */
+function getDeterministicFallback(userMessage, status) {
+  var q = (userMessage || "").toLowerCase().replace(/\s+/g, "");
+
+  // 1. 현재 상태 질의 ("지금뭐해야", "다음단계", "어떻게", "순서")
+  if (q.indexOf("지금") !== -1 || q.indexOf("다음") !== -1 || q.indexOf("순서") !== -1 || q.indexOf("뭐해") !== -1) {
+    if (!status.folderUrl) {
+      return {
+        success: true,
+        reply: "캠페인 작업 공간이 아직 구축되지 않았습니다. 먼저 작업 공간을 초기화해 주십시오.",
+        action: "initCampaignWorkspace",
+        actionLabel: "[초기화] 캠페인 작업 공간 구축",
+        taskName: "캠페인 작업 공간 구축"
+      };
+    }
+    if (!status.planDocUrl) {
+      return {
+        success: true,
+        reply: "현재 아이디어 메모가 준비되어 있습니다. 1단계로 캠페인 기획서(PLAN)와 제작 명세서(SPEC) 생성을 진행해 주십시오.",
+        action: "guardAndRunIdeaToPlan",
+        actionLabel: "기획서 (PLAN & SPEC) 도출하기",
+        taskName: "기획서 및 명세서 생성"
+      };
+    }
+    if (!status.contentDocUrl) {
+      return {
+        success: true,
+        reply: "기획서가 확정되어 있습니다. 2단계로 초판 마케팅 콘텐츠(rv-00: 카피, 비주얼 이미지 3종, Veo 숏폼 영상)를 제작할 차례입니다.",
+        action: "guardAndRunInitialContent",
+        actionLabel: "초판 콘텐츠 (rv-00) 제작하기",
+        taskName: "초판 콘텐츠 생성"
+      };
+    }
+    if (!status.summaryDocUrl) {
+      return {
+        success: true,
+        reply: "초판 콘텐츠가 준비되어 있습니다. 3단계 25인 AI 페르소나 다면 평가 또는 4단계 피드백 종합 보고서 생성을 진행해 주십시오.",
+        action: "promptAndRunPersonaEvaluation",
+        actionLabel: "25인 AI 페르소나 다면 평가 실행하기",
+        taskName: "25인 AI 페르소나 평가"
+      };
+    }
+    return {
+      success: true,
+      reply: "피드백 종합 보고서 검토 후, 마케터 보정 지침을 반영하여 5단계 차기 리비전 콘텐츠 보정을 진행해 주십시오.",
+      action: "promptAndRunFeedbackRevision",
+      actionLabel: "피드백 반영 콘텐츠 보정하기",
+      taskName: "피드백 반영 콘텐츠 보정"
+    };
+  }
+
+  // 2. 기획서 요청 ("기획", "plan")
+  if (q.indexOf("기획") !== -1 || q.indexOf("plan") !== -1) {
+    return {
+      success: true,
+      reply: "캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 도출을 시작합니다.",
+      action: "guardAndRunIdeaToPlan",
+      actionLabel: "기획서 (PLAN & SPEC) 도출하기",
+      taskName: "기획서 및 명세서 생성"
+    };
+  }
+
+  // 3. 초판/콘텐츠 요청 ("초판", "콘텐츠", "카피", "이미지", "영상", "제작")
+  if (q.indexOf("초판") !== -1 || q.indexOf("콘텐츠") !== -1 || q.indexOf("제작") !== -1 || q.indexOf("카피") !== -1) {
+    return {
+      success: true,
+      reply: "초판 마케팅 콘텐츠(카피라이팅, 비주얼 이미지 3종, Veo 숏폼 영상) 세트 생성을 시작합니다.",
+      action: "guardAndRunInitialContent",
+      actionLabel: "초판 콘텐츠 (rv-00) 제작하기",
+      taskName: "초판 콘텐츠 생성"
+    };
+  }
+
+  // 4. 평가 요청 ("25인", "페르소나", "다면평가", "평가")
+  if (q.indexOf("25인") !== -1 || q.indexOf("페르소나") !== -1 || q.indexOf("평가") !== -1) {
+    if (q.indexOf("뭐야") !== -1 || q.indexOf("설명") !== -1) {
+      return {
+        success: true,
+        reply: "25인 AI 페르소나 평가는 대한민국 시장 환경과 타깃 오디언스를 대변하는 25인의 가상 소비자 패널이 정량 평점 및 구체적 VoC를 제공하는 다면 평가 시스템입니다.",
+        action: "promptAndRunPersonaEvaluation",
+        actionLabel: "25인 다면 평가 실행하기",
+        taskName: "25인 AI 페르소나 평가"
+      };
+    }
+    return {
+      success: true,
+      reply: "25인 맞춤 AI 페르소나 다면 평가(fb-xx)를 실행합니다.",
+      action: "promptAndRunPersonaEvaluation",
+      actionLabel: "25인 다면 평가 실행하기",
+      taskName: "25인 AI 페르소나 평가"
+    };
+  }
+
+  // 5. 보고서 요청 ("보고서", "요약서", "피드백")
+  if (q.indexOf("보고서") !== -1 || q.indexOf("피드백") !== -1 || q.indexOf("요약") !== -1) {
+    return {
+      success: true,
+      reply: "고객 VoC 및 VLM 멀티모달 분석, t-SNE 여론 지형도가 종합된 피드백 분석 보고서를 도출합니다.",
+      action: "promptAndRunFeedbackSummary",
+      actionLabel: "피드백 종합 보고서 생성하기",
+      taskName: "피드백 종합 보고서 생성"
+    };
+  }
+
+  // 6. 보정 요청 ("보정", "개정", "리비전", "수정")
+  if (q.indexOf("보정") !== -1 || q.indexOf("개정") !== -1 || q.indexOf("리비전") !== -1) {
+    return {
+      success: true,
+      reply: "마케터 보정 지침을 최우선 반영하여 차기 리비전 마케팅 콘텐츠를 개정 보정합니다.",
+      action: "promptAndRunFeedbackRevision",
+      actionLabel: "피드백 반영 콘텐츠 보정하기",
+      taskName: "피드백 반영 콘텐츠 보정"
+    };
+  }
+
+  // 7. 지형도 질문 ("지형도", "tsne", "t-sne")
+  if (q.indexOf("지형도") !== -1 || q.indexOf("tsne") !== -1 || q.indexOf("여론") !== -1) {
+    return {
+      success: true,
+      reply: "t-SNE 여론 지형도는 25인 소비자 패널의 50~80개 세부 피드백을 128차원 벡터 임베딩으로 분석하여 여론의 긍정/부정 군집을 2차원 평면 지도에 시각화한 차트입니다.",
+      action: null,
+      actionLabel: null,
+      taskName: null
+    };
+  }
+
+  // 8. 초기화 요청 ("초기화", "구축", "셋업", "공간")
+  if (q.indexOf("초기화") !== -1 || q.indexOf("구축") !== -1 || q.indexOf("셋업") !== -1) {
+    return {
+      success: true,
+      reply: "캠페인 부모 폴더를 감지하고 누락된 리소스를 안전하게 핀포인트 복구합니다.",
+      action: "initCampaignWorkspace",
+      actionLabel: "[초기화] 캠페인 작업 공간 구축",
+      taskName: "캠페인 작업 공간 구축"
+    };
+  }
+
+  // 9. 기본 fallback
+  return {
+    success: true,
+    reply: "마케팅 콘텐츠 파이프라인 제어 패널입니다. 원하시는 작업을 아래 버튼에서 선택하시거나 '지금 뭐 해야 돼?'를 입력해 주십시오.",
+    action: null,
+    actionLabel: null,
+    taskName: null
+  };
+}
+
+/**
  * 마케터의 자연어 질의를 수신하여 현재 파이프라인 상태를 진단하고 안내 및 동적 액션 칩을 반환한다.
  *
  * @param {string} userMessage - 마케터가 입력한 자연어 질문 또는 지시
@@ -46,6 +199,7 @@ function askPipelineAssistant(userMessage) {
     };
   }
 
+  var status = getPipelineStatus();
   var apiKey = getGeminiApiKey();
   if (!apiKey) {
     return {
@@ -57,7 +211,6 @@ function askPipelineAssistant(userMessage) {
     };
   }
 
-  var status = getPipelineStatus();
   var contextSummary = [
     "- 캠페인 폴더: " + (status.folderUrl ? "연결됨 (" + status.campaignCode + ")" : "미구축 (초기화 필요)"),
     "- 아이디어 메모: " + (status.ideaDocUrl ? "작성 문서 있음" : "문서 없음 (초기화 필요)"),
@@ -86,7 +239,7 @@ function askPipelineAssistant(userMessage) {
     "[응답 지침]\n" +
     "1. 마케터의 질문 의도를 정밀하게 파악하십시오.\n" +
     "   - '지금 뭐 해야 돼?', '다음 단계 알려줘' 등 현재 상태 질의: 현재 완료된 상태와 다음에 진행해야 할 단계를 친절히 안내하고 해당 액션을 제시하십시오.\n" +
-    "   - '기획서 만들어줘', '초판 만들어줘' 등 작업 지시: 바로 실행할 수 있도록 안내하고 액션을 제시하십시오.\n" +
+    "   - '기획서 만들어 줘', '초판 제작해 줘' 등 작업 지시: 바로 실행할 수 있도록 안내하고 액션을 제시하십시오.\n" +
     "   - 't-SNE 지형도가 뭐야?', '25인 페르소나가 뭐야?' 등 개념 질의: 1~3문장으로 비개발자 마케터 눈높이에 맞추어 핵심 가치를 설명하십시오. (이 경우 action은 null)\n" +
     "2. 만약 마케터가 특정 단계를 지시했는데 선결 조건(예: 기획서 없이 초판 생성)이 누락되었다면, 친절하게 선행 작업을 먼저 해야 함을 설명하고 선행 작업 액션을 제시하십시오.\n" +
     "3. 출력은 마크다운 코드블록(```json) 없이 오직 단일 순수 JSON 객체만 반환하십시오:\n" +
@@ -111,22 +264,19 @@ function askPipelineAssistant(userMessage) {
       cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
     }
     var parsed = JSON.parse(cleanJson);
-    return {
-      success: true,
-      reply: parsed.reply || "요청하신 내용을 확인했습니다.",
-      action: parsed.action || null,
-      actionLabel: parsed.actionLabel || null,
-      taskName: parsed.taskName || null
-    };
+    if (parsed && parsed.reply) {
+      return {
+        success: true,
+        reply: parsed.reply,
+        action: parsed.action || null,
+        actionLabel: parsed.actionLabel || null,
+        taskName: parsed.taskName || null
+      };
+    }
+    return getDeterministicFallback(userMessage, status);
   } catch (err) {
-    Logger.log("askPipelineAssistant 파싱 실패: " + err + "\nRaw: " + rawResponse);
-    return {
-      success: true,
-      reply: "요청하신 내용을 확인했습니다. 현재 단계에 맞는 작업을 아래 버튼에서 선택하여 실행하실 수 있습니다.",
-      action: null,
-      actionLabel: null,
-      taskName: null
-    };
+    Logger.log("askPipelineAssistant API 호출/파싱 실패, 결정론적 폴백 가동: " + err);
+    return getDeterministicFallback(userMessage, status);
   }
 }
 
@@ -151,11 +301,38 @@ function showPipelineSidebar() {
 }
 
 /**
+ * 파이프라인 상태 캐시를 무효화(Purge)한다.
+ */
+function invalidatePipelineStatusCache() {
+  try {
+    CacheService.getUserCache().remove("PIPELINE_STATUS_CACHE");
+  } catch (e) {
+    // 무시
+  }
+}
+
+/**
  * 사이드바 화면 렌더링에 필요한 현재 캠페인 파이프라인 상태 정보를 반환한다.
+ * DriveApp API 할당량 고갈 방지 및 고속 응답을 위해 30초 로컬 사용자 캐시(CacheService)를 적용한다.
  *
+ * @param {boolean} [optBypassCache=false] - 캐시 우회 여부
  * @return {Object} 캠페인 작업 공간 상태, 산출물 URL, 리비전, 토큰 통계 객체
  */
-function getPipelineStatus() {
+function getPipelineStatus(optBypassCache) {
+  var cacheKey = "PIPELINE_STATUS_CACHE";
+  var cache = null;
+  try {
+    cache = CacheService.getUserCache();
+    if (!optBypassCache && cache) {
+      var cachedStr = cache.get(cacheKey);
+      if (cachedStr) {
+        return JSON.parse(cachedStr);
+      }
+    }
+  } catch (e) {
+    // 캐시 조회 실패 시 드라이브 직접 스캔 진행
+  }
+
   try {
     initDashboardSheet();
   } catch (e) {
@@ -233,6 +410,15 @@ function getPipelineStatus() {
     }
   } catch (e) {
     Logger.log("getPipelineStatus 예외: " + e);
+  }
+
+  // 30초 로컬 사용자 캐시 저장
+  if (cache) {
+    try {
+      cache.put(cacheKey, JSON.stringify(status), 30);
+    } catch (e) {
+      // 캐시 저장 실패 무시
+    }
   }
 
   return status;
@@ -759,8 +945,8 @@ function getPipelineSidebarHtml() {
     "    </div>\n" +
     "    <div class='quick-chips'>\n" +
     "      <span class='quick-chip' onclick=\"quickChat('지금 뭐 해야 돼?')\">지금 뭐 해야 돼?</span>\n" +
-    "      <span class='quick-chip' onclick=\"quickChat('기획서 도출해줘')\">기획서 도출해줘</span>\n" +
-    "      <span class='quick-chip' onclick=\"quickChat('초판 제작해줘')\">초판 제작해줘</span>\n" +
+    "      <span class='quick-chip' onclick=\"quickChat('기획서 도출해 줘')\">기획서 도출해 줘</span>\n" +
+    "      <span class='quick-chip' onclick=\"quickChat('초판 제작해 줘')\">초판 제작해 줘</span>\n" +
     "      <span class='quick-chip' onclick=\"quickChat('25인 평가가 뭐야?')\">25인 평가가 뭐야?</span>\n" +
     "      <span class='quick-chip' onclick=\"quickChat('t-SNE 지형도가 뭐야?')\">t-SNE 지형도가 뭐야?</span>\n" +
     "    </div>\n" +
@@ -1026,18 +1212,32 @@ function getPipelineSidebarHtml() {
     "        })[fnName]();\n" +
     "    }\n" +
     "\n" +
+    "    function escapeHtml(str) {\n" +
+    "      if (!str) return '';\n" +
+    "      return String(str)\n" +
+    "        .replace(/&/g, '&amp;')\n" +
+    "        .replace(/</g, '&lt;')\n" +
+    "        .replace(/>/g, '&gt;')\n" +
+    "        .replace(/\"/g, '&quot;')\n" +
+    "        .replace(/'/g, '&#039;');\n" +
+    "    }\n" +
+    "\n" +
     "    function appendChatBubble(sender, text, actionBtnHtml) {\n" +
     "      var log = document.getElementById('chatLog');\n" +
     "      if (!log) return null;\n" +
     "      var bubble = document.createElement('div');\n" +
     "      bubble.className = 'chat-bubble ' + sender;\n" +
-    "      bubble.innerHTML = text + (actionBtnHtml || '');\n" +
+    "      var safeText = sender === 'user' ? escapeHtml(text) : text;\n" +
+    "      bubble.innerHTML = safeText + (actionBtnHtml || '');\n" +
     "      log.appendChild(bubble);\n" +
     "      log.scrollTop = log.scrollHeight;\n" +
     "      return bubble;\n" +
     "    }\n" +
     "\n" +
+    "    var isChatProcessing = false;\n" +
+    "\n" +
     "    function quickChat(text) {\n" +
+    "      if (isChatProcessing) return;\n" +
     "      var inp = document.getElementById('chatInput');\n" +
     "      if (inp) inp.value = text;\n" +
     "      submitChatQuery();\n" +
@@ -1051,21 +1251,29 @@ function getPipelineSidebarHtml() {
     "    }\n" +
     "\n" +
     "    function submitChatQuery() {\n" +
+    "      if (isChatProcessing) return;\n" +
     "      var inp = document.getElementById('chatInput');\n" +
     "      if (!inp) return;\n" +
     "      var val = inp.value.trim();\n" +
     "      if (!val) return;\n" +
     "      inp.value = '';\n" +
+    "      isChatProcessing = true;\n" +
     "\n" +
     "      appendChatBubble('user', val);\n" +
     "      var loadingBubble = appendChatBubble('bot', \"<span class='spinner'></span> 답변 생성 중...\");\n" +
     "\n" +
     "      var btn = document.getElementById('btnChatSend');\n" +
     "      if (btn) btn.disabled = true;\n" +
+    "      inp.disabled = true;\n" +
     "\n" +
     "      google.script.run\n" +
     "        .withSuccessHandler(function(res) {\n" +
+    "          isChatProcessing = false;\n" +
     "          if (btn) btn.disabled = false;\n" +
+    "          if (inp) {\n" +
+    "            inp.disabled = false;\n" +
+    "            inp.focus();\n" +
+    "          }\n" +
     "          var reply = (res && res.reply) || '답변을 생성하지 못했습니다.';\n" +
     "          var actionHtml = '';\n" +
     "          if (res && res.action && res.actionLabel) {\n" +
@@ -1079,7 +1287,12 @@ function getPipelineSidebarHtml() {
     "          }\n" +
     "        })\n" +
     "        .withFailureHandler(function(err) {\n" +
+    "          isChatProcessing = false;\n" +
     "          if (btn) btn.disabled = false;\n" +
+    "          if (inp) {\n" +
+    "            inp.disabled = false;\n" +
+    "            inp.focus();\n" +
+    "          }\n" +
     "          if (loadingBubble) {\n" +
     "            loadingBubble.innerHTML = '질문 처리 중 오류: ' + (err.message || err);\n" +
     "          }\n" +
