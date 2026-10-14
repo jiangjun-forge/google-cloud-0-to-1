@@ -631,7 +631,7 @@ function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief
     var userPrompt =
       "### [1. 캠페인 카피 콘텐츠]\n" + (campaignAsset || "") + "\n\n" +
       "### [2. 고객 및 페르소나 피드백 종합 요약본]\n" + (feedbackSummary || "") + "\n\n" +
-      "### [3. ★마케터 최종 의사 결정 및 보정 지침 (최우선 반영)]\n" + (directiveText || "기본 광고 비주얼 톤앤매너 준수") + "\n\n" +
+      "### [3. 마케터 최종 의사 결정 및 보정 지침 (최우선 반영)]\n" + (directiveText || "기본 광고 비주얼 톤앤매너 준수") + "\n\n" +
       "위 마케터의 의도를 충실히 반영한 상업 광고 이미지 생성용 영문 프롬프트 1개를 작성하라.";
 
     var visualPrompt = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_GENERATOR, 8192);
