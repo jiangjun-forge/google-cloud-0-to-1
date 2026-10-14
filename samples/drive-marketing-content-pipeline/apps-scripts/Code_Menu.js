@@ -17,7 +17,7 @@ function onOpen() {
     .addSeparator()
     .addItem("[Step 4] 고객 VoC 수집용 Google Forms 자동 생성 (이미지/비디오 업로드)", "createAndLinkGoogleForm")
     .addItem("[Step 5] 25인 AI 페르소나 1차 다면 평가 및 t-SNE 지형도 자동 렌더링 (fb-01)", "runJudgeEvaluationRound1")
-    .addItem("[Step 6] 마케터 피드백 검토 및 최종 의사 결정 (Human-in-the-loop)", "runMarketerDecisionPrompt")
+    .addItem("[Step 6] 피드백 종합 요약서(fb-01) 자동 도출 및 마케터 검토 (Human-in-the-loop)", "runFeedbackSummaryRound1")
     .addItem("[Step 7] 다면 평가 피드백 기반 1차 마케팅 콘텐츠 반자율 보정 (rv-01)", "runReviseAssetsRound1")
     .addSeparator()
     .addItem("[Step 8] 다면 평가 및 t-SNE 지형도 갱신 (N차 피드백: fb-02 ~ fb-99)", "promptAndRunJudgeEvaluation")

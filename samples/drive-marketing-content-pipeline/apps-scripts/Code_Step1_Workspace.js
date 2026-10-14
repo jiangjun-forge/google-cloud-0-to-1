@@ -21,10 +21,8 @@ function createWorkspaceFolderTree() {
     // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json 생성)
     saveTextFile(inputFolder, "ai_personas.json", JSON.stringify(masterPersonas25, null, 2));
 
-    // fb-01 폴더 초기 생성 및 샘플 고객 동영상(VoC) 자동 시딩 (feedback_{timestamp}.mp4)
+    // fb-01 폴더 초기 생성 (마케터 또는 고객의 실제 영상/피드백 투입 대기 폴더)
     var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
-    var sampleVideoName = "feedback_" + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyyMMdd_HHmmss") + ".mp4";
-    saveSampleVideoFile(fb01Folder, sampleVideoName);
 
     // 스타터 아이디어 구글 독스 문서 (input/아이디어 메모) 자동 생성
     if (!readGoogleDoc(inputFolder, "아이디어 메모")) {

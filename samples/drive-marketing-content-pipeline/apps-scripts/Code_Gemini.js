@@ -182,7 +182,7 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
 }
 
 /**
- * Gemini Imagen / Flash Image 생성 API 호출 (상업용 광고 비주얼 시안 생성)
+ * Gemini Imagen 3 이미지 생성 API 호출 (상업용 광고 비주얼 시안 생성)
  */
 function callGeminiImage(prompt, aspectRatio) {
   try {
@@ -197,15 +197,16 @@ function callGeminiImage(prompt, aspectRatio) {
       ],
       parameters: {
         sampleCount: 1,
-        aspectRatio: ratio,
-        personGeneration: "ALLOW_ADULT",
-        outputMimeType: "image/png"
+        aspectRatio: ratio
       }
     };
 
     var options = {
       method: "post",
       contentType: "application/json",
+      headers: {
+        "x-goog-api-key": apiKey
+      },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     };
@@ -217,7 +218,10 @@ function callGeminiImage(prompt, aspectRatio) {
     if (code === 200) {
       var result = JSON.parse(body);
       if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-        return result.predictions[0].bytesBase64Encoded;
+        return {
+          base64: result.predictions[0].bytesBase64Encoded,
+          mimeType: result.predictions[0].mimeType || "image/jpeg"
+        };
       }
     } else {
       Logger.log("Imagen 3 이미지 생성 실패 (" + code + "): " + body);
