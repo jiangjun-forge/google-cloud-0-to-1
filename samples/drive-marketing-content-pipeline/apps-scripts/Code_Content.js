@@ -132,6 +132,17 @@ function runIdeaToPlanConversion() {
       planFile.getUrl()
     );
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "기획서 및 명세서",
+      "마케팅 기획서(PLAN/SPEC) 생성",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     ui.alert("기획서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
@@ -284,6 +295,17 @@ function runInitialContentGeneration() {
       rv00Folder.getUrl()
     );
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "초판 콘텐츠 (rv-00)",
+      "멀티 채널 콘텐츠 생성",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     ui.alert("초판 콘텐츠 생성 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
@@ -474,6 +496,17 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     }
     return finalizedContent;
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "콘텐츠 보정",
+      "피드백 반영 개정본 생성",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     if (!isSilent) {
       ui.alert("콘텐츠 보정 중 오류 발생", e.toString(), ui.ButtonSet.OK);
     } else {

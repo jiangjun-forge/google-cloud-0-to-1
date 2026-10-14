@@ -88,6 +88,17 @@ function runPersonaEvaluation(targetRoundOpt) {
         clusterMapFile.getUrl()
       );
     } catch (e) {
+      var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+      recordStepResultToSheet(
+        "다면 평가 (" + (targetRound || "fb-01") + ")",
+        "25인 AI 페르소나 평가",
+        "실패",
+        "",
+        "",
+        failDuration,
+        "-",
+        "오류 발생: " + (e.message || e.toString())
+      );
       ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
     }
   });
@@ -290,6 +301,17 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       directiveFile.getUrl()
     );
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "피드백 종합 보고서",
+      "고객 VoC 및 VLM 멀티모달 분석",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     ui.alert("피드백 보고서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });

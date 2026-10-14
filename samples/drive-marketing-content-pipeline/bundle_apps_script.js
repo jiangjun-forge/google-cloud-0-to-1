@@ -1128,6 +1128,17 @@ function initCampaignWorkspace() {
       campaignFolder.getUrl()
     );
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "초기 환경 구축",
+      "작업 공간 및 VoC 설문 폼",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     ui.alert("초기화 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
@@ -1441,6 +1452,17 @@ function runIdeaToPlanConversion() {
       planFile.getUrl()
     );
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "기획서 및 명세서",
+      "마케팅 기획서(PLAN/SPEC) 생성",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     ui.alert("기획서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
@@ -1593,6 +1615,17 @@ function runInitialContentGeneration() {
       rv00Folder.getUrl()
     );
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "초판 콘텐츠 (rv-00)",
+      "멀티 채널 콘텐츠 생성",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     ui.alert("초판 콘텐츠 생성 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
@@ -1783,6 +1816,17 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     }
     return finalizedContent;
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "콘텐츠 보정",
+      "피드백 반영 개정본 생성",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     if (!isSilent) {
       ui.alert("콘텐츠 보정 중 오류 발생", e.toString(), ui.ButtonSet.OK);
     } else {
@@ -1886,6 +1930,17 @@ function runPersonaEvaluation(targetRoundOpt) {
         clusterMapFile.getUrl()
       );
     } catch (e) {
+      var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+      recordStepResultToSheet(
+        "다면 평가 (" + (targetRound || "fb-01") + ")",
+        "25인 AI 페르소나 평가",
+        "실패",
+        "",
+        "",
+        failDuration,
+        "-",
+        "오류 발생: " + (e.message || e.toString())
+      );
       ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
     }
   });
@@ -2088,6 +2143,17 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       directiveFile.getUrl()
     );
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "피드백 종합 보고서",
+      "고객 VoC 및 VLM 멀티모달 분석",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     ui.alert("피드백 보고서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
@@ -3677,13 +3743,36 @@ function getDashboardSheet() {
     if (!ss) return null;
     var sheet = ss.getSheetByName("실행 대시보드");
     if (!sheet) {
-      sheet = ss.getSheets()[0];
-      sheet.setName("실행 대시보드");
+      var sheets = ss.getSheets();
+      if (sheets.length === 1 && sheets[0].getLastRow() === 0 && sheets[0].getLastColumn() === 0) {
+        sheet = sheets[0];
+        sheet.setName("실행 대시보드");
+      } else {
+        sheet = ss.insertSheet("실행 대시보드", 0);
+      }
     }
     return sheet;
   } catch (e) {
     Logger.log("대시보드 시트 획득 예외: " + e);
     return null;
+  }
+}
+
+/**
+ * [대시보드 활성화]: 실행 대시보드 시트를 초기화하고 사용자 화면의 활성 탭으로 즉시 전환한다.
+ */
+function openDashboardSheet() {
+  try {
+    var sheet = getDashboardSheet();
+    if (sheet) {
+      initDashboardSheet();
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      if (ss) {
+        ss.setActiveSheet(sheet);
+      }
+    }
+  } catch (e) {
+    Logger.log("openDashboardSheet 예외: " + e);
   }
 }
 
@@ -3716,11 +3805,10 @@ function initDashboardSheet() {
   if (!sheet) return;
 
   try {
-    var val = sheet.getRange("A2").getValue();
+    var a2Val = sheet.getRange("A2").getValue();
     var lastCol = sheet.getLastColumn();
-    if (val === "실행 단계" && lastCol >= 7) return;
-
-    sheet.clear();
+    // 이미 헤더가 존재하면 기존 데이터 행을 절대 덮어쓰지 않고 유지
+    if (a2Val === "실행 단계" && lastCol >= 7) return;
 
     // 상단 타이틀 배너 (A1:G1)
     sheet.getRange("A1:G1").merge();
@@ -3760,6 +3848,7 @@ function initDashboardSheet() {
     sheet.setColumnWidth(7, 450); // 실행 로그 및 상세 내역 (450px)
 
     sheet.getRange("A2:G2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
+    SpreadsheetApp.flush();
   } catch (e) {
     Logger.log("대시보드 시트 초기화 예외: " + e);
   }
@@ -3818,14 +3907,26 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
       statusCell.setBackground("#DCFCE7").setFontColor("#15803D").setFontWeight("bold");
     } else if (status === "진행 중") {
       statusCell.setBackground("#FEF9C3").setFontColor("#A16207").setFontWeight("bold");
+    } else if (status === "실패") {
+      statusCell.setBackground("#FEE2E2").setFontColor("#B91C1C").setFontWeight("bold");
+    } else if (status === "활성") {
+      statusCell.setBackground("#E0F2FE").setFontColor("#0369A1").setFontWeight("bold");
     }
 
-    // 3열: 생성된 산출물 바로가기 (300)
+    // 3열: 생성된 산출물 바로가기 (300) - 네이티브 RichTextValue 기반 안전한 하이퍼링크 렌더링
     var linkCell = sheet.getRange(targetRow, 3);
     linkCell.setFontSize(10).setVerticalAlignment("middle");
     if (linkUrl) {
       var displayText = linkText || stepName;
-      linkCell.setFormula('=HYPERLINK("' + linkUrl + '", "' + displayText + '")').setHorizontalAlignment("left");
+      try {
+        var richText = SpreadsheetApp.newRichTextValue()
+          .setText(displayText)
+          .setLinkUrl(linkUrl)
+          .build();
+        linkCell.setRichTextValue(richText).setHorizontalAlignment("left");
+      } catch (linkErr) {
+        linkCell.setValue(displayText + " (" + linkUrl + ")").setHorizontalAlignment("left");
+      }
     } else {
       linkCell.setValue(stepName).setHorizontalAlignment("left");
     }
@@ -3868,6 +3969,9 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
     var rowRange = sheet.getRange(targetRow, 1, 1, 7);
     rowRange.setWrap(false);
     rowRange.setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
+
+    // [즉각 반영]: 변경 사항 즉시 시트 화면에 플러시 렌더링
+    SpreadsheetApp.flush();
   } catch (e) {
     Logger.log("대시보드 시트 결과 기록 예외: " + e);
   }
@@ -3979,6 +4083,7 @@ function showResultModal(title, message, btnText, btnUrl) {
 function showPipelineSidebar() {
   var ui = SpreadsheetApp.getUi();
   try {
+    initDashboardSheet();
     var htmlOutput = HtmlService.createHtmlOutput(getPipelineSidebarHtml())
       .setTitle("마케팅 콘텐츠 파이프라인 제어 패널")
       .setWidth(340);
@@ -3998,6 +4103,11 @@ function showPipelineSidebar() {
  * @return {Object} 캠페인 작업 공간 상태, 산출물 URL, 리비전, 토큰 통계 객체
  */
 function getPipelineStatus() {
+  try {
+    initDashboardSheet();
+  } catch (e) {
+    // 무시
+  }
   var status = {
     hasApiKey: !!getGeminiApiKey(),
     campaignCode: "CAMP-2026-AUTUMN",
@@ -4340,6 +4450,8 @@ function getPipelineSidebarHtml() {
     "\n" +
     "  <div class='footer-actions'>\n" +
     "    <button class='footer-btn' onclick='refreshStatus()'>패널 상태 새로고침</button>\n" +
+    "     | \n" +
+    "    <button class='footer-btn' onclick=\"callServer('openDashboardSheet')\">실행 대시보드 열기</button>\n" +
     "     | \n" +
     "    <button class='footer-btn' onclick=\"callServer('forceSyncEngine')\">GitHub 최신 엔진 동기화</button>\n" +
     "  </div>\n" +

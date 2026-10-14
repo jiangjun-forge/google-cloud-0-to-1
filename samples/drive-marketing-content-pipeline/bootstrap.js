@@ -186,6 +186,7 @@ function promptAndRunReviseAssets() { dispatch("promptAndRunReviseAssets"); }
 function openCustomerVocForm() { dispatch("openCustomerVocForm"); }
 function setCustomPersonasPrompt() { dispatch("setCustomPersonasPrompt"); }
 function promptForGeminiApiKey() { dispatch("promptForGeminiApiKey"); }
+function openDashboardSheet() { dispatch("openDashboardSheet"); }
 
 /**
  * GitHub 퍼블릭 저장소 최신 엔진 코드 즉시 강제 갱신

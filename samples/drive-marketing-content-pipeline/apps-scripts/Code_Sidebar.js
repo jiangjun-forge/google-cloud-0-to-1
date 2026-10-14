@@ -12,6 +12,7 @@
 function showPipelineSidebar() {
   var ui = SpreadsheetApp.getUi();
   try {
+    initDashboardSheet();
     var htmlOutput = HtmlService.createHtmlOutput(getPipelineSidebarHtml())
       .setTitle("마케팅 콘텐츠 파이프라인 제어 패널")
       .setWidth(340);
@@ -31,6 +32,11 @@ function showPipelineSidebar() {
  * @return {Object} 캠페인 작업 공간 상태, 산출물 URL, 리비전, 토큰 통계 객체
  */
 function getPipelineStatus() {
+  try {
+    initDashboardSheet();
+  } catch (e) {
+    // 무시
+  }
   var status = {
     hasApiKey: !!getGeminiApiKey(),
     campaignCode: "CAMP-2026-AUTUMN",
@@ -373,6 +379,8 @@ function getPipelineSidebarHtml() {
     "\n" +
     "  <div class='footer-actions'>\n" +
     "    <button class='footer-btn' onclick='refreshStatus()'>패널 상태 새로고침</button>\n" +
+    "     | \n" +
+    "    <button class='footer-btn' onclick=\"callServer('openDashboardSheet')\">실행 대시보드 열기</button>\n" +
     "     | \n" +
     "    <button class='footer-btn' onclick=\"callServer('forceSyncEngine')\">GitHub 최신 엔진 동기화</button>\n" +
     "  </div>\n" +

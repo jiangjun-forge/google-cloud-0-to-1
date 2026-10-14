@@ -103,6 +103,17 @@ function initCampaignWorkspace() {
       campaignFolder.getUrl()
     );
   } catch (e) {
+    var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
+    recordStepResultToSheet(
+      "초기 환경 구축",
+      "작업 공간 및 VoC 설문 폼",
+      "실패",
+      "",
+      "",
+      failDuration,
+      "-",
+      "오류 발생: " + (e.message || e.toString())
+    );
     ui.alert("초기화 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
   });
