@@ -2844,11 +2844,47 @@ function formatInlineStyles(element, rawText) {
 }
 
 /**
+ * 구글 독스 본문(Body)을 안전하게 초기화한다.
+ * [마지막 단락 보호]: 구글 독스 문서 섹션에는 최소 1개의 단락이 반드시 존재해야 하므로,
+ * body.clear() 대신 마지막 단락을 보존하며 텍스트를 비워 'Can't remove the last paragraph' 예외를 원천 차단한다.
+ */
+function safelyClearBody(body) {
+  try {
+    var hasParagraph = false;
+    for (var i = 0; i < body.getNumChildren(); i++) {
+      if (body.getChild(i).getType() === DocumentApp.ElementType.PARAGRAPH) {
+        hasParagraph = true;
+        break;
+      }
+    }
+    if (!hasParagraph) {
+      body.appendParagraph("");
+    }
+
+    while (body.getNumChildren() > 1) {
+      body.removeChild(body.getChild(0));
+    }
+
+    var lastChild = body.getChild(0);
+    if (lastChild) {
+      if (lastChild.getType() === DocumentApp.ElementType.PARAGRAPH) {
+        lastChild.asParagraph().setText("");
+      } else {
+        body.appendParagraph("");
+        body.removeChild(lastChild);
+      }
+    }
+  } catch (err) {
+    Logger.log("safelyClearBody 경고: " + err);
+  }
+}
+
+/**
  * 마크다운 텍스트를 구글 독스(Google Docs) 네이티브 스타일(Title, Heading 1~3, List, Table, HorizontalRule)로 변환하여 렌더링한다.
  */
 function renderMarkdownToDoc(doc, markdown) {
   var body = doc.getBody();
-  body.clear();
+  safelyClearBody(body);
 
   if (!markdown) {
     return;
@@ -2994,6 +3030,19 @@ function renderMarkdownToDoc(doc, markdown) {
   if (inCodeBlock && codeBlockContent.length > 0) {
     var leftP = appendPara(codeBlockContent.join("\n"), DocumentApp.ParagraphHeading.NORMAL);
     leftP.setFontFamily("Consolas");
+  }
+
+  if (!isFirstParagraph) {
+    try {
+      if (body.getNumChildren() > 1) {
+        var firstEl = body.getChild(0);
+        if (firstEl.getType() === DocumentApp.ElementType.PARAGRAPH && firstEl.asParagraph().getText() === "") {
+          firstEl.removeFromParent();
+        }
+      }
+    } catch (cleanupErr) {
+      // 안전 무시
+    }
   }
 }
 
