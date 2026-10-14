@@ -41,6 +41,9 @@ var CONFIG = {
   PERSONA_FILE_NAME: "ai_personas.json", // 25인 타깃 AI 페르소나 마스터 데이터 (캠페인 루트 직속)
   PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 구글 독스 보관 폴더명
 
+  // GitHub 퍼블릭 저장소 Raw 베이스 URL (초기화 시 최신 프롬프트 및 페르소나 실시간 인출)
+  GITHUB_RAW_BASE: "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline",
+
   // 멀티 채널 마케팅 콘텐츠 및 소재 기본 규격
   CONTENT_SPECS: {
     BANNER_16x9: {
@@ -759,7 +762,8 @@ function createDeterministicVector(text, dim) {
  */
 /**
  * 캠페인 루트의 prompts/ 폴더 내에 6대 프롬프트 구글 독스를 자동 시딩한다.
- * 마케터가 이미 수정한 구글 독스가 존재할 경우 내용을 보존한다.
+ * GitHub 퍼블릭 저장소(GitHub Raw)에서 최신 프롬프트 마크다운 파일을 실시간 인출하여 생성하며,
+ * 마케터가 이미 수정한 구글 독스가 존재할 경우 기존 내용을 안전하게 보존한다.
  *
  * @param {GoogleAppsScript.Drive.Folder} promptsFolder - prompts 폴더 객체
  */
@@ -768,17 +772,37 @@ function seedDefaultPrompts(promptsFolder) {
     return;
   }
 
+  var rawBase = (CONFIG && CONFIG.GITHUB_RAW_BASE) || "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline";
   var promptKeys = Object.keys(CONFIG.DEFAULT_PROMPTS || {});
+
   for (var i = 0; i < promptKeys.length; i++) {
     var key = promptKeys[i];
     var def = CONFIG.DEFAULT_PROMPTS[key];
     var files = promptsFolder.getFilesByName(def.title);
     if (!files.hasNext()) {
-      var initialContent =
-        "# " + def.title + "\n\n" +
-        "> " + def.description + "\n\n" +
-        "---\n\n" +
-        def.systemInstruction + "\n";
+      var initialContent = "";
+
+      // 1. GitHub 퍼블릭 저장소의 prompts/{key}.md 파일 실시간 인출
+      try {
+        var fetchUrl = rawBase + "/prompts/" + key + ".md";
+        var resp = UrlFetchApp.fetch(fetchUrl, { muteHttpExceptions: true });
+        if (resp.getResponseCode() === 200) {
+          initialContent = resp.getContentText();
+          Logger.log("GitHub Raw로부터 최신 프롬프트 인출 성공: " + key + ".md");
+        }
+      } catch (fetchErr) {
+        Logger.log("GitHub Raw 프롬프트 인출 실패 (로컬 폴백 사용): " + fetchErr.toString());
+      }
+
+      // 2. 네트워크 지연 또는 비정상 응답 시 내장 기본값으로 안전 폴백
+      if (!initialContent) {
+        initialContent =
+          "# " + def.title + "\n\n" +
+          "> " + def.description + "\n\n" +
+          "---\n\n" +
+          def.systemInstruction + "\n";
+      }
+
       saveGoogleDoc(promptsFolder, def.title, initialContent);
       Logger.log("프롬프트 구글 독스 자동 시딩 완료: " + def.title);
     }
@@ -2195,8 +2219,28 @@ function initCampaignWorkspace() {
     var personaFileName = CONFIG.PERSONA_FILE_NAME || "ai_personas.json";
     var existingPersonas = campaignFolder.getFilesByName(personaFileName);
     if (!existingPersonas.hasNext()) {
-      var masterPersonas = getMasterPersonas25();
-      saveTextFile(campaignFolder, personaFileName, JSON.stringify(masterPersonas, null, 2));
+      var rawBase = (CONFIG && CONFIG.GITHUB_RAW_BASE) || "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline";
+      var personaJsonText = "";
+
+      // GitHub 퍼블릭 저장소의 data/ai_personas.json 파일 실시간 인출
+      try {
+        var personaUrl = rawBase + "/data/ai_personas.json";
+        var pResp = UrlFetchApp.fetch(personaUrl, { muteHttpExceptions: true });
+        if (pResp.getResponseCode() === 200) {
+          personaJsonText = pResp.getContentText();
+          Logger.log("GitHub Raw로부터 최신 25인 페르소나 데이터 인출 성공");
+        }
+      } catch (fetchErr) {
+        Logger.log("GitHub Raw 페르소나 인출 실패 (로컬 폴백 사용): " + fetchErr.toString());
+      }
+
+      // 네트워크 불가 시 내장 기본값으로 안전 폴백
+      if (!personaJsonText) {
+        var masterPersonas = getMasterPersonas25();
+        personaJsonText = JSON.stringify(masterPersonas, null, 2);
+      }
+
+      saveTextFile(campaignFolder, personaFileName, personaJsonText);
       Logger.log("루트 직속 25인 AI 페르소나 데이터셋 시딩 완료: " + personaFileName);
     }
 
@@ -2205,13 +2249,32 @@ function initCampaignWorkspace() {
 
     // 4. 스타터 아이디어 메모 구글 독스 시딩 (input/아이디어 메모)
     if (!readGoogleDoc(inputFolder, "아이디어 메모")) {
-      var starterIdea =
-        "# 캠페인 아이디어 메모\n\n" +
-        "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (" + campaignCode + ")\n" +
-        "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 노이즈 캔슬링(ANC) 헤드폰 일상 탈출 컬렉션\n" +
-        "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 통근자\n" +
-        "* **핵심 소구점**: 180g 초경량 착용감, 45dB 차음 성능, 감성적 힐링 몰입 무드\n" +
-        "* **목표 채널**: 유튜브 쇼츠 및 인스타그램 릴스(9:16), 디스플레이 배너(16:9), 블로그 브랜드 기고문\n";
+      var rawBase = (CONFIG && CONFIG.GITHUB_RAW_BASE) || "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline";
+      var starterIdea = "";
+
+      // GitHub 퍼블릭 저장소의 data/starter_idea.md 파일 실시간 인출
+      try {
+        var ideaUrl = rawBase + "/data/starter_idea.md";
+        var iResp = UrlFetchApp.fetch(ideaUrl, { muteHttpExceptions: true });
+        if (iResp.getResponseCode() === 200) {
+          starterIdea = iResp.getContentText().replace("cp-ignite", campaignCode);
+          Logger.log("GitHub Raw로부터 스타터 아이디어 메모 인출 성공");
+        }
+      } catch (ideaErr) {
+        Logger.log("GitHub Raw 스타터 아이디어 인출 실패 (로컬 폴백 사용): " + ideaErr.toString());
+      }
+
+      // 폴백 템플릿
+      if (!starterIdea) {
+        starterIdea =
+          "# 캠페인 아이디어 메모\n\n" +
+          "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (" + campaignCode + ")\n" +
+          "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 노이즈 캔슬링(ANC) 헤드폰 일상 탈출 컬렉션\n" +
+          "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 통근자\n" +
+          "* **핵심 소구점**: 180g 초경량 착용감, 45dB 차음 성능, 감성적 힐링 몰입 무드\n" +
+          "* **목표 채널**: 유튜브 쇼츠 및 인스타그램 릴스(9:16), 디스플레이 배너(16:9), 블로그 브랜드 기고문\n";
+      }
+
       saveGoogleDoc(inputFolder, "아이디어 메모", starterIdea);
     }
 

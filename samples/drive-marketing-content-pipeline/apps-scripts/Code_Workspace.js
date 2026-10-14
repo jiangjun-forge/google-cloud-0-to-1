@@ -28,8 +28,28 @@ function initCampaignWorkspace() {
     var personaFileName = CONFIG.PERSONA_FILE_NAME || "ai_personas.json";
     var existingPersonas = campaignFolder.getFilesByName(personaFileName);
     if (!existingPersonas.hasNext()) {
-      var masterPersonas = getMasterPersonas25();
-      saveTextFile(campaignFolder, personaFileName, JSON.stringify(masterPersonas, null, 2));
+      var rawBase = (CONFIG && CONFIG.GITHUB_RAW_BASE) || "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline";
+      var personaJsonText = "";
+
+      // GitHub 퍼블릭 저장소의 data/ai_personas.json 파일 실시간 인출
+      try {
+        var personaUrl = rawBase + "/data/ai_personas.json";
+        var pResp = UrlFetchApp.fetch(personaUrl, { muteHttpExceptions: true });
+        if (pResp.getResponseCode() === 200) {
+          personaJsonText = pResp.getContentText();
+          Logger.log("GitHub Raw로부터 최신 25인 페르소나 데이터 인출 성공");
+        }
+      } catch (fetchErr) {
+        Logger.log("GitHub Raw 페르소나 인출 실패 (로컬 폴백 사용): " + fetchErr.toString());
+      }
+
+      // 네트워크 불가 시 내장 기본값으로 안전 폴백
+      if (!personaJsonText) {
+        var masterPersonas = getMasterPersonas25();
+        personaJsonText = JSON.stringify(masterPersonas, null, 2);
+      }
+
+      saveTextFile(campaignFolder, personaFileName, personaJsonText);
       Logger.log("루트 직속 25인 AI 페르소나 데이터셋 시딩 완료: " + personaFileName);
     }
 
@@ -38,13 +58,32 @@ function initCampaignWorkspace() {
 
     // 4. 스타터 아이디어 메모 구글 독스 시딩 (input/아이디어 메모)
     if (!readGoogleDoc(inputFolder, "아이디어 메모")) {
-      var starterIdea =
-        "# 캠페인 아이디어 메모\n\n" +
-        "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (" + campaignCode + ")\n" +
-        "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 노이즈 캔슬링(ANC) 헤드폰 일상 탈출 컬렉션\n" +
-        "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 통근자\n" +
-        "* **핵심 소구점**: 180g 초경량 착용감, 45dB 차음 성능, 감성적 힐링 몰입 무드\n" +
-        "* **목표 채널**: 유튜브 쇼츠 및 인스타그램 릴스(9:16), 디스플레이 배너(16:9), 블로그 브랜드 기고문\n";
+      var rawBase = (CONFIG && CONFIG.GITHUB_RAW_BASE) || "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline";
+      var starterIdea = "";
+
+      // GitHub 퍼블릭 저장소의 data/starter_idea.md 파일 실시간 인출
+      try {
+        var ideaUrl = rawBase + "/data/starter_idea.md";
+        var iResp = UrlFetchApp.fetch(ideaUrl, { muteHttpExceptions: true });
+        if (iResp.getResponseCode() === 200) {
+          starterIdea = iResp.getContentText().replace("cp-ignite", campaignCode);
+          Logger.log("GitHub Raw로부터 스타터 아이디어 메모 인출 성공");
+        }
+      } catch (ideaErr) {
+        Logger.log("GitHub Raw 스타터 아이디어 인출 실패 (로컬 폴백 사용): " + ideaErr.toString());
+      }
+
+      // 폴백 템플릿
+      if (!starterIdea) {
+        starterIdea =
+          "# 캠페인 아이디어 메모\n\n" +
+          "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (" + campaignCode + ")\n" +
+          "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 노이즈 캔슬링(ANC) 헤드폰 일상 탈출 컬렉션\n" +
+          "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 통근자\n" +
+          "* **핵심 소구점**: 180g 초경량 착용감, 45dB 차음 성능, 감성적 힐링 몰입 무드\n" +
+          "* **목표 채널**: 유튜브 쇼츠 및 인스타그램 릴스(9:16), 디스플레이 배너(16:9), 블로그 브랜드 기고문\n";
+      }
+
       saveGoogleDoc(inputFolder, "아이디어 메모", starterIdea);
     }
 

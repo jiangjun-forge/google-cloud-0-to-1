@@ -8,7 +8,8 @@
 
 /**
  * 캠페인 루트의 prompts/ 폴더 내에 6대 프롬프트 구글 독스를 자동 시딩한다.
- * 마케터가 이미 수정한 구글 독스가 존재할 경우 내용을 보존한다.
+ * GitHub 퍼블릭 저장소(GitHub Raw)에서 최신 프롬프트 마크다운 파일을 실시간 인출하여 생성하며,
+ * 마케터가 이미 수정한 구글 독스가 존재할 경우 기존 내용을 안전하게 보존한다.
  *
  * @param {GoogleAppsScript.Drive.Folder} promptsFolder - prompts 폴더 객체
  */
@@ -17,17 +18,37 @@ function seedDefaultPrompts(promptsFolder) {
     return;
   }
 
+  var rawBase = (CONFIG && CONFIG.GITHUB_RAW_BASE) || "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline";
   var promptKeys = Object.keys(CONFIG.DEFAULT_PROMPTS || {});
+
   for (var i = 0; i < promptKeys.length; i++) {
     var key = promptKeys[i];
     var def = CONFIG.DEFAULT_PROMPTS[key];
     var files = promptsFolder.getFilesByName(def.title);
     if (!files.hasNext()) {
-      var initialContent =
-        "# " + def.title + "\n\n" +
-        "> " + def.description + "\n\n" +
-        "---\n\n" +
-        def.systemInstruction + "\n";
+      var initialContent = "";
+
+      // 1. GitHub 퍼블릭 저장소의 prompts/{key}.md 파일 실시간 인출
+      try {
+        var fetchUrl = rawBase + "/prompts/" + key + ".md";
+        var resp = UrlFetchApp.fetch(fetchUrl, { muteHttpExceptions: true });
+        if (resp.getResponseCode() === 200) {
+          initialContent = resp.getContentText();
+          Logger.log("GitHub Raw로부터 최신 프롬프트 인출 성공: " + key + ".md");
+        }
+      } catch (fetchErr) {
+        Logger.log("GitHub Raw 프롬프트 인출 실패 (로컬 폴백 사용): " + fetchErr.toString());
+      }
+
+      // 2. 네트워크 지연 또는 비정상 응답 시 내장 기본값으로 안전 폴백
+      if (!initialContent) {
+        initialContent =
+          "# " + def.title + "\n\n" +
+          "> " + def.description + "\n\n" +
+          "---\n\n" +
+          def.systemInstruction + "\n";
+      }
+
       saveGoogleDoc(promptsFolder, def.title, initialContent);
       Logger.log("프롬프트 구글 독스 자동 시딩 완료: " + def.title);
     }
