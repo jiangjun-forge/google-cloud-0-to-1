@@ -17,10 +17,19 @@ function renderPipelineMenu() {
 }
 
 /**
- * 스프레드시트 열림 시 액션 중심 커스텀 메뉴 자동 등록
+ * 스프레드시트 열림 시 액션 중심 커스텀 메뉴 자동 등록 및 시트 제목 동기화
  */
 function onOpen() {
   renderPipelineMenu();
+
+  try {
+    var folder = getCampaignFolder();
+    if (folder) {
+      syncSpreadsheetTitleWithCampaign(folder.getName(), getCampaignCode());
+    }
+  } catch (syncErr) {
+    // 단순 열림 트리거 환경에서의 권한 제약 시 무시
+  }
 
   try {
     showPipelineSidebar();

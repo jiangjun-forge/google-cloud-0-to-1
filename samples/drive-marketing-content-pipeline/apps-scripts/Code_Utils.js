@@ -208,11 +208,50 @@ function generateCampaignSlug(rawName) {
 }
 
 /**
+ * 현재 구글 시트의 이름이 기본 Untitled 상태이거나 초기 상태인 경우,
+ * 확정된 캠페인 폴더명 및 슬러그에 맞추어 직관적인 컨트롤 타워 명칭으로 자동 변경한다.
+ *
+ * @param {string} [displayName] - 캠페인 폴더 표시 명칭
+ * @param {string} [slug] - 캠페인 영문 슬러그
+ */
+function syncSpreadsheetTitleWithCampaign(displayName, slug) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return;
+
+    var currentTitle = (ss.getName() || "").trim();
+    var lowerTitle = currentTitle.toLowerCase();
+
+    // 사용자가 직접 명명한 고유 시트명이 아닌, Untitled/기본 상태인 경우에만 자동 변경
+    var isUntitled = !currentTitle ||
+      lowerTitle === "untitled" ||
+      lowerTitle.indexOf("untitled spreadsheet") === 0 ||
+      lowerTitle.indexOf("untitled") === 0 ||
+      currentTitle === "제목 없는 스프레드시트" ||
+      currentTitle === "제목없는 스프레드시트" ||
+      currentTitle === "마케팅 콘텐츠 파이프라인" ||
+      currentTitle.indexOf("[마케팅 컨트롤 타워]") === 0;
+
+    if (isUntitled) {
+      var targetName = displayName || slug || (CONFIG && CONFIG.CAMPAIGN_CODE) || "cp-ignite";
+      var newTitle = "[마케팅 컨트롤 타워] " + targetName;
+      if (currentTitle !== newTitle) {
+        ss.rename(newTitle);
+        Logger.log("구글 시트 제목 자동 동기화: '" + currentTitle + "' -> '" + newTitle + "'");
+      }
+    }
+  } catch (e) {
+    Logger.log("구글 시트 제목 변경 중 예외 (무시 가능): " + e);
+  }
+}
+
+/**
  * 마케터가 생성한 캠페인 폴더를 자동 감지하고 폴더 ID로 영구 바인딩한다.
  * [UX 혁신]: 마케터가 구글 드라이브에서 자유롭게 폴더를 만들고 시트를 넣으면,
  * 1. 구글 시트의 부모 폴더를 즉시 캠페인 루트 폴더로 자동 채택
  * 2. 폴더 ID(folder.getId())를 영구 저장하여 마케터가 폴더 이름을 변경해도 완벽 추적
  * 3. 한글 폴더명을 분석하여 안전한 영문 슬러그를 자동 합성
+ * 4. 구글 시트 제목이 Untitled일 경우 캠페인 명칭으로 자동 동기화
  */
 function getCampaignFolder() {
   var props = PropertiesService.getScriptProperties();
@@ -223,6 +262,7 @@ function getCampaignFolder() {
     try {
       var savedFolder = DriveApp.getFolderById(savedFolderId);
       if (savedFolder && !savedFolder.isTrashed()) {
+        syncSpreadsheetTitleWithCampaign(savedFolder.getName(), props.getProperty("CAMPAIGN_SLUG"));
         return savedFolder;
       }
     } catch (idErr) {
@@ -247,6 +287,7 @@ function getCampaignFolder() {
         props.setProperty("CAMPAIGN_SLUG", slug);
         props.setProperty("CAMPAIGN_DISPLAY_NAME", folderName);
         Logger.log("마케터 캠페인 부모 폴더 자동 감지 및 ID 영구 바인딩: " + folderName + " (ID: " + parent.getId() + ", Slug: " + slug + ")");
+        syncSpreadsheetTitleWithCampaign(folderName, slug);
         return parent;
       }
     }
@@ -259,6 +300,7 @@ function getCampaignFolder() {
   props.setProperty("CAMPAIGN_FOLDER_ID", defaultFolder.getId());
   props.setProperty("CAMPAIGN_SLUG", CONFIG.CAMPAIGN_CODE);
   props.setProperty("CAMPAIGN_DISPLAY_NAME", CONFIG.CAMPAIGN_CODE);
+  syncSpreadsheetTitleWithCampaign(CONFIG.CAMPAIGN_CODE, CONFIG.CAMPAIGN_CODE);
   return defaultFolder;
 }
 
@@ -269,12 +311,16 @@ function getCampaignCode() {
   try {
     var props = PropertiesService.getScriptProperties();
     var savedSlug = props.getProperty("CAMPAIGN_SLUG");
-    if (savedSlug) return savedSlug;
+    if (savedSlug) {
+      syncSpreadsheetTitleWithCampaign(props.getProperty("CAMPAIGN_DISPLAY_NAME"), savedSlug);
+      return savedSlug;
+    }
 
     var folder = getCampaignFolder();
     var folderName = folder.getName();
     var slug = generateCampaignSlug(folderName);
     props.setProperty("CAMPAIGN_SLUG", slug);
+    syncSpreadsheetTitleWithCampaign(folderName, slug);
     return slug;
   } catch (e) {
     Logger.log("캠페인 코드 도출 중 예외: " + e);

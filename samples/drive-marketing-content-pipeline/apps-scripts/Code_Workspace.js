@@ -73,10 +73,7 @@ function initCampaignWorkspace() {
         sheetFile.moveTo(campaignFolder);
       }
       var folderDisplayName = campaignFolder.getName();
-      var currentTitle = activeSpreadsheet.getName();
-      if (!currentTitle || currentTitle === "제목 없는 스프레드시트" || currentTitle === "마케팅 콘텐츠 파이프라인" || currentTitle.indexOf("[마케팅 컨트롤 타워]") === 0) {
-        activeSpreadsheet.rename("[마케팅 컨트롤 타워] " + folderDisplayName);
-      }
+      syncSpreadsheetTitleWithCampaign(folderDisplayName, campaignCode);
     } catch (sheetMoveErr) {
       Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
     }
