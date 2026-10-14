@@ -151,36 +151,26 @@ function dispatch(fnName, args) {
 
 /**
  * Google Sheets 액션 중심 커스텀 메뉴 렌더링
- * [단순 트리거 호환]: 네트워크(UrlFetchApp)나 민감 권한 호출 없이 순수 UI 메뉴만 즉시 생성하므로,
- * 문서 열림(onOpen) 시 권한 에러 없이 12대 정식 메뉴가 즉시 표시된다.
+ * [단일 엔트리포인트]: 모든 제어 기능이 우측 패널(사이드바)에 완비되어 있으므로,
+ * 상단 메뉴는 오직 패널 재진입용 단 1개 버튼만 미니멀하게 제공한다.
  */
 function renderPipelineMenu() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu("[마케팅 콘텐츠 파이프라인]")
-    .addItem("[제어 패널] 마케팅 파이프라인 우측 패널 열기 (Sidebar)", "showPipelineSidebar")
-    .addSeparator()
-    .addItem("[초기화] 캠페인 작업 공간 환경 구축 (All-in-one Setup)", "initCampaignWorkspace")
-    .addItem("[설정] 캠페인 환경 설정 및 재설정 (Configure)", "runConfigureCampaignSettings")
-    .addSeparator()
-    .addItem("[기획] 기획서 및 콘텐츠 명세서 생성 (PLAN & SPEC)", "guardAndRunIdeaToPlan")
-    .addItem("[생성] 초판 마케팅 콘텐츠 생성 (rv-00)", "guardAndRunInitialContent")
-    .addItem("[평가] 25인 AI 페르소나 다면 평가 실행 (fb-xx)", "promptAndRunJudgeEvaluation")
-    .addItem("[보고서] 피드백 종합 분석 보고서 생성 (feedback_summary)", "promptAndRunFeedbackSummary")
-    .addItem("[보정] 피드백 반영 콘텐츠 보정 (rv-xx)", "promptAndRunReviseAssets")
-    .addSeparator()
-    .addItem("[설문 폼] 고객 VoC 설문 폼 열기", "openCustomerVocForm")
-    .addItem("[페르소나] 25인 AI 페르소나 맞춤 재설정 (선택 사항)", "setCustomPersonasPrompt")
-    .addItem("[API Key] Gemini API Key 설정 (Google AI Studio)", "promptForGeminiApiKey")
-    .addSeparator()
-    .addItem("[엔진 동기화] GitHub 최신 버전 즉시 동기화", "forceSyncEngine")
+  ui.createMenu("[마케팅 파이프라인]")
+    .addItem("제어 패널 열기 (Open Panel)", "showPipelineSidebar")
     .addToUi();
 }
 
 /**
- * 구글 시트 문서 열림 시 메뉴 자동 등록 (단순 트리거)
+ * 구글 시트 문서 열림 시 메뉴 자동 등록 및 사이드바 표시 시도 (단순 트리거)
  */
 function onOpen() {
   renderPipelineMenu();
+  try {
+    showPipelineSidebar();
+  } catch (e) {
+    // 단순 트리거 환경에서의 권한 제약 시 무시
+  }
 }
 
 // 액션 메뉴 디스패치 프록시 함수들 (사용자 클릭 시 지연 로드 및 실행)

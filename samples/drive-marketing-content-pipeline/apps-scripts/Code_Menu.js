@@ -11,24 +11,15 @@
  */
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu("[마케팅 콘텐츠 파이프라인]")
-    .addItem("[제어 패널] 마케팅 파이프라인 우측 패널 열기 (Sidebar)", "showPipelineSidebar")
-    .addSeparator()
-    .addItem("[초기화] 캠페인 작업 공간 환경 구축 (All-in-one Setup)", "initCampaignWorkspace")
-    .addItem("[설정] 캠페인 환경 설정 및 재설정 (Configure)", "runConfigureCampaignSettings")
-    .addSeparator()
-    .addItem("[기획] 기획서 및 콘텐츠 명세서 생성 (PLAN & SPEC)", "guardAndRunIdeaToPlan")
-    .addItem("[생성] 초판 마케팅 콘텐츠 생성 (rv-00)", "guardAndRunInitialContent")
-    .addItem("[평가] 25인 AI 페르소나 다면 평가 실행 (fb-xx)", "promptAndRunJudgeEvaluation")
-    .addItem("[보고서] 피드백 종합 분석 보고서 생성 (feedback_summary)", "promptAndRunFeedbackSummary")
-    .addItem("[보정] 피드백 반영 콘텐츠 보정 (rv-xx)", "promptAndRunReviseAssets")
-    .addSeparator()
-    .addItem("[설문 폼] 고객 VoC 설문 폼 열기", "openCustomerVocForm")
-    .addItem("[페르소나] 25인 AI 페르소나 맞춤 재설정 (선택 사항)", "setCustomPersonasPrompt")
-    .addItem("[API Key] Gemini API Key 설정 (Google AI Studio)", "promptForGeminiApiKey")
-    .addSeparator()
-    .addItem("[엔진 동기화] GitHub 최신 버전 즉시 동기화", "forceSyncEngine")
+  ui.createMenu("[마케팅 파이프라인]")
+    .addItem("제어 패널 열기 (Open Panel)", "showPipelineSidebar")
     .addToUi();
+
+  try {
+    showPipelineSidebar();
+  } catch (e) {
+    // 단순 트리거 환경에서의 권한 제약 시 무시
+  }
 }
 
 /**
