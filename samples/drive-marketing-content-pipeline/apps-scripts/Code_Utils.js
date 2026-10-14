@@ -230,11 +230,12 @@ function syncSpreadsheetTitleWithCampaign(displayName, slug) {
       currentTitle === "제목 없는 스프레드시트" ||
       currentTitle === "제목없는 스프레드시트" ||
       currentTitle === "마케팅 콘텐츠 파이프라인" ||
-      currentTitle.indexOf("[마케팅 컨트롤 타워]") === 0;
+      currentTitle.indexOf("[마케팅 컨트롤 타워]") === 0 ||
+      currentTitle.indexOf("[마케팅 콘텐츠 컨트롤 타워]") === 0;
 
     if (isUntitled) {
       var targetName = displayName || slug || (CONFIG && CONFIG.CAMPAIGN_CODE) || "cp-ignite";
-      var newTitle = "[마케팅 컨트롤 타워] " + targetName;
+      var newTitle = "[마케팅 콘텐츠 컨트롤 타워] " + targetName;
       if (currentTitle !== newTitle) {
         ss.rename(newTitle);
         Logger.log("구글 시트 제목 자동 동기화: '" + currentTitle + "' -> '" + newTitle + "'");
