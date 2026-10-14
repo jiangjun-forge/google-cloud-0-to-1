@@ -410,7 +410,7 @@ function getPipelineSidebarHtml() {
     "  <div class='footer-actions'>\n" +
     "    <button class='footer-btn' onclick='refreshStatus()'>패널 상태 새로고침</button>\n" +
     "     | \n" +
-    "    <button class='footer-btn' onclick=\"callServer('openDashboardSheet')\">실행 대시보드 열기</button>\n" +
+    "    <button class='footer-btn' onclick=\"callServer('openDashboardSheet')\">실행 로그 열기</button>\n" +
     "     | \n" +
     "    <button class='footer-btn' onclick=\"callServer('forceSyncEngine')\">GitHub 최신 엔진 동기화</button>\n" +
     "  </div>\n" +

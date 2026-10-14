@@ -1072,31 +1072,31 @@ function renderAndSaveTsneClusterMap(feedbackFolder, pointsList) {
 }
 
 /**
- * 구글 시트 실시간 실행 대시보드 헬퍼
+ * 구글 시트 실시간 실행 로그 헬퍼 (아무 장식 없는 순수 기본 시트 스타일)
  */
 function getDashboardSheet() {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) return null;
-    var sheet = ss.getSheetByName("실행 대시보드");
+    var sheet = ss.getSheetByName("실행 로그") || ss.getSheetByName("실행 대시보드");
     if (!sheet) {
       var sheets = ss.getSheets();
       if (sheets.length === 1 && sheets[0].getLastRow() === 0 && sheets[0].getLastColumn() === 0) {
         sheet = sheets[0];
-        sheet.setName("실행 대시보드");
+        sheet.setName("실행 로그");
       } else {
-        sheet = ss.insertSheet("실행 대시보드", 0);
+        sheet = ss.insertSheet("실행 로그", 0);
       }
     }
     return sheet;
   } catch (e) {
-    Logger.log("대시보드 시트 획득 예외: " + e);
+    Logger.log("실행 로그 시트 획득 예외: " + e);
     return null;
   }
 }
 
 /**
- * [대시보드 활성화]: 실행 대시보드 시트를 초기화하고 사용자 화면의 활성 탭으로 즉시 전환한다.
+ * [실행 로그 활성화]: 시트를 초기화하고 사용자 화면의 활성 탭으로 즉시 전환한다.
  */
 function openDashboardSheet() {
   try {
@@ -1137,70 +1137,62 @@ function formatTokenCount(tokens) {
   return num.toLocaleString() + " tokens";
 }
 
+/**
+ * 실행 로그 시트 헤더 초기화
+ * [미니멀 기본 스타일]: 배너, 배경색, 테두리 등 템플릿 장식 없이 순수 1행 헤더만 간결하게 유지한다.
+ */
 function initDashboardSheet() {
   var sheet = getDashboardSheet();
   if (!sheet) return;
 
   try {
-    var a2Val = sheet.getRange("A2").getValue();
+    var a1Val = sheet.getRange("A1").getValue();
     var lastCol = sheet.getLastColumn();
-    // 이미 헤더가 존재하면 기존 데이터 행을 절대 덮어쓰지 않고 유지
-    if (a2Val === "실행 단계" && lastCol >= 7) return;
+    // 1행에 이미 '실행 단계' 헤더가 있으면 기존 데이터 보존하고 즉시 반환
+    if (a1Val === "실행 단계" && lastCol >= 7) return;
 
-    // 상단 타이틀 배너 (A1:G1)
-    sheet.getRange("A1:G1").merge();
-    sheet.getRange("A1").setValue("Google Drive 마케팅 콘텐츠 파이프라인 실행 대시보드");
-    sheet.getRange("A1")
-      .setFontWeight("bold")
-      .setFontSize(12)
-      .setBackground("#1E293B")
-      .setFontColor("#FFFFFF")
-      .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle")
-      .setWrap(false);
-    sheet.setRowHeight(1, 38);
+    // 만약 예전 템플릿의 병합 배너가 남아있다면 병합 해제 및 서식 초기화
+    try {
+      sheet.getRange("A1:G1").breakApart();
+      sheet.getRange("A1:G1").clearFormat();
+    } catch (unmergeErr) {
+      // 무시
+    }
 
-    // 컬럼 헤더 행 (A2:G2) - 7대 핵심 컬럼
-    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각", "소요 시간", "소모 토큰", "실행 로그 및 상세 내역"]];
-    sheet.getRange("A2:G2").setValues(headers);
-    sheet.getRange("A2:G2")
-      .setFontWeight("bold")
-      .setFontSize(10)
-      .setBackground("#F1F5F9")
-      .setFontColor("#334155")
-      .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle")
-      .setWrap(false);
-    // 숫자 컬럼(소요 시간, 소모 토큰) 헤더 우측 정렬
-    sheet.getRange("E2:F2").setHorizontalAlignment("right");
-    sheet.setRowHeight(2, 28);
+    // 기본 헤더 행 (A1:G1) - 템플릿 장식 없는 순수 기본 스타일
+    var headers = [["실행 단계", "진행 상태", "산출물 링크", "완료 시각", "소요 시간", "소모 토큰", "상세 내용"]];
+    var headerRange = sheet.getRange("A1:G1");
+    headerRange.setValues(headers);
+    headerRange.setFontWeight("bold");
+    headerRange.setHorizontalAlignment("center");
+    sheet.getRange("E1:F1").setHorizontalAlignment("right");
 
-    // 컬럼 너비 설정 (사용자 지정: 150, 100, 300, 150, 100, 150, 450)
-    sheet.setColumnWidth(1, 150);
-    sheet.setColumnWidth(2, 100);
-    sheet.setColumnWidth(3, 300);
+    // 기본 컬럼 너비 설정
+    sheet.setColumnWidth(1, 140);
+    sheet.setColumnWidth(2, 90);
+    sheet.setColumnWidth(3, 260);
     sheet.setColumnWidth(4, 150);
-    sheet.setColumnWidth(5, 100);
-    sheet.setColumnWidth(6, 150); // 소요 시간 다음 칼럼: 소모 토큰 (150px)
-    sheet.setColumnWidth(7, 450); // 실행 로그 및 상세 내역 (450px)
+    sheet.setColumnWidth(5, 90);
+    sheet.setColumnWidth(6, 120);
+    sheet.setColumnWidth(7, 400);
 
-    sheet.getRange("A2:G2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
     SpreadsheetApp.flush();
   } catch (e) {
-    Logger.log("대시보드 시트 초기화 예외: " + e);
+    Logger.log("실행 로그 시트 초기화 예외: " + e);
   }
 }
 
 /**
- * 실행 대시보드 시트에 결과를 항상 맨 아래에 새 행으로 누적 추가(Append-only)한다.
+ * 실행 로그 시트에 결과를 항상 맨 아래에 새 행으로 누적 추가(Append-only)한다.
+ * [기본 스타일]: 색상 배지나 테두리 등 서식 장식 없이, 구글 시트 본연의 담백한 텍스트로 기록한다.
  *
  * @param {string} stepId - 실행 단계 식별자
  * @param {string} stepName - 작업 명칭
- * @param {string} status - 진행 상태 ('완료', '진행 중' 등)
+ * @param {string} status - 진행 상태 ('완료', '진행 중', '실패' 등)
  * @param {string} linkUrl - 산출물 링크 URL
  * @param {string} linkText - 링크 표시 텍스트
  * @param {number|string} [durationSec] - 소요 시간 (초 단위 숫자 또는 문자열)
- * @param {number|string} [tokensOrLog] - 소모 토큰 수 또는 로그 (오버로딩 방어)
+ * @param {number|string} [tokensOrLog] - 소모 토큰 수 또는 로그
  * @param {string} [logDetailOpt] - 실행 로그 및 상세 내역
  */
 function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, durationSec, tokensOrLog, logDetailOpt) {
@@ -1211,10 +1203,8 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
     initDashboardSheet();
 
     var lastRow = sheet.getLastRow();
-    // 항상 맨 아래에 새 행으로 누적 추가 (헤더가 2행이므로 최소 3행부터 시작)
-    var targetRow = Math.max(3, lastRow + 1);
-
-    sheet.setRowHeight(targetRow, 28);
+    // 1행이 헤더이므로 최소 2행부터 누적
+    var targetRow = Math.max(2, lastRow + 1);
 
     var tokenVal = "-";
     var detailText = "";
@@ -1226,33 +1216,14 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
       detailText = tokensOrLog || (status === "완료" ? "정상 처리 완료" : "");
     }
 
-    // 1열: 실행 단계 (150)
-    sheet.getRange(targetRow, 1)
-      .setValue(stepId)
-      .setFontWeight("bold")
-      .setFontSize(10)
-      .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle");
+    // 1열: 실행 단계 (가운데 정렬)
+    sheet.getRange(targetRow, 1).setValue(stepId).setHorizontalAlignment("center");
 
-    // 2열: 진행 상태 (100)
-    var statusCell = sheet.getRange(targetRow, 2);
-    statusCell.setValue(status)
-      .setFontSize(10)
-      .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle");
-    if (status === "완료") {
-      statusCell.setBackground("#DCFCE7").setFontColor("#15803D").setFontWeight("bold");
-    } else if (status === "진행 중") {
-      statusCell.setBackground("#FEF9C3").setFontColor("#A16207").setFontWeight("bold");
-    } else if (status === "실패") {
-      statusCell.setBackground("#FEE2E2").setFontColor("#B91C1C").setFontWeight("bold");
-    } else if (status === "활성") {
-      statusCell.setBackground("#E0F2FE").setFontColor("#0369A1").setFontWeight("bold");
-    }
+    // 2열: 진행 상태 (가운데 정렬 - 색상 장식 없는 순수 텍스트)
+    sheet.getRange(targetRow, 2).setValue(status).setHorizontalAlignment("center");
 
-    // 3열: 생성된 산출물 바로가기 (300) - 네이티브 RichTextValue 기반 안전한 하이퍼링크 렌더링
+    // 3열: 산출물 링크 (왼쪽 정렬 - 클릭 가능한 표준 하이퍼링크)
     var linkCell = sheet.getRange(targetRow, 3);
-    linkCell.setFontSize(10).setVerticalAlignment("middle");
     if (linkUrl) {
       var displayText = linkText || stepName;
       try {
@@ -1268,49 +1239,24 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
       linkCell.setValue(stepName).setHorizontalAlignment("left");
     }
 
-    // 4열: 완료 시각 (150)
+    // 4열: 완료 시각 (가운데 정렬)
     var nowStr = Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
-    sheet.getRange(targetRow, 4)
-      .setValue(nowStr)
-      .setFontSize(9)
-      .setFontColor("#64748B")
-      .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle");
+    sheet.getRange(targetRow, 4).setValue(nowStr).setHorizontalAlignment("center");
 
-    // 5열: 소요 시간 (100) - 숫자 메트릭 우측 정렬
+    // 5열: 소요 시간 (우측 정렬)
     var durText = formatDuration(durationSec);
-    sheet.getRange(targetRow, 5)
-      .setValue(durText)
-      .setFontSize(9)
-      .setFontColor("#334155")
-      .setHorizontalAlignment("right")
-      .setVerticalAlignment("middle");
+    sheet.getRange(targetRow, 5).setValue(durText).setHorizontalAlignment("right");
 
-    // 6열: 소모 토큰 (150) - 숫자 메트릭 우측 정렬
-    sheet.getRange(targetRow, 6)
-      .setValue(tokenVal)
-      .setFontSize(9)
-      .setFontColor("#334155")
-      .setHorizontalAlignment("right")
-      .setVerticalAlignment("middle");
+    // 6열: 소모 토큰 (우측 정렬)
+    sheet.getRange(targetRow, 6).setValue(tokenVal).setHorizontalAlignment("right");
 
-    // 7열: 실행 로그 및 상세 내역 (450)
-    sheet.getRange(targetRow, 7)
-      .setValue(detailText)
-      .setFontSize(9)
-      .setFontColor("#475569")
-      .setHorizontalAlignment("left")
-      .setVerticalAlignment("middle");
+    // 7열: 상세 내용 (왼쪽 정렬)
+    sheet.getRange(targetRow, 7).setValue(detailText).setHorizontalAlignment("left");
 
-    // 라인 랩 방지 (CLIP) 및 테두리 설정 (1~7열)
-    var rowRange = sheet.getRange(targetRow, 1, 1, 7);
-    rowRange.setWrap(false);
-    rowRange.setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
-
-    // [즉각 반영]: 변경 사항 즉시 시트 화면에 플러시 렌더링
+    // 즉시 시트 화면에 플러시 렌더링
     SpreadsheetApp.flush();
   } catch (e) {
-    Logger.log("대시보드 시트 결과 기록 예외: " + e);
+    Logger.log("실행 로그 결과 기록 예외: " + e);
   }
 }
 
