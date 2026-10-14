@@ -12,8 +12,13 @@
 // ============================================================================
 
 /**
- * Module: Code_Config.js
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 1] 전역 설정 (Global Configuration)
  */
+
 var CONFIG = {
   // 기본 캠페인 코드 및 구글 드라이브 루트 폴더명
   CAMPAIGN_CODE: "cp-ignite",
@@ -123,8 +128,13 @@ var CONFIG = {
 // ============================================================================
 
 /**
- * Module: Code_Gemini.js
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 2] Gemini REST API 클라이언트 엔진 (Google AI Studio 무료 API Key 기반 Zero-GCP 인증)
  */
+
 /**
  * Google AI Studio Gemini API Key 취득 함수
  * 1순위: UserProperties (사용자 개인별 안전 보관)
@@ -707,8 +717,13 @@ function createDeterministicVector(text, dim) {
 // ============================================================================
 
 /**
- * Module: Code_Prompts.js
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 3] 프롬프트 구글 독스 관리 및 스마트 캐싱 엔진 (Prompt Management & Cache Engine)
  */
+
 /**
  * 캠페인 루트의 prompts/ 폴더 내에 6대 프롬프트 구글 독스를 자동 시딩한다.
  * GitHub 퍼블릭 저장소(GitHub Raw)에서 최신 프롬프트 마크다운 파일을 실시간 인출하여 생성하며,
@@ -857,8 +872,13 @@ function renderPromptTemplate(template, variables) {
 // ============================================================================
 
 /**
- * Module: Code_Utils.js
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 4] 구글 드라이브 파일 탐색, 입출력 및 마크다운 독스 렌더러 (Drive Utils & Document Renderer)
  */
+
 function getFolderByPath(pathParts) {
   var currentFolder = DriveApp.getRootFolder();
   for (var i = 0; i < pathParts.length; i++) {
@@ -1177,9 +1197,75 @@ function readGoogleDoc(folder, title) {
 }
 
 /**
- * 대표 비주얼 이미지 3종 비율 세트 생성 (16:9 배너, 9:16 포스터, 1:1 SNS 피드)
+ * 리비전 폴더(rv-xx) 내 필수 에셋 5종(카피 독스, 이미지 3종, 숏폼 비디오)의 완성 상태를 정밀 진단한다.
  */
-function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
+function inspectRevisionFolder(folder, prefix) {
+  var result = {
+    hasDoc: false,
+    hasBanner: false,
+    hasPoster: false,
+    hasSns: false,
+    hasVideo: false,
+    existingFiles: [],
+    missingFiles: [],
+    isComplete: false,
+    isEmpty: true
+  };
+
+  if (!folder) return result;
+
+  var docName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+  var bannerName = prefix + "_banner_16x9.png";
+  var posterName = prefix + "_poster_9x16.png";
+  var snsName = prefix + "_sns_1x1.png";
+  var videoName = prefix + "_shorts.mp4";
+
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    var f = files.next();
+    var name = f.getName();
+    if (name === docName || name === "campaign_asset") {
+      result.hasDoc = true;
+    } else if (name === bannerName) {
+      result.hasBanner = true;
+    } else if (name === posterName) {
+      result.hasPoster = true;
+    } else if (name === snsName) {
+      result.hasSns = true;
+    } else if (name === videoName) {
+      result.hasVideo = true;
+    }
+  }
+
+  if (result.hasDoc) result.existingFiles.push("카피 독스(" + docName + ")");
+  else result.missingFiles.push("카피 독스(" + docName + ")");
+
+  if (result.hasBanner) result.existingFiles.push("배너 이미지(" + bannerName + ")");
+  else result.missingFiles.push("배너 이미지(" + bannerName + ")");
+
+  if (result.hasPoster) result.existingFiles.push("포스터 이미지(" + posterName + ")");
+  else result.missingFiles.push("포스터 이미지(" + posterName + ")");
+
+  if (result.hasSns) result.existingFiles.push("SNS 피드 이미지(" + snsName + ")");
+  else result.missingFiles.push("SNS 피드 이미지(" + snsName + ")");
+
+  if (result.hasVideo) result.existingFiles.push("숏폼 비디오(" + videoName + ")");
+  else result.missingFiles.push("숏폼 비디오(" + videoName + ")");
+
+  result.isComplete = (result.hasDoc && result.hasBanner && result.hasPoster && result.hasSns && result.hasVideo);
+  result.isEmpty = (result.existingFiles.length === 0);
+
+  return result;
+}
+
+/**
+ * 대표 비주얼 이미지 3종 비율 세트 및 Veo 비디오 생성 (16:9 배너, 9:16 포스터, 1:1 SNS 피드, 숏폼 비디오)
+ * options.onlyMissing = true 설정 시 이미 존재하는 파일은 건너뛰고 누락된 파일만 생성한다.
+ */
+function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief, options) {
+  var opts = options || {};
+  var onlyMissing = (opts.onlyMissing === true);
+
   var brief = visualBrief || "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones, warm golden hour sunlight, modern Seoul street";
   var items = [
     { name: prefix + "_banner_16x9.png", ratio: "16:9", prompt: brief + " Wide horizontal display banner (16:9)." },
@@ -1187,8 +1273,18 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
     { name: prefix + "_sns_1x1.png", ratio: "1:1", prompt: brief + " Square social media feed photo (1:1)." }
   ];
 
+  var genImageCount = 0;
+  var skipImageCount = 0;
+
   for (var i = 0; i < items.length; i++) {
     var item = items[i];
+
+    if (onlyMissing && targetFolder.getFilesByName(item.name).hasNext()) {
+      Logger.log("이미 존재하는 이미지 생략 (보존): " + item.name);
+      skipImageCount++;
+      continue;
+    }
+
     var imageResult = null;
     try {
       if (typeof callGeminiImage === "function") {
@@ -1203,28 +1299,44 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
       var mimeType = (typeof imageResult === "object" && imageResult.mimeType) ? imageResult.mimeType : MimeType.PNG;
       saveBinaryFile(targetFolder, item.name, base64Data, mimeType);
       Logger.log("실시간 Gemini 비주얼 이미지 생성 및 저장 성공: " + item.name);
+      genImageCount++;
     } else {
       Logger.log("Gemini 비주얼 이미지 생성 응답 없음: " + item.name);
     }
   }
 
   // 4. Gemini Veo 비디오 생성 API 호출 및 실제 숏폼 비디오(${prefix}_shorts.mp4) 저장
-  // (별도 txt 콘티 파일은 생성하지 않고 campaign_content 단일 구글 독스 문서에 통합됨)
   var videoFileName = prefix + "_shorts.mp4";
-  try {
-    if (typeof callGeminiVideo === "function") {
-      var videoPrompt = brief + " Vertical mobile commercial video (9:16 aspect ratio), cinematic lighting, smooth camera movement, photorealistic quality.";
-      var videoResult = callGeminiVideo(videoPrompt, "9:16", 4);
-      if (videoResult && videoResult.base64) {
-        saveBinaryFile(targetFolder, videoFileName, videoResult.base64, videoResult.mimeType || "video/mp4");
-        Logger.log("Gemini Veo 비디오 생성 및 저장 완료: " + videoFileName);
-      } else {
-        Logger.log("Gemini Veo 비디오 생성 응답 없음 또는 무료 티어 제한 (campaign_content 문서의 숏폼 영상 콘티 참조).");
+  var videoStatus = "none";
+
+  if (onlyMissing && targetFolder.getFilesByName(videoFileName).hasNext()) {
+    Logger.log("이미 존재하는 Veo 비디오 생략 (보존): " + videoFileName);
+    videoStatus = "skipped";
+  } else {
+    try {
+      if (typeof callGeminiVideo === "function") {
+        var videoPrompt = brief + " Vertical mobile commercial video (9:16 aspect ratio), cinematic lighting, smooth camera movement, photorealistic quality.";
+        var videoResult = callGeminiVideo(videoPrompt, "9:16", 4);
+        if (videoResult && videoResult.base64) {
+          saveBinaryFile(targetFolder, videoFileName, videoResult.base64, videoResult.mimeType || "video/mp4");
+          Logger.log("Gemini Veo 비디오 생성 및 저장 완료: " + videoFileName);
+          videoStatus = "generated";
+        } else {
+          Logger.log("Gemini Veo 비디오 생성 응답 없음 또는 무료 티어 제한 (campaign_content 문서의 숏폼 영상 콘티 참조).");
+          videoStatus = "unavailable";
+        }
       }
+    } catch (veoErr) {
+      Logger.log("Gemini Veo 비디오 생성 연동 예외: " + veoErr);
+      videoStatus = "unavailable";
     }
-  } catch (veoErr) {
-    Logger.log("Gemini Veo 비디오 생성 연동 예외: " + veoErr);
   }
+
+  return {
+    genImageCount: genImageCount,
+    skipImageCount: skipImageCount,
+    videoStatus: videoStatus
+  };
 }
 
 /**
@@ -1688,6 +1800,19 @@ function getDashboardSheet() {
   }
 }
 
+/**
+ * 초 단위 소요 시간을 사람이 읽기 편한 문자열(예: '24초', '1분 15초')로 포맷팅한다.
+ */
+function formatDuration(secOrMs) {
+  if (secOrMs === null || secOrMs === undefined || secOrMs === "") return "-";
+  var sec = typeof secOrMs === "number" ? Math.round(secOrMs > 1000 ? secOrMs / 1000 : secOrMs) : parseInt(secOrMs, 10);
+  if (isNaN(sec) || sec < 0) return String(secOrMs);
+  if (sec < 60) return sec + "초";
+  var min = Math.floor(sec / 60);
+  var remSec = sec % 60;
+  return remSec > 0 ? min + "분 " + remSec + "초" : min + "분";
+}
+
 function initDashboardSheet() {
   var sheet = getDashboardSheet();
   if (!sheet) return;
@@ -1698,8 +1823,8 @@ function initDashboardSheet() {
 
     sheet.clear();
 
-    // 상단 타이틀 배너 (A1:D1)
-    sheet.getRange("A1:D1").merge();
+    // 상단 타이틀 배너 (A1:F1)
+    sheet.getRange("A1:F1").merge();
     sheet.getRange("A1").setValue("Google Drive 마케팅 콘텐츠 파이프라인 실행 대시보드");
     sheet.getRange("A1")
       .setFontWeight("bold")
@@ -1707,34 +1832,49 @@ function initDashboardSheet() {
       .setBackground("#1E293B")
       .setFontColor("#FFFFFF")
       .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle");
+      .setVerticalAlignment("middle")
+      .setWrap(false);
     sheet.setRowHeight(1, 38);
 
-    // 컬럼 헤더 행 (A2:D2)
-    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각"]];
-    sheet.getRange("A2:D2").setValues(headers);
-    sheet.getRange("A2:D2")
+    // 컬럼 헤더 행 (A2:F2)
+    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각", "소요 시간", "실행 로그 및 상세 내역"]];
+    sheet.getRange("A2:F2").setValues(headers);
+    sheet.getRange("A2:F2")
       .setFontWeight("bold")
       .setFontSize(10)
       .setBackground("#F1F5F9")
       .setFontColor("#334155")
       .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle");
+      .setVerticalAlignment("middle")
+      .setWrap(false);
     sheet.setRowHeight(2, 28);
 
-    // 컬럼 너비
-    sheet.setColumnWidth(1, 140);
-    sheet.setColumnWidth(2, 90);
-    sheet.setColumnWidth(3, 380);
-    sheet.setColumnWidth(4, 180);
+    // 컬럼 너비 설정 (사용자 지정: 150, 100, 300, 150, 100, 450)
+    sheet.setColumnWidth(1, 150);
+    sheet.setColumnWidth(2, 100);
+    sheet.setColumnWidth(3, 300);
+    sheet.setColumnWidth(4, 150);
+    sheet.setColumnWidth(5, 100);
+    sheet.setColumnWidth(6, 450);
 
-    sheet.getRange("A2:D2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
+    sheet.getRange("A2:F2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
   } catch (e) {
     Logger.log("대시보드 시트 초기화 예외: " + e);
   }
 }
 
-function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
+/**
+ * 실행 대시보드 시트에 결과를 항상 맨 아래에 새 행으로 누적 추가(Append-only)한다.
+ *
+ * @param {string} stepId - 실행 단계 식별자
+ * @param {string} stepName - 작업 명칭
+ * @param {string} status - 진행 상태 ('완료', '진행 중' 등)
+ * @param {string} linkUrl - 산출물 링크 URL
+ * @param {string} linkText - 링크 표시 텍스트
+ * @param {number|string} [durationSec] - 소요 시간 (초 단위 숫자 또는 문자열)
+ * @param {string} [logDetail] - 실행 로그 및 상세 내역
+ */
+function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, durationSec, logDetail) {
   var sheet = getDashboardSheet();
   if (!sheet) return;
 
@@ -1742,25 +1882,12 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
     initDashboardSheet();
 
     var lastRow = sheet.getLastRow();
-    var targetRow = 0;
-
-    if (lastRow >= 3) {
-      var stepValues = sheet.getRange(3, 1, lastRow - 2, 1).getValues();
-      for (var i = 0; i < stepValues.length; i++) {
-        var currentStep = stepValues[i][0];
-        if (currentStep === stepId || (stepId === "Step 2 (기획서)" && currentStep === "Step 2")) {
-          targetRow = i + 3;
-          break;
-        }
-      }
-    }
-
-    if (targetRow === 0) {
-      targetRow = Math.max(3, lastRow + 1);
-    }
+    // 항상 맨 아래에 새 행으로 누적 추가 (헤더가 2행이므로 최소 3행부터 시작)
+    var targetRow = Math.max(3, lastRow + 1);
 
     sheet.setRowHeight(targetRow, 28);
 
+    // 1열: 실행 단계 (150)
     sheet.getRange(targetRow, 1)
       .setValue(stepId)
       .setFontWeight("bold")
@@ -1768,6 +1895,7 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
 
+    // 2열: 진행 상태 (100)
     var statusCell = sheet.getRange(targetRow, 2);
     statusCell.setValue(status)
       .setFontSize(10)
@@ -1779,6 +1907,7 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
       statusCell.setBackground("#FEF9C3").setFontColor("#A16207").setFontWeight("bold");
     }
 
+    // 3열: 생성된 산출물 바로가기 (300)
     var linkCell = sheet.getRange(targetRow, 3);
     linkCell.setFontSize(10).setVerticalAlignment("middle");
     if (linkUrl) {
@@ -1788,6 +1917,7 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
       linkCell.setValue(stepName).setHorizontalAlignment("left");
     }
 
+    // 4열: 완료 시각 (150)
     var nowStr = Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
     sheet.getRange(targetRow, 4)
       .setValue(nowStr)
@@ -1796,7 +1926,28 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
 
-    sheet.getRange(targetRow, 1, 1, 4).setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
+    // 5열: 소요 시간 (100)
+    var durText = formatDuration(durationSec);
+    sheet.getRange(targetRow, 5)
+      .setValue(durText)
+      .setFontSize(9)
+      .setFontColor("#334155")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+
+    // 6열: 실행 로그 및 상세 내역 (450)
+    var detailText = logDetail || (status === "완료" ? "정상 처리 완료" : "");
+    sheet.getRange(targetRow, 6)
+      .setValue(detailText)
+      .setFontSize(9)
+      .setFontColor("#475569")
+      .setHorizontalAlignment("left")
+      .setVerticalAlignment("middle");
+
+    // 라인 랩 방지 (CLIP) 및 테두리 설정
+    var rowRange = sheet.getRange(targetRow, 1, 1, 6);
+    rowRange.setWrap(false);
+    rowRange.setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
   } catch (e) {
     Logger.log("대시보드 시트 결과 기록 예외: " + e);
   }
@@ -1899,14 +2050,20 @@ function showResultModal(title, message, btnText, btnUrl) {
 // ============================================================================
 
 /**
- * Module: Code_Workspace.js
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 4] 캠페인 작업 공간 초기화 및 구글 폼 올인원 세팅 엔진 (Workspace & Form Initializer)
  */
+
 /**
  * [캠페인 초기화] 구글 드라이브 폴더 트리, 루트 직속 25인 페르소나, 6대 프롬프트 구글 독스,
  * 그리고 고객 VoC 수집용 Google Forms 생성 및 시트 바인딩까지 초장에 100% 완결한다.
  */
 function initCampaignWorkspace() {
   var ui = SpreadsheetApp.getUi();
+  var startTime = new Date().getTime();
   showProcessingToast("캠페인 작업 공간 및 VoC 설문 폼 올인원 초기화 중...", 20);
   try {
     var campaignFolder = getCampaignFolder();
@@ -1999,10 +2156,27 @@ function initCampaignWorkspace() {
     }
 
     // 7. 구글 시트 실행 대시보드 표 초기화 및 핵심 리소스 링크 등록
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     initDashboardSheet();
-    recordStepResultToSheet("초기 환경 구축", "작업 공간 및 VoC 설문 폼", "완료", campaignFolder.getUrl(), "구글 드라이브 폴더 열기 (" + campaignCode + ")");
+    recordStepResultToSheet(
+      "초기 환경 구축",
+      "작업 공간 및 VoC 설문 폼",
+      "완료",
+      campaignFolder.getUrl(),
+      "구글 드라이브 폴더 열기 (" + campaignCode + ")",
+      durationSec,
+      "캠페인 폴더 트리 8종 구축, 6대 프롬프트 독스 및 25인 페르소나 직속 적재 완료"
+    );
     if (formInfo && formInfo.publishedUrl) {
-      recordStepResultToSheet("고객 피드백 채널", "VoC 구글 폼 및 모바일 QR", "활성", formInfo.publishedUrl, "온라인 설문지 열기");
+      recordStepResultToSheet(
+        "고객 피드백 채널",
+        "VoC 구글 폼 및 모바일 QR",
+        "활성",
+        formInfo.publishedUrl,
+        "온라인 설문지 열기",
+        durationSec,
+        "Google Forms 연동 완료 (현재 시트에 설문 응답 실시간 수신 대기)"
+      );
     }
 
     showResultModal(
@@ -2192,13 +2366,19 @@ function getMasterPersonas25() {
 // ============================================================================
 
 /**
- * Module: Code_Content.js
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 5] 기획서(PLAN/SPEC) 도출 및 멀티 채널 콘텐츠 양산/보정 엔진 (Content Engine)
  */
+
 /**
  * [액션 1] 마케터 자연어 아이디어를 기반으로 캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC)를 자동 도출한다.
  */
 function runIdeaToPlanConversion() {
   var ui = SpreadsheetApp.getUi();
+  var startTime = new Date().getTime();
   showProcessingToast("아이디어 기반 기획서(PLAN) 및 명세서(SPEC) 자동 도출 중...", 30);
   try {
     var campaignFolder = getCampaignFolder();
@@ -2271,13 +2451,33 @@ function runIdeaToPlanConversion() {
     var planFile = saveGoogleDoc(campaignFolder, planDocName, planContent);
     var specFile = saveGoogleDoc(campaignFolder, specDocName, specContent);
 
-    // 4. 대시보드 시트에 링크 기록
-    recordStepResultToSheet("기획서 (PLAN)", "마케팅 캠페인 기획서", "완료", planFile.getUrl(), "구글 독스 열기 (PLAN)");
-    recordStepResultToSheet("제작 명세서 (SPEC)", "멀티 채널 콘텐츠 제작 명세서", "완료", specFile.getUrl(), "구글 독스 열기 (SPEC)");
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+
+    // 4. 대시보드 시트에 링크 및 소요 시간, 실행 로그 기록
+    recordStepResultToSheet(
+      "기획서 (PLAN)",
+      "마케팅 캠페인 기획서",
+      "완료",
+      planFile.getUrl(),
+      "구글 독스 열기 (PLAN)",
+      durationSec,
+      "마케터 아이디어 분석 기반 기획서(PLAN) 독스 자동 생성 완료"
+    );
+    recordStepResultToSheet(
+      "제작 명세서 (SPEC)",
+      "멀티 채널 콘텐츠 제작 명세서",
+      "완료",
+      specFile.getUrl(),
+      "구글 독스 열기 (SPEC)",
+      durationSec,
+      "16:9 배너, 9:16 포스터, 1:1 SNS, 15초 숏폼 규격 명세서(SPEC) 독스 생성 완료"
+    );
 
     showResultModal(
       "기획서 및 명세서 생성 완료",
-      "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 생성되었습니다.\n아래 버튼을 클릭하여 기획서를 검토하거나 SPEC 수치를 직접 수정하십시오.",
+      "캠페인 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC) 구글 독스가 준비되었습니다.\n\n" +
+      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n\n" +
+      "아래 버튼을 클릭하여 기획서를 검토하거나 SPEC 수치를 직접 수정하십시오.",
       "기획서 구글 독스 열기 (PLAN)",
       planFile.getUrl()
     );
@@ -2291,11 +2491,48 @@ function runIdeaToPlanConversion() {
  */
 function runInitialContentGeneration() {
   var ui = SpreadsheetApp.getUi();
+  var startTime = new Date().getTime();
   showProcessingToast("초판 마케팅 콘텐츠 양산 중 (rv-00)...", 60);
   try {
     var campaignFolder = getCampaignFolder();
     var campaignCode = getCampaignCode();
     var rv00Folder = getCampaignSubFolder(["output", "rv-00"]);
+
+    // 폴더 내 기존 에셋 검사 및 스마트 분기
+    var folderStatus = inspectRevisionFolder(rv00Folder, "00");
+    var onlyMissing = false;
+
+    if (!folderStatus.isEmpty) {
+      if (folderStatus.isComplete) {
+        var respComplete = ui.alert(
+          "초판 콘텐츠(rv-00) 완비 안내",
+          "초판 폴더(rv-00)에 모든 에셋(카피 독스, 이미지 3종, 숏폼 비디오)이 이미 완비되어 있습니다.\n\n" +
+          "모든 에셋을 새로 덮어쓰시겠습니까?\n" +
+          "([예]: 전체 새로 덮어쓰기 / [아니오]: 작업 중단)",
+          ui.ButtonSet.YES_NO
+        );
+        if (respComplete !== ui.Button.YES) {
+          return;
+        }
+      } else {
+        var missingMsg = folderStatus.missingFiles.join(", ");
+        var existingMsg = folderStatus.existingFiles.join(", ");
+        var respMissing = ui.alert(
+          "초판 콘텐츠(rv-00) 미완성 에셋 감지",
+          "초판 폴더(rv-00)에 일부 에셋이 존재합니다.\n\n" +
+          "* 보존 대상 기존 파일: " + existingMsg + "\n" +
+          "* 누락된 미완성 파일: " + missingMsg + "\n\n" +
+          "[예] 누락된 미완성 파일만 고속 보충 (권장, 기존 편집본 및 이미지 보존)\n" +
+          "[아니오] 전체 덮어쓰기 (모든 에셋 새로 재생성)",
+          ui.ButtonSet.YES_NO_CANCEL
+        );
+        if (respMissing === ui.Button.CANCEL) {
+          return;
+        } else if (respMissing === ui.Button.YES) {
+          onlyMissing = true;
+        }
+      }
+    }
 
     // 선결 조건 검사: PLAN 문서 확인
     var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
@@ -2320,38 +2557,74 @@ function runInitialContentGeneration() {
     var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
     var specContent = readGoogleDoc(campaignFolder, specDocName) || "";
 
-    // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
-    var systemInstruction = getPromptTemplate("02_content_generation");
-    var promptText =
-      "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
-      "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
-      "### [1. 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
-      "### [2. 멀티 채널 콘텐츠 제작 명세서 (SPEC)]\n" + (specContent || "기본 규격 준수");
-
-    var generatedContent = callGemini(systemInstruction, promptText);
-
-    // 2. 동적 비주얼 프롬프트 도출 및 숏폼 영상 콘티 완전 통합
-    var visualBrief = extractDynamicVisualPrompt(
-      generatedContent,
-      planContent,
-      "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
-    );
-    var finalizedContent = ensureShortsScriptInCampaignContent(generatedContent, "00", visualBrief);
-
-    // 3. campaign_content 단일 구글 독스 문서 저장
     var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
-    var contentDocFile = saveGoogleDoc(rv00Folder, contentDocName, finalizedContent);
+    var finalizedContent = "";
+    var visualBrief = "";
+
+    if (onlyMissing && folderStatus.hasDoc) {
+      // 카피 독스가 이미 존재하면 기존 문서를 읽어 마케터의 수정본을 존중
+      finalizedContent = readGoogleDoc(rv00Folder, contentDocName) || "";
+      visualBrief = extractDynamicVisualPrompt(
+        finalizedContent,
+        planContent,
+        "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
+      );
+    } else {
+      // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
+      var systemInstruction = getPromptTemplate("02_content_generation");
+      var promptText =
+        "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
+        "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
+        "### [1. 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+        "### [2. 멀티 채널 콘텐츠 제작 명세서 (SPEC)]\n" + (specContent || "기본 규격 준수");
+
+      var generatedContent = callGemini(systemInstruction, promptText);
+
+      // 2. 동적 비주얼 프롬프트 도출 및 숏폼 영상 콘티 완전 통합
+      visualBrief = extractDynamicVisualPrompt(
+        generatedContent,
+        planContent,
+        "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
+      );
+      finalizedContent = ensureShortsScriptInCampaignContent(generatedContent, "00", visualBrief);
+
+      // 3. campaign_content 단일 구글 독스 문서 저장
+      saveGoogleDoc(rv00Folder, contentDocName, finalizedContent);
+    }
 
     // 4. 실시간 대표 비주얼 이미지 3종 및 Veo 비디오 생성
     Logger.log("동적 도출된 비주얼 프롬프트 (rv-00): " + visualBrief);
-    generateAndSaveVisualAssets(rv00Folder, "00", visualBrief);
+    var visResult = generateAndSaveVisualAssets(rv00Folder, "00", visualBrief, { onlyMissing: onlyMissing });
 
-    // 5. 실행 대시보드에 링크 기록
-    recordStepResultToSheet("초판 마케팅 콘텐츠", "카피 및 비주얼 (rv-00)", "완료", rv00Folder.getUrl(), "구글 드라이브 폴더 열기 (rv-00)");
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+
+    // 5. 상세 실행 로그 조립
+    var logDetail = "";
+    if (onlyMissing) {
+      var totalSkipped = visResult.skipImageCount + (visResult.videoStatus === "skipped" ? 1 : 0);
+      logDetail = "미완성 에셋 선별 보충 완료 (신규 이미지 " + visResult.genImageCount + "건 생성, 기존 에셋 " + totalSkipped + "건 보존)";
+    } else {
+      var videoDesc = visResult.videoStatus === "generated" ? "Veo 비디오 1건" : "숏폼 콘티 독스 수록";
+      logDetail = "통합 카피 독스 1건, 대표 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 정상 양산 완료";
+    }
+
+    // 6. 실행 대시보드에 링크 기록
+    recordStepResultToSheet(
+      "초판 마케팅 콘텐츠",
+      "카피 및 비주얼 (rv-00)",
+      "완료",
+      rv00Folder.getUrl(),
+      "구글 드라이브 폴더 열기 (rv-00)",
+      durationSec,
+      logDetail
+    );
 
     showResultModal(
       "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
-      "카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오 생성이 완료되었습니다.\n아래 버튼을 눌러 초판 콘텐츠 폴더를 확인하십시오.",
+      "카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오가 준비되었습니다.\n\n" +
+      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
+      "* 실행 상세 내역: " + logDetail + "\n\n" +
+      "아래 버튼을 눌러 초판 콘텐츠 폴더를 확인하십시오.",
       "초판 콘텐츠 폴더 열기 (rv-00)",
       rv00Folder.getUrl()
     );
@@ -2366,6 +2639,7 @@ function runInitialContentGeneration() {
 function runReviseContent(targetRoundOpt, isSilentOpt) {
   var ui = SpreadsheetApp.getUi();
   var isSilent = (isSilentOpt === true);
+  var startTime = new Date().getTime();
   try {
     var campaignFolder = getCampaignFolder();
 
@@ -2381,11 +2655,59 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     var prevRoundNum = roundNum - 1;
     var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
     var targetRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
+    var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
+
+    var targetRvFolder = getCampaignSubFolder(["output", targetRvName]);
+    var onlyMissing = false;
+
+    // 타깃 폴더 에셋 상태 검사 및 스마트 분기
+    var folderStatus = inspectRevisionFolder(targetRvFolder, prefix);
+    if (!folderStatus.isEmpty) {
+      if (folderStatus.isComplete) {
+        var nextRoundNum = roundNum + 1;
+        var nextRvName = "rv-" + (nextRoundNum < 10 ? "0" + nextRoundNum : nextRoundNum);
+        var respComplete = ui.alert(
+          "개정본 콘텐츠(" + targetRvName + ") 완비 안내",
+          "개정본 폴더(" + targetRvName + ")에 모든 에셋(카피 독스, 이미지 3종, 숏폼 비디오)이 이미 완비되어 있습니다.\n\n" +
+          "[예] 다음 리비전(" + nextRvName + ")으로 안전 신규 생성 (권장, 기존 " + targetRvName + " 보존)\n" +
+          "[아니오] 현재 리비전(" + targetRvName + ") 전체 새로 덮어쓰기\n" +
+          "[취소] 작업 중단",
+          ui.ButtonSet.YES_NO_CANCEL
+        );
+        if (respComplete === ui.Button.CANCEL) {
+          return;
+        } else if (respComplete === ui.Button.YES) {
+          // 다음 리비전으로 타깃 전환
+          roundNum = nextRoundNum;
+          prevRvName = targetRvName;
+          targetRvName = nextRvName;
+          prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
+          targetRvFolder = getCampaignSubFolder(["output", targetRvName]);
+          folderStatus = inspectRevisionFolder(targetRvFolder, prefix);
+        }
+      } else {
+        var missingMsg = folderStatus.missingFiles.join(", ");
+        var existingMsg = folderStatus.existingFiles.join(", ");
+        var respMissing = ui.alert(
+          "개정본 콘텐츠(" + targetRvName + ") 미완성 에셋 감지",
+          "개정본 폴더(" + targetRvName + ")에 일부 에셋이 이미 존재합니다.\n\n" +
+          "* 보존 대상 기존 파일: " + existingMsg + "\n" +
+          "* 누락된 미완성 파일: " + missingMsg + "\n\n" +
+          "[예] 누락된 미완성 파일만 고속 보충 (권장, 기존 마케터 편집본 및 이미지 보존)\n" +
+          "[아니오] 전체 덮어쓰기 (모든 에셋 새로 재생성)",
+          ui.ButtonSet.YES_NO_CANCEL
+        );
+        if (respMissing === ui.Button.CANCEL) {
+          return;
+        } else if (respMissing === ui.Button.YES) {
+          onlyMissing = true;
+        }
+      }
+    }
 
     showProcessingToast("피드백 반영 마케팅 콘텐츠 보정 중 (" + targetRvName + ")...", 75);
 
     var prevRvFolder = getCampaignSubFolder(["output", prevRvName]);
-    var targetRvFolder = getCampaignSubFolder(["output", targetRvName]);
     var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
 
     // 선결 조건 1: 이전 콘텐츠 확인
@@ -2406,41 +2728,76 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
     var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
     var specContent = readGoogleDoc(campaignFolder, specDocName) || "콘텐츠 제작 명세서";
 
-    // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
-    var systemInstruction = getPromptTemplate("05_content_revision");
-    var userPrompt =
-      "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)이다.\n\n" +
-      "### [1. 원천 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
-      "### [2. 콘텐츠 제작 명세서 (SPEC)]\n" + specContent + "\n\n" +
-      "### [3. 직전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + previousAsset + "\n\n" +
-      "### [4. 고객 및 AI 페르소나 피드백 요약본 (feedback_summary)]\n" + summaryContent;
+    var finalizedContent = "";
+    var dynamicBrief = "";
 
-    var refinedAsset = callGemini(systemInstruction, userPrompt);
+    if (onlyMissing && folderStatus.hasDoc) {
+      // 카피 독스가 이미 있으면 기존 독스를 유지하고 비주얼 프롬프트만 재도출
+      finalizedContent = readGoogleDoc(targetRvFolder, targetContentDocName) || "";
+      dynamicBrief = extractDynamicVisualPrompt(
+        finalizedContent,
+        summaryContent,
+        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+      );
+    } else {
+      // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
+      var systemInstruction = getPromptTemplate("05_content_revision");
+      var userPrompt =
+        "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)이다.\n\n" +
+        "### [1. 원천 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+        "### [2. 콘텐츠 제작 명세서 (SPEC)]\n" + specContent + "\n\n" +
+        "### [3. 직전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + previousAsset + "\n\n" +
+        "### [4. 고객 및 AI 페르소나 피드백 요약본 (feedback_summary)]\n" + summaryContent;
 
-    // 2. 동적 비주얼 프롬프트 도출 및 숏폼 영상 콘티 완전 통합
-    var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
-    var dynamicBrief = extractDynamicVisualPrompt(
-      refinedAsset,
-      summaryContent,
-      "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
-    );
-    var finalizedContent = ensureShortsScriptInCampaignContent(refinedAsset, prefix, dynamicBrief);
+      var refinedAsset = callGemini(systemInstruction, userPrompt);
 
-    // 3. campaign_content 단일 구글 독스 문서 저장
-    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, finalizedContent);
+      // 2. 동적 비주얼 프롬프트 도출 및 숏폼 영상 콘티 완전 통합
+      dynamicBrief = extractDynamicVisualPrompt(
+        refinedAsset,
+        summaryContent,
+        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+      );
+      finalizedContent = ensureShortsScriptInCampaignContent(refinedAsset, prefix, dynamicBrief);
 
-    // 4. 대시보드 시트에 링크 기록
-    var stepTitle = roundNum + "차 마케팅 콘텐츠 개정본 (" + targetRvName + ")";
-    recordStepResultToSheet(targetRvName, stepTitle, "완료", targetRvFolder.getUrl(), "구글 드라이브 폴더 열기 (" + targetRvName + ")");
+      // 3. campaign_content 단일 구글 독스 문서 저장
+      saveGoogleDoc(targetRvFolder, targetContentDocName, finalizedContent);
+    }
 
-    // 5. 신규 비주얼 이미지 3종 및 Veo 비디오 생성
+    // 4. 신규 비주얼 이미지 3종 및 Veo 비디오 생성
     Logger.log("동적 도출된 비주얼 프롬프트 (" + targetRvName + "): " + dynamicBrief);
-    generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief);
+    var visResult = generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief, { onlyMissing: onlyMissing });
+
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+
+    // 5. 상세 실행 로그 조립
+    var logDetail = "";
+    if (onlyMissing) {
+      var totalSkipped = visResult.skipImageCount + (visResult.videoStatus === "skipped" ? 1 : 0);
+      logDetail = "미완성 에셋 선별 보충 완료 (신규 이미지 " + visResult.genImageCount + "건 생성, 기존 에셋 " + totalSkipped + "건 보존)";
+    } else {
+      var videoDesc = visResult.videoStatus === "generated" ? "Veo 비디오 1건" : "숏폼 콘티 독스 수록";
+      logDetail = "피드백 반영 개정본 독스 1건, 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 양산 완료";
+    }
+
+    // 6. 대시보드 시트에 링크 기록
+    var stepTitle = roundNum + "차 마케팅 콘텐츠 개정본 (" + targetRvName + ")";
+    recordStepResultToSheet(
+      targetRvName,
+      stepTitle,
+      "완료",
+      targetRvFolder.getUrl(),
+      "구글 드라이브 폴더 열기 (" + targetRvName + ")",
+      durationSec,
+      logDetail
+    );
 
     if (!isSilent) {
       showResultModal(
         "마케팅 콘텐츠 보정 완료 (" + targetRvName + ")",
-        "피드백 분석 보고서와 마케터 보정 지침이 반영된 개정본(" + targetRvName + ") 및 신규 비주얼 3종, Veo 영상이 생성되었습니다.\n아래 버튼을 눌러 개정본 콘텐츠 폴더를 확인하십시오.",
+        "피드백 분석 보고서와 마케터 보정 지침이 반영된 개정본(" + targetRvName + ") 및 비주얼 에셋이 준비되었습니다.\n\n" +
+        "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
+        "* 실행 상세 내역: " + logDetail + "\n\n" +
+        "아래 버튼을 눌러 개정본 콘텐츠 폴더를 확인하십시오.",
         "개정본 콘텐츠 폴더 열기 (" + targetRvName + ")",
         targetRvFolder.getUrl()
       );
@@ -2461,8 +2818,13 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
 // ============================================================================
 
 /**
- * Module: Code_Feedback.js
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 6] 25인 AI 페르소나 다면 평가 및 피드백 종합 분석 보고서 엔진 (Feedback & Evaluation Engine)
  */
+
 /**
  * [액션 4] 25인 AI 페르소나 다면 평가를 실행하고 128d 임베딩 기반 2D t-SNE 여론 지형도를 생성한다.
  *
@@ -2470,6 +2832,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
  */
 function runPersonaEvaluation(targetRoundOpt) {
   var ui = SpreadsheetApp.getUi();
+  var startTime = new Date().getTime();
   try {
     var campaignFolder = getCampaignFolder();
 
@@ -2519,6 +2882,10 @@ function runPersonaEvaluation(targetRoundOpt) {
       throw new Error("t-SNE 여론 지형도 이미지 생성에 실패했습니다.");
     }
 
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+    var pointCount = parsedPoints ? parsedPoints.length : 0;
+    var logDetail = "25인 페르소나 다면 평가 완료" + (pointCount > 0 ? " (VoC 포인트 " + pointCount + "개 도출, " : " (") + "128d 임베딩 t-SNE 여론 지형도 렌더링 완료)";
+
     // 3. 대시보드 시트에 링크 기록
     var stepTitle = roundNum + "차 페르소나 다면 평가 및 t-SNE 지형도 (" + targetRound + ")";
     recordStepResultToSheet(
@@ -2526,14 +2893,19 @@ function runPersonaEvaluation(targetRoundOpt) {
       stepTitle,
       "완료",
       clusterMapFile.getUrl(),
-      "t-SNE 지형도 이미지 열기 (" + targetRound + ")"
+      "t-SNE 지형도 이미지 열기 (" + targetRound + ")",
+      durationSec,
+      logDetail
     );
 
     showResultModal(
       "25인 페르소나 다면 평가 및 지형도 생성 완료 (" + targetRound + ")",
-      "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
+      "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n\n" +
+      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
+      "* 실행 상세 내역: " + logDetail + "\n\n" +
+      "아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
       "t-SNE 지형도 차트 보기",
-      chartFile ? chartFile.getUrl() : feedbackFolder.getUrl()
+      clusterMapFile.getUrl()
     );
   } catch (e) {
     ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
@@ -2548,6 +2920,7 @@ function runPersonaEvaluation(targetRoundOpt) {
  */
 function runFeedbackSummaryReport(targetRoundOpt) {
   var ui = SpreadsheetApp.getUi();
+  var startTime = new Date().getTime();
   try {
     var campaignFolder = getCampaignFolder();
 
@@ -2661,18 +3034,25 @@ function runFeedbackSummaryReport(targetRoundOpt) {
     }
 
     // 6. 대시보드 시트에 링크 기록
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     var stepTitle = roundNum + "차 피드백 종합 분석 보고서 (" + targetRound + ")";
+    var logDetail = "고객 VoC + 25인 평가 + VLM 시각 분석 통합 보고서(feedback_summary) 구글 독스 생성 완료";
     recordStepResultToSheet(
       "피드백 보고서",
       stepTitle,
       "완료",
       summaryFile.getUrl(),
-      "구글 독스 보고서 열기 (" + targetRound + ")"
+      "구글 독스 보고서 열기 (" + targetRound + ")",
+      durationSec,
+      logDetail
     );
 
     showResultModal(
       "피드백 종합 분석 보고서 도출 완료 (" + targetRound + ")",
-      "피드백 종합 보고서(feedback_summary) 구글 독스가 생성되었습니다.\n문서 하단의 [마케터 최종 의사 결정] 지침을 브라우저에서 직접 검토 및 수정한 뒤 [보정] 메뉴를 진행하십시오.",
+      "피드백 종합 보고서(feedback_summary) 구글 독스가 생성되었습니다.\n\n" +
+      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
+      "* 실행 상세 내역: " + logDetail + "\n\n" +
+      "문서 하단의 [마케터 최종 의사 결정] 지침을 브라우저에서 직접 검토 및 수정한 뒤 [보정] 메뉴를 진행하십시오.",
       "피드백 요약서 구글 독스 열기",
       summaryFile.getUrl()
     );
@@ -2739,8 +3119,13 @@ function loadGoogleFormResponsesText() {
 // ============================================================================
 
 /**
- * Module: Code_Menu.js
+ * Copyright 2026 Google LLC. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive Marketing Content Pipeline
+ * [모듈 7] Google Sheets 액션 중심 커스텀 메뉴 및 선결 가드레일 UI (Spreadsheet UI & Action Menus)
  */
+
 /**
  * 스프레드시트 열림 시 액션 중심 커스텀 메뉴 자동 등록
  */
@@ -3183,4 +3568,5 @@ function forceSyncEngine() {
     ui.alert("동기화 실패", "엔진 동기화 중 오류가 발생했습니다: " + err.toString(), ui.ButtonSet.OK);
   }
 }
+
 

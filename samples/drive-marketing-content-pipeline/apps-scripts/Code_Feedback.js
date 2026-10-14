@@ -13,6 +13,7 @@
  */
 function runPersonaEvaluation(targetRoundOpt) {
   var ui = SpreadsheetApp.getUi();
+  var startTime = new Date().getTime();
   try {
     var campaignFolder = getCampaignFolder();
 
@@ -62,6 +63,10 @@ function runPersonaEvaluation(targetRoundOpt) {
       throw new Error("t-SNE 여론 지형도 이미지 생성에 실패했습니다.");
     }
 
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+    var pointCount = parsedPoints ? parsedPoints.length : 0;
+    var logDetail = "25인 페르소나 다면 평가 완료" + (pointCount > 0 ? " (VoC 포인트 " + pointCount + "개 도출, " : " (") + "128d 임베딩 t-SNE 여론 지형도 렌더링 완료)";
+
     // 3. 대시보드 시트에 링크 기록
     var stepTitle = roundNum + "차 페르소나 다면 평가 및 t-SNE 지형도 (" + targetRound + ")";
     recordStepResultToSheet(
@@ -69,14 +74,19 @@ function runPersonaEvaluation(targetRoundOpt) {
       stepTitle,
       "완료",
       clusterMapFile.getUrl(),
-      "t-SNE 지형도 이미지 열기 (" + targetRound + ")"
+      "t-SNE 지형도 이미지 열기 (" + targetRound + ")",
+      durationSec,
+      logDetail
     );
 
     showResultModal(
       "25인 페르소나 다면 평가 및 지형도 생성 완료 (" + targetRound + ")",
-      "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
+      "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n\n" +
+      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
+      "* 실행 상세 내역: " + logDetail + "\n\n" +
+      "아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
       "t-SNE 지형도 차트 보기",
-      chartFile ? chartFile.getUrl() : feedbackFolder.getUrl()
+      clusterMapFile.getUrl()
     );
   } catch (e) {
     ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
@@ -91,6 +101,7 @@ function runPersonaEvaluation(targetRoundOpt) {
  */
 function runFeedbackSummaryReport(targetRoundOpt) {
   var ui = SpreadsheetApp.getUi();
+  var startTime = new Date().getTime();
   try {
     var campaignFolder = getCampaignFolder();
 
@@ -204,18 +215,25 @@ function runFeedbackSummaryReport(targetRoundOpt) {
     }
 
     // 6. 대시보드 시트에 링크 기록
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     var stepTitle = roundNum + "차 피드백 종합 분석 보고서 (" + targetRound + ")";
+    var logDetail = "고객 VoC + 25인 평가 + VLM 시각 분석 통합 보고서(feedback_summary) 구글 독스 생성 완료";
     recordStepResultToSheet(
       "피드백 보고서",
       stepTitle,
       "완료",
       summaryFile.getUrl(),
-      "구글 독스 보고서 열기 (" + targetRound + ")"
+      "구글 독스 보고서 열기 (" + targetRound + ")",
+      durationSec,
+      logDetail
     );
 
     showResultModal(
       "피드백 종합 분석 보고서 도출 완료 (" + targetRound + ")",
-      "피드백 종합 보고서(feedback_summary) 구글 독스가 생성되었습니다.\n문서 하단의 [마케터 최종 의사 결정] 지침을 브라우저에서 직접 검토 및 수정한 뒤 [보정] 메뉴를 진행하십시오.",
+      "피드백 종합 보고서(feedback_summary) 구글 독스가 생성되었습니다.\n\n" +
+      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
+      "* 실행 상세 내역: " + logDetail + "\n\n" +
+      "문서 하단의 [마케터 최종 의사 결정] 지침을 브라우저에서 직접 검토 및 수정한 뒤 [보정] 메뉴를 진행하십시오.",
       "피드백 요약서 구글 독스 열기",
       summaryFile.getUrl()
     );

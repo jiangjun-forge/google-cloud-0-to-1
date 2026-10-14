@@ -324,9 +324,75 @@ function readGoogleDoc(folder, title) {
 }
 
 /**
- * 대표 비주얼 이미지 3종 비율 세트 생성 (16:9 배너, 9:16 포스터, 1:1 SNS 피드)
+ * 리비전 폴더(rv-xx) 내 필수 에셋 5종(카피 독스, 이미지 3종, 숏폼 비디오)의 완성 상태를 정밀 진단한다.
  */
-function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
+function inspectRevisionFolder(folder, prefix) {
+  var result = {
+    hasDoc: false,
+    hasBanner: false,
+    hasPoster: false,
+    hasSns: false,
+    hasVideo: false,
+    existingFiles: [],
+    missingFiles: [],
+    isComplete: false,
+    isEmpty: true
+  };
+
+  if (!folder) return result;
+
+  var docName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+  var bannerName = prefix + "_banner_16x9.png";
+  var posterName = prefix + "_poster_9x16.png";
+  var snsName = prefix + "_sns_1x1.png";
+  var videoName = prefix + "_shorts.mp4";
+
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    var f = files.next();
+    var name = f.getName();
+    if (name === docName || name === "campaign_asset") {
+      result.hasDoc = true;
+    } else if (name === bannerName) {
+      result.hasBanner = true;
+    } else if (name === posterName) {
+      result.hasPoster = true;
+    } else if (name === snsName) {
+      result.hasSns = true;
+    } else if (name === videoName) {
+      result.hasVideo = true;
+    }
+  }
+
+  if (result.hasDoc) result.existingFiles.push("카피 독스(" + docName + ")");
+  else result.missingFiles.push("카피 독스(" + docName + ")");
+
+  if (result.hasBanner) result.existingFiles.push("배너 이미지(" + bannerName + ")");
+  else result.missingFiles.push("배너 이미지(" + bannerName + ")");
+
+  if (result.hasPoster) result.existingFiles.push("포스터 이미지(" + posterName + ")");
+  else result.missingFiles.push("포스터 이미지(" + posterName + ")");
+
+  if (result.hasSns) result.existingFiles.push("SNS 피드 이미지(" + snsName + ")");
+  else result.missingFiles.push("SNS 피드 이미지(" + snsName + ")");
+
+  if (result.hasVideo) result.existingFiles.push("숏폼 비디오(" + videoName + ")");
+  else result.missingFiles.push("숏폼 비디오(" + videoName + ")");
+
+  result.isComplete = (result.hasDoc && result.hasBanner && result.hasPoster && result.hasSns && result.hasVideo);
+  result.isEmpty = (result.existingFiles.length === 0);
+
+  return result;
+}
+
+/**
+ * 대표 비주얼 이미지 3종 비율 세트 및 Veo 비디오 생성 (16:9 배너, 9:16 포스터, 1:1 SNS 피드, 숏폼 비디오)
+ * options.onlyMissing = true 설정 시 이미 존재하는 파일은 건너뛰고 누락된 파일만 생성한다.
+ */
+function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief, options) {
+  var opts = options || {};
+  var onlyMissing = (opts.onlyMissing === true);
+
   var brief = visualBrief || "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones, warm golden hour sunlight, modern Seoul street";
   var items = [
     { name: prefix + "_banner_16x9.png", ratio: "16:9", prompt: brief + " Wide horizontal display banner (16:9)." },
@@ -334,8 +400,18 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
     { name: prefix + "_sns_1x1.png", ratio: "1:1", prompt: brief + " Square social media feed photo (1:1)." }
   ];
 
+  var genImageCount = 0;
+  var skipImageCount = 0;
+
   for (var i = 0; i < items.length; i++) {
     var item = items[i];
+
+    if (onlyMissing && targetFolder.getFilesByName(item.name).hasNext()) {
+      Logger.log("이미 존재하는 이미지 생략 (보존): " + item.name);
+      skipImageCount++;
+      continue;
+    }
+
     var imageResult = null;
     try {
       if (typeof callGeminiImage === "function") {
@@ -350,28 +426,44 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
       var mimeType = (typeof imageResult === "object" && imageResult.mimeType) ? imageResult.mimeType : MimeType.PNG;
       saveBinaryFile(targetFolder, item.name, base64Data, mimeType);
       Logger.log("실시간 Gemini 비주얼 이미지 생성 및 저장 성공: " + item.name);
+      genImageCount++;
     } else {
       Logger.log("Gemini 비주얼 이미지 생성 응답 없음: " + item.name);
     }
   }
 
   // 4. Gemini Veo 비디오 생성 API 호출 및 실제 숏폼 비디오(${prefix}_shorts.mp4) 저장
-  // (별도 txt 콘티 파일은 생성하지 않고 campaign_content 단일 구글 독스 문서에 통합됨)
   var videoFileName = prefix + "_shorts.mp4";
-  try {
-    if (typeof callGeminiVideo === "function") {
-      var videoPrompt = brief + " Vertical mobile commercial video (9:16 aspect ratio), cinematic lighting, smooth camera movement, photorealistic quality.";
-      var videoResult = callGeminiVideo(videoPrompt, "9:16", 4);
-      if (videoResult && videoResult.base64) {
-        saveBinaryFile(targetFolder, videoFileName, videoResult.base64, videoResult.mimeType || "video/mp4");
-        Logger.log("Gemini Veo 비디오 생성 및 저장 완료: " + videoFileName);
-      } else {
-        Logger.log("Gemini Veo 비디오 생성 응답 없음 또는 무료 티어 제한 (campaign_content 문서의 숏폼 영상 콘티 참조).");
+  var videoStatus = "none";
+
+  if (onlyMissing && targetFolder.getFilesByName(videoFileName).hasNext()) {
+    Logger.log("이미 존재하는 Veo 비디오 생략 (보존): " + videoFileName);
+    videoStatus = "skipped";
+  } else {
+    try {
+      if (typeof callGeminiVideo === "function") {
+        var videoPrompt = brief + " Vertical mobile commercial video (9:16 aspect ratio), cinematic lighting, smooth camera movement, photorealistic quality.";
+        var videoResult = callGeminiVideo(videoPrompt, "9:16", 4);
+        if (videoResult && videoResult.base64) {
+          saveBinaryFile(targetFolder, videoFileName, videoResult.base64, videoResult.mimeType || "video/mp4");
+          Logger.log("Gemini Veo 비디오 생성 및 저장 완료: " + videoFileName);
+          videoStatus = "generated";
+        } else {
+          Logger.log("Gemini Veo 비디오 생성 응답 없음 또는 무료 티어 제한 (campaign_content 문서의 숏폼 영상 콘티 참조).");
+          videoStatus = "unavailable";
+        }
       }
+    } catch (veoErr) {
+      Logger.log("Gemini Veo 비디오 생성 연동 예외: " + veoErr);
+      videoStatus = "unavailable";
     }
-  } catch (veoErr) {
-    Logger.log("Gemini Veo 비디오 생성 연동 예외: " + veoErr);
   }
+
+  return {
+    genImageCount: genImageCount,
+    skipImageCount: skipImageCount,
+    videoStatus: videoStatus
+  };
 }
 
 /**
@@ -835,6 +927,19 @@ function getDashboardSheet() {
   }
 }
 
+/**
+ * 초 단위 소요 시간을 사람이 읽기 편한 문자열(예: '24초', '1분 15초')로 포맷팅한다.
+ */
+function formatDuration(secOrMs) {
+  if (secOrMs === null || secOrMs === undefined || secOrMs === "") return "-";
+  var sec = typeof secOrMs === "number" ? Math.round(secOrMs > 1000 ? secOrMs / 1000 : secOrMs) : parseInt(secOrMs, 10);
+  if (isNaN(sec) || sec < 0) return String(secOrMs);
+  if (sec < 60) return sec + "초";
+  var min = Math.floor(sec / 60);
+  var remSec = sec % 60;
+  return remSec > 0 ? min + "분 " + remSec + "초" : min + "분";
+}
+
 function initDashboardSheet() {
   var sheet = getDashboardSheet();
   if (!sheet) return;
@@ -845,8 +950,8 @@ function initDashboardSheet() {
 
     sheet.clear();
 
-    // 상단 타이틀 배너 (A1:D1)
-    sheet.getRange("A1:D1").merge();
+    // 상단 타이틀 배너 (A1:F1)
+    sheet.getRange("A1:F1").merge();
     sheet.getRange("A1").setValue("Google Drive 마케팅 콘텐츠 파이프라인 실행 대시보드");
     sheet.getRange("A1")
       .setFontWeight("bold")
@@ -854,34 +959,49 @@ function initDashboardSheet() {
       .setBackground("#1E293B")
       .setFontColor("#FFFFFF")
       .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle");
+      .setVerticalAlignment("middle")
+      .setWrap(false);
     sheet.setRowHeight(1, 38);
 
-    // 컬럼 헤더 행 (A2:D2)
-    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각"]];
-    sheet.getRange("A2:D2").setValues(headers);
-    sheet.getRange("A2:D2")
+    // 컬럼 헤더 행 (A2:F2)
+    var headers = [["실행 단계", "진행 상태", "생성된 산출물 바로가기", "완료 시각", "소요 시간", "실행 로그 및 상세 내역"]];
+    sheet.getRange("A2:F2").setValues(headers);
+    sheet.getRange("A2:F2")
       .setFontWeight("bold")
       .setFontSize(10)
       .setBackground("#F1F5F9")
       .setFontColor("#334155")
       .setHorizontalAlignment("center")
-      .setVerticalAlignment("middle");
+      .setVerticalAlignment("middle")
+      .setWrap(false);
     sheet.setRowHeight(2, 28);
 
-    // 컬럼 너비
-    sheet.setColumnWidth(1, 140);
-    sheet.setColumnWidth(2, 90);
-    sheet.setColumnWidth(3, 380);
-    sheet.setColumnWidth(4, 180);
+    // 컬럼 너비 설정 (사용자 지정: 150, 100, 300, 150, 100, 450)
+    sheet.setColumnWidth(1, 150);
+    sheet.setColumnWidth(2, 100);
+    sheet.setColumnWidth(3, 300);
+    sheet.setColumnWidth(4, 150);
+    sheet.setColumnWidth(5, 100);
+    sheet.setColumnWidth(6, 450);
 
-    sheet.getRange("A2:D2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
+    sheet.getRange("A2:F2").setBorder(true, true, true, true, true, true, "#CBD5E1", SpreadsheetApp.BorderStyle.SOLID);
   } catch (e) {
     Logger.log("대시보드 시트 초기화 예외: " + e);
   }
 }
 
-function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
+/**
+ * 실행 대시보드 시트에 결과를 항상 맨 아래에 새 행으로 누적 추가(Append-only)한다.
+ *
+ * @param {string} stepId - 실행 단계 식별자
+ * @param {string} stepName - 작업 명칭
+ * @param {string} status - 진행 상태 ('완료', '진행 중' 등)
+ * @param {string} linkUrl - 산출물 링크 URL
+ * @param {string} linkText - 링크 표시 텍스트
+ * @param {number|string} [durationSec] - 소요 시간 (초 단위 숫자 또는 문자열)
+ * @param {string} [logDetail] - 실행 로그 및 상세 내역
+ */
+function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, durationSec, logDetail) {
   var sheet = getDashboardSheet();
   if (!sheet) return;
 
@@ -889,25 +1009,12 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
     initDashboardSheet();
 
     var lastRow = sheet.getLastRow();
-    var targetRow = 0;
-
-    if (lastRow >= 3) {
-      var stepValues = sheet.getRange(3, 1, lastRow - 2, 1).getValues();
-      for (var i = 0; i < stepValues.length; i++) {
-        var currentStep = stepValues[i][0];
-        if (currentStep === stepId || (stepId === "Step 2 (기획서)" && currentStep === "Step 2")) {
-          targetRow = i + 3;
-          break;
-        }
-      }
-    }
-
-    if (targetRow === 0) {
-      targetRow = Math.max(3, lastRow + 1);
-    }
+    // 항상 맨 아래에 새 행으로 누적 추가 (헤더가 2행이므로 최소 3행부터 시작)
+    var targetRow = Math.max(3, lastRow + 1);
 
     sheet.setRowHeight(targetRow, 28);
 
+    // 1열: 실행 단계 (150)
     sheet.getRange(targetRow, 1)
       .setValue(stepId)
       .setFontWeight("bold")
@@ -915,6 +1022,7 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
 
+    // 2열: 진행 상태 (100)
     var statusCell = sheet.getRange(targetRow, 2);
     statusCell.setValue(status)
       .setFontSize(10)
@@ -926,6 +1034,7 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
       statusCell.setBackground("#FEF9C3").setFontColor("#A16207").setFontWeight("bold");
     }
 
+    // 3열: 생성된 산출물 바로가기 (300)
     var linkCell = sheet.getRange(targetRow, 3);
     linkCell.setFontSize(10).setVerticalAlignment("middle");
     if (linkUrl) {
@@ -935,6 +1044,7 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
       linkCell.setValue(stepName).setHorizontalAlignment("left");
     }
 
+    // 4열: 완료 시각 (150)
     var nowStr = Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
     sheet.getRange(targetRow, 4)
       .setValue(nowStr)
@@ -943,7 +1053,28 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText) {
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
 
-    sheet.getRange(targetRow, 1, 1, 4).setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
+    // 5열: 소요 시간 (100)
+    var durText = formatDuration(durationSec);
+    sheet.getRange(targetRow, 5)
+      .setValue(durText)
+      .setFontSize(9)
+      .setFontColor("#334155")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+
+    // 6열: 실행 로그 및 상세 내역 (450)
+    var detailText = logDetail || (status === "완료" ? "정상 처리 완료" : "");
+    sheet.getRange(targetRow, 6)
+      .setValue(detailText)
+      .setFontSize(9)
+      .setFontColor("#475569")
+      .setHorizontalAlignment("left")
+      .setVerticalAlignment("middle");
+
+    // 라인 랩 방지 (CLIP) 및 테두리 설정
+    var rowRange = sheet.getRange(targetRow, 1, 1, 6);
+    rowRange.setWrap(false);
+    rowRange.setBorder(true, true, true, true, true, true, "#E2E8F0", SpreadsheetApp.BorderStyle.SOLID);
   } catch (e) {
     Logger.log("대시보드 시트 결과 기록 예외: " + e);
   }

@@ -12,6 +12,7 @@
  */
 function initCampaignWorkspace() {
   var ui = SpreadsheetApp.getUi();
+  var startTime = new Date().getTime();
   showProcessingToast("캠페인 작업 공간 및 VoC 설문 폼 올인원 초기화 중...", 20);
   try {
     var campaignFolder = getCampaignFolder();
@@ -104,10 +105,27 @@ function initCampaignWorkspace() {
     }
 
     // 7. 구글 시트 실행 대시보드 표 초기화 및 핵심 리소스 링크 등록
+    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     initDashboardSheet();
-    recordStepResultToSheet("초기 환경 구축", "작업 공간 및 VoC 설문 폼", "완료", campaignFolder.getUrl(), "구글 드라이브 폴더 열기 (" + campaignCode + ")");
+    recordStepResultToSheet(
+      "초기 환경 구축",
+      "작업 공간 및 VoC 설문 폼",
+      "완료",
+      campaignFolder.getUrl(),
+      "구글 드라이브 폴더 열기 (" + campaignCode + ")",
+      durationSec,
+      "캠페인 폴더 트리 8종 구축, 6대 프롬프트 독스 및 25인 페르소나 직속 적재 완료"
+    );
     if (formInfo && formInfo.publishedUrl) {
-      recordStepResultToSheet("고객 피드백 채널", "VoC 구글 폼 및 모바일 QR", "활성", formInfo.publishedUrl, "온라인 설문지 열기");
+      recordStepResultToSheet(
+        "고객 피드백 채널",
+        "VoC 구글 폼 및 모바일 QR",
+        "활성",
+        formInfo.publishedUrl,
+        "온라인 설문지 열기",
+        durationSec,
+        "Google Forms 연동 완료 (현재 시트에 설문 응답 실시간 수신 대기)"
+      );
     }
 
     showResultModal(
