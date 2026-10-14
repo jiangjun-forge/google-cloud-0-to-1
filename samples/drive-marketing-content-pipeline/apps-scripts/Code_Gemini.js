@@ -187,17 +187,19 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
 function callGeminiImage(prompt, aspectRatio) {
   try {
     var apiKey = getGeminiApiKey();
-    var imgModel = CONFIG.IMAGE_MODEL_NAME || "gemini-2.5-flash-image";
+    var imgModel = CONFIG.IMAGE_MODEL_NAME || "imagen-3.0-generate-002";
     var endpoint = CONFIG.BASE_URL + "/" + imgModel + ":predict?key=" + apiKey;
     var ratio = aspectRatio || "1:1";
 
     var payload = {
       instances: [
-        { prompt: prompt + ", high quality commercial advertising photography, professional studio lighting, 8k resolution" }
+        { prompt: prompt + ", commercial advertising product photography, professional studio lighting, 8k resolution, photorealistic" }
       ],
       parameters: {
         sampleCount: 1,
-        aspectRatio: ratio
+        aspectRatio: ratio,
+        personGeneration: "ALLOW_ADULT",
+        outputMimeType: "image/png"
       }
     };
 
@@ -209,16 +211,19 @@ function callGeminiImage(prompt, aspectRatio) {
     };
 
     var response = UrlFetchApp.fetch(endpoint, options);
-    if (response.getResponseCode() === 200) {
-      var result = JSON.parse(response.getContentText());
+    var code = response.getResponseCode();
+    var body = response.getContentText();
+
+    if (code === 200) {
+      var result = JSON.parse(body);
       if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
         return result.predictions[0].bytesBase64Encoded;
       }
     } else {
-      Logger.log("Gemini 이미지 생성 실패 (" + response.getResponseCode() + "): " + response.getContentText());
+      Logger.log("Imagen 3 이미지 생성 실패 (" + code + "): " + body);
     }
   } catch (err) {
-    Logger.log("Gemini 이미지 생성 네트워크 예외: " + err);
+    Logger.log("Imagen 3 이미지 생성 네트워크 예외: " + err);
   }
   return null;
 }

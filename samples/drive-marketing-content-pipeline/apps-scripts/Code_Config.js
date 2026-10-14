@@ -21,7 +21,7 @@ var CONFIG = {
   GEMINI_MODEL: "gemini-3.8-flash",
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 양산 모델
   MODEL_JUDGE: "gemini-3.8-flash", // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
-  IMAGE_MODEL_NAME: "gemini-2.5-flash-image", // 광고 소재 비주얼 이미지 생성 모델
+  IMAGE_MODEL_NAME: "imagen-3.0-generate-002", // 광고 소재 비주얼 이미지 생성 모델 (Imagen 3)
   VIDEO_MODEL_NAME: "veo-3.1-generate-001", // 모바일 숏폼 영상 생성 모델
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
   EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
