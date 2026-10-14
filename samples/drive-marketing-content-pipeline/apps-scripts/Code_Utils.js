@@ -356,8 +356,8 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
   }
 
   // 4. 모바일 숏폼 세로 영상 제작 콘티 전문 (${prefix}_shorts_script.txt) 자동 저장
-  // (실제 영상은 마케터 또는 고객이 직접 촬영/제작하여 업로드하며, 기계적인 가짜 바이너리 영상 생성 배제)
   var scriptFileName = prefix + "_shorts_script.txt";
+  var videoFileName = prefix + "_shorts.mp4";
   try {
     var shortsScriptContent =
       "# 모바일 세로 숏폼 영상 제작 콘티 (" + prefix + "_shorts)\n\n" +
@@ -368,12 +368,28 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
       "  - [04~10초 본문]: 180g 초경량 착용감과 감성적 힐링 몰입 무드 부각 (자연스러운 미소와 서울 카페 풍경)\n" +
       "  - [11~15초 엔딩]: 브랜드 시그니처 로고 및 얼리버드 한정 혜택 명시\n\n" +
       "* **실제 영상 운영 안내**:\n" +
-      "  마케터 또는 고객이 촬영/제작한 실제 모바일 숏폼 영상 파일(" + prefix + "_shorts.mp4)을 드라이브 폴더에 직접 업로드하면,\n" +
-      "  피드백 다면 평가 단계에서 Gemini VLM 멀티모달 엔진이 표정, 음성 톤, 발화 내용을 전수 분석합니다.\n";
+      "  Gemini Veo AI 모델이 아래 콘티를 바탕으로 실제 비디오(" + videoFileName + ")를 자동 생성하여 폴더에 함께 저장합니다.\n" +
+      "  필요 시 마케터 또는 고객이 직접 촬영한 실제 모바일 숏폼 영상으로 교체하거나 추가 업로드할 수 있습니다.\n";
     saveTextFile(targetFolder, scriptFileName, shortsScriptContent);
     Logger.log("모바일 세로 숏폼 영상 제작 콘티 저장 완료: " + scriptFileName);
   } catch (vidErr) {
     Logger.log("숏폼 영상 소재 콘티 저장 예외: " + vidErr);
+  }
+
+  // 5. 콘티 기반 Gemini Veo 비디오 생성 API 호출 및 실제 숏폼 비디오(${prefix}_shorts.mp4) 저장
+  try {
+    if (typeof callGeminiVideo === "function") {
+      var videoPrompt = brief + " Vertical mobile commercial video (9:16 aspect ratio), cinematic lighting, smooth camera movement, photorealistic quality.";
+      var videoResult = callGeminiVideo(videoPrompt, "9:16", 5);
+      if (videoResult && videoResult.base64) {
+        saveBinaryFile(targetFolder, videoFileName, videoResult.base64, videoResult.mimeType || "video/mp4");
+        Logger.log("Gemini Veo 비디오 생성 및 저장 완료: " + videoFileName);
+      } else {
+        Logger.log("Gemini Veo 비디오 생성 응답 없음 또는 할당량 초과. 콘티(" + scriptFileName + ")를 유지합니다.");
+      }
+    }
+  } catch (veoErr) {
+    Logger.log("Gemini Veo 비디오 생성 연동 예외: " + veoErr);
   }
 }
 

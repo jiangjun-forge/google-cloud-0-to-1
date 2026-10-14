@@ -233,6 +233,154 @@ function callGeminiImage(prompt, aspectRatio) {
 }
 
 /**
+ * Gemini Veo 비디오 생성 API 호출 (9:16 모바일 숏폼 영상 생성)
+ * Google AI Studio / Gemini Developer API의 predictLongRunning 엔드포인트 및 LRO 폴링
+ *
+ * @param {string} prompt - 영문 비디오 연출 프롬프트
+ * @param {string} [aspectRatio] - 종횡비 (기본값: "9:16")
+ * @param {number} [durationSeconds] - 영상 길이 (초 단위, 기본값: 5)
+ * @return {{ base64: string, mimeType: string } | null} 생성된 비디오 base64 객체 또는 null
+ */
+function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
+  try {
+    var apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      Logger.log("API Key 누락으로 Veo 비디오 생성을 건너뜁니다.");
+      return null;
+    }
+
+    var modelName = (CONFIG && CONFIG.VIDEO_MODEL_NAME) || "veo-2.0-generate-001";
+    var ratio = aspectRatio || "9:16";
+    var duration = durationSeconds || 5;
+
+    var endpoint = CONFIG.BASE_URL + "/" + modelName + ":predictLongRunning";
+
+    var payload = {
+      instances: [
+        {
+          prompt: prompt
+        }
+      ],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: ratio,
+        durationSeconds: duration
+      }
+    };
+
+    var options = {
+      method: "post",
+      contentType: "application/json",
+      headers: {
+        "x-goog-api-key": apiKey
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    Logger.log("Veo 비디오 생성 요청 시작 (모델: " + modelName + ", 비율: " + ratio + "): " + prompt.substring(0, 100) + "...");
+    var response = UrlFetchApp.fetch(endpoint, options);
+    var code = response.getResponseCode();
+    var body = response.getContentText();
+
+    if (code !== 200) {
+      Logger.log("Veo 초기 생성 요청 실패 (" + code + "): " + body);
+      if (modelName !== "veo-2.0-generate-001") {
+        var fallbackEndpoint = CONFIG.BASE_URL + "/veo-2.0-generate-001:predictLongRunning";
+        var fbResp = UrlFetchApp.fetch(fallbackEndpoint, options);
+        if (fbResp.getResponseCode() === 200) {
+          body = fbResp.getContentText();
+          code = 200;
+        }
+      }
+      if (code !== 200) {
+        return null;
+      }
+    }
+
+    var initResult = JSON.parse(body);
+    var operationName = initResult.name;
+    if (!operationName) {
+      Logger.log("Veo 작업 ID(name)를 응답에서 찾을 수 없습니다: " + body);
+      return null;
+    }
+
+    Logger.log("Veo 장기 실행 작업(LRO) 생성 완료: " + operationName + ". 완료 대기 폴링 시작...");
+
+    // LRO 폴링: Apps Script 런타임 제약(단일 실행 6분) 내에서 5초 간격으로 최대 90초 폴링
+    var pollUrl = "https://generativelanguage.googleapis.com/v1beta/" + operationName;
+    var pollOptions = {
+      method: "get",
+      headers: {
+        "x-goog-api-key": apiKey
+      },
+      muteHttpExceptions: true
+    };
+
+    var maxAttempts = 18; // 5초 * 18회 = 최대 90초
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      Utilities.sleep(5000);
+
+      var pollResp = UrlFetchApp.fetch(pollUrl, pollOptions);
+      var pCode = pollResp.getResponseCode();
+      if (pCode !== 200) {
+        Logger.log("Veo 폴링 실패 (시도 " + attempt + "/" + maxAttempts + ", 응답 코드: " + pCode + ")");
+        continue;
+      }
+
+      var pollData = JSON.parse(pollResp.getContentText());
+      if (pollData.error) {
+        Logger.log("Veo 비디오 생성 작업 에러: " + JSON.stringify(pollData.error));
+        return null;
+      }
+
+      if (pollData.done === true) {
+        Logger.log("Veo 비디오 생성 작업 완료! (" + (attempt * 5) + "초 소요)");
+        var respObj = pollData.response || pollData.result;
+        if (!respObj) {
+          Logger.log("완료된 작업에 결과 데이터가 없습니다: " + JSON.stringify(pollData));
+          return null;
+        }
+
+        var genVideoResp = respObj.generateVideoResponse || respObj;
+        var samples = genVideoResp.generatedSamples || genVideoResp.generatedVideos || [];
+        if (samples.length > 0 && samples[0].video) {
+          var vObj = samples[0].video;
+          var encoded = vObj.encodedVideo || vObj.bytesBase64Encoded || vObj.videoBytes;
+          if (encoded) {
+            return {
+              base64: encoded,
+              mimeType: vObj.encoding || vObj.mimeType || "video/mp4"
+            };
+          }
+          if (vObj.uri) {
+            var downloadUrl = vObj.uri + (vObj.uri.indexOf("?") === -1 ? "?key=" + apiKey : "&key=" + apiKey);
+            var downloadResp = UrlFetchApp.fetch(downloadUrl, { muteHttpExceptions: true });
+            if (downloadResp.getResponseCode() === 200) {
+              var blob = downloadResp.getBlob();
+              return {
+                base64: Utilities.base64Encode(blob.getBytes()),
+                mimeType: blob.getContentType() || "video/mp4"
+              };
+            }
+          }
+        }
+        Logger.log("Veo 결과 파싱 실패: " + JSON.stringify(respObj));
+        return null;
+      }
+
+      Logger.log("Veo 렌더링 진행 중... (시도 " + attempt + "/" + maxAttempts + ")");
+    }
+
+    Logger.log("Veo 렌더링 시간 초과 (90초). 백그라운드 처리가 계속될 수 있습니다.");
+    return null;
+  } catch (err) {
+    Logger.log("Veo 비디오 생성 예외: " + err);
+    return null;
+  }
+}
+
+/**
  * 한국어 및 다국어 특화 텍스트 임베딩 모델(text-multilingual-embedding-002)을 호출하여
  * 텍스트 목록을 128차원(MRL) 벡터 배열로 일괄 변환한다.
  *
