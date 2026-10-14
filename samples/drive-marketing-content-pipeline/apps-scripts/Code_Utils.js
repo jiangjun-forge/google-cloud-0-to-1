@@ -1321,6 +1321,24 @@ function formatTokenCount(tokens) {
 }
 
 /**
+ * 실행 로그 시트 컬럼 너비를 50 단위 버켓팅 규격(150, 100, 250, 150, 100, 100, 400)으로 설정한다.
+ */
+function applyDashboardColumnWidths(sheet) {
+  if (!sheet) return;
+  try {
+    sheet.setColumnWidth(1, 150); // 실행 단계 (150px)
+    sheet.setColumnWidth(2, 100); // 진행 상태 (100px)
+    sheet.setColumnWidth(3, 250); // 산출물 링크 (250px)
+    sheet.setColumnWidth(4, 150); // 완료 시각 (150px)
+    sheet.setColumnWidth(5, 100); // 소요 시간 (초) (100px)
+    sheet.setColumnWidth(6, 100); // 소모 토큰 (100px)
+    sheet.setColumnWidth(7, 400); // 상세 내용 (400px)
+  } catch (e) {
+    Logger.log("컬럼 너비 설정 예외: " + e);
+  }
+}
+
+/**
  * 실행 로그 시트 헤더 초기화
  * [미니멀 기본 스타일]: 배너, 배경색, 테두리 등 템플릿 장식 없이 순수 1행 헤더만 간결하게 유지한다.
  */
@@ -1332,8 +1350,11 @@ function initDashboardSheet() {
     var a1Val = sheet.getRange("A1").getValue();
     var e1Val = sheet.getRange("E1").getValue();
     var lastCol = sheet.getLastColumn();
-    // 1행에 '실행 단계' 및 최신 '소요 시간 (초)' 헤더가 이미 있으면 기존 데이터 보존하고 즉시 반환
-    if (a1Val === "실행 단계" && e1Val === "소요 시간 (초)" && lastCol >= 7) return;
+    // 1행에 '실행 단계' 및 최신 '소요 시간 (초)' 헤더가 이미 있으면 너비 보정 후 즉시 반환
+    if (a1Val === "실행 단계" && e1Val === "소요 시간 (초)" && lastCol >= 7) {
+      applyDashboardColumnWidths(sheet);
+      return;
+    }
 
     // 만약 예전 템플릿의 병합 배너가 남아있다면 병합 해제 및 서식 초기화
     try {
@@ -1351,14 +1372,8 @@ function initDashboardSheet() {
     headerRange.setHorizontalAlignment("center");
     sheet.getRange("E1:F1").setHorizontalAlignment("right");
 
-    // 기본 컬럼 너비 설정
-    sheet.setColumnWidth(1, 140);
-    sheet.setColumnWidth(2, 90);
-    sheet.setColumnWidth(3, 260);
-    sheet.setColumnWidth(4, 150);
-    sheet.setColumnWidth(5, 100);
-    sheet.setColumnWidth(6, 120);
-    sheet.setColumnWidth(7, 400);
+    // 기본 컬럼 너비 설정 (50 단위 버켓팅 규격)
+    applyDashboardColumnWidths(sheet);
 
     SpreadsheetApp.flush();
   } catch (e) {
