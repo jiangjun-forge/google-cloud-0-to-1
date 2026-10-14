@@ -194,10 +194,26 @@ function forceSyncEngine() {
   var ui = SpreadsheetApp.getUi();
   try {
     loadPipelineEngine(true);
-    renderPipelineMenu();
+
+    try {
+      if (typeof this.renderPipelineMenu === "function") {
+        this.renderPipelineMenu();
+      } else {
+        renderPipelineMenu();
+      }
+    } catch (menuErr) {
+      renderPipelineMenu();
+    }
+
+    try {
+      showPipelineSidebar();
+    } catch (sidebarErr) {
+      // 무시
+    }
+
     ui.alert(
       "엔진 동기화 완료",
-      "GitHub 퍼블릭 저장소의 최신 버전 파이프라인 엔진 코드가 성공적으로 갱신되었습니다.\n상단 메뉴를 클릭하여 작업을 시작할 수 있습니다.",
+      "GitHub 퍼블릭 저장소의 최신 버전 파이프라인 엔진 코드가 성공적으로 갱신되었습니다.\n우측 제어 패널(사이드바)을 통해 작업을 진행할 수 있습니다.",
       ui.ButtonSet.OK
     );
   } catch (err) {

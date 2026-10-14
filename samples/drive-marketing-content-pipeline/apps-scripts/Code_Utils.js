@@ -1277,18 +1277,11 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
 }
 
 /**
- * 사용자 대기 피로도 경감을 위한 실시간 토스트 알림 헬퍼
+ * 사용자 대기 피로도 경감을 위한 처리 상태 로깅 헬퍼
+ * [우측 패널 통합]: 모든 진행 상태와 피드백이 우측 패널(사이드바) 상태 바로 일원화되었으므로 시트 하단 중복 토스트는 발생시키지 않는다.
  */
 function showProcessingToast(stepTitle, estimatedTimeSec) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (ss) {
-      var secText = estimatedTimeSec ? " (예상 소요 시간: 약 " + estimatedTimeSec + "초)" : "";
-      ss.toast("Apps Script 엔진이 작업을 시작했습니다" + secText + ". 잠시만 기다려 주십시오...", stepTitle || "파이프라인 실행 중", estimatedTimeSec || 30);
-    }
-  } catch (e) {
-    Logger.log("토스트 알림 표시 예외: " + e);
-  }
+  Logger.log("[파이프라인 진행 상태] " + stepTitle + (estimatedTimeSec ? " (예상 소요 시간: 약 " + estimatedTimeSec + "초)" : ""));
 }
 
 /**

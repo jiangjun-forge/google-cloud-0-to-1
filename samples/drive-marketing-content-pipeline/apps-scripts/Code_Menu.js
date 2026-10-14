@@ -7,13 +7,20 @@
  */
 
 /**
- * 스프레드시트 열림 시 액션 중심 커스텀 메뉴 자동 등록
+ * 액션 중심 커스텀 메뉴 렌더링
  */
-function onOpen() {
+function renderPipelineMenu() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu("[마케팅 콘텐츠 파이프라인]")
     .addItem("제어 패널 열기 (Open Panel)", "showPipelineSidebar")
     .addToUi();
+}
+
+/**
+ * 스프레드시트 열림 시 액션 중심 커스텀 메뉴 자동 등록
+ */
+function onOpen() {
+  renderPipelineMenu();
 
   try {
     showPipelineSidebar();
