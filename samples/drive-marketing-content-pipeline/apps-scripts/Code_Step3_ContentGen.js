@@ -52,16 +52,17 @@ function runInitialAssetGeneration() {
                      "### [2. 멀티 채널 콘텐츠 제작 명세서 (SPEC)]\n" + (specContent || "기본 규격 준수");
     var generatedContent = callGemini(systemInstruction, promptText);
 
-    // 4. 저장: output/rv-00/에 campaign_content 구글 독스 단일 저장
-    var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
-    saveGoogleDoc(rv00Folder, contentDocName, generatedContent);
-
-    // 5. 실시간 대표 비주얼 이미지 3종 비율 세트 생성 (rv-00: 가로 16:9, 세로 9:16, 정사각 1:1)
+    // 4. 저장: output/rv-00/에 campaign_content 구글 독스 단일 저장 (숏폼 영상 콘티 완전 통합)
     var visualBrief = extractDynamicVisualPrompt(
       generatedContent,
       planContent,
       "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
     );
+    var finalizedContent = ensureShortsScriptInCampaignContent(generatedContent, "00", visualBrief);
+    var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+    saveGoogleDoc(rv00Folder, contentDocName, finalizedContent);
+
+    // 5. 실시간 대표 비주얼 이미지 3종 비율 세트 및 Veo 비디오 생성 (rv-00: 가로 16:9, 세로 9:16, 정사각 1:1)
     Logger.log("동적 도출된 비주얼 프롬프트 (rv-00): " + visualBrief);
     generateAndSaveVisualAssets(rv00Folder, "00", visualBrief);
 
@@ -73,12 +74,12 @@ function runInitialAssetGeneration() {
       Logger.log("25인 가상 페르소나 피드백 실시간 도출 예외: " + fbGenErr);
     }
 
-    // 7. 구글 시트 실행 대시보드에 Step 2 완료 및 링크 기록
+    // 7. 구글 시트 실행 대시보드에 Step 3 완료 및 링크 기록
     recordStepResultToSheet("Step 3", "초판 마케팅 콘텐츠 양산 (rv-00)", "완료", rv00Folder.getUrl(), "구글 드라이브 폴더 열기 (rv-00)");
 
     ui.alert(
       "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
-      "초판 마케팅 카피, 대표 비주얼 이미지 3종 및 세로 숏폼 영상(00_shorts.mp4) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+      "초판 마케팅 카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종 비율 세트 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
       ui.ButtonSet.OK
     );
   } catch (e) {

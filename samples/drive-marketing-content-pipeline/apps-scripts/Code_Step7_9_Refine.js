@@ -100,28 +100,29 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
     // 6. Gemini 호출
     var refinedAsset = callGemini(systemInstruction, userPrompt);
 
-    // 7. 저장: output/{targetRvName}/에 campaign_content 구글 독스 단일 저장
-    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, refinedAsset);
-
-    // 8. Google Sheets 실행 대시보드에 개정본 완료 및 링크 기록
-    var stepId = (targetRvName === "rv-01") ? "Step 7" : (targetRvName === "rv-02" ? "Step 9" : "Step 9 (" + targetRvName + ")");
-    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : (targetRvName === "rv-02" ? "2차 마케팅 콘텐츠 반자율 보정 (rv-02)" : roundNum + "차 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")");
-    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "Google Drive 폴더 열기 (" + targetRvName + ")");
-
-    // 9. 동적 비주얼 프롬프트 도출 및 실시간 이미지 3종 생성
+    // 7. 저장: output/{targetRvName}/에 campaign_content 구글 독스 단일 저장 (쇼츠 영상 콘티 완전 통합)
     var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
     var dynamicBrief = extractDynamicVisualPrompt(
       refinedAsset,
       summaryContent,
       "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
     );
+    var finalizedContent = ensureShortsScriptInCampaignContent(refinedAsset, prefix, dynamicBrief);
+    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, finalizedContent);
+
+    // 8. Google Sheets 실행 대시보드에 개정본 완료 및 링크 기록
+    var stepId = (targetRvName === "rv-01") ? "Step 7" : (targetRvName === "rv-02" ? "Step 9" : "Step 9 (" + targetRvName + ")");
+    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : (targetRvName === "rv-02" ? "2차 마케팅 콘텐츠 반자율 보정 (rv-02)" : roundNum + "차 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")");
+    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "Google Drive 폴더 열기 (" + targetRvName + ")");
+
+    // 9. 실시간 이미지 3종 및 Veo 비디오 생성
     Logger.log("동적 도출된 비주얼 프롬프트 (" + targetRvName + "): " + dynamicBrief);
     generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief);
 
     if (!isSilent) {
       ui.alert(
         "마케팅 콘텐츠 반자율 보정 완료 (" + targetRvName + ")",
-        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + "), 신규 비주얼 이미지 3종 및 세로 숏폼 영상(" + prefix + "_shorts.mp4) 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + ") 및 신규 비주얼 이미지 3종 비율 세트 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
         ui.ButtonSet.OK
       );
     }

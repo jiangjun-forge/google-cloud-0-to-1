@@ -342,7 +342,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
 
     for (var m = 0; m < candidateModels.length; m++) {
       var modelName = candidateModels[m];
-      var endpoint = CONFIG.BASE_URL + "/" + modelName + ":predictLongRunning";
+      var endpoint = CONFIG.BASE_URL + "/" + modelName + ":predictLongRunning?key=" + apiKey;
 
       var payload = {
         instances: [
@@ -351,9 +351,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
           }
         ],
         parameters: {
-          sampleCount: 1,
-          aspectRatio: ratio,
-          durationSeconds: duration
+          aspectRatio: ratio
         }
       };
 
@@ -385,14 +383,14 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
     }
 
     if (!operationName) {
-      Logger.log("모든 Veo 모델 생성 작업 큐 등록에 실패하여 비디오 생성을 완료하지 못했습니다.");
+      Logger.log("모든 Veo 모델 생성 작업 큐 등록에 실패하여 비디오 생성을 완료하지 못했습니다 (Google AI Studio 무료 티어 API Key는 Veo가 미지원되거나 유료 결제 계정 필요).");
       return null;
     }
 
     Logger.log("Veo 장기 실행 작업(LRO) 등록 완료 (" + activeModel + "): " + operationName + ". 완료 대기 폴링 시작...");
 
-    // LRO 폴링: Apps Script 런타임 제약(단일 실행 6분) 내에서 5초 간격으로 최대 18회(90초) 폴링
-    var pollUrl = "https://generativelanguage.googleapis.com/v1beta/" + operationName;
+    // LRO 폴링: Apps Script 런타임 제약(단일 실행 6분) 내에서 5초 간격으로 최대 24회(120초) 폴링
+    var pollUrl = "https://generativelanguage.googleapis.com/v1beta/" + operationName + "?key=" + apiKey;
     var pollOptions = {
       method: "get",
       headers: {
@@ -401,7 +399,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
       muteHttpExceptions: true
     };
 
-    var maxAttempts = 18; // 5초 * 18회 = 최대 90초
+    var maxAttempts = 24; // 5초 * 24회 = 최대 120초
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       Utilities.sleep(5000);
 

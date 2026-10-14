@@ -426,7 +426,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
 
     for (var m = 0; m < candidateModels.length; m++) {
       var modelName = candidateModels[m];
-      var endpoint = CONFIG.BASE_URL + "/" + modelName + ":predictLongRunning";
+      var endpoint = CONFIG.BASE_URL + "/" + modelName + ":predictLongRunning?key=" + apiKey;
 
       var payload = {
         instances: [
@@ -435,9 +435,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
           }
         ],
         parameters: {
-          sampleCount: 1,
-          aspectRatio: ratio,
-          durationSeconds: duration
+          aspectRatio: ratio
         }
       };
 
@@ -469,14 +467,14 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
     }
 
     if (!operationName) {
-      Logger.log("모든 Veo 모델 생성 작업 큐 등록에 실패하여 비디오 생성을 완료하지 못했습니다.");
+      Logger.log("모든 Veo 모델 생성 작업 큐 등록에 실패하여 비디오 생성을 완료하지 못했습니다 (Google AI Studio 무료 티어 API Key는 Veo가 미지원되거나 유료 결제 계정 필요).");
       return null;
     }
 
     Logger.log("Veo 장기 실행 작업(LRO) 등록 완료 (" + activeModel + "): " + operationName + ". 완료 대기 폴링 시작...");
 
-    // LRO 폴링: Apps Script 런타임 제약(단일 실행 6분) 내에서 5초 간격으로 최대 18회(90초) 폴링
-    var pollUrl = "https://generativelanguage.googleapis.com/v1beta/" + operationName;
+    // LRO 폴링: Apps Script 런타임 제약(단일 실행 6분) 내에서 5초 간격으로 최대 24회(120초) 폴링
+    var pollUrl = "https://generativelanguage.googleapis.com/v1beta/" + operationName + "?key=" + apiKey;
     var pollOptions = {
       method: "get",
       headers: {
@@ -485,7 +483,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
       muteHttpExceptions: true
     };
 
-    var maxAttempts = 18; // 5초 * 18회 = 최대 90초
+    var maxAttempts = 24; // 5초 * 24회 = 최대 120초
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       Utilities.sleep(5000);
 
@@ -1352,16 +1350,17 @@ function runInitialAssetGeneration() {
                      "### [2. 멀티 채널 콘텐츠 제작 명세서 (SPEC)]\n" + (specContent || "기본 규격 준수");
     var generatedContent = callGemini(systemInstruction, promptText);
 
-    // 4. 저장: output/rv-00/에 campaign_content 구글 독스 단일 저장
-    var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
-    saveGoogleDoc(rv00Folder, contentDocName, generatedContent);
-
-    // 5. 실시간 대표 비주얼 이미지 3종 비율 세트 생성 (rv-00: 가로 16:9, 세로 9:16, 정사각 1:1)
+    // 4. 저장: output/rv-00/에 campaign_content 구글 독스 단일 저장 (숏폼 영상 콘티 완전 통합)
     var visualBrief = extractDynamicVisualPrompt(
       generatedContent,
       planContent,
       "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
     );
+    var finalizedContent = ensureShortsScriptInCampaignContent(generatedContent, "00", visualBrief);
+    var contentDocName = (CONFIG && CONFIG.CONTENT_DOC_NAME) || "campaign_content";
+    saveGoogleDoc(rv00Folder, contentDocName, finalizedContent);
+
+    // 5. 실시간 대표 비주얼 이미지 3종 비율 세트 및 Veo 비디오 생성 (rv-00: 가로 16:9, 세로 9:16, 정사각 1:1)
     Logger.log("동적 도출된 비주얼 프롬프트 (rv-00): " + visualBrief);
     generateAndSaveVisualAssets(rv00Folder, "00", visualBrief);
 
@@ -1373,12 +1372,12 @@ function runInitialAssetGeneration() {
       Logger.log("25인 가상 페르소나 피드백 실시간 도출 예외: " + fbGenErr);
     }
 
-    // 7. 구글 시트 실행 대시보드에 Step 2 완료 및 링크 기록
+    // 7. 구글 시트 실행 대시보드에 Step 3 완료 및 링크 기록
     recordStepResultToSheet("Step 3", "초판 마케팅 콘텐츠 양산 (rv-00)", "완료", rv00Folder.getUrl(), "구글 드라이브 폴더 열기 (rv-00)");
 
     ui.alert(
       "초판 마케팅 콘텐츠 양산 완료 (rv-00)",
-      "초판 마케팅 카피, 대표 비주얼 이미지 3종 및 세로 숏폼 영상(00_shorts.mp4) 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+      "초판 마케팅 카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종 비율 세트 생성이 완료되었습니다.\n\n구글 시트의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
       ui.ButtonSet.OK
     );
   } catch (e) {
@@ -2168,28 +2167,29 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
     // 6. Gemini 호출
     var refinedAsset = callGemini(systemInstruction, userPrompt);
 
-    // 7. 저장: output/{targetRvName}/에 campaign_content 구글 독스 단일 저장
-    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, refinedAsset);
-
-    // 8. Google Sheets 실행 대시보드에 개정본 완료 및 링크 기록
-    var stepId = (targetRvName === "rv-01") ? "Step 7" : (targetRvName === "rv-02" ? "Step 9" : "Step 9 (" + targetRvName + ")");
-    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : (targetRvName === "rv-02" ? "2차 마케팅 콘텐츠 반자율 보정 (rv-02)" : roundNum + "차 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")");
-    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "Google Drive 폴더 열기 (" + targetRvName + ")");
-
-    // 9. 동적 비주얼 프롬프트 도출 및 실시간 이미지 3종 생성
+    // 7. 저장: output/{targetRvName}/에 campaign_content 구글 독스 단일 저장 (쇼츠 영상 콘티 완전 통합)
     var prefix = (roundNum < 10 ? "0" + roundNum : "" + roundNum);
     var dynamicBrief = extractDynamicVisualPrompt(
       refinedAsset,
       summaryContent,
       "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
     );
+    var finalizedContent = ensureShortsScriptInCampaignContent(refinedAsset, prefix, dynamicBrief);
+    var assetDocFile = saveGoogleDoc(targetRvFolder, targetContentDocName, finalizedContent);
+
+    // 8. Google Sheets 실행 대시보드에 개정본 완료 및 링크 기록
+    var stepId = (targetRvName === "rv-01") ? "Step 7" : (targetRvName === "rv-02" ? "Step 9" : "Step 9 (" + targetRvName + ")");
+    var stepTitle = (targetRvName === "rv-01") ? "1차 마케팅 콘텐츠 반자율 보정 (rv-01)" : (targetRvName === "rv-02" ? "2차 마케팅 콘텐츠 반자율 보정 (rv-02)" : roundNum + "차 마케팅 콘텐츠 반자율 보정 (" + targetRvName + ")");
+    recordStepResultToSheet(stepId, stepTitle, "완료", targetRvFolder.getUrl(), "Google Drive 폴더 열기 (" + targetRvName + ")");
+
+    // 9. 실시간 이미지 3종 및 Veo 비디오 생성
     Logger.log("동적 도출된 비주얼 프롬프트 (" + targetRvName + "): " + dynamicBrief);
     generateAndSaveVisualAssets(targetRvFolder, prefix, dynamicBrief);
 
     if (!isSilent) {
       ui.alert(
         "마케팅 콘텐츠 반자율 보정 완료 (" + targetRvName + ")",
-        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + "), 신규 비주얼 이미지 3종 및 세로 숏폼 영상(" + prefix + "_shorts.mp4) 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
+        "피드백과 마케터 지침이 반영된 개정본(" + targetRvName + ") 및 신규 비주얼 이미지 3종 비율 세트 생성이 완료되었습니다.\n\nGoogle Sheets의 [실행 대시보드] 표에서 바로가기 링크를 확인하십시오.",
         ui.ButtonSet.OK
       );
     }
@@ -2565,42 +2565,53 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief) {
     }
   }
 
-  // 4. 모바일 숏폼 세로 영상 제작 콘티 전문 (${prefix}_shorts_script.txt) 자동 저장
-  var scriptFileName = prefix + "_shorts_script.txt";
+  // 4. Gemini Veo 비디오 생성 API 호출 및 실제 숏폼 비디오(${prefix}_shorts.mp4) 저장
+  // (별도 txt 콘티 파일은 생성하지 않고 campaign_content 단일 구글 독스 문서에 통합됨)
   var videoFileName = prefix + "_shorts.mp4";
-  try {
-    var shortsScriptContent =
-      "# 모바일 세로 숏폼 영상 제작 콘티 (" + prefix + "_shorts)\n\n" +
-      "* **영상 규격**: 9:16 세로형 모바일 숏폼 (권장 해상도 1080x1920, 권장 길이 15~30초)\n" +
-      "* **타깃 채널**: 인스타그램 릴스, 유튜브 쇼츠, 틱톡\n" +
-      "* **비주얼 연출 콘티**:\n" +
-      "  - [00~03초 훅(Hook)]: " + brief + " (도심 소음이 일시에 멈추는 직관적 차음 연출)\n" +
-      "  - [04~10초 본문]: 180g 초경량 착용감과 감성적 힐링 몰입 무드 부각 (자연스러운 미소와 서울 카페 풍경)\n" +
-      "  - [11~15초 엔딩]: 브랜드 시그니처 로고 및 얼리버드 한정 혜택 명시\n\n" +
-      "* **실제 영상 운영 안내**:\n" +
-      "  Gemini Veo AI 모델이 아래 콘티를 바탕으로 실제 비디오(" + videoFileName + ")를 자동 생성하여 폴더에 함께 저장합니다.\n" +
-      "  필요 시 마케터 또는 고객이 직접 촬영한 실제 모바일 숏폼 영상으로 교체하거나 추가 업로드할 수 있습니다.\n";
-    saveTextFile(targetFolder, scriptFileName, shortsScriptContent);
-    Logger.log("모바일 세로 숏폼 영상 제작 콘티 저장 완료: " + scriptFileName);
-  } catch (vidErr) {
-    Logger.log("숏폼 영상 소재 콘티 저장 예외: " + vidErr);
-  }
-
-  // 5. 콘티 기반 Gemini Veo 비디오 생성 API 호출 및 실제 숏폼 비디오(${prefix}_shorts.mp4) 저장
   try {
     if (typeof callGeminiVideo === "function") {
       var videoPrompt = brief + " Vertical mobile commercial video (9:16 aspect ratio), cinematic lighting, smooth camera movement, photorealistic quality.";
-      var videoResult = callGeminiVideo(videoPrompt, "9:16", 5);
+      var videoResult = callGeminiVideo(videoPrompt, "9:16", 4);
       if (videoResult && videoResult.base64) {
         saveBinaryFile(targetFolder, videoFileName, videoResult.base64, videoResult.mimeType || "video/mp4");
         Logger.log("Gemini Veo 비디오 생성 및 저장 완료: " + videoFileName);
       } else {
-        Logger.log("Gemini Veo 비디오 생성 응답 없음 또는 할당량 초과. 콘티(" + scriptFileName + ")를 유지합니다.");
+        Logger.log("Gemini Veo 비디오 생성 응답 없음 또는 무료 티어 제한 (campaign_content 문서의 숏폼 영상 콘티 참조).");
       }
     }
   } catch (veoErr) {
     Logger.log("Gemini Veo 비디오 생성 연동 예외: " + veoErr);
   }
+}
+
+/**
+ * campaign_content 구글 독스 본문에 모바일 세로 숏폼 영상 제작 콘티 섹션이 포함되도록 보장한다.
+ * (별도 txt 파일을 생성하지 않고 마케팅 콘텐츠 단일 구글 독스 문서 내에 완전 통합)
+ */
+function ensureShortsScriptInCampaignContent(rawContent, prefix, visualBrief) {
+  var content = rawContent || "";
+  var hasShortsSection = (content.indexOf("숏폼") !== -1 || content.indexOf("Shorts") !== -1 || content.indexOf("영상 콘티") !== -1);
+  
+  if (hasShortsSection) {
+    return content;
+  }
+
+  var brief = visualBrief || "A stylish 20s Korean female commuter enjoying lightweight ANC headphones in cozy Seoul street";
+  var videoFileName = prefix + "_shorts.mp4";
+  var shortsSection =
+    "\n\n---\n\n" +
+    "## 모바일 세로 숏폼 영상 제작 콘티 (" + prefix + "_shorts)\n\n" +
+    "* **영상 규격**: 9:16 세로형 모바일 숏폼 (권장 해상도 1080x1920, 권장 러닝타임 15초)\n" +
+    "* **타깃 채널**: 유튜브 쇼츠, 인스타그램 릴스, 틱톡\n" +
+    "* **타임라인별 씬 및 연출 지시문**:\n" +
+    "  - **[00~03초 훅(Hook)]**: " + brief + " (도심 소음이 일시에 멈추는 직관적 차음 연출과 배경음 전환)\n" +
+    "  - **[04~10초 본문]**: 180g 초경량 착용감과 감성적 몰입 무드 부각 (자연스러운 미소와 서울 카페/지하철 일상 풍경)\n" +
+    "  - **[11~15초 엔딩]**: 브랜드 시그니처 로고 노출 및 얼리버드 한정 혜택 자막 명시\n\n" +
+    "* **실제 영상 운영 안내**:\n" +
+    "  - Google AI Studio 유료 결제 계정 연동 API Key 환경에서는 Gemini Veo 모델이 위 콘티를 바탕으로 실제 비디오(" + videoFileName + ")를 자동 생성하여 폴더에 함께 저장합니다.\n" +
+    "  - 무료 API Key 환경이거나 현장 촬영본이 있는 경우, 마케터 또는 고객이 직접 촬영한 실제 모바일 숏폼 영상(" + videoFileName + ")을 해당 폴더에 업로드하여 활용할 수 있습니다.\n";
+
+  return content + shortsSection;
 }
 
 /**
