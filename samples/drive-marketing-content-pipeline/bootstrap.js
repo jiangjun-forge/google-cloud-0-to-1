@@ -93,11 +93,22 @@ function loadPipelineEngine(forceRefresh) {
 
 /**
  * 부트스트랩 프록시 디스패처 (런타임 함수 동적 호출)
+ * 지연 로딩(Lazy Loading): 사용자가 메뉴를 클릭할 때 최신 코드를 로드하므로 단순 트리거(onOpen)의 권한 제약을 완벽히 우회한다.
  */
 function dispatch(fnName, args) {
   loadPipelineEngine(false);
-  if (typeof this[fnName] === "function") {
-    return this[fnName].apply(this, args || []);
+  var targetFn = (typeof globalThis !== "undefined" && typeof globalThis[fnName] === "function") ? globalThis[fnName]
+               : (typeof this !== "undefined" && typeof this[fnName] === "function") ? this[fnName]
+               : null;
+  if (!targetFn) {
+    try {
+      targetFn = eval(fnName);
+    } catch (e) {
+      targetFn = null;
+    }
+  }
+  if (typeof targetFn === "function") {
+    return targetFn.apply(this, args || []);
   } else {
     throw new Error("파이프라인 엔진 내에 함수 [" + fnName + "]가 정의되지 않았습니다.");
   }
@@ -108,23 +119,38 @@ function dispatch(fnName, args) {
 // ============================================================================
 
 /**
- * 구글 시트 문서 열림 시 GitHub 최신 엔진을 로드하여 메뉴 등록
+ * Google Sheets 액션 중심 커스텀 메뉴 렌더링
+ * [단순 트리거 호환]: 네트워크(UrlFetchApp)나 민감 권한 호출 없이 순수 UI 메뉴만 즉시 생성하므로,
+ * 문서 열림(onOpen) 시 권한 에러 없이 12대 정식 메뉴가 즉시 표시된다.
  */
-function onOpen() {
-  try {
-    loadPipelineEngine(false);
-    if (typeof this.onOpen === "function") {
-      this.onOpen();
-    }
-  } catch (err) {
-    var ui = SpreadsheetApp.getUi();
-    ui.createMenu("[마케팅 콘텐츠 파이프라인]")
-      .addItem("[엔진 최신 버전 동기화 및 복구]", "forceSyncEngine")
-      .addToUi();
-  }
+function renderPipelineMenu() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu("[마케팅 콘텐츠 파이프라인]")
+    .addItem("[초기화] 캠페인 작업 공간 환경 구축 (All-in-one Setup)", "initCampaignWorkspace")
+    .addItem("[설정] 캠페인 환경 설정 및 재설정 (Configure)", "runConfigureCampaignSettings")
+    .addSeparator()
+    .addItem("[기획] 기획서 및 콘텐츠 명세서 생성 (PLAN & SPEC)", "guardAndRunIdeaToPlan")
+    .addItem("[생성] 초판 마케팅 콘텐츠 생성 (rv-00)", "guardAndRunInitialContent")
+    .addItem("[평가] 25인 AI 페르소나 다면 평가 실행 (fb-xx)", "promptAndRunJudgeEvaluation")
+    .addItem("[보고서] 피드백 종합 분석 보고서 생성 (feedback_summary)", "promptAndRunFeedbackSummary")
+    .addItem("[보정] 피드백 반영 콘텐츠 보정 (rv-xx)", "promptAndRunReviseAssets")
+    .addSeparator()
+    .addItem("[설문 폼] 고객 VoC 설문 폼 열기", "openCustomerVocForm")
+    .addItem("[페르소나] 25인 AI 페르소나 맞춤 재설정 (선택 사항)", "setCustomPersonasPrompt")
+    .addItem("[API Key] Gemini API Key 설정 (Google AI Studio)", "promptForGeminiApiKey")
+    .addSeparator()
+    .addItem("[엔진 동기화] GitHub 최신 버전 즉시 동기화", "forceSyncEngine")
+    .addToUi();
 }
 
-// 액션 메뉴 디스패치 프록시 함수들
+/**
+ * 구글 시트 문서 열림 시 메뉴 자동 등록 (단순 트리거)
+ */
+function onOpen() {
+  renderPipelineMenu();
+}
+
+// 액션 메뉴 디스패치 프록시 함수들 (사용자 클릭 시 지연 로드 및 실행)
 function initCampaignWorkspace() { dispatch("initCampaignWorkspace"); }
 function runConfigureCampaignSettings() { dispatch("runConfigureCampaignSettings"); }
 function guardAndRunIdeaToPlan() { dispatch("guardAndRunIdeaToPlan"); }
@@ -140,12 +166,22 @@ function promptForGeminiApiKey() { dispatch("promptForGeminiApiKey"); }
  * GitHub 퍼블릭 저장소 최신 엔진 코드 즉시 강제 갱신
  */
 function forceSyncEngine() {
-  loadPipelineEngine(true);
-  SpreadsheetApp.getUi().alert(
-    "엔진 동기화 완료",
-    "GitHub 퍼블릭 저장소의 최신 버전 파이프라인 엔진 코드가 성공적으로 갱신되었습니다.",
-    SpreadsheetApp.getUi().ButtonSet.OK
-  );
+  var ui = SpreadsheetApp.getUi();
+  try {
+    loadPipelineEngine(true);
+    renderPipelineMenu();
+    ui.alert(
+      "엔진 동기화 완료",
+      "GitHub 퍼블릭 저장소의 최신 버전 파이프라인 엔진 코드가 성공적으로 갱신되었습니다.\n상단 메뉴를 클릭하여 작업을 시작할 수 있습니다.",
+      ui.ButtonSet.OK
+    );
+  } catch (err) {
+    ui.alert(
+      "동기화 실패",
+      "엔진 동기화 중 오류가 발생했습니다: " + err.toString(),
+      ui.ButtonSet.OK
+    );
+  }
 }
 
 /**
