@@ -74,40 +74,46 @@ var CONFIG = {
   // QuickChart REST API 엔드포인트 (t-SNE 여론 군집 지형도 렌더링)
   QUICKCHART_ENDPOINT: "https://quickchart.io/chart",
 
-  // 6대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
+  // 7대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
   DEFAULT_PROMPTS: {
     "01_idea_to_plan": {
       title: "01_idea_to_plan",
-      description: "마케팅 캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 도출 지침",
+      description: "마케팅 캠페인 기획서(PLAN) 도출 지침",
       systemInstruction:
-        "당신은 엔터프라이즈 브랜드 마케팅 수석 디렉터이다. 아이디어 메모로부터 마케팅 캠페인 기획서(PLAN)와 제작 명세서(SPEC)를 '===SPEC_DELIMITER===' 구분자로 분리하여 전문적인 마크다운으로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
+        "당신은 엔터프라이즈 브랜드 마케팅 수석 디렉터이다. 아이디어 메모로부터 마케팅 캠페인 기획서(PLAN) 전문을 체계적이고 전문적인 마크다운으로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
-    "02_content_generation": {
-      title: "02_content_generation",
+    "02_plan_to_spec": {
+      title: "02_plan_to_spec",
+      description: "기획서(PLAN) 기반 콘텐츠 제작 명세서(SPEC) 도출 지침",
+      systemInstruction:
+        "당신은 테크니컬 마케팅 스펙 아키텍트이다. 제공된 마케팅 기획서(PLAN)를 바탕으로 비주얼 이미지 3종(16:9, 9:16, 1:1), 15초 모바일 숏폼 영상, 멀티 채널 카피라이팅 및 피드백 설문 가이드라인을 정의한 콘텐츠 제작 명세서(SPEC) 전문을 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+    },
+    "03_content_generation": {
+      title: "03_content_generation",
       description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 생성 지침",
       systemInstruction:
         "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content 구글 독스를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
-    "03_persona_evaluation": {
-      title: "03_persona_evaluation",
+    "04_persona_evaluation": {
+      title: "04_persona_evaluation",
       description: "25인 한국인 마스터 AI 페르소나 다면 평가 및 세부 의견 포인트 도출 지침",
       systemInstruction:
         "당신은 엔터프라이즈 마케팅 리서치 분석 AI이다. 공개된 마케팅 콘텐츠를 25인 한국인 가상 페르소나 관점에서 다면 평가하고, 1인당 2~4개의 세부 의견 포인트(points 배열, 총 50~80개)를 포함하는 순수 JSON 배열만 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
-    "04_feedback_summary": {
-      title: "04_feedback_summary",
+    "05_feedback_summary": {
+      title: "05_feedback_summary",
       description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
         "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
-    "05_content_revision": {
-      title: "05_content_revision",
+    "06_content_revision": {
+      title: "06_content_revision",
       description: "피드백 요약서 및 독립된 마케터 보정 지침서 반영 차기 리비전 콘텐츠 보정 지침",
       systemInstruction:
         "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
-    "06_visual_prompt": {
-      title: "06_visual_prompt",
+    "07_visual_prompt": {
+      title: "07_visual_prompt",
       description: "비주얼 이미지 3종 및 Veo 숏폼 영상 프롬프트 엔지니어링 지침",
       systemInstruction:
         "당신은 AI 아트 디렉터이다. 캠페인 카피와 마케터 의사 결정을 분석하여 Gemini 이미지 모델(Nano Banana 2.1) 및 Veo 비디오 모델에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라. 설명 없이 영문 프롬프트만 출력하라."

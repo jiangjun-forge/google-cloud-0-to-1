@@ -87,40 +87,46 @@ var CONFIG = {
   // QuickChart REST API 엔드포인트 (t-SNE 여론 군집 지형도 렌더링)
   QUICKCHART_ENDPOINT: "https://quickchart.io/chart",
 
-  // 6대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
+  // 7대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
   DEFAULT_PROMPTS: {
     "01_idea_to_plan": {
       title: "01_idea_to_plan",
-      description: "마케팅 캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC) 도출 지침",
+      description: "마케팅 캠페인 기획서(PLAN) 도출 지침",
       systemInstruction:
-        "당신은 엔터프라이즈 브랜드 마케팅 수석 디렉터이다. 아이디어 메모로부터 마케팅 캠페인 기획서(PLAN)와 제작 명세서(SPEC)를 '===SPEC_DELIMITER===' 구분자로 분리하여 전문적인 마크다운으로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
+        "당신은 엔터프라이즈 브랜드 마케팅 수석 디렉터이다. 아이디어 메모로부터 마케팅 캠페인 기획서(PLAN) 전문을 체계적이고 전문적인 마크다운으로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
-    "02_content_generation": {
-      title: "02_content_generation",
+    "02_plan_to_spec": {
+      title: "02_plan_to_spec",
+      description: "기획서(PLAN) 기반 콘텐츠 제작 명세서(SPEC) 도출 지침",
+      systemInstruction:
+        "당신은 테크니컬 마케팅 스펙 아키텍트이다. 제공된 마케팅 기획서(PLAN)를 바탕으로 비주얼 이미지 3종(16:9, 9:16, 1:1), 15초 모바일 숏폼 영상, 멀티 채널 카피라이팅 및 피드백 설문 가이드라인을 정의한 콘텐츠 제작 명세서(SPEC) 전문을 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+    },
+    "03_content_generation": {
+      title: "03_content_generation",
       description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 생성 지침",
       systemInstruction:
         "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content 구글 독스를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
-    "03_persona_evaluation": {
-      title: "03_persona_evaluation",
+    "04_persona_evaluation": {
+      title: "04_persona_evaluation",
       description: "25인 한국인 마스터 AI 페르소나 다면 평가 및 세부 의견 포인트 도출 지침",
       systemInstruction:
         "당신은 엔터프라이즈 마케팅 리서치 분석 AI이다. 공개된 마케팅 콘텐츠를 25인 한국인 가상 페르소나 관점에서 다면 평가하고, 1인당 2~4개의 세부 의견 포인트(points 배열, 총 50~80개)를 포함하는 순수 JSON 배열만 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
-    "04_feedback_summary": {
-      title: "04_feedback_summary",
+    "05_feedback_summary": {
+      title: "05_feedback_summary",
       description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
         "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
-    "05_content_revision": {
-      title: "05_content_revision",
+    "06_content_revision": {
+      title: "06_content_revision",
       description: "피드백 요약서 및 독립된 마케터 보정 지침서 반영 차기 리비전 콘텐츠 보정 지침",
       systemInstruction:
         "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
-    "06_visual_prompt": {
-      title: "06_visual_prompt",
+    "07_visual_prompt": {
+      title: "07_visual_prompt",
       description: "비주얼 이미지 3종 및 Veo 숏폼 영상 프롬프트 엔지니어링 지침",
       systemInstruction:
         "당신은 AI 아트 디렉터이다. 캠페인 카피와 마케터 의사 결정을 분석하여 Gemini 이미지 모델(Nano Banana 2.1) 및 Veo 비디오 모델에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라. 설명 없이 영문 프롬프트만 출력하라."
@@ -1633,7 +1639,8 @@ function ensureShortsScriptInCampaignContent(rawContent, prefix, visualBrief) {
 function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief, marketerDirectiveOpt) {
   try {
     var directiveText = marketerDirectiveOpt || "";
-    var systemInstruction =
+    var templatePrompt = (typeof getPromptTemplate === "function") ? getPromptTemplate("07_visual_prompt") : "";
+    var systemInstruction = templatePrompt || (
       "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
       "제공된 캠페인 카피와 고객 피드백 요약본, 그리고 최우선 구속력을 갖는 마케터의 최종 의사 결정 지침을 정밀 분석하여, " +
       "이미지 생성 AI(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
@@ -1713,7 +1720,7 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
       ? "- 콘텐츠 제작 명세서(SPEC)에 정의된 피드백 설문 항목을 충실히 반영하여 의견을 개진하라.\n"
       : "- 콘텐츠 제작 명세서(SPEC)에 특정 설문 문항이 고정되어 있지 않으므로, '열린 피드백(Open-ended Feedback)' 원칙을 적용한다. 각 페르소나는 자신의 연령, 성별, 직업, 라이프스타일 관점에서 장점 호평, 단점 비판, 가격 저항, 사용성 의문, 구매 전환 장벽 등 다각도의 열린 의견을 자유롭게 개진하라.\n";
 
-    var promptDocTemplate = (typeof getPromptTemplate === "function") ? getPromptTemplate("03_persona_evaluation") : "";
+    var promptDocTemplate = (typeof getPromptTemplate === "function") ? getPromptTemplate("04_persona_evaluation") : "";
     var systemInstruction = promptDocTemplate || (
       "당신은 엔터프라이즈 마케팅 리서치 및 소비자 심리 분석 전문 AI이다.\n" +
       "소비자는 사내 기획서를 알지 못하며, 시장에 공개된 마케팅 캠페인 콘텐츠(" + prevRvName + " 카피 및 비주얼)만을 보고 반응한다.\n" +
@@ -2711,36 +2718,25 @@ function runIdeaToPlanConversion() {
 
     resetSessionTokens();
 
-    // 2. 구글 독스 기반 프롬프트 템플릿 로드 (마케터 수정분 자동 반영)
-    var systemInstruction = getPromptTemplate("01_idea_to_plan");
-    var userPrompt =
+    // 2-1단계: 아이디어 메모로부터 마케팅 캠페인 기획서(PLAN) 전문 도출
+    var planSystemInstruction = getPromptTemplate("01_idea_to_plan");
+    var planUserPrompt =
       "다음은 마케터가 작성한 캠페인 아이디어 초안 메모이다.\n\n" +
       "### [마케터 아이디어 메모]\n" + ideaMemo + "\n\n" +
-      "위 아이디어를 정밀 분석하여 다음 두 개의 독립된 문서 본문을 마크다운으로 작성하라:\n\n" +
-      "===DOCUMENT_SPLIT_PLAN===\n" +
-      "(여기에 마케팅 캠페인 기획서 PLAN 본문 작성)\n\n" +
-      "===DOCUMENT_SPLIT_SPEC===\n" +
-      "(여기에 멀티 채널 콘텐츠 제작 명세서 SPEC 본문 작성: 가로 16:9 배너, 세로 9:16 포스터, 정사각 1:1 SNS 피드, 세로 9:16 모바일 숏폼 영상 15초 규격 포함)";
+      "위 아이디어를 정밀 분석하여 마케팅 캠페인 기획서(PLAN) 전문을 체계적인 마크다운으로 작성하라.";
 
-    var rawResponse = callGemini(systemInstruction, userPrompt);
+    var planContent = callGemini(planSystemInstruction, planUserPrompt);
 
-    // 3. 기획서(PLAN)와 제작 명세서(SPEC) 분리 저장
-    var planContent = "";
-    var specContent = "";
+    // 2-2단계: 도출된 기획서(PLAN)를 바탕으로 정밀한 콘텐츠 제작 명세서(SPEC) 도출 (독립 파이프라인)
+    var specSystemInstruction = getPromptTemplate("02_plan_to_spec");
+    var specUserPrompt =
+      "다음은 이번 캠페인의 마케팅 기획서(PLAN) 전문이다.\n\n" +
+      "### [마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+      "위 기획서의 타깃 오디언스, 핵심 USP, 캠페인 전략을 충실히 반영하여 제작 실무진(디자이너, 영상 PD, 카피라이터)을 위한 콘텐츠 제작 명세서(SPEC) 전문을 마크다운으로 작성하라:\n" +
+      "- 가로 16:9 배너 (1920x1080), 세로 9:16 모바일 포스터 (1080x1920), 정방형 1:1 SNS 피드 (1080x1080)\n" +
+      "- 15초 세로 9:16 모바일 숏폼 영상 콘티 규격 및 4대 평가 영역 설문 가이드라인 정의";
 
-    if (rawResponse.indexOf("===DOCUMENT_SPLIT_PLAN===") !== -1 && rawResponse.indexOf("===DOCUMENT_SPLIT_SPEC===") !== -1) {
-      var parts = rawResponse.split("===DOCUMENT_SPLIT_SPEC===");
-      planContent = parts[0].replace("===DOCUMENT_SPLIT_PLAN===", "").trim();
-      specContent = parts[1].trim();
-    } else {
-      planContent = rawResponse;
-      specContent =
-        "# 콘텐츠 제작 명세서 (SPEC)\n\n" +
-        "* 가로 배너: 16:9 (1920x1080) - 구글 디스플레이 네트워크\n" +
-        "* 세로 포스터: 9:16 (1080x1920) - 모바일 스토리\n" +
-        "* 정방형 SNS: 1:1 (1080x1080) - 인스타그램 피드\n" +
-        "* 모바일 숏폼: 9:16 (1080x1920, 15초) - 유튜브 쇼츠, 인스타그램 릴스\n";
-    }
+    var specContent = callGemini(specSystemInstruction, specUserPrompt);
 
     var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
     var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
@@ -2876,7 +2872,7 @@ function runInitialContentGeneration() {
       );
     } else {
       // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
-      var systemInstruction = getPromptTemplate("02_content_generation");
+      var systemInstruction = getPromptTemplate("03_content_generation");
       var promptText =
         "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
         "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
@@ -3056,7 +3052,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       );
     } else {
       // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
-      var systemInstruction = getPromptTemplate("05_content_revision");
+      var systemInstruction = getPromptTemplate("06_content_revision");
       var userPrompt =
         "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), " +
         "고객 피드백 종합 요약본(feedback_summary), 그리고 마케터의 최종 의사 결정 및 보정 지침이다.\n\n" +
@@ -3311,7 +3307,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
     var prevContent = readGoogleDoc(prevFolder, CONFIG.CONTENT_DOC_NAME || "campaign_content") || "";
 
     // 4. 구글 독스 기반 프롬프트 템플릿 로드 (스마트 캐싱)
-    var systemInstruction = getPromptTemplate("04_feedback_summary");
+    var systemInstruction = getPromptTemplate("05_feedback_summary");
     var userPrompt =
       "다음은 " + prevRvName + " 마케팅 콘텐츠에 대한 25인 가상 페르소나 다면 평가 결과와 실제 고객 설문 응답, 미디어 VLM 분석 데이터이다.\n\n" +
       "### [1. 이전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + (prevContent.substring(0, 1500) || "카피 및 비주얼") + "\n\n" +

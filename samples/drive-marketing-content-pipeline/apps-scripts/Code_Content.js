@@ -50,36 +50,25 @@ function runIdeaToPlanConversion() {
 
     resetSessionTokens();
 
-    // 2. 구글 독스 기반 프롬프트 템플릿 로드 (마케터 수정분 자동 반영)
-    var systemInstruction = getPromptTemplate("01_idea_to_plan");
-    var userPrompt =
+    // 2-1단계: 아이디어 메모로부터 마케팅 캠페인 기획서(PLAN) 전문 도출
+    var planSystemInstruction = getPromptTemplate("01_idea_to_plan");
+    var planUserPrompt =
       "다음은 마케터가 작성한 캠페인 아이디어 초안 메모이다.\n\n" +
       "### [마케터 아이디어 메모]\n" + ideaMemo + "\n\n" +
-      "위 아이디어를 정밀 분석하여 다음 두 개의 독립된 문서 본문을 마크다운으로 작성하라:\n\n" +
-      "===DOCUMENT_SPLIT_PLAN===\n" +
-      "(여기에 마케팅 캠페인 기획서 PLAN 본문 작성)\n\n" +
-      "===DOCUMENT_SPLIT_SPEC===\n" +
-      "(여기에 멀티 채널 콘텐츠 제작 명세서 SPEC 본문 작성: 가로 16:9 배너, 세로 9:16 포스터, 정사각 1:1 SNS 피드, 세로 9:16 모바일 숏폼 영상 15초 규격 포함)";
+      "위 아이디어를 정밀 분석하여 마케팅 캠페인 기획서(PLAN) 전문을 체계적인 마크다운으로 작성하라.";
 
-    var rawResponse = callGemini(systemInstruction, userPrompt);
+    var planContent = callGemini(planSystemInstruction, planUserPrompt);
 
-    // 3. 기획서(PLAN)와 제작 명세서(SPEC) 분리 저장
-    var planContent = "";
-    var specContent = "";
+    // 2-2단계: 도출된 기획서(PLAN)를 바탕으로 정밀한 콘텐츠 제작 명세서(SPEC) 도출 (독립 파이프라인)
+    var specSystemInstruction = getPromptTemplate("02_plan_to_spec");
+    var specUserPrompt =
+      "다음은 이번 캠페인의 마케팅 기획서(PLAN) 전문이다.\n\n" +
+      "### [마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
+      "위 기획서의 타깃 오디언스, 핵심 USP, 캠페인 전략을 충실히 반영하여 제작 실무진(디자이너, 영상 PD, 카피라이터)을 위한 콘텐츠 제작 명세서(SPEC) 전문을 마크다운으로 작성하라:\n" +
+      "- 가로 16:9 배너 (1920x1080), 세로 9:16 모바일 포스터 (1080x1920), 정방형 1:1 SNS 피드 (1080x1080)\n" +
+      "- 15초 세로 9:16 모바일 숏폼 영상 콘티 규격 및 4대 평가 영역 설문 가이드라인 정의";
 
-    if (rawResponse.indexOf("===DOCUMENT_SPLIT_PLAN===") !== -1 && rawResponse.indexOf("===DOCUMENT_SPLIT_SPEC===") !== -1) {
-      var parts = rawResponse.split("===DOCUMENT_SPLIT_SPEC===");
-      planContent = parts[0].replace("===DOCUMENT_SPLIT_PLAN===", "").trim();
-      specContent = parts[1].trim();
-    } else {
-      planContent = rawResponse;
-      specContent =
-        "# 콘텐츠 제작 명세서 (SPEC)\n\n" +
-        "* 가로 배너: 16:9 (1920x1080) - 구글 디스플레이 네트워크\n" +
-        "* 세로 포스터: 9:16 (1080x1920) - 모바일 스토리\n" +
-        "* 정방형 SNS: 1:1 (1080x1080) - 인스타그램 피드\n" +
-        "* 모바일 숏폼: 9:16 (1080x1920, 15초) - 유튜브 쇼츠, 인스타그램 릴스\n";
-    }
+    var specContent = callGemini(specSystemInstruction, specUserPrompt);
 
     var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
     var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
@@ -215,7 +204,7 @@ function runInitialContentGeneration() {
       );
     } else {
       // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
-      var systemInstruction = getPromptTemplate("02_content_generation");
+      var systemInstruction = getPromptTemplate("03_content_generation");
       var promptText =
         "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
         "명세서(SPEC)에 정의된 채널 규격, 영상 길이, 비주얼 가이드라인을 엄격히 준수하여 초판 campaign_content를 작성하라:\n\n" +
@@ -395,7 +384,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       );
     } else {
       // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
-      var systemInstruction = getPromptTemplate("05_content_revision");
+      var systemInstruction = getPromptTemplate("06_content_revision");
       var userPrompt =
         "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), " +
         "고객 피드백 종합 요약본(feedback_summary), 그리고 마케터의 최종 의사 결정 및 보정 지침이다.\n\n" +

@@ -171,7 +171,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
     var prevContent = readGoogleDoc(prevFolder, CONFIG.CONTENT_DOC_NAME || "campaign_content") || "";
 
     // 4. 구글 독스 기반 프롬프트 템플릿 로드 (스마트 캐싱)
-    var systemInstruction = getPromptTemplate("04_feedback_summary");
+    var systemInstruction = getPromptTemplate("05_feedback_summary");
     var userPrompt =
       "다음은 " + prevRvName + " 마케팅 콘텐츠에 대한 25인 가상 페르소나 다면 평가 결과와 실제 고객 설문 응답, 미디어 VLM 분석 데이터이다.\n\n" +
       "### [1. 이전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + (prevContent.substring(0, 1500) || "카피 및 비주얼") + "\n\n" +

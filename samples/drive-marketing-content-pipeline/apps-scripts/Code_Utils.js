@@ -618,7 +618,8 @@ function ensureShortsScriptInCampaignContent(rawContent, prefix, visualBrief) {
 function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief, marketerDirectiveOpt) {
   try {
     var directiveText = marketerDirectiveOpt || "";
-    var systemInstruction =
+    var templatePrompt = (typeof getPromptTemplate === "function") ? getPromptTemplate("07_visual_prompt") : "";
+    var systemInstruction = templatePrompt || (
       "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
       "제공된 캠페인 카피와 고객 피드백 요약본, 그리고 최우선 구속력을 갖는 마케터의 최종 의사 결정 지침을 정밀 분석하여, " +
       "이미지 생성 AI(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
@@ -698,7 +699,7 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
       ? "- 콘텐츠 제작 명세서(SPEC)에 정의된 피드백 설문 항목을 충실히 반영하여 의견을 개진하라.\n"
       : "- 콘텐츠 제작 명세서(SPEC)에 특정 설문 문항이 고정되어 있지 않으므로, '열린 피드백(Open-ended Feedback)' 원칙을 적용한다. 각 페르소나는 자신의 연령, 성별, 직업, 라이프스타일 관점에서 장점 호평, 단점 비판, 가격 저항, 사용성 의문, 구매 전환 장벽 등 다각도의 열린 의견을 자유롭게 개진하라.\n";
 
-    var promptDocTemplate = (typeof getPromptTemplate === "function") ? getPromptTemplate("03_persona_evaluation") : "";
+    var promptDocTemplate = (typeof getPromptTemplate === "function") ? getPromptTemplate("04_persona_evaluation") : "";
     var systemInstruction = promptDocTemplate || (
       "당신은 엔터프라이즈 마케팅 리서치 및 소비자 심리 분석 전문 AI이다.\n" +
       "소비자는 사내 기획서를 알지 못하며, 시장에 공개된 마케팅 캠페인 콘텐츠(" + prevRvName + " 카피 및 비주얼)만을 보고 반응한다.\n" +
