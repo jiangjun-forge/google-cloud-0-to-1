@@ -294,6 +294,34 @@ function getPipelineSidebarHtml() {
     "      text-decoration: underline;\n" +
     "    }\n" +
     "    .footer-btn:hover { color: #1a73e8; }\n" +
+    "    details.setup-box {\n" +
+    "      margin-top: 14px;\n" +
+    "      margin-bottom: 12px;\n" +
+    "      border: 1px solid #dadce0;\n" +
+    "      border-radius: 6px;\n" +
+    "      background: #f8f9fa;\n" +
+    "      padding: 8px 10px;\n" +
+    "    }\n" +
+    "    details.setup-box summary {\n" +
+    "      font-size: 11px;\n" +
+    "      font-weight: 700;\n" +
+    "      color: #5f6368;\n" +
+    "      cursor: pointer;\n" +
+    "      display: flex;\n" +
+    "      justify-content: space-between;\n" +
+    "      align-items: center;\n" +
+    "      user-select: none;\n" +
+    "    }\n" +
+    "    details.setup-box summary::-webkit-details-marker { display: none; }\n" +
+    "    details.setup-box[open] {\n" +
+    "      background: #ffffff;\n" +
+    "      border-color: #1a73e8;\n" +
+    "    }\n" +
+    "    details.setup-box .setup-content {\n" +
+    "      margin-top: 10px;\n" +
+    "      padding-top: 8px;\n" +
+    "      border-top: 1px solid #f1f3f4;\n" +
+    "    }\n" +
     "  </style>\n" +
     "</head>\n" +
     "<body>\n" +
@@ -306,15 +334,6 @@ function getPipelineSidebarHtml() {
     "  </div>\n" +
     "\n" +
     "  <div id='statusBar' class='status-bar'></div>\n" +
-    "\n" +
-    "  <div class='section'>\n" +
-    "    <div class='section-title'>\n" +
-    "      <span>환경 설정 및 초기화</span>\n" +
-    "      <span class='step-tag'>Setup</span>\n" +
-    "    </div>\n" +
-    "    <button id='btnApiKey' class='btn' onclick=\"callServer('promptForGeminiApiKey')\">Gemini API Key 설정</button>\n" +
-    "    <button id='btnInit' class='btn btn-primary' onclick=\"callServer('initCampaignWorkspace')\">[초기화] 캠페인 작업 공간 구축</button>\n" +
-    "  </div>\n" +
     "\n" +
     "  <div class='section'>\n" +
     "    <div class='section-title'>\n" +
@@ -376,6 +395,17 @@ function getPipelineSidebarHtml() {
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
+    "\n" +
+    "  <details class='setup-box'>\n" +
+    "    <summary>\n" +
+    "      <span>환경 설정 및 초기화 (최초 1회)</span>\n" +
+    "      <span class='step-tag'>Setup ▼</span>\n" +
+    "    </summary>\n" +
+    "    <div class='setup-content'>\n" +
+    "      <button id='btnApiKey' class='btn' onclick=\"callServer('promptForGeminiApiKey')\">Gemini API Key 설정</button>\n" +
+    "      <button id='btnInit' class='btn btn-primary' onclick=\"callServer('initCampaignWorkspace')\">[초기화] 캠페인 작업 공간 구축</button>\n" +
+    "    </div>\n" +
+    "  </details>\n" +
     "\n" +
     "  <div class='footer-actions'>\n" +
     "    <button class='footer-btn' onclick='refreshStatus()'>패널 상태 새로고침</button>\n" +
