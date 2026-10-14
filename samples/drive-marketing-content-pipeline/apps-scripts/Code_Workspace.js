@@ -11,7 +11,8 @@
  * 그리고 고객 VoC 수집용 Google Forms 생성 및 시트 바인딩까지 초장에 100% 완결한다.
  */
 function initCampaignWorkspace() {
-  var ui = SpreadsheetApp.getUi();
+  return withUserLock("campaign_init", function() {
+    var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
   showProcessingToast("캠페인 작업 공간 및 VoC 설문 폼 올인원 초기화 중...", 20);
   try {
@@ -137,6 +138,7 @@ function initCampaignWorkspace() {
   } catch (e) {
     ui.alert("초기화 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
+  });
 }
 
 /**

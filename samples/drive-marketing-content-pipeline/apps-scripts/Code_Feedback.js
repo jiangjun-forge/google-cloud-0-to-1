@@ -12,85 +12,82 @@
  * @param {string} [targetRoundOpt] - 대상 피드백 라운드 (기본값: 자동 감지 fb-01, fb-02 ...)
  */
 function runPersonaEvaluation(targetRoundOpt) {
-  var ui = SpreadsheetApp.getUi();
-  var startTime = new Date().getTime();
-  try {
-    var campaignFolder = getCampaignFolder();
+  return withUserLock("persona_evaluation", function() {
+    var ui = SpreadsheetApp.getUi();
+    var startTime = new Date().getTime();
+    try {
+      var campaignFolder = getCampaignFolder();
 
-    // 피드백 회차 판별
-    var targetRound = targetRoundOpt;
-    if (!targetRound) {
-      var latestFb = detectLatestFeedbackRoundNum();
-      var latestRv = detectLatestRevisionRoundNum();
-      var autoRound = Math.max(latestFb + 1, latestRv + 1, 1);
-      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
-    }
-
-    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
-    var prevRoundNum = Math.max(0, roundNum - 1);
-    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
-
-    showProcessingToast("25인 페르소나 다면 평가 및 t-SNE 지형도 생성 중 (" + targetRound + ")...", 60);
-
-    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
-
-    // 1. 25인 페르소나 피드백 데이터셋 로드 또는 실시간 생성 (50~80개 세부 의견 포인트 + 128d 임베딩)
-    var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
-    if (!jsonContent) {
-      jsonContent = generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName);
-    }
-
-    // 2. 128d 임베딩 기반 t-SNE 다면 여론 지형도 차트 생성 (feedback_clusters_map.png)
-    var clusterMapFile = null;
-    var pointsJson = readTextFile(feedbackFolder, "feedback_points_128d.json");
-    var parsedPoints = [];
-    if (pointsJson) {
-      try {
-        parsedPoints = JSON.parse(pointsJson);
-      } catch (e) {}
-    }
-
-    if (parsedPoints && parsedPoints.length > 0) {
-      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPoints);
-    } else {
-      var existingMap = feedbackFolder.getFilesByName("feedback_clusters_map.png");
-      if (existingMap.hasNext()) {
-        clusterMapFile = existingMap.next();
+      // 피드백 회차 판별
+      var targetRound = targetRoundOpt;
+      if (!targetRound) {
+        var latestFb = detectLatestFeedbackRoundNum();
+        var latestRv = detectLatestRevisionRoundNum();
+        var autoRound = Math.max(latestFb + 1, latestRv + 1, 1);
+        targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
       }
+
+      var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+      var prevRoundNum = Math.max(0, roundNum - 1);
+      var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+
+      showProcessingToast("25인 페르소나 다면 평가 및 t-SNE 지형도 생성 중 (" + targetRound + ")...", 60);
+
+      var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+      // 1. 25인 페르소나 피드백 데이터셋 로드 또는 실시간 생성 (50~80개 세부 의견 포인트 + 128d 임베딩)
+      var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
+      if (!jsonContent) {
+        jsonContent = generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName);
+      }
+
+      // 2. 128d 임베딩 기반 t-SNE 다면 여론 지형도 차트 생성 (feedback_clusters_map.png)
+      var clusterMapFile = null;
+      var pointsJson = readTextFile(feedbackFolder, "feedback_points_128d.json");
+      var parsedPoints = safeParseJson(pointsJson, [], true);
+
+      if (parsedPoints && parsedPoints.length > 0) {
+        clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPoints);
+      } else {
+        var existingMap = feedbackFolder.getFilesByName("feedback_clusters_map.png");
+        if (existingMap.hasNext()) {
+          clusterMapFile = existingMap.next();
+        }
+      }
+
+      if (!clusterMapFile) {
+        throw new Error("t-SNE 여론 지형도 이미지 생성에 실패했습니다.");
+      }
+
+      var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+      var pointCount = parsedPoints ? parsedPoints.length : 0;
+      var logDetail = "25인 페르소나 다면 평가 완료" + (pointCount > 0 ? " (VoC 포인트 " + pointCount + "개 도출, " : " (") + "128d 임베딩 t-SNE 여론 지형도 렌더링 완료)";
+
+      // 3. 대시보드 시트에 링크 기록
+      var stepTitle = roundNum + "차 페르소나 다면 평가 및 t-SNE 지형도 (" + targetRound + ")";
+      recordStepResultToSheet(
+        targetRound,
+        stepTitle,
+        "완료",
+        clusterMapFile.getUrl(),
+        "t-SNE 지형도 이미지 열기 (" + targetRound + ")",
+        durationSec,
+        logDetail
+      );
+
+      showResultModal(
+        "25인 페르소나 다면 평가 및 지형도 생성 완료 (" + targetRound + ")",
+        "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n\n" +
+        "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
+        "* 실행 상세 내역: " + logDetail + "\n\n" +
+        "아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
+        "t-SNE 지형도 차트 보기",
+        clusterMapFile.getUrl()
+      );
+    } catch (e) {
+      ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
     }
-
-    if (!clusterMapFile) {
-      throw new Error("t-SNE 여론 지형도 이미지 생성에 실패했습니다.");
-    }
-
-    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
-    var pointCount = parsedPoints ? parsedPoints.length : 0;
-    var logDetail = "25인 페르소나 다면 평가 완료" + (pointCount > 0 ? " (VoC 포인트 " + pointCount + "개 도출, " : " (") + "128d 임베딩 t-SNE 여론 지형도 렌더링 완료)";
-
-    // 3. 대시보드 시트에 링크 기록
-    var stepTitle = roundNum + "차 페르소나 다면 평가 및 t-SNE 지형도 (" + targetRound + ")";
-    recordStepResultToSheet(
-      targetRound,
-      stepTitle,
-      "완료",
-      clusterMapFile.getUrl(),
-      "t-SNE 지형도 이미지 열기 (" + targetRound + ")",
-      durationSec,
-      logDetail
-    );
-
-    showResultModal(
-      "25인 페르소나 다면 평가 및 지형도 생성 완료 (" + targetRound + ")",
-      "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n\n" +
-      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
-      "* 실행 상세 내역: " + logDetail + "\n\n" +
-      "아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
-      "t-SNE 지형도 차트 보기",
-      clusterMapFile.getUrl()
-    );
-  } catch (e) {
-    ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
-  }
+  });
 }
 
 /**
@@ -100,25 +97,26 @@ function runPersonaEvaluation(targetRoundOpt) {
  * @param {string} [targetRoundOpt] - 대상 피드백 라운드
  */
 function runFeedbackSummaryReport(targetRoundOpt) {
-  var ui = SpreadsheetApp.getUi();
-  var startTime = new Date().getTime();
-  try {
-    var campaignFolder = getCampaignFolder();
+  return withUserLock("feedback_summary", function() {
+    var ui = SpreadsheetApp.getUi();
+    var startTime = new Date().getTime();
+    try {
+      var campaignFolder = getCampaignFolder();
 
-    var targetRound = targetRoundOpt;
-    if (!targetRound) {
-      var latestFb = detectLatestFeedbackRoundNum();
-      targetRound = "fb-" + (latestFb < 10 ? "0" + latestFb : latestFb);
-      if (latestFb === 0) {
-        targetRound = "fb-01";
+      var targetRound = targetRoundOpt;
+      if (!targetRound) {
+        var latestFb = detectLatestFeedbackRoundNum();
+        targetRound = "fb-" + (latestFb < 10 ? "0" + latestFb : latestFb);
+        if (latestFb === 0) {
+          targetRound = "fb-01";
+        }
       }
-    }
 
-    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
-    var prevRoundNum = Math.max(0, roundNum - 1);
-    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+      var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+      var prevRoundNum = Math.max(0, roundNum - 1);
+      var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
 
-    showProcessingToast("피드백 종합 분석 보고서 도출 중 (" + targetRound + ")...", 60);
+      showProcessingToast("피드백 종합 분석 보고서 도출 중 (" + targetRound + ")...", 60);
 
     var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
 
@@ -240,6 +238,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
   } catch (e) {
     ui.alert("피드백 보고서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
+  });
 }
 
 /**

@@ -10,7 +10,8 @@
  * [액션 1] 마케터 자연어 아이디어를 기반으로 캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC)를 자동 도출한다.
  */
 function runIdeaToPlanConversion() {
-  var ui = SpreadsheetApp.getUi();
+  return withUserLock("plan_generation", function() {
+    var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
   showProcessingToast("아이디어 기반 기획서(PLAN) 및 명세서(SPEC) 자동 도출 중...", 30);
   try {
@@ -117,13 +118,15 @@ function runIdeaToPlanConversion() {
   } catch (e) {
     ui.alert("기획서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
+  });
 }
 
 /**
  * [액션 2] 기획서(PLAN) 및 명세서(SPEC)를 기반으로 초판 마케팅 콘텐츠(rv-00)를 일괄 양산한다.
  */
 function runInitialContentGeneration() {
-  var ui = SpreadsheetApp.getUi();
+  return withUserLock("content_generation", function() {
+    var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
   showProcessingToast("초판 마케팅 콘텐츠 양산 중 (rv-00)...", 60);
   try {
@@ -264,16 +267,18 @@ function runInitialContentGeneration() {
   } catch (e) {
     ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
+  });
 }
 
 /**
  * [액션 3] 피드백 요약본(feedback_summary)과 마케터 지침을 반영하여 N차 개정본 마케팅 콘텐츠를 완결 보정한다.
  */
 function runReviseContent(targetRoundOpt, isSilentOpt) {
-  var ui = SpreadsheetApp.getUi();
-  var isSilent = (isSilentOpt === true);
-  var startTime = new Date().getTime();
-  try {
+  return withUserLock("content_revision", function() {
+    var ui = SpreadsheetApp.getUi();
+    var isSilent = (isSilentOpt === true);
+    var startTime = new Date().getTime();
+    try {
     var campaignFolder = getCampaignFolder();
 
     // 회차 판별 (fb-01 -> rv-01, fb-02 -> rv-02 ...)
@@ -443,4 +448,5 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       throw e;
     }
   }
+  });
 }

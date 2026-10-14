@@ -6,6 +6,122 @@
  * [모듈 4] 구글 드라이브 파일 탐색, 입출력 및 마크다운 독스 렌더러 (Drive Utils & Document Renderer)
  */
 
+/**
+ * 마케터의 중복 클릭(Double-click) 및 동시 실행 충돌을 방어하기 위한 사용자 락(User Lock) 래퍼
+ *
+ * @param {string} lockName - 작업 식별자
+ * @param {Function} taskFn - 실행할 작업 함수
+ * @param {number} [timeoutMs] - 락 대기 시간 (밀리초, 기본값: 3000ms)
+ * @return {*} 작업 함수의 반환값
+ */
+function withUserLock(lockName, taskFn, timeoutMs) {
+  var lock = LockService.getUserLock();
+  var waitTime = timeoutMs || 3000;
+  var hasLock = false;
+
+  try {
+    hasLock = lock.tryLock(waitTime);
+  } catch (e) {
+    Logger.log("LockService tryLock 예외 (" + lockName + "): " + e);
+  }
+
+  if (!hasLock) {
+    try {
+      var ui = SpreadsheetApp.getUi();
+      ui.alert(
+        "작업 진행 중 안내",
+        "현재 동일하거나 다른 파이프라인 작업이 이미 백그라운드에서 진행 중입니다.\n\n" +
+        "중복 실행으로 인한 데이터 덮어쓰기를 방지하기 위해 새 요청을 차단했습니다.\n" +
+        "이전 작업이 완료된 후 다시 시도해 주십시오.",
+        ui.ButtonSet.OK
+      );
+    } catch (uiErr) {
+      Logger.log("Lock 경고 알림 표시 불가: " + uiErr);
+    }
+    return null;
+  }
+
+  try {
+    return taskFn();
+  } finally {
+    try {
+      lock.releaseLock();
+    } catch (relErr) {
+      Logger.log("LockService releaseLock 예외 (" + lockName + "): " + relErr);
+    }
+  }
+}
+
+/**
+ * LLM 응답 텍스트에서 마크다운 코드 블록(```json) 및 앞뒤 잡음 사족 문구를 정밀 제거하고
+ * 순수 JSON 문자열만 안전하게 슬라이싱 추출한다.
+ *
+ * @param {string} rawText - 원천 LLM 응답 텍스트
+ * @param {boolean} [isArrayExpected] - 배열([...]) 형식을 기대하는지 여부
+ * @return {string} 추출된 순수 JSON 문자열
+ */
+function safeExtractJson(rawText, isArrayExpected) {
+  if (!rawText) return "";
+
+  var text = String(rawText).trim();
+
+  // 1. 마크다운 코드 블록 제거
+  text = text.replace(/^```[a-z0-9_-]*\s*/i, "").replace(/\s*```$/, "").trim();
+
+  // 2. 대괄호([]) 또는 중괄호({}) 범위 정밀 슬라이싱
+  var startIdx = -1;
+  var endIdx = -1;
+
+  if (isArrayExpected === true) {
+    startIdx = text.indexOf("[");
+    endIdx = text.lastIndexOf("]");
+  } else if (isArrayExpected === false) {
+    startIdx = text.indexOf("{");
+    endIdx = text.lastIndexOf("}");
+  } else {
+    // 자동 감지: 먼저 등장하는 괄호 기준
+    var firstBracket = text.indexOf("[");
+    var firstBrace = text.indexOf("{");
+
+    if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+      startIdx = firstBracket;
+      endIdx = text.lastIndexOf("]");
+    } else if (firstBrace !== -1) {
+      startIdx = firstBrace;
+      endIdx = text.lastIndexOf("}");
+    }
+  }
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    return text.substring(startIdx, endIdx + 1).trim();
+  }
+
+  return text;
+}
+
+/**
+ * 안전한 JSON 파서 (LLM 사족 문구 자동 슬라이싱 및 문법 오류 시 크래시 방지 폴백 지원)
+ *
+ * @param {string} rawText - 파싱할 텍스트
+ * @param {*} [fallbackVal] - 파싱 실패 시 반환할 기본값 (기본값: null)
+ * @param {boolean} [isArrayExpected] - 배열 형식 기대 여부
+ * @return {*} 파싱된 객체/배열 또는 fallbackVal
+ */
+function safeParseJson(rawText, fallbackVal, isArrayExpected) {
+  var fallback = (fallbackVal !== undefined) ? fallbackVal : null;
+  if (!rawText) return fallback;
+
+  var cleaned = safeExtractJson(rawText, isArrayExpected);
+  if (!cleaned) return fallback;
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    Logger.log("safeParseJson 파싱 실패: " + err + " (정제된 텍스트 앞 120자: " + cleaned.substring(0, 120) + ")");
+    return fallback;
+  }
+}
+
 function getFolderByPath(pathParts) {
   var currentFolder = DriveApp.getRootFolder();
   for (var i = 0; i < pathParts.length; i++) {
@@ -637,8 +753,7 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
 
     var rawOutput = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_GENERATOR);
     if (rawOutput) {
-      var cleanJson = rawOutput.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-      var parsed = JSON.parse(cleanJson);
+      var parsed = safeParseJson(rawOutput, [], true);
       if (Array.isArray(parsed) && parsed.length > 0) {
         // 복수 의견 포인트 평탄화(Flatten)
         var allPoints = [];

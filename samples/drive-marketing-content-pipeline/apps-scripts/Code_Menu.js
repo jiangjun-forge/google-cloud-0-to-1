@@ -398,8 +398,10 @@ function setCustomPersonasPrompt() {
     }
 
     if (generatedJson) {
-      var cleanJson = generatedJson.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-      var parsed = JSON.parse(cleanJson);
+      var parsed = safeParseJson(generatedJson, null, false);
+      if (!parsed) {
+        throw new Error("생성된 페르소나 데이터의 유효한 JSON을 추출하지 못했습니다.");
+      }
       var formatted = JSON.stringify(parsed, null, 2);
 
       // 캠페인 루트 폴더 직속에 저장 (장준 요청 사항 반영)

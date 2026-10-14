@@ -879,6 +879,122 @@ function renderPromptTemplate(template, variables) {
  * [모듈 4] 구글 드라이브 파일 탐색, 입출력 및 마크다운 독스 렌더러 (Drive Utils & Document Renderer)
  */
 
+/**
+ * 마케터의 중복 클릭(Double-click) 및 동시 실행 충돌을 방어하기 위한 사용자 락(User Lock) 래퍼
+ *
+ * @param {string} lockName - 작업 식별자
+ * @param {Function} taskFn - 실행할 작업 함수
+ * @param {number} [timeoutMs] - 락 대기 시간 (밀리초, 기본값: 3000ms)
+ * @return {*} 작업 함수의 반환값
+ */
+function withUserLock(lockName, taskFn, timeoutMs) {
+  var lock = LockService.getUserLock();
+  var waitTime = timeoutMs || 3000;
+  var hasLock = false;
+
+  try {
+    hasLock = lock.tryLock(waitTime);
+  } catch (e) {
+    Logger.log("LockService tryLock 예외 (" + lockName + "): " + e);
+  }
+
+  if (!hasLock) {
+    try {
+      var ui = SpreadsheetApp.getUi();
+      ui.alert(
+        "작업 진행 중 안내",
+        "현재 동일하거나 다른 파이프라인 작업이 이미 백그라운드에서 진행 중입니다.\n\n" +
+        "중복 실행으로 인한 데이터 덮어쓰기를 방지하기 위해 새 요청을 차단했습니다.\n" +
+        "이전 작업이 완료된 후 다시 시도해 주십시오.",
+        ui.ButtonSet.OK
+      );
+    } catch (uiErr) {
+      Logger.log("Lock 경고 알림 표시 불가: " + uiErr);
+    }
+    return null;
+  }
+
+  try {
+    return taskFn();
+  } finally {
+    try {
+      lock.releaseLock();
+    } catch (relErr) {
+      Logger.log("LockService releaseLock 예외 (" + lockName + "): " + relErr);
+    }
+  }
+}
+
+/**
+ * LLM 응답 텍스트에서 마크다운 코드 블록(```json) 및 앞뒤 잡음 사족 문구를 정밀 제거하고
+ * 순수 JSON 문자열만 안전하게 슬라이싱 추출한다.
+ *
+ * @param {string} rawText - 원천 LLM 응답 텍스트
+ * @param {boolean} [isArrayExpected] - 배열([...]) 형식을 기대하는지 여부
+ * @return {string} 추출된 순수 JSON 문자열
+ */
+function safeExtractJson(rawText, isArrayExpected) {
+  if (!rawText) return "";
+
+  var text = String(rawText).trim();
+
+  // 1. 마크다운 코드 블록 제거
+  text = text.replace(/^```[a-z0-9_-]*\s*/i, "").replace(/\s*```$/, "").trim();
+
+  // 2. 대괄호([]) 또는 중괄호({}) 범위 정밀 슬라이싱
+  var startIdx = -1;
+  var endIdx = -1;
+
+  if (isArrayExpected === true) {
+    startIdx = text.indexOf("[");
+    endIdx = text.lastIndexOf("]");
+  } else if (isArrayExpected === false) {
+    startIdx = text.indexOf("{");
+    endIdx = text.lastIndexOf("}");
+  } else {
+    // 자동 감지: 먼저 등장하는 괄호 기준
+    var firstBracket = text.indexOf("[");
+    var firstBrace = text.indexOf("{");
+
+    if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+      startIdx = firstBracket;
+      endIdx = text.lastIndexOf("]");
+    } else if (firstBrace !== -1) {
+      startIdx = firstBrace;
+      endIdx = text.lastIndexOf("}");
+    }
+  }
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    return text.substring(startIdx, endIdx + 1).trim();
+  }
+
+  return text;
+}
+
+/**
+ * 안전한 JSON 파서 (LLM 사족 문구 자동 슬라이싱 및 문법 오류 시 크래시 방지 폴백 지원)
+ *
+ * @param {string} rawText - 파싱할 텍스트
+ * @param {*} [fallbackVal] - 파싱 실패 시 반환할 기본값 (기본값: null)
+ * @param {boolean} [isArrayExpected] - 배열 형식 기대 여부
+ * @return {*} 파싱된 객체/배열 또는 fallbackVal
+ */
+function safeParseJson(rawText, fallbackVal, isArrayExpected) {
+  var fallback = (fallbackVal !== undefined) ? fallbackVal : null;
+  if (!rawText) return fallback;
+
+  var cleaned = safeExtractJson(rawText, isArrayExpected);
+  if (!cleaned) return fallback;
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    Logger.log("safeParseJson 파싱 실패: " + err + " (정제된 텍스트 앞 120자: " + cleaned.substring(0, 120) + ")");
+    return fallback;
+  }
+}
+
 function getFolderByPath(pathParts) {
   var currentFolder = DriveApp.getRootFolder();
   for (var i = 0; i < pathParts.length; i++) {
@@ -1510,8 +1626,7 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
 
     var rawOutput = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_GENERATOR);
     if (rawOutput) {
-      var cleanJson = rawOutput.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-      var parsed = JSON.parse(cleanJson);
+      var parsed = safeParseJson(rawOutput, [], true);
       if (Array.isArray(parsed) && parsed.length > 0) {
         // 복수 의견 포인트 평탄화(Flatten)
         var allPoints = [];
@@ -2062,7 +2177,8 @@ function showResultModal(title, message, btnText, btnUrl) {
  * 그리고 고객 VoC 수집용 Google Forms 생성 및 시트 바인딩까지 초장에 100% 완결한다.
  */
 function initCampaignWorkspace() {
-  var ui = SpreadsheetApp.getUi();
+  return withUserLock("campaign_init", function() {
+    var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
   showProcessingToast("캠페인 작업 공간 및 VoC 설문 폼 올인원 초기화 중...", 20);
   try {
@@ -2188,6 +2304,7 @@ function initCampaignWorkspace() {
   } catch (e) {
     ui.alert("초기화 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
+  });
 }
 
 /**
@@ -2377,7 +2494,8 @@ function getMasterPersonas25() {
  * [액션 1] 마케터 자연어 아이디어를 기반으로 캠페인 기획서(PLAN) 및 콘텐츠 제작 명세서(SPEC)를 자동 도출한다.
  */
 function runIdeaToPlanConversion() {
-  var ui = SpreadsheetApp.getUi();
+  return withUserLock("plan_generation", function() {
+    var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
   showProcessingToast("아이디어 기반 기획서(PLAN) 및 명세서(SPEC) 자동 도출 중...", 30);
   try {
@@ -2484,13 +2602,15 @@ function runIdeaToPlanConversion() {
   } catch (e) {
     ui.alert("기획서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
+  });
 }
 
 /**
  * [액션 2] 기획서(PLAN) 및 명세서(SPEC)를 기반으로 초판 마케팅 콘텐츠(rv-00)를 일괄 양산한다.
  */
 function runInitialContentGeneration() {
-  var ui = SpreadsheetApp.getUi();
+  return withUserLock("content_generation", function() {
+    var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
   showProcessingToast("초판 마케팅 콘텐츠 양산 중 (rv-00)...", 60);
   try {
@@ -2631,16 +2751,18 @@ function runInitialContentGeneration() {
   } catch (e) {
     ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
+  });
 }
 
 /**
  * [액션 3] 피드백 요약본(feedback_summary)과 마케터 지침을 반영하여 N차 개정본 마케팅 콘텐츠를 완결 보정한다.
  */
 function runReviseContent(targetRoundOpt, isSilentOpt) {
-  var ui = SpreadsheetApp.getUi();
-  var isSilent = (isSilentOpt === true);
-  var startTime = new Date().getTime();
-  try {
+  return withUserLock("content_revision", function() {
+    var ui = SpreadsheetApp.getUi();
+    var isSilent = (isSilentOpt === true);
+    var startTime = new Date().getTime();
+    try {
     var campaignFolder = getCampaignFolder();
 
     // 회차 판별 (fb-01 -> rv-01, fb-02 -> rv-02 ...)
@@ -2810,6 +2932,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       throw e;
     }
   }
+  });
 }
 
 
@@ -2831,85 +2954,82 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
  * @param {string} [targetRoundOpt] - 대상 피드백 라운드 (기본값: 자동 감지 fb-01, fb-02 ...)
  */
 function runPersonaEvaluation(targetRoundOpt) {
-  var ui = SpreadsheetApp.getUi();
-  var startTime = new Date().getTime();
-  try {
-    var campaignFolder = getCampaignFolder();
+  return withUserLock("persona_evaluation", function() {
+    var ui = SpreadsheetApp.getUi();
+    var startTime = new Date().getTime();
+    try {
+      var campaignFolder = getCampaignFolder();
 
-    // 피드백 회차 판별
-    var targetRound = targetRoundOpt;
-    if (!targetRound) {
-      var latestFb = detectLatestFeedbackRoundNum();
-      var latestRv = detectLatestRevisionRoundNum();
-      var autoRound = Math.max(latestFb + 1, latestRv + 1, 1);
-      targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
-    }
-
-    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
-    var prevRoundNum = Math.max(0, roundNum - 1);
-    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
-
-    showProcessingToast("25인 페르소나 다면 평가 및 t-SNE 지형도 생성 중 (" + targetRound + ")...", 60);
-
-    var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
-
-    // 1. 25인 페르소나 피드백 데이터셋 로드 또는 실시간 생성 (50~80개 세부 의견 포인트 + 128d 임베딩)
-    var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
-    if (!jsonContent) {
-      jsonContent = generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName);
-    }
-
-    // 2. 128d 임베딩 기반 t-SNE 다면 여론 지형도 차트 생성 (feedback_clusters_map.png)
-    var clusterMapFile = null;
-    var pointsJson = readTextFile(feedbackFolder, "feedback_points_128d.json");
-    var parsedPoints = [];
-    if (pointsJson) {
-      try {
-        parsedPoints = JSON.parse(pointsJson);
-      } catch (e) {}
-    }
-
-    if (parsedPoints && parsedPoints.length > 0) {
-      clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPoints);
-    } else {
-      var existingMap = feedbackFolder.getFilesByName("feedback_clusters_map.png");
-      if (existingMap.hasNext()) {
-        clusterMapFile = existingMap.next();
+      // 피드백 회차 판별
+      var targetRound = targetRoundOpt;
+      if (!targetRound) {
+        var latestFb = detectLatestFeedbackRoundNum();
+        var latestRv = detectLatestRevisionRoundNum();
+        var autoRound = Math.max(latestFb + 1, latestRv + 1, 1);
+        targetRound = "fb-" + (autoRound < 10 ? "0" + autoRound : autoRound);
       }
+
+      var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+      var prevRoundNum = Math.max(0, roundNum - 1);
+      var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+
+      showProcessingToast("25인 페르소나 다면 평가 및 t-SNE 지형도 생성 중 (" + targetRound + ")...", 60);
+
+      var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
+
+      // 1. 25인 페르소나 피드백 데이터셋 로드 또는 실시간 생성 (50~80개 세부 의견 포인트 + 128d 임베딩)
+      var jsonContent = readTextFile(feedbackFolder, "ai_persona_feedbacks.json");
+      if (!jsonContent) {
+        jsonContent = generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName);
+      }
+
+      // 2. 128d 임베딩 기반 t-SNE 다면 여론 지형도 차트 생성 (feedback_clusters_map.png)
+      var clusterMapFile = null;
+      var pointsJson = readTextFile(feedbackFolder, "feedback_points_128d.json");
+      var parsedPoints = safeParseJson(pointsJson, [], true);
+
+      if (parsedPoints && parsedPoints.length > 0) {
+        clusterMapFile = renderAndSaveTsneClusterMap(feedbackFolder, parsedPoints);
+      } else {
+        var existingMap = feedbackFolder.getFilesByName("feedback_clusters_map.png");
+        if (existingMap.hasNext()) {
+          clusterMapFile = existingMap.next();
+        }
+      }
+
+      if (!clusterMapFile) {
+        throw new Error("t-SNE 여론 지형도 이미지 생성에 실패했습니다.");
+      }
+
+      var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
+      var pointCount = parsedPoints ? parsedPoints.length : 0;
+      var logDetail = "25인 페르소나 다면 평가 완료" + (pointCount > 0 ? " (VoC 포인트 " + pointCount + "개 도출, " : " (") + "128d 임베딩 t-SNE 여론 지형도 렌더링 완료)";
+
+      // 3. 대시보드 시트에 링크 기록
+      var stepTitle = roundNum + "차 페르소나 다면 평가 및 t-SNE 지형도 (" + targetRound + ")";
+      recordStepResultToSheet(
+        targetRound,
+        stepTitle,
+        "완료",
+        clusterMapFile.getUrl(),
+        "t-SNE 지형도 이미지 열기 (" + targetRound + ")",
+        durationSec,
+        logDetail
+      );
+
+      showResultModal(
+        "25인 페르소나 다면 평가 및 지형도 생성 완료 (" + targetRound + ")",
+        "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n\n" +
+        "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
+        "* 실행 상세 내역: " + logDetail + "\n\n" +
+        "아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
+        "t-SNE 지형도 차트 보기",
+        clusterMapFile.getUrl()
+      );
+    } catch (e) {
+      ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
     }
-
-    if (!clusterMapFile) {
-      throw new Error("t-SNE 여론 지형도 이미지 생성에 실패했습니다.");
-    }
-
-    var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
-    var pointCount = parsedPoints ? parsedPoints.length : 0;
-    var logDetail = "25인 페르소나 다면 평가 완료" + (pointCount > 0 ? " (VoC 포인트 " + pointCount + "개 도출, " : " (") + "128d 임베딩 t-SNE 여론 지형도 렌더링 완료)";
-
-    // 3. 대시보드 시트에 링크 기록
-    var stepTitle = roundNum + "차 페르소나 다면 평가 및 t-SNE 지형도 (" + targetRound + ")";
-    recordStepResultToSheet(
-      targetRound,
-      stepTitle,
-      "완료",
-      clusterMapFile.getUrl(),
-      "t-SNE 지형도 이미지 열기 (" + targetRound + ")",
-      durationSec,
-      logDetail
-    );
-
-    showResultModal(
-      "25인 페르소나 다면 평가 및 지형도 생성 완료 (" + targetRound + ")",
-      "한국인 25인 가상 페르소나로부터 50개 이상의 세부 의견 포인트와 128차원 임베딩 기반 t-SNE 여론 지형도가 성공적으로 도출되었습니다.\n\n" +
-      "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
-      "* 실행 상세 내역: " + logDetail + "\n\n" +
-      "아래 버튼을 클릭하여 다면 여론 지형도 차트를 즉시 확인하십시오.",
-      "t-SNE 지형도 차트 보기",
-      clusterMapFile.getUrl()
-    );
-  } catch (e) {
-    ui.alert("페르소나 평가 중 오류 발생", e.toString(), ui.ButtonSet.OK);
-  }
+  });
 }
 
 /**
@@ -2919,25 +3039,26 @@ function runPersonaEvaluation(targetRoundOpt) {
  * @param {string} [targetRoundOpt] - 대상 피드백 라운드
  */
 function runFeedbackSummaryReport(targetRoundOpt) {
-  var ui = SpreadsheetApp.getUi();
-  var startTime = new Date().getTime();
-  try {
-    var campaignFolder = getCampaignFolder();
+  return withUserLock("feedback_summary", function() {
+    var ui = SpreadsheetApp.getUi();
+    var startTime = new Date().getTime();
+    try {
+      var campaignFolder = getCampaignFolder();
 
-    var targetRound = targetRoundOpt;
-    if (!targetRound) {
-      var latestFb = detectLatestFeedbackRoundNum();
-      targetRound = "fb-" + (latestFb < 10 ? "0" + latestFb : latestFb);
-      if (latestFb === 0) {
-        targetRound = "fb-01";
+      var targetRound = targetRoundOpt;
+      if (!targetRound) {
+        var latestFb = detectLatestFeedbackRoundNum();
+        targetRound = "fb-" + (latestFb < 10 ? "0" + latestFb : latestFb);
+        if (latestFb === 0) {
+          targetRound = "fb-01";
+        }
       }
-    }
 
-    var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
-    var prevRoundNum = Math.max(0, roundNum - 1);
-    var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
+      var roundNum = parseInt(targetRound.replace("fb-", ""), 10) || 1;
+      var prevRoundNum = Math.max(0, roundNum - 1);
+      var prevRvName = "rv-" + (prevRoundNum < 10 ? "0" + prevRoundNum : prevRoundNum);
 
-    showProcessingToast("피드백 종합 분석 보고서 도출 중 (" + targetRound + ")...", 60);
+      showProcessingToast("피드백 종합 분석 보고서 도출 중 (" + targetRound + ")...", 60);
 
     var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
 
@@ -3059,6 +3180,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
   } catch (e) {
     ui.alert("피드백 보고서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
+  });
 }
 
 /**
@@ -3518,8 +3640,10 @@ function setCustomPersonasPrompt() {
     }
 
     if (generatedJson) {
-      var cleanJson = generatedJson.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-      var parsed = JSON.parse(cleanJson);
+      var parsed = safeParseJson(generatedJson, null, false);
+      if (!parsed) {
+        throw new Error("생성된 페르소나 데이터의 유효한 JSON을 추출하지 못했습니다.");
+      }
       var formatted = JSON.stringify(parsed, null, 2);
 
       // 캠페인 루트 폴더 직속에 저장 (장준 요청 사항 반영)
