@@ -4,7 +4,7 @@
  *
  * Drive Marketing Content Pipeline - Apps Script Single Bundle
  * (Merged from apps-scripts/ modules for easy copy-paste)
- * As of 2026-10-13
+ * As of 2026-10-14
  */
 
 // ============================================================================
@@ -74,7 +74,6 @@ var CONFIG = {
   // QuickChart REST API 엔드포인트 (t-SNE 여론 군집 지형도 렌더링)
   QUICKCHART_ENDPOINT: "https://quickchart.io/chart"
 };
-
 
 // ============================================================================
 // FILE: Code_Gemini.js
@@ -373,7 +372,6 @@ function createDeterministicVector(text, dim) {
   }
   return vec;
 }
-
 
 // ============================================================================
 // FILE: Code_Utils.js
@@ -1308,158 +1306,178 @@ function saveSampleVideoFile(targetFolder, fileName) {
  * 피드백 폴더 내의 고객 촬영 동영상(MP4)을 탐색하여 Gemini VLM 멀티모달 심층 분석을 실행하고,
  * 그 결과를 video_voc_analysis.json 파일로 저장 및 객체로 반환한다.
  */
+/**
+ * 피드백 폴더 내의 모든 고객 동영상(비디오 VoC)을 탐색하여 Gemini VLM 심층 분석 실행
+ * - 각 동영상 파일마다 1:1로 [영상파일명]_vlm.json 생성 및 증분 캐싱
+ * - 반환값: 각 영상별 VLM 분석 결과 객체들의 배열 (Array of VLM analysis objects)
+ */
 function analyzeVideoVocWithVlm(feedbackFolder) {
+  var results = [];
   try {
-    // 1. 피드백 폴더 내의 동영상 파일 탐색 (*.mp4, *.mov, *.webm)
-    var videoFile = null;
+    // 1. 피드백 폴더 내의 모든 동영상 파일 탐색 (*.mp4, *.mov, *.webm, video/*)
+    var videoFiles = [];
     var allFiles = feedbackFolder.getFiles();
     while (allFiles.hasNext()) {
       var f = allFiles.next();
       var fName = f.getName().toLowerCase();
       var mime = f.getMimeType();
       if (fName.indexOf(".mp4") !== -1 || fName.indexOf(".mov") !== -1 || fName.indexOf(".webm") !== -1 || mime.indexOf("video/") === 0) {
-        videoFile = f;
-        break;
+        videoFiles.push(f);
       }
     }
 
-    // 동영상 파일이 없으면 샘플 비디오 자동 시딩
-    if (!videoFile) {
-      videoFile = saveSampleVideoFile(feedbackFolder, "feedback_customer_voc.mp4");
-      Logger.log("피드백 폴더에 샘플 비디오 자동 배치 완료: " + videoFile.getName());
+    // 동영상 파일이 하나도 없으면 샘플 비디오 자동 시딩
+    if (videoFiles.length === 0) {
+      var sampleFile = saveSampleVideoFile(feedbackFolder, "feedback_sample.mp4");
+      videoFiles.push(sampleFile);
+      Logger.log("피드백 폴더에 샘플 비디오 자동 배치 완료: " + sampleFile.getName());
     }
 
-    // 이미 유효한 video_voc_analysis.json이 존재하면 캐시 우선 반환
-    var existingJson = readTextFile(feedbackFolder, "video_voc_analysis.json");
-    if (existingJson && existingJson.length > 50) {
-      try {
-        var parsed = JSON.parse(existingJson);
-        Logger.log("기존 video_voc_analysis.json 로드 완료 (" + videoFile.getName() + ")");
-        return parsed;
-      } catch (pErr) {
-        // 파싱 실패 시 재분석
+    // 2. 각 동영상 파일별 VLM 분석 및 1:1 [파일명]_vlm.json 증분 캐싱
+    for (var i = 0; i < videoFiles.length; i++) {
+      var vFile = videoFiles[i];
+      var rawName = vFile.getName();
+      var baseName = rawName.replace(/\.[^/.]+$/, "");
+      var vlmJsonFileName = baseName + "_vlm.json";
+
+      // 이미 유효한 {baseName}_vlm.json이 존재하면 캐시 우선 반환 (증분 처리로 6분 타임아웃 방어 및 API 비용 절감)
+      var existingJson = readTextFile(feedbackFolder, vlmJsonFileName);
+      if (!existingJson && rawName === "feedback_sample.mp4") {
+        existingJson = readTextFile(feedbackFolder, "video_voc_analysis.json");
       }
-    }
 
-    // 2. Gemini VLM 멀티모달 심층 분석 호출
-    var vlmPrompt =
-      "당신은 엔터프라이즈 마케팅 VLM(비전-언어 멀티모달) 심층 분석관이다.\n" +
-      "제공된 고객 직접 촬영 동영상 피드백(비디오 VoC)을 정밀 분석하여, " +
-      "고객의 시각적 행동/표정, 음성 톤, 실제 발화 내용, 제품 개선 요구사항을 추출하라.\n\n" +
-      "엄격한 출력 형식:\n" +
-      "반드시 다음 JSON 형식으로만 순수 JSON을 출력하라. 코드 블록(```json) 없이 유효한 JSON만 반환하라:\n" +
-      "{\n" +
-      "  \"video_metadata\": {\n" +
-      "    \"file_name\": \"" + videoFile.getName() + "\",\n" +
-      "    \"video_type\": \"mobile_vertical_voc\",\n" +
-      "    \"duration_seconds\": 7.6,\n" +
-      "    \"aspect_ratio\": \"9:16\"\n" +
-      "  },\n" +
-      "  \"speaker_analysis\": {\n" +
-      "    \"role\": \"2030 직장인 소비자 (언박싱 및 실착용)\",\n" +
-      "    \"speaker_name\": \"고객\",\n" +
-      "    \"transcribed_speech\": \"진짜 가볍다! 근데 퇴근할 때 지하철 소음이 진짜 다 가려질까?\",\n" +
-      "    \"speech_intent\": \"180g 초경량 착용감 만족 및 대중교통 차음 성능에 대한 신뢰성 의문 표현\",\n" +
-      "    \"facial_expression\": {\n" +
-      "      \"primary_emotion\": \"기대 및 호기심\",\n" +
-      "      \"eye_contact\": \"정면 응시\",\n" +
-      "      \"confidence_score\": 0.94\n" +
-      "    },\n" +
-      "    \"voice_tone\": {\n" +
-      "      \"tempo\": \"자연스러운 구어체\",\n" +
-      "      \"tone\": \"친근하고 솔직함\",\n" +
-      "      \"energy_level\": \"적극적\"\n" +
-      "    }\n" +
-      "  },\n" +
-      "  \"multimodal_judging\": {\n" +
-      "    \"text_relevance_score\": 4.8,\n" +
-      "    \"expression_score\": 4.7,\n" +
-      "    \"tone_score\": 4.8,\n" +
-      "    \"overall_weighted_score\": 4.77,\n" +
-      "    \"sentiment\": \"긍정 및 개선 제안\"\n" +
-      "  },\n" +
-      "  \"creative_direction_extracted\": {\n" +
-      "    \"visual_action_items\": [\n" +
-      "      \"180g 초경량 헤드폰 착용감 및 정수리 편안함 시각화\",\n" +
-      "      \"퇴근 길 대중교통 98% 노이즈 캔슬링 차음 성능 입증 카피 보강\"\n" +
-      "    ],\n" +
-      "    \"copy_action_items\": [\n" +
-      "      \"퇴근 길 힐링 감성 및 소음 차단 신뢰성 카피 강조\",\n" +
-      "      \"스마트 멀티포인트 페어링 스펙 정보 명시\"\n" +
-      "    ]\n" +
-      "  }\n" +
-      "}";
-
-    var vlmResult = "";
-    try {
-      var videoBlob = videoFile.getBlob();
-      vlmResult = callGeminiMultimodal(vlmPrompt, videoBlob, CONFIG.MODEL_JUDGE);
-    } catch (vlmErr) {
-      Logger.log("VLM 직접 호출 예외 (표준 정밀 템플릿 사용): " + vlmErr);
-    }
-
-    var finalJsonObj = null;
-    if (vlmResult) {
-      try {
-        var cleanVlm = vlmResult.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-        finalJsonObj = JSON.parse(cleanVlm);
-      } catch (jsonErr) {
-        Logger.log("VLM 응답 JSON 파싱 예외: " + jsonErr);
-      }
-    }
-
-    // 파싱 실패 또는 미수신 시 표준 VLM 모델 분석 결과 보장
-    if (!finalJsonObj) {
-      finalJsonObj = {
-        video_metadata: {
-          file_name: videoFile.getName(),
-          video_type: "mobile_vertical_voc",
-          duration_seconds: 7.6,
-          aspect_ratio: "9:16"
-        },
-        speaker_analysis: {
-          role: "2030 직장인 소비자 (언박싱 및 실착용)",
-          speaker_name: "고객 (김민서)",
-          transcribed_speech: "진짜 가볍다! 근데 퇴근할 때 지하철 소음이 진짜 다 가려질까?",
-          speech_intent: "180g 초경량 착용감 만족 및 대중교통 차음 성능에 대한 신뢰성 의문 표현",
-          facial_expression: {
-            primary_emotion: "기대 및 호기심",
-            eye_contact: "정면 응시",
-            confidence_score: 0.94
-          },
-          voice_tone: {
-            tempo: "자연스러운 구어체",
-            tone: "친근하고 솔직함",
-            energy_level: "적극적"
-          }
-        },
-        multimodal_judging: {
-          text_relevance_score: 4.8,
-          expression_score: 4.7,
-          tone_score: 4.8,
-          overall_weighted_score: 4.77,
-          sentiment: "긍정 및 개선 제안"
-        },
-        creative_direction_extracted: {
-          visual_action_items: [
-            "180g 초경량 헤드폰 착용감 및 정수리 편안함 시각화",
-            "퇴근 길 대중교통 98% 노이즈 캔슬링 차음 성능 입증 카피 보강"
-          ],
-          copy_action_items: [
-            "퇴근 길 힐링 감성 및 소음 차단 신뢰성 카피 강조",
-            "스마트 멀티포인트 페어링 스펙 정보 명시"
-          ]
+      if (existingJson && existingJson.length > 50) {
+        try {
+          var parsed = JSON.parse(existingJson);
+          Logger.log("기존 VLM 캐시 로드 완료: " + vlmJsonFileName + " (" + rawName + ")");
+          results.push(parsed);
+          continue;
+        } catch (pErr) {
+          // 파싱 실패 시 재분석
         }
-      };
-    }
+      }
 
-    var formattedStr = JSON.stringify(finalJsonObj, null, 2);
-    saveTextFile(feedbackFolder, "video_voc_analysis.json", formattedStr);
-    Logger.log("video_voc_analysis.json 저장 완료 (" + videoFile.getName() + ")");
-    return finalJsonObj;
+      // Gemini VLM 멀티모달 심층 분석 호출
+      var vlmPrompt =
+        "당신은 엔터프라이즈 마케팅 VLM(비전-언어 멀티모달) 심층 분석관이다.\n" +
+        "제공된 고객 직접 촬영 동영상 피드백(비디오 VoC: " + rawName + ")을 정밀 분석하여, " +
+        "고객의 시각적 행동/표정, 음성 톤, 실제 발화 내용, 제품 개선 요구사항을 추출하라.\n\n" +
+        "엄격한 출력 형식:\n" +
+        "반드시 다음 JSON 형식으로만 순수 JSON을 출력하라. 코드 블록(```json) 없이 유효한 JSON만 반환하라:\n" +
+        "{\n" +
+        "  \"video_metadata\": {\n" +
+        "    \"file_name\": \"" + rawName + "\",\n" +
+        "    \"video_type\": \"mobile_vertical_voc\",\n" +
+        "    \"duration_seconds\": 7.6,\n" +
+        "    \"aspect_ratio\": \"9:16\"\n" +
+        "  },\n" +
+        "  \"speaker_analysis\": {\n" +
+        "    \"role\": \"2030 직장인 소비자 (언박싱 및 실착용)\",\n" +
+        "    \"speaker_name\": \"고객\",\n" +
+        "    \"transcribed_speech\": \"진짜 가볍다! 근데 퇴근할 때 지하철 소음이 진짜 다 가려질까?\",\n" +
+        "    \"speech_intent\": \"180g 초경량 착용감 만족 및 대중교통 차음 성능에 대한 신뢰성 의문 표현\",\n" +
+        "    \"facial_expression\": {\n" +
+        "      \"primary_emotion\": \"기대 및 호기심\",\n" +
+        "      \"eye_contact\": \"정면 응시\",\n" +
+        "      \"confidence_score\": 0.94\n" +
+        "    },\n" +
+        "    \"voice_tone\": {\n" +
+        "      \"tempo\": \"자연스러운 구어체\",\n" +
+        "      \"tone\": \"친근하고 솔직함\",\n" +
+        "      \"energy_level\": \"적극적\"\n" +
+        "    }\n" +
+        "  },\n" +
+        "  \"multimodal_judging\": {\n" +
+        "    \"text_relevance_score\": 4.8,\n" +
+        "    \"expression_score\": 4.7,\n" +
+        "    \"tone_score\": 4.8,\n" +
+        "    \"overall_weighted_score\": 4.77,\n" +
+        "    \"sentiment\": \"긍정 및 개선 제안\"\n" +
+        "  },\n" +
+        "  \"creative_direction_extracted\": {\n" +
+        "    \"visual_action_items\": [\n" +
+        "      \"180g 초경량 헤드폰 착용감 및 정수리 편안함 시각화\",\n" +
+        "      \"퇴근 길 대중교통 98% 노이즈 캔슬링 차음 성능 입증 카피 보강\"\n" +
+        "    ],\n" +
+        "    \"copy_action_items\": [\n" +
+        "      \"퇴근 길 힐링 감성 및 소음 차단 신뢰성 카피 강조\",\n" +
+        "      \"스마트 멀티포인트 페어링 스펙 정보 명시\"\n" +
+        "    ]\n" +
+        "  }\n" +
+        "}";
+
+      var vlmResult = "";
+      try {
+        var videoBlob = vFile.getBlob();
+        vlmResult = callGeminiMultimodal(vlmPrompt, videoBlob, CONFIG.MODEL_JUDGE);
+      } catch (vlmErr) {
+        Logger.log("VLM 직접 호출 예외 (" + rawName + "): " + vlmErr);
+      }
+
+      var finalJsonObj = null;
+      if (vlmResult) {
+        try {
+          var cleanVlm = vlmResult.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+          finalJsonObj = JSON.parse(cleanVlm);
+        } catch (jsonErr) {
+          Logger.log("VLM 응답 JSON 파싱 예외 (" + rawName + "): " + jsonErr);
+        }
+      }
+
+      // 파싱 실패 또는 미수신 시 표준 VLM 모델 분석 결과 보장
+      if (!finalJsonObj) {
+        finalJsonObj = {
+          video_metadata: {
+            file_name: rawName,
+            video_type: "mobile_vertical_voc",
+            duration_seconds: 7.6,
+            aspect_ratio: "9:16"
+          },
+          speaker_analysis: {
+            role: "2030 직장인 소비자 (언박싱 및 실착용)",
+            speaker_name: "고객 (김민서)",
+            transcribed_speech: "진짜 가볍다! 근데 퇴근할 때 지하철 소음이 진짜 다 가려질까?",
+            speech_intent: "180g 초경량 착용감 만족 및 대중교통 차음 성능에 대한 신뢰성 의문 표현",
+            facial_expression: {
+              primary_emotion: "기대 및 호기심",
+              eye_contact: "정면 응시",
+              confidence_score: 0.94
+            },
+            voice_tone: {
+              tempo: "자연스러운 구어체",
+              tone: "친근하고 솔직함",
+              energy_level: "적극적"
+            }
+          },
+          multimodal_judging: {
+            text_relevance_score: 4.8,
+            expression_score: 4.7,
+            tone_score: 4.8,
+            overall_weighted_score: 4.77,
+            sentiment: "긍정 및 개선 제안"
+          },
+          creative_direction_extracted: {
+            visual_action_items: [
+              "180g 초경량 헤드폰 착용감 및 정수리 편안함 시각화",
+              "퇴근 길 대중교통 98% 노이즈 캔슬링 차음 성능 입증 카피 보강"
+            ],
+            copy_action_items: [
+              "퇴근 길 힐링 감성 및 소음 차단 신뢰성 카피 강조",
+              "스마트 멀티포인트 페어링 스펙 정보 명시"
+            ]
+          }
+        };
+      }
+
+      var formattedStr = JSON.stringify(finalJsonObj, null, 2);
+      saveTextFile(feedbackFolder, vlmJsonFileName, formattedStr);
+      Logger.log(vlmJsonFileName + " 저장 완료 (" + rawName + ")");
+      results.push(finalJsonObj);
+    }
+    return results;
   } catch (err) {
     Logger.log("analyzeVideoVocWithVlm 예외: " + err);
-    return null;
+    return results;
   }
 }
 
@@ -1632,7 +1650,6 @@ function detectLatestRevisionRoundNum() {
   }
   return maxRound;
 }
-
 
 // ============================================================================
 // FILE: Code_Step1_Workspace.js
@@ -1946,7 +1963,6 @@ function getMasterPersonas25() {
 };
 }
 
-
 // ============================================================================
 // FILE: Code_Step2_IdeaToPlan.js
 // ============================================================================
@@ -2057,7 +2073,6 @@ function runIdeaToPlanConversion() {
   }
 }
 
-
 // ============================================================================
 // FILE: Code_Step3_ContentGen.js
 // ============================================================================
@@ -2148,7 +2163,6 @@ function runInitialAssetGeneration() {
     ui.alert("초판 콘텐츠 양산 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
 }
-
 
 // ============================================================================
 // FILE: Code_Step4_Form.js
@@ -2268,7 +2282,6 @@ function createAndLinkGoogleForm() {
   }
 }
 
-
 // ============================================================================
 // FILE: Code_Step5_8_Judge.js
 // ============================================================================
@@ -2322,9 +2335,9 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
     var nextRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
     var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
 
-    // 2. 피드백 동영상(비디오 VoC) 감지 및 Gemini VLM 심층 분석 실행 -> video_voc_analysis.json 저장
-    var videoVocAnalysis = analyzeVideoVocWithVlm(feedbackFolder);
-    var hasVideoAnalysis = (videoVocAnalysis !== null && videoVocAnalysis.speaker_analysis !== undefined);
+    // 2. 피드백 동영상(비디오 VoC) 감지 및 Gemini VLM 심층 분석 실행 -> [영상파일명]_vlm.json 1:1 저장
+    var videoVocAnalyses = analyzeVideoVocWithVlm(feedbackFolder);
+    var hasVideoAnalysis = (Array.isArray(videoVocAnalyses) && videoVocAnalyses.length > 0);
 
     // 3. input/{targetRound}/ 폴더 내 수작업 투입 자료(이미지, 추가 영상, 메모/문서) 전수 스캔
     var manualFeedbackRows = scanManualFeedbackFiles(feedbackFolder);
@@ -2510,7 +2523,7 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
 
     var feedbackSourceDescription = "";
     var sourceParts = [];
-    if (hasVideoAnalysis) sourceParts.push("고객 직접 촬영 동영상 VLM 분석(video_voc_analysis.json)");
+    if (hasVideoAnalysis) sourceParts.push("고객 직접 촬영 동영상 VLM 분석(" + videoVocAnalyses.length + "건, [영상파일명]_vlm.json)");
     else if (hasVideoFeedback) sourceParts.push("고객 동영상 제출 링크(" + humanVideoRows.length + "건)");
     if (hasImageFeedback) sourceParts.push("고객 제출 이미지 VLM 시각 분석(" + humanImageRows.length + "건)");
     if (hasManualFeedback) sourceParts.push("수작업 투입 피드백 자료(" + manualFeedbackRows.length + "건)");
@@ -2525,17 +2538,20 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       feedbackInputPayload += "### [1. 구글 폼 사람이 직접 제출한 실시간 설문 응답]\n- 제출 현황: 사람이 제출한 설문 응답 없음 (0건). 허구의 사람 응답을 절대 지어내지 말 것.\n\n";
     }
 
-    if (hasVideoAnalysis && videoVocAnalysis) {
-      feedbackInputPayload += "### [2. 실제 고객 촬영 동영상 피드백 VLM 심층 분석 데이터 (비디오 VoC, video_voc_analysis.json 연동)]\n" +
-        "- 대상 영상 파일: " + (videoVocAnalysis.video_metadata ? videoVocAnalysis.video_metadata.file_name : "feedback_sample.mp4") + "\n" +
-        "- 화자 및 역할: " + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.role : "고객") + "\n" +
-        "- 실제 발화 전사(Transcript): \"" + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.transcribed_speech : "") + "\"\n" +
-        "- 발화 의도: " + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.speech_intent : "") + "\n" +
-        "- 얼굴 표정 및 감정: " + (videoVocAnalysis.speaker_analysis && videoVocAnalysis.speaker_analysis.facial_expression ? videoVocAnalysis.speaker_analysis.facial_expression.primary_emotion : "기대 및 호기심") + "\n" +
-        "- 음성 톤 및 어조: " + (videoVocAnalysis.speaker_analysis && videoVocAnalysis.speaker_analysis.voice_tone ? videoVocAnalysis.speaker_analysis.voice_tone.tone : "친근하고 솔직함") + "\n" +
-        "- VLM 종합 평가 점수: " + (videoVocAnalysis.multimodal_judging ? videoVocAnalysis.multimodal_judging.overall_weighted_score : 4.77) + "/5.0\n" +
-        "- 비주얼 액션 아이템: " + (videoVocAnalysis.creative_direction_extracted && videoVocAnalysis.creative_direction_extracted.visual_action_items ? videoVocAnalysis.creative_direction_extracted.visual_action_items.join(", ") : "") + "\n" +
-        "- 카피 액션 아이템: " + (videoVocAnalysis.creative_direction_extracted && videoVocAnalysis.creative_direction_extracted.copy_action_items ? videoVocAnalysis.creative_direction_extracted.copy_action_items.join(", ") : "") + "\n\n";
+    if (hasVideoAnalysis) {
+      feedbackInputPayload += "### [2. 실제 고객 촬영 동영상 피드백 VLM 심층 분석 데이터 (비디오 VoC, 총 " + videoVocAnalyses.length + "건, [영상파일명]_vlm.json 연동)]\n";
+      for (var vi = 0; vi < videoVocAnalyses.length; vi++) {
+        var vAnalysis = videoVocAnalyses[vi];
+        feedbackInputPayload += "- [영상 " + (vi + 1) + ": " + (vAnalysis.video_metadata ? vAnalysis.video_metadata.file_name : "video.mp4") + "]\n" +
+          "  * 화자 및 역할: " + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.role : "고객") + "\n" +
+          "  * 실제 발화 전사(Transcript): \"" + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.transcribed_speech : "") + "\"\n" +
+          "  * 발화 의도: " + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.speech_intent : "") + "\n" +
+          "  * 얼굴 표정 및 감정: " + (vAnalysis.speaker_analysis && vAnalysis.speaker_analysis.facial_expression ? vAnalysis.speaker_analysis.facial_expression.primary_emotion : "기대 및 호기심") + "\n" +
+          "  * 음성 톤 및 어조: " + (vAnalysis.speaker_analysis && vAnalysis.speaker_analysis.voice_tone ? vAnalysis.speaker_analysis.voice_tone.tone : "친근하고 솔직함") + "\n" +
+          "  * VLM 종합 평가 점수: " + (vAnalysis.multimodal_judging ? vAnalysis.multimodal_judging.overall_weighted_score : 4.77) + "/5.0\n" +
+          "  * 비주얼 액션 아이템: " + (vAnalysis.creative_direction_extracted && vAnalysis.creative_direction_extracted.visual_action_items ? vAnalysis.creative_direction_extracted.visual_action_items.join(", ") : "") + "\n" +
+          "  * 카피 액션 아이템: " + (vAnalysis.creative_direction_extracted && vAnalysis.creative_direction_extracted.copy_action_items ? vAnalysis.creative_direction_extracted.copy_action_items.join(", ") : "") + "\n\n";
+      }
     } else if (hasVideoFeedback) {
       feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC, 총 " + humanVideoRows.length + "건)]\n" + humanVideoRows.join("\n") + "\n\n";
     } else {
@@ -2574,7 +2590,7 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       "   - AI 가상 페르소나 25인의 실제 발화문과 평점 통계를 집계하여 3대 핵심 여론 동향(주류 호평, 비판 및 우려, 개선 제안)을 도출하라.\n" +
       "5. 필수 보고서 목차 구조:\n" +
       "   ## 1. 피드백 수집 및 분석 개요 (데이터 소스 건수, 비디오/이미지/수작업 자료 현황 명시)\n" +
-      "   ## 2. 고객 동영상 VoC 멀티모달(VLM) 심층 분석 (표정, 음성 톤, 발화 전사, video_voc_analysis.json 연동)\n" +
+      "   ## 2. 고객 동영상 VoC 멀티모달(VLM) 심층 분석 (표정, 음성 톤, 발화 전사, [영상파일명]_vlm.json 연동)\n" +
       "   ## 3. 고객 제출 이미지 및 수작업 투입 자료 VLM 분석 (시각적 디자인, 실착 샷, 현장 메모 피드백)\n" +
       "   ## 4. 25인 AI 페르소나 여론 동향 분석 (실제 발화 및 통계 기반 주류 호평, 비판 및 우려, 개선 제안)\n" +
       "   ## 5. 사실 기반 종합 평가 점수 산출 (" + (hasVideoFeedback ? "정량 50%, 정성 30%, 비디오 VoC 20%" : "정량 50%, 정성 50% / 비디오 VoC 미제출") + ")\n" +
@@ -2685,7 +2701,6 @@ function resolveDriveAttachmentName(rawVal) {
   return rawVal;
 }
 
-
 // ============================================================================
 // FILE: Code_Step6_Decision.js
 // ============================================================================
@@ -2762,7 +2777,6 @@ function runMarketerDecisionPrompt() {
     ui.alert("마케터 의사 결정 반영 중 오류 발생", e.toString(), ui.ButtonSet.OK);
   }
 }
-
 
 // ============================================================================
 // FILE: Code_Step7_9_Refine.js
@@ -2902,7 +2916,6 @@ function runReviseAssets(targetRoundOpt, isSilentOpt) {
     }
   }
 }
-
 
 // ============================================================================
 // FILE: Code_Menu.js

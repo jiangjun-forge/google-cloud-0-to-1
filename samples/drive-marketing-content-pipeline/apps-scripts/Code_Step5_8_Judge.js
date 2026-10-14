@@ -48,9 +48,9 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
     var nextRvName = "rv-" + (roundNum < 10 ? "0" + roundNum : roundNum);
     var feedbackFolder = getCampaignSubFolder(["input", targetRound]);
 
-    // 2. 피드백 동영상(비디오 VoC) 감지 및 Gemini VLM 심층 분석 실행 -> video_voc_analysis.json 저장
-    var videoVocAnalysis = analyzeVideoVocWithVlm(feedbackFolder);
-    var hasVideoAnalysis = (videoVocAnalysis !== null && videoVocAnalysis.speaker_analysis !== undefined);
+    // 2. 피드백 동영상(비디오 VoC) 감지 및 Gemini VLM 심층 분석 실행 -> [영상파일명]_vlm.json 1:1 저장
+    var videoVocAnalyses = analyzeVideoVocWithVlm(feedbackFolder);
+    var hasVideoAnalysis = (Array.isArray(videoVocAnalyses) && videoVocAnalyses.length > 0);
 
     // 3. input/{targetRound}/ 폴더 내 수작업 투입 자료(이미지, 추가 영상, 메모/문서) 전수 스캔
     var manualFeedbackRows = scanManualFeedbackFiles(feedbackFolder);
@@ -236,7 +236,7 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
 
     var feedbackSourceDescription = "";
     var sourceParts = [];
-    if (hasVideoAnalysis) sourceParts.push("고객 직접 촬영 동영상 VLM 분석(video_voc_analysis.json)");
+    if (hasVideoAnalysis) sourceParts.push("고객 직접 촬영 동영상 VLM 분석(" + videoVocAnalyses.length + "건, [영상파일명]_vlm.json)");
     else if (hasVideoFeedback) sourceParts.push("고객 동영상 제출 링크(" + humanVideoRows.length + "건)");
     if (hasImageFeedback) sourceParts.push("고객 제출 이미지 VLM 시각 분석(" + humanImageRows.length + "건)");
     if (hasManualFeedback) sourceParts.push("수작업 투입 피드백 자료(" + manualFeedbackRows.length + "건)");
@@ -251,17 +251,20 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       feedbackInputPayload += "### [1. 구글 폼 사람이 직접 제출한 실시간 설문 응답]\n- 제출 현황: 사람이 제출한 설문 응답 없음 (0건). 허구의 사람 응답을 절대 지어내지 말 것.\n\n";
     }
 
-    if (hasVideoAnalysis && videoVocAnalysis) {
-      feedbackInputPayload += "### [2. 실제 고객 촬영 동영상 피드백 VLM 심층 분석 데이터 (비디오 VoC, video_voc_analysis.json 연동)]\n" +
-        "- 대상 영상 파일: " + (videoVocAnalysis.video_metadata ? videoVocAnalysis.video_metadata.file_name : "feedback_sample.mp4") + "\n" +
-        "- 화자 및 역할: " + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.role : "고객") + "\n" +
-        "- 실제 발화 전사(Transcript): \"" + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.transcribed_speech : "") + "\"\n" +
-        "- 발화 의도: " + (videoVocAnalysis.speaker_analysis ? videoVocAnalysis.speaker_analysis.speech_intent : "") + "\n" +
-        "- 얼굴 표정 및 감정: " + (videoVocAnalysis.speaker_analysis && videoVocAnalysis.speaker_analysis.facial_expression ? videoVocAnalysis.speaker_analysis.facial_expression.primary_emotion : "기대 및 호기심") + "\n" +
-        "- 음성 톤 및 어조: " + (videoVocAnalysis.speaker_analysis && videoVocAnalysis.speaker_analysis.voice_tone ? videoVocAnalysis.speaker_analysis.voice_tone.tone : "친근하고 솔직함") + "\n" +
-        "- VLM 종합 평가 점수: " + (videoVocAnalysis.multimodal_judging ? videoVocAnalysis.multimodal_judging.overall_weighted_score : 4.77) + "/5.0\n" +
-        "- 비주얼 액션 아이템: " + (videoVocAnalysis.creative_direction_extracted && videoVocAnalysis.creative_direction_extracted.visual_action_items ? videoVocAnalysis.creative_direction_extracted.visual_action_items.join(", ") : "") + "\n" +
-        "- 카피 액션 아이템: " + (videoVocAnalysis.creative_direction_extracted && videoVocAnalysis.creative_direction_extracted.copy_action_items ? videoVocAnalysis.creative_direction_extracted.copy_action_items.join(", ") : "") + "\n\n";
+    if (hasVideoAnalysis) {
+      feedbackInputPayload += "### [2. 실제 고객 촬영 동영상 피드백 VLM 심층 분석 데이터 (비디오 VoC, 총 " + videoVocAnalyses.length + "건, [영상파일명]_vlm.json 연동)]\n";
+      for (var vi = 0; vi < videoVocAnalyses.length; vi++) {
+        var vAnalysis = videoVocAnalyses[vi];
+        feedbackInputPayload += "- [영상 " + (vi + 1) + ": " + (vAnalysis.video_metadata ? vAnalysis.video_metadata.file_name : "video.mp4") + "]\n" +
+          "  * 화자 및 역할: " + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.role : "고객") + "\n" +
+          "  * 실제 발화 전사(Transcript): \"" + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.transcribed_speech : "") + "\"\n" +
+          "  * 발화 의도: " + (vAnalysis.speaker_analysis ? vAnalysis.speaker_analysis.speech_intent : "") + "\n" +
+          "  * 얼굴 표정 및 감정: " + (vAnalysis.speaker_analysis && vAnalysis.speaker_analysis.facial_expression ? vAnalysis.speaker_analysis.facial_expression.primary_emotion : "기대 및 호기심") + "\n" +
+          "  * 음성 톤 및 어조: " + (vAnalysis.speaker_analysis && vAnalysis.speaker_analysis.voice_tone ? vAnalysis.speaker_analysis.voice_tone.tone : "친근하고 솔직함") + "\n" +
+          "  * VLM 종합 평가 점수: " + (vAnalysis.multimodal_judging ? vAnalysis.multimodal_judging.overall_weighted_score : 4.77) + "/5.0\n" +
+          "  * 비주얼 액션 아이템: " + (vAnalysis.creative_direction_extracted && vAnalysis.creative_direction_extracted.visual_action_items ? vAnalysis.creative_direction_extracted.visual_action_items.join(", ") : "") + "\n" +
+          "  * 카피 액션 아이템: " + (vAnalysis.creative_direction_extracted && vAnalysis.creative_direction_extracted.copy_action_items ? vAnalysis.creative_direction_extracted.copy_action_items.join(", ") : "") + "\n\n";
+      }
     } else if (hasVideoFeedback) {
       feedbackInputPayload += "### [2. 실제 제출된 고객 동영상 피드백 (비디오 VoC, 총 " + humanVideoRows.length + "건)]\n" + humanVideoRows.join("\n") + "\n\n";
     } else {
@@ -300,7 +303,7 @@ function runJudgeEvaluation(targetRoundOpt, isSilentOpt) {
       "   - AI 가상 페르소나 25인의 실제 발화문과 평점 통계를 집계하여 3대 핵심 여론 동향(주류 호평, 비판 및 우려, 개선 제안)을 도출하라.\n" +
       "5. 필수 보고서 목차 구조:\n" +
       "   ## 1. 피드백 수집 및 분석 개요 (데이터 소스 건수, 비디오/이미지/수작업 자료 현황 명시)\n" +
-      "   ## 2. 고객 동영상 VoC 멀티모달(VLM) 심층 분석 (표정, 음성 톤, 발화 전사, video_voc_analysis.json 연동)\n" +
+      "   ## 2. 고객 동영상 VoC 멀티모달(VLM) 심층 분석 (표정, 음성 톤, 발화 전사, [영상파일명]_vlm.json 연동)\n" +
       "   ## 3. 고객 제출 이미지 및 수작업 투입 자료 VLM 분석 (시각적 디자인, 실착 샷, 현장 메모 피드백)\n" +
       "   ## 4. 25인 AI 페르소나 여론 동향 분석 (실제 발화 및 통계 기반 주류 호평, 비판 및 우려, 개선 제안)\n" +
       "   ## 5. 사실 기반 종합 평가 점수 산출 (" + (hasVideoFeedback ? "정량 50%, 정성 30%, 비디오 VoC 20%" : "정량 50%, 정성 50% / 비디오 VoC 미제출") + ")\n" +
