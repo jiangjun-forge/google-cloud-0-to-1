@@ -52,3 +52,14 @@ All contents, designs, and code examples are subject to change, modification, or
 - **마케팅 및 콘텐츠 기획자 (`#Architect`)**: 인프라 승인 대기 없이 실무 현장에서 즉시 생성형 AI를 활용하여 브랜드 캠페인 콘텐츠를 원스톱으로 제작하고 사전 검증을 수행하고자 하는 실무 총괄자
 - **크리에이티브 및 콘텐츠 제작자 (`#Developer`)**: 기획서와 시스템 규격에 정렬된 일관된 멀티 채널 카피라이팅, 다중 해상도 그래픽, 모바일 숏폼 영상 콘티 및 광고 소재를 효율적으로 생성하고자 하는 담당자
 - **퍼포먼스 마케터 및 데이터 분석가 (`#FinOps`, `#SecOps`)**: 25인 가상 소비자 페르소나 반응 및 고객 동영상 VoC를 정량, 정성적으로 통합 분석하고 t-SNE 여론 지형도를 통해 메시지 반응도를 사전에 정밀 측정하고자 하는 실무자
+
+---
+
+## 4. 향후 확장 및 고려 사항 (Future Considerations)
+
+- **대규모 캠페인 원천 자산 질의 및 컨텍스트 캐싱(Context Caching) 확장 고려**:
+  - **현재 경량 관제 체계**: 사이드바 AI 코파일럿은 파이프라인의 실시간 상태 메타데이터(URL, 폴더, 상태 식별자 등 약 500~800 토큰)를 기반으로 동작하며, Apps Script의 30초 로컬 사용자 캐시(`CacheService`)를 통해 구글 드라이브 스캔 횟수와 지연 시간을 최소화하고 무료 Google AI Studio API Key 단독으로 구동된다.
+  - **대형화 시 확장 검토 (Scale-up Pathway)**:
+    - 향후 캠페인 기획서(PLAN), 제작 명세서(SPEC), 25인 AI 페르소나 패널, 브랜드 가이드라인(톤앤매너, 금지어, 컬러 팔레트) 및 과거 누적 캠페인 이력 등 대규모 비정형 문서 전문을 코파일럿 대화 컨텍스트에 직접 주입(Full Context Injection, 10,000~50,000+ 토큰)하는 '캠페인 자산 인텔리전스(Campaign Asset Intelligence)'로 확장할 경우,
+    - Gemini API 공식 Context Caching(`v1beta/cachedContents`) 또는 버텍스 AI(Vertex AI) 검색 및 RAG 파이프라인 도입을 검토한다.
+    - 단, 공식 Context Caching 도입 시 유료 결제 계정 연결(스토리지 보관료 발생) 및 마케터 문서 수정 시 캐시 무효화(Cache Invalidation) 수명 주기 관리가 수반되므로, 초기에는 Flash 모델의 1M 토큰 윈도우 다이렉트 추론 방식을 우선 채택하고 엔터프라이즈 브랜드 자산 대형화 시점에 캐싱을 정식 고려한다.

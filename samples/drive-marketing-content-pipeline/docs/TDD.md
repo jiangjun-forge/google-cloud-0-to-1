@@ -117,3 +117,14 @@ python3 test_pipeline.py --edge
 # Google AI Studio API 키를 사용한 라이브 엔드포인트 직접 연동 검증
 python3 test_pipeline.py --live --api-key "AIzaSy..."
 ```
+
+---
+
+## 5. 향후 확장 및 엔터프라이즈 아키텍처 고려 사항 (Future Architecture Considerations)
+
+- **대규모 비정형 자산 질의 및 컨텍스트 캐싱(Context Caching) 아키텍처**:
+  - **현재 구현 상태**: 사이드바 AI 코파일럿(`askPipelineAssistant`)은 파이프라인의 실시간 상태 메타데이터(약 500~800 토큰)를 주입받아 구동되며, 구글 드라이브 스캔 부하를 방지하기 위해 Apps Script의 30초 로컬 사용자 캐시(`CacheService`)와 LLM 장애 시 0ms 즉답을 보장하는 결정론적 룰 기반 폴백 엔진(`getDeterministicFallback`)을 적용했다.
+  - **대형화 시 고려 사항 (Scale-up Considerations)**:
+    - 마케터가 기획서(PLAN), 제작 명세서(SPEC), 25인 AI 페르소나, 브랜드 가이드라인(톤앤매너, 금지어), 과거 누적 피드백 등 수천~수만 토큰에 달하는 원천 자산의 본문 내용을 코파일럿에게 직접 질의하는 '캠페인 자산 인텔리전스'로 고도화할 때,
+    - Gemini API 공식 Context Caching(`POST v1beta/cachedContents`) 또는 버텍스 AI(Vertex AI) Search / Agent Platform RAG 아키텍처 연동을 검토한다.
+    - 단, 공식 Context Caching은 유료 결제 계정 연결 필수, 시간당 스토리지 보관료 발생, 마케터의 실시간 문서 편집에 따른 캐시 무효화 및 재생성 수명 주기 오버헤드가 발생하므로, 단기적으로는 Gemini 3.8 Flash의 1M 토큰 윈도우 다이렉트 추론(Zero-GCP Dependency 무료 API Key 유지)을 채택하고, 향후 수백 페이지의 브랜드 매뉴얼 등 엔터프라이즈 자산 대형화 시점에 캐싱을 정식 도입한다.
