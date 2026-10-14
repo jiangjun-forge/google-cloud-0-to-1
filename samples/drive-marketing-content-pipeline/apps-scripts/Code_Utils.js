@@ -1288,7 +1288,7 @@ function openDashboardSheet() {
 }
 
 /**
- * 초 단위 소요 시간을 사람이 읽기 편한 문자열(예: '24초', '1분 15초')로 포맷팅한다.
+ * 초 단위 소요 시간을 사람이 읽기 편한 문자열(예: '24초', '1분 15초')로 포맷팅한다. (모달 팝업 메시지용)
  */
 function formatDuration(secOrMs) {
   if (secOrMs === null || secOrMs === undefined || secOrMs === "") return "-";
@@ -1301,14 +1301,23 @@ function formatDuration(secOrMs) {
 }
 
 /**
- * 소모된 토큰 수를 사람이 읽기 편한 문자열(예: '2,450 tokens')로 포맷팅한다.
+ * 초 단위 소요 시간을 순수 숫자(초)로 반환한다. (시트 기록용: 단위는 헤더에 명시, 미기록 시 "-")
+ */
+function formatDurationSec(secOrMs) {
+  if (secOrMs === null || secOrMs === undefined || secOrMs === "" || secOrMs === "-") return "-";
+  var sec = typeof secOrMs === "number" ? Math.round(secOrMs > 1000 ? secOrMs / 1000 : secOrMs) : parseInt(secOrMs, 10);
+  if (isNaN(sec) || sec < 0) return "-";
+  return sec;
+}
+
+/**
+ * 소모된 토큰 수를 순수 정수 숫자로 반환한다. (시트 기록용: 미발생 시 "-")
  */
 function formatTokenCount(tokens) {
-  if (tokens === null || tokens === undefined || tokens === "" || tokens === 0) return "-";
-  if (typeof tokens === "string") return tokens;
-  var num = parseInt(tokens, 10);
+  if (tokens === null || tokens === undefined || tokens === "" || tokens === 0 || tokens === "0" || tokens === "-") return "-";
+  var num = typeof tokens === "number" ? Math.round(tokens) : parseInt(String(tokens).replace(/[^0-9]/g, ""), 10);
   if (isNaN(num) || num <= 0) return "-";
-  return num.toLocaleString() + " tokens";
+  return num;
 }
 
 /**
@@ -1321,9 +1330,10 @@ function initDashboardSheet() {
 
   try {
     var a1Val = sheet.getRange("A1").getValue();
+    var e1Val = sheet.getRange("E1").getValue();
     var lastCol = sheet.getLastColumn();
-    // 1행에 이미 '실행 단계' 헤더가 있으면 기존 데이터 보존하고 즉시 반환
-    if (a1Val === "실행 단계" && lastCol >= 7) return;
+    // 1행에 '실행 단계' 및 최신 '소요 시간 (초)' 헤더가 이미 있으면 기존 데이터 보존하고 즉시 반환
+    if (a1Val === "실행 단계" && e1Val === "소요 시간 (초)" && lastCol >= 7) return;
 
     // 만약 예전 템플릿의 병합 배너가 남아있다면 병합 해제 및 서식 초기화
     try {
@@ -1333,8 +1343,8 @@ function initDashboardSheet() {
       // 무시
     }
 
-    // 기본 헤더 행 (A1:G1) - 템플릿 장식 없는 순수 기본 스타일
-    var headers = [["실행 단계", "진행 상태", "산출물 링크", "완료 시각", "소요 시간", "소모 토큰", "상세 내용"]];
+    // 기본 헤더 행 (A1:G1) - 템플릿 장식 없는 순수 기본 스타일 (소요 시간 (초), 소모 토큰)
+    var headers = [["실행 단계", "진행 상태", "산출물 링크", "완료 시각", "소요 시간 (초)", "소모 토큰", "상세 내용"]];
     var headerRange = sheet.getRange("A1:G1");
     headerRange.setValues(headers);
     headerRange.setFontWeight("bold");
@@ -1346,7 +1356,7 @@ function initDashboardSheet() {
     sheet.setColumnWidth(2, 90);
     sheet.setColumnWidth(3, 260);
     sheet.setColumnWidth(4, 150);
-    sheet.setColumnWidth(5, 90);
+    sheet.setColumnWidth(5, 100);
     sheet.setColumnWidth(6, 120);
     sheet.setColumnWidth(7, 400);
 
@@ -1358,7 +1368,7 @@ function initDashboardSheet() {
 
 /**
  * 실행 로그 시트에 결과를 항상 맨 아래에 새 행으로 누적 추가(Append-only)한다.
- * [기본 스타일]: 색상 배지나 테두리 등 서식 장식 없이, 구글 시트 본연의 담백한 텍스트로 기록한다.
+ * [기본 스타일]: 색상 배지나 테두리 등 서식 장식 없이, 구글 시트 본연의 담백한 텍스트/숫자로 기록한다.
  *
  * @param {string} stepId - 실행 단계 식별자
  * @param {string} stepName - 작업 명칭
@@ -1417,12 +1427,23 @@ function recordStepResultToSheet(stepId, stepName, status, linkUrl, linkText, du
     var nowStr = Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
     sheet.getRange(targetRow, 4).setValue(nowStr).setHorizontalAlignment("center");
 
-    // 5열: 소요 시간 (우측 정렬)
-    var durText = formatDuration(durationSec);
-    sheet.getRange(targetRow, 5).setValue(durText).setHorizontalAlignment("right");
+    // 5열: 소요 시간 (초) (우측 정렬, 숫자 세자리마다 콤마 서식)
+    var durVal = formatDurationSec(durationSec);
+    var durCell = sheet.getRange(targetRow, 5);
+    if (typeof durVal === "number") {
+      durCell.setValue(durVal).setNumberFormat("#,##0").setHorizontalAlignment("right");
+    } else {
+      durCell.setValue("-").setHorizontalAlignment("center");
+    }
 
-    // 6열: 소모 토큰 (우측 정렬)
-    sheet.getRange(targetRow, 6).setValue(tokenVal).setHorizontalAlignment("right");
+    // 6열: 소모 토큰 (우측 정렬, 숫자 세자리마다 콤마 서식)
+    var tokVal = (typeof tokenVal === "number") ? tokenVal : (parseInt(String(tokenVal).replace(/[^0-9]/g, ""), 10) || "-");
+    var tokCell = sheet.getRange(targetRow, 6);
+    if (typeof tokVal === "number" && !isNaN(tokVal) && tokVal > 0) {
+      tokCell.setValue(tokVal).setNumberFormat("#,##0").setHorizontalAlignment("right");
+    } else {
+      tokCell.setValue("-").setHorizontalAlignment("center");
+    }
 
     // 7열: 상세 내용 (왼쪽 정렬)
     sheet.getRange(targetRow, 7).setValue(detailText).setHorizontalAlignment("left");
