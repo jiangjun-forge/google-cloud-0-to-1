@@ -948,9 +948,10 @@ function analyzeVideoVocWithVlm(feedbackFolder) {
       }
     }
 
-    // 동영상 파일이 하나도 없으면 샘플 비디오 자동 시딩
+    // 동영상 파일이 하나도 없으면 샘플 비디오 자동 시딩 (feedback_{timestamp}.mp4)
     if (videoFiles.length === 0) {
-      var sampleFile = saveSampleVideoFile(feedbackFolder, "feedback_sample.mp4");
+      var tsName = "feedback_" + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyyMMdd_HHmmss") + ".mp4";
+      var sampleFile = saveSampleVideoFile(feedbackFolder, tsName);
       videoFiles.push(sampleFile);
       Logger.log("피드백 폴더에 샘플 비디오 자동 배치 완료: " + sampleFile.getName());
     }
@@ -1166,8 +1167,8 @@ function scanManualFeedbackFiles(feedbackFolder) {
       var file = files.next();
       var fileName = file.getName();
 
-      // 시스템 기본 생성 산출물은 제외
-      if (systemReservedNames.indexOf(fileName) !== -1) {
+      // 시스템 기본 생성 산출물 및 VLM 분석 결과 JSON은 제외
+      if (systemReservedNames.indexOf(fileName) !== -1 || /_vlm\.json$/i.test(fileName)) {
         continue;
       }
 

@@ -1326,9 +1326,10 @@ function analyzeVideoVocWithVlm(feedbackFolder) {
       }
     }
 
-    // 동영상 파일이 하나도 없으면 샘플 비디오 자동 시딩
+    // 동영상 파일이 하나도 없으면 샘플 비디오 자동 시딩 (feedback_{timestamp}.mp4)
     if (videoFiles.length === 0) {
-      var sampleFile = saveSampleVideoFile(feedbackFolder, "feedback_sample.mp4");
+      var tsName = "feedback_" + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyyMMdd_HHmmss") + ".mp4";
+      var sampleFile = saveSampleVideoFile(feedbackFolder, tsName);
       videoFiles.push(sampleFile);
       Logger.log("피드백 폴더에 샘플 비디오 자동 배치 완료: " + sampleFile.getName());
     }
@@ -1544,8 +1545,8 @@ function scanManualFeedbackFiles(feedbackFolder) {
       var file = files.next();
       var fileName = file.getName();
 
-      // 시스템 기본 생성 산출물은 제외
-      if (systemReservedNames.indexOf(fileName) !== -1) {
+      // 시스템 기본 생성 산출물 및 VLM 분석 결과 JSON은 제외
+      if (systemReservedNames.indexOf(fileName) !== -1 || /_vlm\.json$/i.test(fileName)) {
         continue;
       }
 
@@ -1677,9 +1678,10 @@ function createWorkspaceFolderTree() {
     // 2. 가상 페르소나 25인 마스터 데이터셋 ({campaign}/input/ai_personas.json 생성)
     saveTextFile(inputFolder, "ai_personas.json", JSON.stringify(masterPersonas25, null, 2));
 
-    // fb-01 폴더 초기 생성 및 샘플 고객 동영상(VoC) 자동 시딩
+    // fb-01 폴더 초기 생성 및 샘플 고객 동영상(VoC) 자동 시딩 (feedback_{timestamp}.mp4)
     var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
-    saveSampleVideoFile(fb01Folder, "feedback_sample.mp4");
+    var sampleVideoName = "feedback_" + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyyMMdd_HHmmss") + ".mp4";
+    saveSampleVideoFile(fb01Folder, sampleVideoName);
 
     // 스타터 아이디어 구글 독스 문서 (input/아이디어 메모) 자동 생성
     if (!readGoogleDoc(inputFolder, "아이디어 메모")) {
