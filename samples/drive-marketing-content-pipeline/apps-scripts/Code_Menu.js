@@ -24,6 +24,8 @@ function onOpen() {
     .addItem("[설문 폼] 고객 VoC 설문 폼 열기", "openCustomerVocForm")
     .addItem("[페르소나] 25인 AI 페르소나 맞춤 재설정 (선택 사항)", "setCustomPersonasPrompt")
     .addItem("[API Key] Gemini API Key 설정 (Google AI Studio)", "promptForGeminiApiKey")
+    .addSeparator()
+    .addItem("[엔진 동기화] GitHub 최신 버전 즉시 동기화", "forceSyncEngine")
     .addToUi();
 }
 
@@ -419,5 +421,30 @@ function setCustomPersonasPrompt() {
     }
   } catch (err) {
     ui.alert("페르소나 재설정 중 오류 발생", err.toString(), ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * GitHub 퍼블릭 저장소의 최신 번들 엔진 코드로 즉시 강제 갱신한다.
+ */
+function forceSyncEngine() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    if (typeof loadPipelineEngine === "function") {
+      loadPipelineEngine(true);
+      ui.alert(
+        "엔진 동기화 완료",
+        "GitHub 퍼블릭 저장소로부터 최신 파이프라인 엔진 코드가 성공적으로 갱신되었습니다.",
+        ui.ButtonSet.OK
+      );
+    } else {
+      ui.alert(
+        "번들 직접 실행 모드",
+        "현재 단일 번들(bundle_apps_script.js) 직접 실행 모드로 구동 중입니다.\n최신 버전으로 업그레이드하려면 저장소의 최신 번들 코드를 다시 복사하여 붙여넣으십시오.",
+        ui.ButtonSet.OK
+      );
+    }
+  } catch (err) {
+    ui.alert("동기화 실패", "엔진 동기화 중 오류가 발생했습니다: " + err.toString(), ui.ButtonSet.OK);
   }
 }

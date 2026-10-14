@@ -46,13 +46,24 @@ flowchart LR
 
 ## 구축, 사용 가이드
 
-### 1단계: 구글 시트 생성 및 번들 스크립트 붙여넣기
+### 1단계: 구글 시트 생성 및 스크립트 1회 등록
+
+구글 시트(Google Sheets)에 스크립트를 등록하는 방법은 두 가지 중 하나를 자유롭게 선택할 수 있다:
+
+#### 방법 A (강력 추천): 초경량 자동 갱신 부트스트랩 ([bootstrap.js](bootstrap.js), 약 100줄)
+- **특징**: 단 100줄짜리 부트스트랩 코드만 최초 1회 붙여넣으면, 이후 GitHub 저장소의 기능 추가나 버그 패치가 사용자의 구글 시트에 **사람의 개입 없이 100% 실시간 자동 반영**된다.
 1. 구글 드라이브 ( https://drive.google.com )에서 빈 구글 시트(Google Sheets) 문서를 새로 생성한다.
 2. 상단 메뉴에서 `확장 프로그램` > `Apps Script`를 클릭한다.
-3. 기본 편집창의 기존 코드를 모두 지우고, 본 저장소의 [bundle_apps_script.js](bundle_apps_script.js) 파일 내용을 전체 복사하여 붙여넣는다.
+3. 기본 편집창의 기존 코드를 모두 지우고, 본 저장소의 [bootstrap.js](bootstrap.js) 파일 내용을 복사하여 붙여넣는다.
 4. 좌측 `프로젝트 설정 (톱니바퀴 아이콘)`에서 `편집기에서 "appsscript.json" 매니페스트 파일 표시`를 체크한 뒤, 본 저장소의 [appsscript.json](appsscript.json) 파일 내용을 붙여넣고 상단 디스크 아이콘(`프로젝트 저장`)을 누른다.
+
+#### 방법 B: 완전 독립형 오프라인 단일 번들 ([bundle_apps_script.js](bundle_apps_script.js), 약 3,400줄)
+- **특징**: 외부 네트워크(GitHub Raw) 호출 없이 Apps Script 환경 내에서 단독으로 모든 코드가 구동되기를 원할 때 전체 번들을 통째로 붙여넣는 방식이다.
+- 방법 A의 3번 단계에서 `bootstrap.js` 대신 [bundle_apps_script.js](bundle_apps_script.js) 파일 내용을 전체 복사하여 붙여넣는다.
+
+#### 활성화 및 API Key 1회 등록
 5. 구글 시트 브라우저 탭을 새로고침(F5)하면 상단 메뉴 바에 `[마케팅 콘텐츠 파이프라인]` 커스텀 메뉴가 활성화된다.
-6. **Gemini API Key 1회 등록**: Google AI Studio ( https://aistudio.google.com/app/apikey ) 에서 개인 구글 계정으로 무료 API Key를 발급받은 뒤, 상단 메뉴에서 `[Gemini API Key 설정 (Google AI Studio)]`을 클릭하여 등록한다. (미등록 상태에서 파이프라인 단계를 실행하더라도 자동으로 키 입력 팝업이 호출된다)
+6. **Gemini API Key 1회 등록**: Google AI Studio ( https://aistudio.google.com/app/apikey ) 에서 개인 구글 계정으로 무료 API Key를 발급받은 뒤, 상단 메뉴에서 `[Gemini API Key 설정 (Google AI Studio)]`을 클릭하여 등록한다. (미등록 상태에서 파이프라인 메뉴를 실행하더라도 자동으로 키 입력 팝업이 호출된다)
 
 ### 2단계: 상단 메뉴를 통한 액션 중심 실행
 
