@@ -175,7 +175,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       "### [4. 고객 제출 미디어 VLM 분석 실데이터 (" + mediaAnalysisList.length + "건)]\n" +
       (mediaAnalysisList.length > 0 ? JSON.stringify(mediaAnalysisList, null, 2) : "실제 업로드된 고객 동영상 및 이미지 없음 (미제출)") + "\n\n" +
       "위 데이터를 종합하여 최고 마케팅 책임자(CMO) 및 담당 마케터가 검토할 피드백 종합 분석 보고서(feedback_summary)를 작성하라.\n" +
-      "문서 맨 마지막에는 마케터가 직접 브라우저에서 수정할 수 있는 [마케터 최종 의사 결정 및 보정 지침] 섹션을 반드시 포함하라.";
+      "문서 맨 마지막에는 차기 콘텐츠 개정 시 참고할 수 있는 [AI 추천 보정 방향 요약] 섹션을 포함하라.";
 
     var reportMarkdown = callGemini(systemInstruction, userPrompt);
 
@@ -212,10 +212,46 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       }
     }
 
-    // 6. 대시보드 시트에 링크 기록
+    // 6. [핵심] 독립된 마케터 보정 지침서(CONFIG.DIRECTIVE_DOC_NAME) 생성 및 보존
+    // 마케터가 이미 작성해 둔 기존 지침이 있다면 절대 덮어쓰지 않고 100% 보존한다!
+    var directiveDocName = (CONFIG && CONFIG.DIRECTIVE_DOC_NAME) || "마케터 보정 지침";
+    var directiveFile = null;
+    var existingDirectives = feedbackFolder.getFilesByName(directiveDocName);
+    var isDirectiveNew = false;
+
+    if (existingDirectives.hasNext()) {
+      directiveFile = existingDirectives.next();
+      Logger.log("기존 마케터 보정 지침 파일 감지 -> 덮어쓰기 방지 및 영구 보존: " + directiveDocName);
+    } else {
+      // 신규 파일인 경우 AI가 제안하는 초기 보정 가이드라인 템플릿으로 초안 생성
+      var starterDirective =
+        "# " + roundNum + "차 마케팅 콘텐츠 보정 지침 (마케터 최종 의사 결정)\n\n" +
+        "> **안내**: 본 문서는 마케터 전용 의사 결정 문서입니다. 피드백 종합 분석 보고서(feedback_summary)를 참고하여 " +
+        "차기 개정본 양산 시 AI 모델이 최우선으로 반영해야 할 지침을 자유롭게 작성하거나 수정하십시오. " +
+        "AI가 보고서를 재생성하더라도 본 문서는 절대 덮어써지지 않고 영구 보존됩니다.\n\n" +
+        "## 1. 타깃 오디언스 및 페르소나 소구점 보정\n" +
+        "* **핵심 타깃**: 2030 직장인 및 대학생\n" +
+        "* **보정 방향**: 일상 출퇴근 및 대중교통 이용 시 노이즈 캔슬링 성능과 장시간 무압박 착용감(180g) 강조\n\n" +
+        "## 2. 채널별 카피라이팅 및 톤앤매너 지침\n" +
+        "* **가로 배너 (16:9)**: 전문 오디오 스펙보다는 감성적 몰입과 차음 혜택 헤드카피 전면 배치\n" +
+        "* **정방형 SNS (1:1)**: 성수동 카페 감성 룩북 무드와 얼리버드 한정 특별 할인 혜택 서브카피 보강\n\n" +
+        "## 3. 비주얼 아트 디렉션 및 숏폼 영상 연출 지침\n" +
+        "* **모델 및 배경**: 20대 한국인 직장인 여성 모델, 따뜻한 늦가을 오후 햇살이 비치는 서울 도심 및 카페 풍경\n" +
+        "* **15초 모바일 숏폼**: 0~3초 훅에서 도심 소음이 일시에 멈추는 직관적 차음 연출과 편안한 미소 클로즈업 강조\n\n" +
+        "## 4. 기타 주의 사항 및 금지어\n" +
+        "* 과장되거나 단정적인 최상급 표현 배제, 실측 수치(180g, 40시간 배터리) 기반 신뢰도 확보\n";
+
+      directiveFile = saveGoogleDoc(feedbackFolder, directiveDocName, starterDirective);
+      isDirectiveNew = true;
+      Logger.log("신규 마케터 보정 지침 템플릿 문서 생성 완료: " + directiveDocName);
+    }
+
+    // 7. 대시보드 시트에 링크 기록
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     var stepTitle = roundNum + "차 피드백 종합 분석 보고서 (" + targetRound + ")";
-    var logDetail = "고객 VoC + 25인 평가 + VLM 시각 분석 통합 보고서(feedback_summary) 구글 독스 생성 완료";
+    var logDetail = "피드백 요약 보고서(" + summaryFile.getName() + ") 및 " +
+      (isDirectiveNew ? "신규 보정 지침서 템플릿 생성" : "기존 마케터 지침서 보존");
+
     recordStepResultToSheet(
       "피드백 보고서",
       stepTitle,
@@ -226,14 +262,24 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       logDetail
     );
 
+    recordStepResultToSheet(
+      "보정 지침서",
+      roundNum + "차 마케터 최종 의사 결정 (" + targetRound + ")",
+      "준비",
+      directiveFile.getUrl(),
+      "마케터 보정 지침 열기 (" + directiveDocName + ")",
+      durationSec,
+      isDirectiveNew ? "AI 추천 보정 초안 템플릿 자동 생성 완료 (마케터 편집 대기)" : "기존 마케터 작성 지침 안전 보존됨"
+    );
+
     showResultModal(
-      "피드백 종합 분석 보고서 도출 완료 (" + targetRound + ")",
-      "피드백 종합 보고서(feedback_summary) 구글 독스가 생성되었습니다.\n\n" +
+      "피드백 종합 분석 보고서 및 보정 지침서 준비 완료 (" + targetRound + ")",
+      "고객 VoC와 25인 다면 평가가 통합된 [feedback_summary] 보고서와 마케터 전용 [마케터 보정 지침] 독스가 준비되었습니다.\n\n" +
       "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
-      "* 실행 상세 내역: " + logDetail + "\n\n" +
-      "문서 하단의 [마케터 최종 의사 결정] 지침을 브라우저에서 직접 검토 및 수정한 뒤 [보정] 메뉴를 진행하십시오.",
-      "피드백 요약서 구글 독스 열기",
-      summaryFile.getUrl()
+      "* 자산 영구 보존: 마케터 보정 지침 문서는 향후 보고서가 재생성되더라도 절대 덮어써지지 않고 안전하게 보존됩니다.\n\n" +
+      "아래 버튼을 눌러 [마케터 보정 지침] 문서를 열고, 피드백을 반영할 방향을 자유롭게 작성 또는 수정하십시오.",
+      "마케터 보정 지침 구글 독스 열기",
+      directiveFile.getUrl()
     );
   } catch (e) {
     ui.alert("피드백 보고서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);

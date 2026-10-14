@@ -361,6 +361,10 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       throw new Error("피드백 요약본(" + targetRound + "/feedback_summary)을 찾을 수 없습니다. [피드백 종합 분석 보고서 생성]을 먼저 실행하십시오.");
     }
 
+    // 선결 조건 3: 마케터 보정 지침 확인 (독립 파일)
+    var directiveDocName = (CONFIG && CONFIG.DIRECTIVE_DOC_NAME) || "마케터 보정 지침";
+    var marketerDirective = readGoogleDoc(feedbackFolder, directiveDocName) || "";
+
     var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
     var planContent = readGoogleDoc(campaignFolder, planDocName) || readGoogleDoc(campaignFolder, "BRD") || "마케팅 캠페인 기획서";
     var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
@@ -375,17 +379,21 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       dynamicBrief = extractDynamicVisualPrompt(
         finalizedContent,
         summaryContent,
-        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe",
+        marketerDirective
       );
     } else {
       // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
       var systemInstruction = getPromptTemplate("05_content_revision");
       var userPrompt =
-        "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)이다.\n\n" +
+        "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), " +
+        "고객 피드백 종합 요약본(feedback_summary), 그리고 마케터의 최종 의사 결정 및 보정 지침이다.\n\n" +
         "### [1. 원천 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
         "### [2. 콘텐츠 제작 명세서 (SPEC)]\n" + specContent + "\n\n" +
         "### [3. 직전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + previousAsset + "\n\n" +
-        "### [4. 고객 및 AI 페르소나 피드백 요약본 (feedback_summary)]\n" + summaryContent;
+        "### [4. 고객 및 AI 페르소나 피드백 종합 분석 데이터 (feedback_summary)]\n" + summaryContent + "\n\n" +
+        "### [5. ★★★ 마케터 최종 의사 결정 및 보정 지침 (최우선 구속력 반영 필수 지침)]\n" +
+        (marketerDirective || "고객 피드백 분석 보고서의 권장 보정 방향을 충실히 반영하여 품질을 고도화하라.");
 
       var refinedAsset = callGemini(systemInstruction, userPrompt);
 
@@ -393,7 +401,8 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       dynamicBrief = extractDynamicVisualPrompt(
         refinedAsset,
         summaryContent,
-        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe",
+        marketerDirective
       );
       finalizedContent = ensureShortsScriptInCampaignContent(refinedAsset, prefix, dynamicBrief);
 
@@ -414,7 +423,8 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       logDetail = "미완성 에셋 선별 보충 완료 (신규 이미지 " + visResult.genImageCount + "건 생성, 기존 에셋 " + totalSkipped + "건 보존)";
     } else {
       var videoDesc = visResult.videoStatus === "generated" ? "Veo 비디오 1건" : "숏폼 콘티 독스 수록";
-      logDetail = "피드백 반영 개정본 독스 1건, 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 양산 완료";
+      var directiveDesc = marketerDirective ? "마케터 지침서 100% 반영" : "권장 보정안 반영";
+      logDetail = "개정본 독스 1건(" + directiveDesc + "), 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 양산 완료";
     }
 
     // 6. 대시보드 시트에 링크 기록

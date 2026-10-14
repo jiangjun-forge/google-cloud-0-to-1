@@ -32,6 +32,7 @@ var CONFIG = {
   CONTENT_DOC_NAME: "campaign_content", // 멀티 채널 마케팅 콘텐츠 전문 (카피라이팅 및 영상 콘티)
   PERSONA_FILE_NAME: "ai_personas.json", // 25인 타깃 AI 페르소나 마스터 데이터 (캠페인 루트 직속)
   PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 구글 독스 보관 폴더명
+  DIRECTIVE_DOC_NAME: "마케터 보정 지침", // 마케터 전용 의사 결정 및 보정 지침서 (AI 덮어쓰기 금지)
 
   // GitHub 퍼블릭 저장소 Raw 베이스 URL (초기화 시 최신 프롬프트 및 페르소나 실시간 인출)
   GITHUB_RAW_BASE: "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline",
@@ -92,13 +93,13 @@ var CONFIG = {
       title: "04_feedback_summary",
       description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
-        "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 마케터 최종 의사 결정 템플릿을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
+        "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
     "05_content_revision": {
       title: "05_content_revision",
-      description: "피드백 요약서 반영 차기 리비전 마케팅 콘텐츠 완결 보정 지침",
+      description: "피드백 요약서 및 독립된 마케터 보정 지침서 반영 차기 리비전 콘텐츠 보정 지침",
       systemInstruction:
-        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본의 '마케터 최종 의사 결정 지침'을 최우선 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
     "06_visual_prompt": {
       title: "06_visual_prompt",

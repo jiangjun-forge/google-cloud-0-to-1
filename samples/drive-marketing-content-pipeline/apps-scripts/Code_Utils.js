@@ -613,24 +613,26 @@ function ensureShortsScriptInCampaignContent(rawContent, prefix, visualBrief) {
 }
 
 /**
- * 피드백 요약본 및 마케터 지침, 보정 카피로부터 Gemini를 호출하여 영문 이미지 생성 프롬프트를 동적 도출한다.
+ * 피드백 요약본 및 독립된 마케터 보정 지침서, 카피로부터 Gemini를 호출하여 영문 이미지 생성 프롬프트를 동적 도출한다.
  */
-function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief) {
+function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief, marketerDirectiveOpt) {
   try {
+    var directiveText = marketerDirectiveOpt || "";
     var systemInstruction =
       "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
-      "제공된 캠페인 카피와 고객 피드백 요약본(특히 마케터 최종 의사 결정 및 보정 지침)을 정밀 분석하여, " +
+      "제공된 캠페인 카피와 고객 피드백 요약본, 그리고 최우선 구속력을 갖는 마케터의 최종 의사 결정 지침을 정밀 분석하여, " +
       "이미지 생성 AI(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
       "엄격한 작성 규칙:\n" +
-      "1. 마케터 코멘트에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등)이 지정되어 있다면 이를 누락하지 않고 영문(예: 'A stylish 20s Korean female model', 'A chic young Korean woman in Seoul')으로 명시하십시오.\n" +
+      "1. [마케터 최종 의사 결정 및 보정 지침]에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등), 색감/무드가 지정되어 있다면 이를 절대 누락하지 말고 최우선으로 영문 프롬프트에 반영하십시오.\n" +
       "2. 마케터 코멘트에 모델에 대한 별도 언급이 없더라도 한국 시장 타깃 캠페인이므로 한국인(Korean) 모델 및 서울의 현대적인 일상/공간을 기본 배경으로 설정하십시오.\n" +
       "3. 피사체(인물/제품), 공간/조명, 분위기/스타일링을 2~3문장의 자연스러운 영문 묘사로 작성하십시오.\n" +
       "4. 출력은 설명이나 머리말 없이 오직 영문 프롬프트 텍스트만 출력하십시오.";
 
     var userPrompt =
-      "[캠페인 카피 콘텐츠]\n" + (campaignAsset || "") + "\n\n" +
-      "[고객 피드백 종합 요약본 및 마케터 최종 의사 결정]\n" + (feedbackSummary || "") + "\n\n" +
-      "위 내용을 바탕으로 마케터의 의도를 충실히 반영한 상업 광고 이미지 생성용 영문 프롬프트 1개를 작성하라.";
+      "### [1. 캠페인 카피 콘텐츠]\n" + (campaignAsset || "") + "\n\n" +
+      "### [2. 고객 및 페르소나 피드백 종합 요약본]\n" + (feedbackSummary || "") + "\n\n" +
+      "### [3. ★마케터 최종 의사 결정 및 보정 지침 (최우선 반영)]\n" + (directiveText || "기본 광고 비주얼 톤앤매너 준수") + "\n\n" +
+      "위 마케터의 의도를 충실히 반영한 상업 광고 이미지 생성용 영문 프롬프트 1개를 작성하라.";
 
     var visualPrompt = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_GENERATOR, 8192);
     if (visualPrompt && visualPrompt.trim().length > 10) {

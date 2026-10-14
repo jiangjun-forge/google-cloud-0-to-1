@@ -45,6 +45,7 @@ var CONFIG = {
   CONTENT_DOC_NAME: "campaign_content", // 멀티 채널 마케팅 콘텐츠 전문 (카피라이팅 및 영상 콘티)
   PERSONA_FILE_NAME: "ai_personas.json", // 25인 타깃 AI 페르소나 마스터 데이터 (캠페인 루트 직속)
   PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 구글 독스 보관 폴더명
+  DIRECTIVE_DOC_NAME: "마케터 보정 지침", // 마케터 전용 의사 결정 및 보정 지침서 (AI 덮어쓰기 금지)
 
   // GitHub 퍼블릭 저장소 Raw 베이스 URL (초기화 시 최신 프롬프트 및 페르소나 실시간 인출)
   GITHUB_RAW_BASE: "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline",
@@ -105,13 +106,13 @@ var CONFIG = {
       title: "04_feedback_summary",
       description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
-        "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 마케터 최종 의사 결정 템플릿을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
+        "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
     "05_content_revision": {
       title: "05_content_revision",
-      description: "피드백 요약서 반영 차기 리비전 마케팅 콘텐츠 완결 보정 지침",
+      description: "피드백 요약서 및 독립된 마케터 보정 지침서 반영 차기 리비전 콘텐츠 보정 지침",
       systemInstruction:
-        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본의 '마케터 최종 의사 결정 지침'을 최우선 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
     "06_visual_prompt": {
       title: "06_visual_prompt",
@@ -1486,24 +1487,26 @@ function ensureShortsScriptInCampaignContent(rawContent, prefix, visualBrief) {
 }
 
 /**
- * 피드백 요약본 및 마케터 지침, 보정 카피로부터 Gemini를 호출하여 영문 이미지 생성 프롬프트를 동적 도출한다.
+ * 피드백 요약본 및 독립된 마케터 보정 지침서, 카피로부터 Gemini를 호출하여 영문 이미지 생성 프롬프트를 동적 도출한다.
  */
-function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief) {
+function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief, marketerDirectiveOpt) {
   try {
+    var directiveText = marketerDirectiveOpt || "";
     var systemInstruction =
       "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
-      "제공된 캠페인 카피와 고객 피드백 요약본(특히 마케터 최종 의사 결정 및 보정 지침)을 정밀 분석하여, " +
+      "제공된 캠페인 카피와 고객 피드백 요약본, 그리고 최우선 구속력을 갖는 마케터의 최종 의사 결정 지침을 정밀 분석하여, " +
       "이미지 생성 AI(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
       "엄격한 작성 규칙:\n" +
-      "1. 마케터 코멘트에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등)이 지정되어 있다면 이를 누락하지 않고 영문(예: 'A stylish 20s Korean female model', 'A chic young Korean woman in Seoul')으로 명시하십시오.\n" +
+      "1. [마케터 최종 의사 결정 및 보정 지침]에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등), 색감/무드가 지정되어 있다면 이를 절대 누락하지 말고 최우선으로 영문 프롬프트에 반영하십시오.\n" +
       "2. 마케터 코멘트에 모델에 대한 별도 언급이 없더라도 한국 시장 타깃 캠페인이므로 한국인(Korean) 모델 및 서울의 현대적인 일상/공간을 기본 배경으로 설정하십시오.\n" +
       "3. 피사체(인물/제품), 공간/조명, 분위기/스타일링을 2~3문장의 자연스러운 영문 묘사로 작성하십시오.\n" +
       "4. 출력은 설명이나 머리말 없이 오직 영문 프롬프트 텍스트만 출력하십시오.";
 
     var userPrompt =
-      "[캠페인 카피 콘텐츠]\n" + (campaignAsset || "") + "\n\n" +
-      "[고객 피드백 종합 요약본 및 마케터 최종 의사 결정]\n" + (feedbackSummary || "") + "\n\n" +
-      "위 내용을 바탕으로 마케터의 의도를 충실히 반영한 상업 광고 이미지 생성용 영문 프롬프트 1개를 작성하라.";
+      "### [1. 캠페인 카피 콘텐츠]\n" + (campaignAsset || "") + "\n\n" +
+      "### [2. 고객 및 페르소나 피드백 종합 요약본]\n" + (feedbackSummary || "") + "\n\n" +
+      "### [3. ★마케터 최종 의사 결정 및 보정 지침 (최우선 반영)]\n" + (directiveText || "기본 광고 비주얼 톤앤매너 준수") + "\n\n" +
+      "위 마케터의 의도를 충실히 반영한 상업 광고 이미지 생성용 영문 프롬프트 1개를 작성하라.";
 
     var visualPrompt = callGemini(systemInstruction, userPrompt, CONFIG.MODEL_GENERATOR, 8192);
     if (visualPrompt && visualPrompt.trim().length > 10) {
@@ -2845,6 +2848,10 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       throw new Error("피드백 요약본(" + targetRound + "/feedback_summary)을 찾을 수 없습니다. [피드백 종합 분석 보고서 생성]을 먼저 실행하십시오.");
     }
 
+    // 선결 조건 3: 마케터 보정 지침 확인 (독립 파일)
+    var directiveDocName = (CONFIG && CONFIG.DIRECTIVE_DOC_NAME) || "마케터 보정 지침";
+    var marketerDirective = readGoogleDoc(feedbackFolder, directiveDocName) || "";
+
     var planDocName = (CONFIG && CONFIG.PLAN_DOC_NAME) || "PLAN";
     var planContent = readGoogleDoc(campaignFolder, planDocName) || readGoogleDoc(campaignFolder, "BRD") || "마케팅 캠페인 기획서";
     var specDocName = (CONFIG && CONFIG.SPEC_DOC_NAME) || "SPEC";
@@ -2859,17 +2866,21 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       dynamicBrief = extractDynamicVisualPrompt(
         finalizedContent,
         summaryContent,
-        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe",
+        marketerDirective
       );
     } else {
       // 1. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
       var systemInstruction = getPromptTemplate("05_content_revision");
       var userPrompt =
-        "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), 그리고 고객 피드백 종합 요약본(feedback_summary)이다.\n\n" +
+        "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), " +
+        "고객 피드백 종합 요약본(feedback_summary), 그리고 마케터의 최종 의사 결정 및 보정 지침이다.\n\n" +
         "### [1. 원천 마케팅 캠페인 기획서 (PLAN)]\n" + planContent + "\n\n" +
         "### [2. 콘텐츠 제작 명세서 (SPEC)]\n" + specContent + "\n\n" +
         "### [3. 직전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + previousAsset + "\n\n" +
-        "### [4. 고객 및 AI 페르소나 피드백 요약본 (feedback_summary)]\n" + summaryContent;
+        "### [4. 고객 및 AI 페르소나 피드백 종합 분석 데이터 (feedback_summary)]\n" + summaryContent + "\n\n" +
+        "### [5. ★★★ 마케터 최종 의사 결정 및 보정 지침 (최우선 구속력 반영 필수 지침)]\n" +
+        (marketerDirective || "고객 피드백 분석 보고서의 권장 보정 방향을 충실히 반영하여 품질을 고도화하라.");
 
       var refinedAsset = callGemini(systemInstruction, userPrompt);
 
@@ -2877,7 +2888,8 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       dynamicBrief = extractDynamicVisualPrompt(
         refinedAsset,
         summaryContent,
-        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe"
+        "A stylish 20s Korean female model enjoying cozy autumn commuter lifestyle with lightweight ANC headphones in a chic Seoul cafe",
+        marketerDirective
       );
       finalizedContent = ensureShortsScriptInCampaignContent(refinedAsset, prefix, dynamicBrief);
 
@@ -2898,7 +2910,8 @@ function runReviseContent(targetRoundOpt, isSilentOpt) {
       logDetail = "미완성 에셋 선별 보충 완료 (신규 이미지 " + visResult.genImageCount + "건 생성, 기존 에셋 " + totalSkipped + "건 보존)";
     } else {
       var videoDesc = visResult.videoStatus === "generated" ? "Veo 비디오 1건" : "숏폼 콘티 독스 수록";
-      logDetail = "피드백 반영 개정본 독스 1건, 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 양산 완료";
+      var directiveDesc = marketerDirective ? "마케터 지침서 100% 반영" : "권장 보정안 반영";
+      logDetail = "개정본 독스 1건(" + directiveDesc + "), 신규 이미지 " + visResult.genImageCount + "종, " + videoDesc + " 양산 완료";
     }
 
     // 6. 대시보드 시트에 링크 기록
@@ -3117,7 +3130,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       "### [4. 고객 제출 미디어 VLM 분석 실데이터 (" + mediaAnalysisList.length + "건)]\n" +
       (mediaAnalysisList.length > 0 ? JSON.stringify(mediaAnalysisList, null, 2) : "실제 업로드된 고객 동영상 및 이미지 없음 (미제출)") + "\n\n" +
       "위 데이터를 종합하여 최고 마케팅 책임자(CMO) 및 담당 마케터가 검토할 피드백 종합 분석 보고서(feedback_summary)를 작성하라.\n" +
-      "문서 맨 마지막에는 마케터가 직접 브라우저에서 수정할 수 있는 [마케터 최종 의사 결정 및 보정 지침] 섹션을 반드시 포함하라.";
+      "문서 맨 마지막에는 차기 콘텐츠 개정 시 참고할 수 있는 [AI 추천 보정 방향 요약] 섹션을 포함하라.";
 
     var reportMarkdown = callGemini(systemInstruction, userPrompt);
 
@@ -3154,10 +3167,46 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       }
     }
 
-    // 6. 대시보드 시트에 링크 기록
+    // 6. [핵심] 독립된 마케터 보정 지침서(CONFIG.DIRECTIVE_DOC_NAME) 생성 및 보존
+    // 마케터가 이미 작성해 둔 기존 지침이 있다면 절대 덮어쓰지 않고 100% 보존한다!
+    var directiveDocName = (CONFIG && CONFIG.DIRECTIVE_DOC_NAME) || "마케터 보정 지침";
+    var directiveFile = null;
+    var existingDirectives = feedbackFolder.getFilesByName(directiveDocName);
+    var isDirectiveNew = false;
+
+    if (existingDirectives.hasNext()) {
+      directiveFile = existingDirectives.next();
+      Logger.log("기존 마케터 보정 지침 파일 감지 -> 덮어쓰기 방지 및 영구 보존: " + directiveDocName);
+    } else {
+      // 신규 파일인 경우 AI가 제안하는 초기 보정 가이드라인 템플릿으로 초안 생성
+      var starterDirective =
+        "# " + roundNum + "차 마케팅 콘텐츠 보정 지침 (마케터 최종 의사 결정)\n\n" +
+        "> **안내**: 본 문서는 마케터 전용 의사 결정 문서입니다. 피드백 종합 분석 보고서(feedback_summary)를 참고하여 " +
+        "차기 개정본 양산 시 AI 모델이 최우선으로 반영해야 할 지침을 자유롭게 작성하거나 수정하십시오. " +
+        "AI가 보고서를 재생성하더라도 본 문서는 절대 덮어써지지 않고 영구 보존됩니다.\n\n" +
+        "## 1. 타깃 오디언스 및 페르소나 소구점 보정\n" +
+        "* **핵심 타깃**: 2030 직장인 및 대학생\n" +
+        "* **보정 방향**: 일상 출퇴근 및 대중교통 이용 시 노이즈 캔슬링 성능과 장시간 무압박 착용감(180g) 강조\n\n" +
+        "## 2. 채널별 카피라이팅 및 톤앤매너 지침\n" +
+        "* **가로 배너 (16:9)**: 전문 오디오 스펙보다는 감성적 몰입과 차음 혜택 헤드카피 전면 배치\n" +
+        "* **정방형 SNS (1:1)**: 성수동 카페 감성 룩북 무드와 얼리버드 한정 특별 할인 혜택 서브카피 보강\n\n" +
+        "## 3. 비주얼 아트 디렉션 및 숏폼 영상 연출 지침\n" +
+        "* **모델 및 배경**: 20대 한국인 직장인 여성 모델, 따뜻한 늦가을 오후 햇살이 비치는 서울 도심 및 카페 풍경\n" +
+        "* **15초 모바일 숏폼**: 0~3초 훅에서 도심 소음이 일시에 멈추는 직관적 차음 연출과 편안한 미소 클로즈업 강조\n\n" +
+        "## 4. 기타 주의 사항 및 금지어\n" +
+        "* 과장되거나 단정적인 최상급 표현 배제, 실측 수치(180g, 40시간 배터리) 기반 신뢰도 확보\n";
+
+      directiveFile = saveGoogleDoc(feedbackFolder, directiveDocName, starterDirective);
+      isDirectiveNew = true;
+      Logger.log("신규 마케터 보정 지침 템플릿 문서 생성 완료: " + directiveDocName);
+    }
+
+    // 7. 대시보드 시트에 링크 기록
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     var stepTitle = roundNum + "차 피드백 종합 분석 보고서 (" + targetRound + ")";
-    var logDetail = "고객 VoC + 25인 평가 + VLM 시각 분석 통합 보고서(feedback_summary) 구글 독스 생성 완료";
+    var logDetail = "피드백 요약 보고서(" + summaryFile.getName() + ") 및 " +
+      (isDirectiveNew ? "신규 보정 지침서 템플릿 생성" : "기존 마케터 지침서 보존");
+
     recordStepResultToSheet(
       "피드백 보고서",
       stepTitle,
@@ -3168,14 +3217,24 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       logDetail
     );
 
+    recordStepResultToSheet(
+      "보정 지침서",
+      roundNum + "차 마케터 최종 의사 결정 (" + targetRound + ")",
+      "준비",
+      directiveFile.getUrl(),
+      "마케터 보정 지침 열기 (" + directiveDocName + ")",
+      durationSec,
+      isDirectiveNew ? "AI 추천 보정 초안 템플릿 자동 생성 완료 (마케터 편집 대기)" : "기존 마케터 작성 지침 안전 보존됨"
+    );
+
     showResultModal(
-      "피드백 종합 분석 보고서 도출 완료 (" + targetRound + ")",
-      "피드백 종합 보고서(feedback_summary) 구글 독스가 생성되었습니다.\n\n" +
+      "피드백 종합 분석 보고서 및 보정 지침서 준비 완료 (" + targetRound + ")",
+      "고객 VoC와 25인 다면 평가가 통합된 [feedback_summary] 보고서와 마케터 전용 [마케터 보정 지침] 독스가 준비되었습니다.\n\n" +
       "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
-      "* 실행 상세 내역: " + logDetail + "\n\n" +
-      "문서 하단의 [마케터 최종 의사 결정] 지침을 브라우저에서 직접 검토 및 수정한 뒤 [보정] 메뉴를 진행하십시오.",
-      "피드백 요약서 구글 독스 열기",
-      summaryFile.getUrl()
+      "* 자산 영구 보존: 마케터 보정 지침 문서는 향후 보고서가 재생성되더라도 절대 덮어써지지 않고 안전하게 보존됩니다.\n\n" +
+      "아래 버튼을 눌러 [마케터 보정 지침] 문서를 열고, 피드백을 반영할 방향을 자유롭게 작성 또는 수정하십시오.",
+      "마케터 보정 지침 구글 독스 열기",
+      directiveFile.getUrl()
     );
   } catch (e) {
     ui.alert("피드백 보고서 도출 중 오류 발생", e.toString(), ui.ButtonSet.OK);
