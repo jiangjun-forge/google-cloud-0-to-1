@@ -25,6 +25,11 @@ var CONFIG = {
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 초고속 모델 (Veo 3.1 Fast)
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
   EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
+
+  // API 호출 회복 탄력성(Resilience) 및 런타임 제약 가드레일
+  HTTP_MAX_RETRIES: 3, // 429 및 5xx 일시적 오류 시 최대 재시도 횟수
+  HTTP_BASE_DELAY_MS: 1500, // 지수 백오프 기본 대기 시간 (ms)
+  MAX_MEDIA_PAYLOAD_MB: 35, // Apps Script 단일 페이로드 안전 상한 (MB)
   
   // 구글 드라이브 핵심 기획/명세/콘텐츠 문서 파일명
   PLAN_DOC_NAME: "PLAN", // 마케팅 캠페인 기획서 전문

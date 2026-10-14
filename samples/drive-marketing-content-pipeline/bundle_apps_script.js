@@ -38,6 +38,11 @@ var CONFIG = {
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 초고속 모델 (Veo 3.1 Fast)
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
   EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
+
+  // API 호출 회복 탄력성(Resilience) 및 런타임 제약 가드레일
+  HTTP_MAX_RETRIES: 3, // 429 및 5xx 일시적 오류 시 최대 재시도 횟수
+  HTTP_BASE_DELAY_MS: 1500, // 지수 백오프 기본 대기 시간 (ms)
+  MAX_MEDIA_PAYLOAD_MB: 35, // Apps Script 단일 페이로드 안전 상한 (MB)
   
   // 구글 드라이브 핵심 기획/명세/콘텐츠 문서 파일명
   PLAN_DOC_NAME: "PLAN", // 마케팅 캠페인 기획서 전문
@@ -183,8 +188,22 @@ function promptForGeminiApiKey() {
   if (response.getSelectedButton() === ui.Button.OK) {
     var inputKey = response.getResponseText().trim();
     if (inputKey) {
+      // 키 유효성 사전 검증 (Fast-Fail Pre-flight Validation)
+      var isValid = validateGeminiApiKey(inputKey);
+      if (!isValid) {
+        var proceed = ui.alert(
+          "API Key 검증 경고",
+          "입력하신 API Key로 Gemini API 핑(Ping) 테스트에 실패했습니다.\n" +
+          "키에 오타가 있거나 비활성화되었을 수 있습니다.\n\n" +
+          "이 키를 그대로 저장하시겠습니까?",
+          ui.ButtonSet.YES_NO
+        );
+        if (proceed !== ui.Button.YES) {
+          return promptForGeminiApiKey();
+        }
+      }
       userProps.setProperty("GEMINI_API_KEY", inputKey);
-      ui.alert("설정 완료", "Gemini API Key가 안전하게 저장되었습니다.\n파이프라인 단계를 계속 진행하십시오.", ui.ButtonSet.OK);
+      ui.alert("설정 완료", "Gemini API Key가 성공적으로 검증 및 저장되었습니다.\n파이프라인 단계를 계속 진행하십시오.", ui.ButtonSet.OK);
       return inputKey;
     } else {
       ui.alert("입력 오류", "유효한 API Key가 입력되지 않았습니다.", ui.ButtonSet.OK);
@@ -192,6 +211,80 @@ function promptForGeminiApiKey() {
   }
 
   throw new Error("Gemini API Key가 설정되지 않아 작업을 중단합니다. 메뉴의 [Gemini API Key 설정]에서 키를 등록하십시오.");
+}
+
+/**
+ * Gemini API Key의 유효성을 경량 핑(Ping)으로 사전 검증한다.
+ *
+ * @param {string} apiKey - 검증할 API Key
+ * @return {boolean} 유효 여부
+ */
+function validateGeminiApiKey(apiKey) {
+  if (!apiKey || !apiKey.trim()) return false;
+  try {
+    var baseUrl = (CONFIG && CONFIG.BASE_URL) || "https://generativelanguage.googleapis.com/v1beta/models";
+    var testModel = (CONFIG && CONFIG.GEMINI_MODEL) || "gemini-3.8-flash";
+    var testUrl = baseUrl + "/" + testModel + ":generateContent?key=" + apiKey.trim();
+    var payload = {
+      contents: [{ role: "user", parts: [{ text: "ping" }] }],
+      generationConfig: { maxOutputTokens: 2 }
+    };
+    var resp = UrlFetchApp.fetch(testUrl, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    return resp.getResponseCode() === 200;
+  } catch (e) {
+    Logger.log("API Key 사전 검증 실패: " + e);
+    return false;
+  }
+}
+
+/**
+ * 429(Rate Limit) 및 5xx 일시적 서버 오류에 대응하는 지수 백오프 및 무작위 지터 기반 HTTP 재시도 헬퍼
+ *
+ * @param {string} url - 호출 엔드포인트 URL
+ * @param {Object} options - UrlFetchApp 옵션 객체
+ * @param {number} [maxRetriesOpt] - 최대 재시도 횟수
+ * @return {GoogleAppsScript.URL_Fetch.HTTPResponse}
+ */
+function fetchWithRetry(url, options, maxRetriesOpt) {
+  var maxRetries = (typeof maxRetriesOpt === "number") ? maxRetriesOpt : ((CONFIG && CONFIG.HTTP_MAX_RETRIES) || 3);
+  var baseDelayMs = (CONFIG && CONFIG.HTTP_BASE_DELAY_MS) || 1500;
+
+  for (var attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      var response = UrlFetchApp.fetch(url, options);
+      var code = response.getResponseCode();
+
+      // 정상(2xx)이거나 재시도가 무의미한 4xx 클라이언트 오류(400, 401, 403, 404)는 즉시 반환
+      if ((code >= 200 && code < 300) || (code >= 400 && code < 500 && code !== 429)) {
+        return response;
+      }
+
+      // 429 Too Many Requests 또는 5xx 서버 일시 오류 발생 시 재시도
+      if (attempt < maxRetries) {
+        var jitter = Math.floor(Math.random() * 800);
+        var delay = Math.round(baseDelayMs * Math.pow(2, attempt) + jitter);
+        Logger.log("[회복 탄력성] API 일시 응답 코드 (" + code + "), " + delay + "ms 대기 후 재시도 (" + (attempt + 1) + "/" + maxRetries + ")...");
+        Utilities.sleep(delay);
+        continue;
+      }
+
+      return response;
+    } catch (networkErr) {
+      if (attempt < maxRetries) {
+        var jitter = Math.floor(Math.random() * 800);
+        var delay = Math.round(baseDelayMs * Math.pow(2, attempt) + jitter);
+        Logger.log("[회복 탄력성] 네트워크 통신 예외 발생, " + delay + "ms 대기 후 재시도 (" + (attempt + 1) + "/" + maxRetries + ")... 오류: " + networkErr);
+        Utilities.sleep(delay);
+        continue;
+      }
+      throw networkErr;
+    }
+  }
 }
 
 /**
@@ -227,7 +320,7 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
     muteHttpExceptions: true
   };
 
-  var response = UrlFetchApp.fetch(endpoint, options);
+  var response = fetchWithRetry(endpoint, options);
   var responseCode = response.getResponseCode();
   var responseBody = response.getContentText();
 
@@ -256,10 +349,11 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   var bytes = mediaBlob.getBytes();
   var sizeInMb = bytes.length / (1024 * 1024);
 
+  var maxMb = (CONFIG && CONFIG.MAX_MEDIA_PAYLOAD_MB) || 35;
   // Apps Script 런타임 제약 사전 방어 (페이로드 50MB 한계 및 6분 타임아웃 방지)
-  if (sizeInMb > 35) {
+  if (sizeInMb > maxMb) {
     throw new Error(
-      "미디어 파일 크기(" + sizeInMb.toFixed(1) + "MB)가 Apps Script 단일 페이로드 한계(Base64 인코딩 기준 실질 35MB)를 초과합니다. " +
+      "미디어 파일 크기(" + sizeInMb.toFixed(1) + "MB)가 Apps Script 단일 페이로드 안전 상한(" + maxMb + "MB)을 초과합니다. " +
       "안정적인 실행을 위해 15~30초 이내(30MB 이하)의 숏폼 영상을 권장하며, " +
       "장시간 고객 인터뷰나 대용량 영상 분석을 위한 Google Cloud 환경으로의 이관은 Google Cloud에 연락하여 전문 컨설팅을 받으십시오."
     );
@@ -293,7 +387,7 @@ function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
     muteHttpExceptions: true
   };
 
-  var response = UrlFetchApp.fetch(endpoint, options);
+  var response = fetchWithRetry(endpoint, options);
   var responseCode = response.getResponseCode();
   var responseBody = response.getContentText();
 
@@ -359,7 +453,7 @@ function callGeminiImage(prompt, aspectRatio) {
         };
 
         Logger.log("Gemini 이미지 생성 시도 (모델: " + nModel + ", 종횡비: " + ratio + ")...");
-        var nResp = UrlFetchApp.fetch(nEndpoint, nOptions);
+        var nResp = fetchWithRetry(nEndpoint, nOptions);
         var nCode = nResp.getResponseCode();
         var nBody = nResp.getContentText();
 
@@ -413,7 +507,7 @@ function callGeminiImage(prompt, aspectRatio) {
         };
 
         Logger.log("Imagen 이미지 생성 시도 (모델: " + imgModel + ")...");
-        var imgResp = UrlFetchApp.fetch(imgEndpoint, imgOptions);
+        var imgResp = fetchWithRetry(imgEndpoint, imgOptions);
         var imgCode = imgResp.getResponseCode();
         var imgBody = imgResp.getContentText();
 
@@ -495,7 +589,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
       };
 
       Logger.log("Veo 비디오 생성 요청 시작 (모델: " + modelName + ", 비율: " + ratio + "): " + prompt.substring(0, 80) + "...");
-      var response = UrlFetchApp.fetch(endpoint, options);
+      var response = fetchWithRetry(endpoint, options, 2);
       var code = response.getResponseCode();
       var body = response.getContentText();
 
@@ -648,7 +742,7 @@ function callGeminiBatchEmbeddings(texts, optDim) {
     };
 
     try {
-      var response = UrlFetchApp.fetch(endpoint, options);
+      var response = fetchWithRetry(endpoint, options, 2);
       var code = response.getResponseCode();
       var body = response.getContentText();
 
