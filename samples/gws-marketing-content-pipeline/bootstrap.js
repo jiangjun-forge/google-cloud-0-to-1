@@ -11,10 +11,12 @@
  */
 
 var BOOTSTRAP_CONFIG = {
-  BUNDLE_URL: "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline/bundle_apps_script.js",
+  VERSION: "2026.10.15.zero-modal-v53",
+  BUNDLE_URL: "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/gws-marketing-content-pipeline/bundle_apps_script.js",
   PROP_PREFIX: "ENGINE_CHUNK_",
   PROP_COUNT: "ENGINE_CHUNK_COUNT",
-  PROP_SYNC_DATE: "ENGINE_LAST_SYNCED"
+  PROP_SYNC_DATE: "ENGINE_LAST_SYNCED",
+  PROP_VERSION: "ENGINE_BOOTSTRAP_VERSION"
 };
 
 // 단일 실행 세션 내 고속 재사용을 위한 인메모리 캐시 (0ms)
@@ -22,11 +24,9 @@ var __PIPELINE_IN_MEMORY_CODE__ = null;
 
 /**
  * 파이프라인 엔진 코드를 로드한다.
- * [영구 재사용 원칙]:
- * 1. 최초 1회 실행 시에만 GitHub 퍼블릭 저장소로부터 코드를 땡겨와 Google Sheets 영구 저장소(ScriptProperties)에 저장한다.
- * 2. 이후 모든 기능 실행(기획, 생성, 평가, 보고서, 보정) 시에는 GitHub을 일절 호출하지 않고(호출 0회),
- *    구글 시트 영구 저장소로부터 0.001초 만에 로컬 코드를 꺼내어 즉시 실행한다.
- * 3. 사용자가 [엔진 최신 버전 동기화] 메뉴를 명시적으로 클릭할 때에만 GitHub에서 최신 코드를 다시 땡겨와 갱신한다.
+ * [영구 재사용 및 버전 자동 무효화]:
+ * 1. 영구 저장소의 엔진 버전이 최신과 일치할 때 로컬 코드 즉시 복원 (GitHub 네트워크 호출 0회).
+ * 2. 버전 불일치 또는 명시적 갱신 시 GitHub 퍼블릭 저장소로부터 최신 번들을 자동 1회 다운로드하여 즉시 반영.
  *
  * @param {boolean} forceRefresh - 캐시를 무시하고 GitHub 최신 코드를 강제 다운로드할지 여부
  */
@@ -38,10 +38,12 @@ function loadPipelineEngine(forceRefresh) {
   }
 
   var scriptProps = PropertiesService.getScriptProperties();
+  var savedVersion = scriptProps.getProperty(BOOTSTRAP_CONFIG.PROP_VERSION);
+  var isVersionMatch = (savedVersion === BOOTSTRAP_CONFIG.VERSION);
   var fullCode = "";
 
-  // 2. [핵심] 영구 저장소(ScriptProperties)에서 로컬 코드 즉시 복원 (GitHub 호출 0회)
-  if (!forceRefresh) {
+  // 2. 영구 저장소(ScriptProperties)에서 로컬 코드 즉시 복원
+  if (!forceRefresh && isVersionMatch) {
     var chunkCountStr = scriptProps.getProperty(BOOTSTRAP_CONFIG.PROP_COUNT);
     if (chunkCountStr) {
       var count = parseInt(chunkCountStr, 10);
@@ -55,14 +57,14 @@ function loadPipelineEngine(forceRefresh) {
       }
       if (parts.length === count) {
         fullCode = parts.join("");
-        Logger.log("구글 시트 영구 저장소로부터 로컬 엔진 고속 로드 완료 (GitHub 네트워크 호출 0회)");
+        Logger.log("구글 시트 영구 저장소로부터 로컬 엔진 고속 로드 완료 (버전: " + savedVersion + ")");
       }
     }
   }
 
-  // 3. 영구 저장소에 코드가 없거나(최초 1회), 사용자가 명시적 동기화를 요청한 경우에만 GitHub 1회 호출
+  // 3. 영구 저장소에 코드가 없거나, 버전 불일치, 또는 사용자가 명시적 동기화를 요청한 경우 GitHub 1회 호출
   if (!fullCode) {
-    Logger.log("GitHub 퍼블릭 저장소로부터 최신 파이프라인 엔진 1회 다운로드 시작: " + BOOTSTRAP_CONFIG.BUNDLE_URL);
+    Logger.log("GitHub 퍼블릭 저장소로부터 최신 파이프라인 엔진 다운로드 시작 (" + BOOTSTRAP_CONFIG.VERSION + "): " + BOOTSTRAP_CONFIG.BUNDLE_URL);
     var resp = UrlFetchApp.fetch(BOOTSTRAP_CONFIG.BUNDLE_URL, { muteHttpExceptions: true });
     if (resp.getResponseCode() === 200) {
       fullCode = resp.getContentText();
@@ -77,9 +79,10 @@ function loadPipelineEngine(forceRefresh) {
       }
       newProps[BOOTSTRAP_CONFIG.PROP_COUNT] = "" + chunkIdx;
       newProps[BOOTSTRAP_CONFIG.PROP_SYNC_DATE] = new Date().toISOString();
+      newProps[BOOTSTRAP_CONFIG.PROP_VERSION] = BOOTSTRAP_CONFIG.VERSION;
 
       scriptProps.setProperties(newProps);
-      Logger.log("GitHub 최신 엔진 구글 시트 영구 저장 완료 (총 " + chunkIdx + "개 청크 저장, 영구 보존)");
+      Logger.log("GitHub 최신 엔진 구글 시트 영구 저장 완료 (총 " + chunkIdx + "개 청크 저장, 버전: " + BOOTSTRAP_CONFIG.VERSION + ")");
     } else {
       throw new Error("GitHub 퍼블릭 저장소로부터 엔진 코드를 가져오지 못했습니다. (HTTP 응답 코드: " + resp.getResponseCode() + ")");
     }
@@ -135,12 +138,7 @@ function dispatch(fnName, args) {
       throw new Error("파이프라인 엔진 내에 함수 [" + fnName + "]가 정의되지 않았습니다.");
     }
   } catch (err) {
-    var ui = SpreadsheetApp.getUi();
-    ui.alert(
-      "기능 실행 오류",
-      "[" + fnName + "] 실행 중 오류가 발생했습니다:\n" + err.toString() + "\n\n상단 메뉴의 [엔진 동기화]를 1회 실행해주십시오.",
-      ui.ButtonSet.OK
-    );
+    Logger.log("dispatch 오류 [" + fnName + "]: " + err);
     throw err;
   }
 }
@@ -173,26 +171,41 @@ function onOpen() {
   }
 }
 
-// 액션 메뉴 디스패치 프록시 함수들 (사용자 클릭 시 지연 로드 및 실행)
+// 액션 메뉴 디스패치 및 사이드바 RPC 프록시 함수들 (사용자 클릭 시 지연 로드 및 실행)
 function showPipelineSidebar() { dispatch("showPipelineSidebar"); }
 function getPipelineStatus() { return dispatch("getPipelineStatus"); }
-function initCampaignWorkspace() { dispatch("initCampaignWorkspace"); }
-function runConfigureCampaignSettings() { dispatch("runConfigureCampaignSettings"); }
-function guardAndRunIdeaToPlan() { dispatch("guardAndRunIdeaToPlan"); }
-function guardAndRunInitialContent() { dispatch("guardAndRunInitialContent"); }
-function promptAndRunJudgeEvaluation() { dispatch("promptAndRunJudgeEvaluation"); }
-function promptAndRunFeedbackSummary() { dispatch("promptAndRunFeedbackSummary"); }
-function promptAndRunReviseAssets() { dispatch("promptAndRunReviseAssets"); }
-function openCustomerVocForm() { dispatch("openCustomerVocForm"); }
-function setCustomPersonasPrompt() { dispatch("setCustomPersonasPrompt"); }
-function promptForGeminiApiKey() { dispatch("promptForGeminiApiKey"); }
+function initCampaignWorkspace() { return dispatch("initCampaignWorkspace"); }
+function runConfigureCampaignSettings(newCode) { return dispatch("runConfigureCampaignSettings", [newCode]); }
+function runCampaignIdeaMemo(customIdea) { return dispatch("runCampaignIdeaMemo", [customIdea]); }
+function promptAndRunIdeaMemo(customIdea) { return dispatch("promptAndRunIdeaMemo", [customIdea]); }
+function runIdeaToPlan(customIdea) { return dispatch("runIdeaToPlan", [customIdea]); }
+function guardAndRunIdeaToPlan(customIdea) { return dispatch("guardAndRunIdeaToPlan", [customIdea]); }
+function runPlanToSpec() { return dispatch("runPlanToSpec"); }
+function guardAndRunPlanToSpec() { return dispatch("guardAndRunPlanToSpec"); }
+function runPersonaPanelSynthesis() { return dispatch("runPersonaPanelSynthesis"); }
+function guardAndRunPersonaSynthesis() { return dispatch("guardAndRunPersonaSynthesis"); }
+function runInitialContentGeneration(forceOverwrite) { return dispatch("runInitialContentGeneration", [forceOverwrite]); }
+function guardAndRunInitialContent(forceOverwrite) { return dispatch("guardAndRunInitialContent", [forceOverwrite]); }
+function forceRunInitialContent() { return dispatch("forceRunInitialContent"); }
+function runPersonaEvaluation(targetRound) { return dispatch("runPersonaEvaluation", [targetRound]); }
+function promptAndRunJudgeEvaluation(targetRound) { return dispatch("promptAndRunJudgeEvaluation", [targetRound]); }
+function runFeedbackSummaryReport(targetRound) { return dispatch("runFeedbackSummaryReport", [targetRound]); }
+function promptAndRunFeedbackSummary(targetRound) { return dispatch("promptAndRunFeedbackSummary", [targetRound]); }
+function runMarketerDirective(customDirective, targetRound) { return dispatch("runMarketerDirective", [customDirective, targetRound]); }
+function promptAndRunMarketerDirective(customDirective, targetRound) { return dispatch("promptAndRunMarketerDirective", [customDirective, targetRound]); }
+function runReviseContent(targetRound, isSilent, forceAll, customDirective) { return dispatch("runReviseContent", [targetRound, isSilent, forceAll, customDirective]); }
+function promptAndRunFeedbackRevision(customDirectiveOrTargetRv) { return dispatch("promptAndRunFeedbackRevision", [customDirectiveOrTargetRv]); }
+function openCustomerVocForm() { return dispatch("openCustomerVocForm"); }
+function setCustomPersonasPrompt(criteria) { return dispatch("setCustomPersonasPrompt", [criteria]); }
+function promptForGeminiApiKey() { return dispatch("promptForGeminiApiKey"); }
 function openDashboardSheet() { dispatch("openDashboardSheet"); }
+function saveApiKeyInline(apiKey) { return dispatch("saveApiKeyInline", [apiKey]); }
+function askPipelineAssistant(userMessage) { return dispatch("askPipelineAssistant", [userMessage]); }
 
 /**
- * GitHub 퍼블릭 저장소 최신 엔진 코드 즉시 강제 갱신
+ * GitHub 퍼블릭 저장소 최신 엔진 코드 즉시 강제 갱신 (모달 배제)
  */
 function forceSyncEngine() {
-  var ui = SpreadsheetApp.getUi();
   try {
     loadPipelineEngine(true);
 
@@ -212,17 +225,13 @@ function forceSyncEngine() {
       // 무시
     }
 
-    ui.alert(
-      "엔진 동기화 완료",
-      "GitHub 퍼블릭 저장소의 최신 버전 파이프라인 엔진 코드가 성공적으로 갱신되었습니다.\n우측 제어 패널(사이드바)을 통해 작업을 진행할 수 있습니다.",
-      ui.ButtonSet.OK
-    );
+    return {
+      success: true,
+      message: "GitHub 퍼블릭 저장소의 최신 버전 파이프라인 엔진 코드가 성공적으로 갱신되었습니다."
+    };
   } catch (err) {
-    ui.alert(
-      "동기화 실패",
-      "엔진 동기화 중 오류가 발생했습니다: " + err.toString(),
-      ui.ButtonSet.OK
-    );
+    Logger.log("엔진 동기화 실패: " + err);
+    throw err;
   }
 }
 
@@ -236,7 +245,6 @@ function __staticOAuthScopeDeclarations() {
   if (false) {
     SpreadsheetApp.getActiveSpreadsheet();
     SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput(""));
-    SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(""), "");
     HtmlService.createHtmlOutput("");
     DriveApp.getRootFolder();
     DocumentApp.create("dummy");

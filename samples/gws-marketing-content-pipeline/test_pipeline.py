@@ -15,6 +15,7 @@
 
 import argparse
 import os
+import subprocess
 import sys
 import unittest
 from typing import Dict
@@ -56,6 +57,11 @@ def parse_args():
         help="LLM 비정형 사족 JSON 파싱 단위 테스트 실행"
     )
     parser.add_argument(
+        "--gas",
+        action="store_true",
+        help="Apps Script 코어 9대 모듈 기능별 단위 테스트 (Node.js 런타임)"
+    )
+    parser.add_argument(
         "--live",
         action="store_true",
         help="실제 Google AI Studio REST API 엔드포인트 직접 호출 검증"
@@ -63,7 +69,7 @@ def parse_args():
     parser.add_argument(
         "--all",
         action="store_true",
-        help="시나리오, 에지케이스, 라이브 API(키 유효 시) 전체 검증"
+        help="시나리오, 에지케이스, Apps Script 단위 테스트, 라이브 API(키 유효 시) 전체 검증"
     )
     return parser.parse_args()
 
@@ -80,9 +86,10 @@ def main():
     args = parse_args()
     api_key = args.api_key.strip()
 
-    run_all = args.all or (not args.scenario and not args.edge and not args.live and not args.dry_run)
+    run_all = args.all or (not args.scenario and not args.edge and not args.gas and not args.live and not args.dry_run)
     run_scen = args.scenario or args.dry_run or run_all
     run_edge = args.edge or args.dry_run or run_all
+    run_gas = args.gas or run_all
     run_live = args.live or (run_all and bool(api_key))
 
     print("================================================================")
@@ -104,9 +111,22 @@ def main():
         success = run_unit_suite(EdgeCaseParserTest)
         results["LLM 사족 방어 단위 검증"] = "PASS" if success else "FAIL"
 
-    # 3. 실제 Google AI Studio API 엔드포인트 검증
+    # 3. Apps Script 코어 9대 모듈 Node.js/V8 단위 테스트
+    if run_gas:
+        print("\n[3] Apps Script 코어 9대 모듈 기능별 단위 테스트 (Node.js/V8 런타임)...")
+        test_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tests", "test_gas_units.js")
+        try:
+            p = subprocess.run(["node", "--test", test_file], capture_output=True, text=True, check=True)
+            print(p.stdout)
+            results["Apps Script 코어 단위 검증"] = "PASS"
+        except subprocess.CalledProcessError as e:
+            print(e.stdout)
+            print(e.stderr, file=sys.stderr)
+            results["Apps Script 코어 단위 검증"] = "FAIL"
+
+    # 4. 실제 Google AI Studio API 엔드포인트 검증
     if run_live:
-        print("\n[3] Google AI Studio 실제 REST 엔드포인트 호출 검증...")
+        print("\n[4] Google AI Studio 실제 REST 엔드포인트 호출 검증...")
         if not api_key:
             print("  주의: API Key가 없어 실제 API 호출을 건너뜁니다 (--api-key 또는 GEMINI_API_KEY 환경 변수 필요).")
             results["라이브 API 검증"] = "SKIPPED (No Key)"

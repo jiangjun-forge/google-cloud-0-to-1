@@ -18,7 +18,7 @@ function seedDefaultPrompts(promptsFolder) {
     return;
   }
 
-  var rawBase = (CONFIG && CONFIG.GITHUB_RAW_BASE) || "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline";
+  var rawBase = (CONFIG && CONFIG.GITHUB_RAW_BASE) || "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/gws-marketing-content-pipeline";
   var promptKeys = Object.keys(CONFIG.DEFAULT_PROMPTS || {});
 
   for (var i = 0; i < promptKeys.length; i++) {

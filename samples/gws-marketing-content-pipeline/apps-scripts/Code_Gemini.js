@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 2] Gemini REST API 클라이언트 엔진 (Google AI Studio 무료 API Key 기반 Zero-GCP 인증)
+ * [모듈 2] Gemini REST API 클라이언트 엔진 (Google AI Studio API Key 기반 Zero-GCP 인증)
  */
 
 // 세션 단위 API 토큰 소모량 실시간 추적기
@@ -74,53 +74,18 @@ function getGeminiApiKey() {
     return CONFIG.API_KEY.trim();
   }
 
-  return promptForGeminiApiKey();
+  return "";
 }
 
 /**
- * Google AI Studio Gemini API Key 입력 및 저장 UI 프롬프트
+ * Google AI Studio Gemini API Key 안내 및 확인 (모달 팝업 배제)
  */
 function promptForGeminiApiKey() {
-  var ui = SpreadsheetApp.getUi();
-  var userProps = PropertiesService.getUserProperties();
-  var currentKey = userProps.getProperty("GEMINI_API_KEY") || "";
-  var maskedKey = currentKey ? (currentKey.substring(0, 6) + "..." + currentKey.substring(currentKey.length - 4)) : "미등록";
-
-  var response = ui.prompt(
-    "Google AI Studio Gemini API Key 설정 (Zero-GCP)",
-    "Google Cloud 콘솔 및 신용카드 등록 없이 개인 구글 계정으로 100% 무료 구동됩니다.\n\n" +
-    "1. Google AI Studio ( https://aistudio.google.com/app/apikey ) 에서 무료 API Key를 발급받으십시오.\n" +
-    "2. 발급받은 API Key(AIzaSy...)를 아래에 입력하십시오:\n\n" +
-    "(현재 등록된 키: " + maskedKey + ")",
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (response.getSelectedButton() === ui.Button.OK) {
-    var inputKey = response.getResponseText().trim();
-    if (inputKey) {
-      // 키 유효성 사전 검증 (Fast-Fail Pre-flight Validation)
-      var isValid = validateGeminiApiKey(inputKey);
-      if (!isValid) {
-        var proceed = ui.alert(
-          "API Key 검증 경고",
-          "입력하신 API Key로 Gemini API 핑(Ping) 테스트에 실패했습니다.\n" +
-          "키에 오타가 있거나 비활성화되었을 수 있습니다.\n\n" +
-          "이 키를 그대로 저장하시겠습니까?",
-          ui.ButtonSet.YES_NO
-        );
-        if (proceed !== ui.Button.YES) {
-          return promptForGeminiApiKey();
-        }
-      }
-      userProps.setProperty("GEMINI_API_KEY", inputKey);
-      ui.alert("설정 완료", "Gemini API Key가 성공적으로 검증 및 저장되었습니다.\n파이프라인 단계를 계속 진행하십시오.", ui.ButtonSet.OK);
-      return inputKey;
-    } else {
-      ui.alert("입력 오류", "유효한 API Key가 입력되지 않았습니다.", ui.ButtonSet.OK);
-    }
+  var key = getGeminiApiKey();
+  if (key) {
+    return key;
   }
-
-  throw new Error("Gemini API Key가 설정되지 않아 작업을 중단합니다. 메뉴의 [Gemini API Key 설정]에서 키를 등록하십시오.");
+  throw new Error("Gemini API Key가 등록되지 않았습니다. 사이드바 상단 온보딩 배너의 [API Key 등록] 버튼을 눌러 키를 입력해 주십시오.");
 }
 
 /**
@@ -199,22 +164,36 @@ function fetchWithRetry(url, options, maxRetriesOpt) {
 
 /**
  * Gemini 텍스트 생성 API 호출 (System Instruction 및 User Content)
+ *
+ * @param {string} systemInstruction - 시스템 지침
+ * @param {string} userContent - 사용자 입력 프롬프트
+ * @param {string} [modelOverride] - 사용할 모델 오버라이드
+ * @param {number} [maxTokensOverride] - 최대 출력 토큰 수
+ * @param {boolean} [isJsonMode] - JSON 전용 모드 (responseMimeType: "application/json") 여부
  */
-function callGemini(systemInstruction, userContent, modelOverride, maxTokensOverride) {
+function callGemini(systemInstruction, userContent, modelOverride, maxTokensOverride, isJsonMode) {
   var apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API Key가 등록되지 않았습니다. 사이드바 상단 온보딩 배너의 [API Key 등록] 버튼을 눌러 키를 입력해 주십시오.");
+  }
   var targetModel = modelOverride || CONFIG.MODEL_GENERATOR || CONFIG.GEMINI_MODEL || "gemini-3.8-flash";
   var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent?key=" + apiKey;
   var maxTokens = maxTokensOverride || 8192;
+
+  var genConfig = {
+    maxOutputTokens: maxTokens,
+    temperature: isJsonMode ? 0.3 : 0.7
+  };
+  if (isJsonMode) {
+    genConfig.responseMimeType = "application/json";
+  }
 
   var payload = {
     contents: [{
       role: "user",
       parts: [{ text: userContent }]
     }],
-    generationConfig: {
-      maxOutputTokens: maxTokens,
-      temperature: 0.7
-    }
+    generationConfig: genConfig
   };
 
   if (systemInstruction) {
@@ -255,6 +234,9 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
  */
 function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   var apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API Key가 등록되지 않았습니다. 사이드바 상단 온보딩 배너의 [API Key 등록] 버튼을 눌러 키를 입력해 주십시오.");
+  }
   var targetModel = modelOverride || CONFIG.MODEL_GENERATOR || "gemini-3.8-flash";
   var endpoint = CONFIG.BASE_URL + "/" + targetModel + ":generateContent?key=" + apiKey;
 
@@ -522,7 +504,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
     }
 
     if (!operationName) {
-      Logger.log("모든 Veo 모델 생성 작업 큐 등록에 실패하여 비디오 생성을 완료하지 못했습니다 (Google AI Studio 무료 티어 API Key는 Veo가 미지원되거나 유료 결제 계정 필요).");
+      Logger.log("모든 Veo 모델 생성 작업 큐 등록에 실패하여 비디오 생성을 완료하지 못했습니다 (Google AI Studio API Key 권한 또는 할당량 확인 필요).");
       return null;
     }
 
@@ -633,6 +615,9 @@ function callGeminiBatchEmbeddings(texts, optDim) {
   var dim = optDim || CONFIG.EMBEDDING_DIM || 128;
   var embedModel = CONFIG.EMBEDDING_MODEL || "text-multilingual-embedding-002";
   var apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API Key가 등록되지 않았습니다. 사이드바 상단 온보딩 배너의 [API Key 등록] 버튼을 눌러 키를 입력해 주십시오.");
+  }
   var endpoint = CONFIG.BASE_URL + "/" + embedModel + ":batchEmbedContents?key=" + apiKey;
 
   var allEmbeddings = [];

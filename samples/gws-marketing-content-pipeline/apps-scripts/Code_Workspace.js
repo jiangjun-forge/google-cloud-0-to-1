@@ -7,12 +7,11 @@
  */
 
 /**
- * [캠페인 초기화] 구글 드라이브 폴더 트리, 루트 직속 [아이디어 메모], 25인 페르소나, 9대 프롬프트 구글 독스,
- * 그리고 고객 VoC 수집용 Google Forms 생성 및 시트 바인딩까지 초장에 100% 완결한다.
+ * [캠페인 초기화] 구글 드라이브 폴더 트리, AI 페르소나 마스터 패널, 9대 프롬프트 구글 독스,
+ * 그리고 고객 VoC 수집용 Google Forms 생성 및 시트 바인딩까지 초장에 완결한다.
  */
 function initCampaignWorkspace() {
   return withUserLock("campaign_init", function() {
-    var ui = SpreadsheetApp.getUi();
   var startTime = new Date().getTime();
   showProcessingToast("캠페인 작업 공간 및 VoC 설문 폼 올인원 초기화 중...", 20);
   try {
@@ -26,38 +25,25 @@ function initCampaignWorkspace() {
     var fb01Folder = getCampaignSubFolder(["input", "fb-01"]);
     var rv00Folder = getCampaignSubFolder(["output", "rv-00"]);
 
-    // 2. [핵심] 25인 타깃 AI 페르소나 마스터 데이터를 캠페인 루트 폴더 직속에 시딩
+    // 2. [핵심] 타깃 AI 페르소나 마스터 데이터를 캠페인 루트 폴더 직속에 시딩
     var personaFileName = CONFIG.PERSONA_FILE_NAME || "ai_personas.json";
     var existingPersonas = campaignFolder.getFilesByName(personaFileName);
     if (!existingPersonas.hasNext()) {
       var masterPersonas = getMasterPersonas25();
       var personaJsonText = JSON.stringify(masterPersonas, null, 2);
       saveTextFile(campaignFolder, personaFileName, personaJsonText);
-      Logger.log("루트 직속 25인 AI 페르소나 데이터셋 시딩 완료: " + personaFileName);
+      Logger.log("루트 직속 AI 페르소나 데이터셋 시딩 완료: " + personaFileName);
     }
 
     // 3. prompts/ 폴더 내 9대 프롬프트 구글 독스 자동 시딩 (기존 마케터 수정분 보존)
     seedDefaultPrompts(promptsFolder);
 
-    // 4. [UX 개선] 스타터 아이디어 메모 구글 독스 캠페인 루트 폴더 직속 시딩
-    var ideaDocName = CONFIG.IDEA_DOC_NAME || "아이디어 메모";
-    if (!readGoogleDoc(campaignFolder, ideaDocName)) {
-      var starterIdea =
-        "# 캠페인 아이디어 메모\n\n" +
-        "* **캠페인 명칭**: 2026 가을 오텀 브리즈 캠페인 (" + campaignCode + ")\n" +
-        "* **핵심 컨셉**: 선선한 가을 날씨에 어울리는 프리미엄 노이즈 캔슬링(ANC) 헤드폰 일상 탈출 컬렉션\n" +
-        "* **타깃 고객**: 도심 속 워크앤라이프 밸런스를 추구하는 2040 직장인 및 통근자\n" +
-        "* **핵심 소구점**: 180g 경량 착용감, 45dB 차음 성능, 감성적 힐링 몰입 무드\n" +
-        "* **목표 채널**: 유튜브 쇼츠 및 인스타그램 릴스(9:16), 디스플레이 배너(16:9), 블로그 브랜드 기고문\n";
+    var folderDisplayName = campaignFolder.getName();
 
-      saveGoogleDoc(campaignFolder, ideaDocName, starterIdea);
-      Logger.log("캠페인 루트 직속 스타터 아이디어 메모 생성 완료: " + ideaDocName);
-    }
-
-    // 5. [스마트 보존] 고객 VoC 수집용 구글 폼(Google Forms) 탐색 및 연동 (기존 폼 보존, 부재 시에만 생성)
+    // 4. [스마트 보존] 고객 VoC 수집용 구글 폼(Google Forms) 탐색 및 연동 (기존 폼 보존, 부재 시에만 생성)
     var formInfo = setupFeedbackGoogleForm(campaignFolder, campaignCode);
 
-    // 6. 현재 구글 시트를 캠페인 루트 폴더로 패키징 및 직관적 명칭 동기화
+    // 5. 현재 구글 시트를 캠페인 루트 폴더로 패키징 및 직관적 명칭 동기화
     try {
       var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
       var sheetFile = DriveApp.getFileById(activeSpreadsheet.getId());
@@ -72,16 +58,16 @@ function initCampaignWorkspace() {
       if (!isAlreadyInFolder) {
         sheetFile.moveTo(campaignFolder);
       }
-      var folderDisplayName = campaignFolder.getName();
       syncSpreadsheetTitleWithCampaign(folderDisplayName, campaignCode);
     } catch (sheetMoveErr) {
       Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
     }
 
-    // 7. 구글 시트 실행 로그 표 초기화 및 핵심 리소스 링크 등록
+    // 6. 구글 시트 실행 내역 표 초기화 및 핵심 리소스 링크 등록
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     initDashboardSheet();
-    var folderDisplayName = campaignFolder.getName();
+    
+    // 1행: 작업 공간 준비 (드라이브 폴더 열기)
     recordStepResultToSheet(
       "작업 공간 준비",
       "캠페인 폴더 및 자산 무결성 점검",
@@ -89,9 +75,11 @@ function initCampaignWorkspace() {
       campaignFolder.getUrl(),
       "드라이브 폴더 열기 (" + folderDisplayName + ")",
       durationSec,
-      "-",
-      "기존 콘텐츠/기획서 100% 안전 보존 및 누락된 필수 폴더 트리/설문 채널 복구 완료"
+      0,
+      "기존 콘텐츠/기획서 안전 보존 및 누락된 필수 폴더 트리/설문 채널 복구 완료"
     );
+
+    // 2행: 고객 피드백 채널
     if (formInfo && formInfo.publishedUrl) {
       recordStepResultToSheet(
         "고객 피드백 채널",
@@ -100,20 +88,27 @@ function initCampaignWorkspace() {
         formInfo.publishedUrl,
         "온라인 설문지 열기",
         durationSec,
-        "-",
+        0,
         "Google Forms 연동 완료 (현재 시트에 설문 응답 실시간 수신 대기)"
       );
     }
 
     showResultModal(
       "캠페인 작업 공간 준비 완료 (" + folderDisplayName + ")",
-      "캠페인 폴더 내 기존 콘텐츠와 기획서 자산을 100% 안전하게 보존하고, 누락된 필수 리소스 복구를 완료했습니다.\n\n" +
+      "캠페인 폴더 내 기존 콘텐츠와 기획서 자산을 안전하게 보존하고, 누락된 필수 리소스 복구를 완료했습니다.\n\n" +
       "* 캠페인 명칭: " + folderDisplayName + " (" + campaignCode + ")\n" +
       "* 처리 소요 시간: " + formatDuration(durationSec) + "\n\n" +
       "아래 버튼을 눌러 캠페인 드라이브 폴더를 즉시 확인하십시오.",
       "캠페인 드라이브 폴더 열기",
       campaignFolder.getUrl()
     );
+
+    return {
+      success: true,
+      message: "캠페인 작업 공간이 준비되었습니다. 필수 폴더 트리와 9대 프롬프트 및 고객 설문 폼이 구축되었습니다. 이제 [Step 1] 아이디어 메모 작성을 진행해 주십시오.",
+      folderUrl: campaignFolder.getUrl(),
+      ideaDocUrl: ""
+    };
   } catch (e) {
     var failDuration = Math.round((new Date().getTime() - startTime) / 1000);
     recordStepResultToSheet(
@@ -123,10 +118,10 @@ function initCampaignWorkspace() {
       "",
       "",
       failDuration,
-      "-",
+      0,
       "오류 발생: " + (e.message || e.toString())
     );
-    ui.alert("초기화 중 오류 발생", e.toString(), ui.ButtonSet.OK);
+    throw e;
   }
   });
 }
@@ -246,37 +241,29 @@ function setupFeedbackGoogleForm(campaignFolder, campaignCode) {
 
 /**
  * [환경 설정] 캠페인 코드 및 타깃 설정을 조회하고 재설정한다.
+ *
+ * @param {string} [newCodeOpt] - 변경할 새로운 캠페인 코드 (선택)
+ * @return {string} 현재 또는 갱신된 캠페인 코드
  */
-function runConfigureCampaignSettings() {
-  var ui = SpreadsheetApp.getUi();
+function runConfigureCampaignSettings(newCodeOpt) {
   var userProps = PropertiesService.getUserProperties();
   var currentCode = userProps.getProperty("CAMPAIGN_CODE") || CONFIG.CAMPAIGN_CODE || "cp-ignite";
 
-  var response = ui.prompt(
-    "캠페인 환경 설정 및 재설정 (Configuration)",
-    "현재 캠페인 코드: [" + currentCode + "]\n\n" +
-    "새로운 캠페인 코드를 입력하거나 기존 코드를 유지하십시오 (영문 소문자 및 하이픈 권장):",
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (response.getSelectedButton() === ui.Button.OK) {
-    var newCode = response.getResponseText().trim();
-    if (newCode) {
-      userProps.setProperty("CAMPAIGN_CODE", newCode);
-      ui.alert("설정 완료", "캠페인 코드가 [" + newCode + "]로 업데이트되었습니다.", ui.ButtonSet.OK);
-      return newCode;
-    }
+  if (newCodeOpt && typeof newCodeOpt === "string" && newCodeOpt.trim()) {
+    var newCode = newCodeOpt.trim();
+    userProps.setProperty("CAMPAIGN_CODE", newCode);
+    return newCode;
   }
   return currentCode;
 }
 
 /**
- * 25인 슬림 한국인 AI 페르소나 마스터 데이터셋 반환
+ * 슬림 한국인 AI 페르소나 마스터 데이터셋 반환
  */
 function getMasterPersonas25() {
   return {
     "metadata": {
-      "description": "한국인 25인 다면 평가 슬림 AI 페르소나 패널 (토큰 최적화 경량 규격)",
+      "description": "한국인 다면 평가 슬림 AI 페르소나 패널 (토큰 최적화 경량 규격)",
       "total": 25
     },
     "personas": [

@@ -34,7 +34,6 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── cloud-nat-port-exhaustion-guard/        # Cloud NAT 동적 포트 할당(DPA) 확장 지연 및 사일런트 패킷 드롭 진단
     ├── cloud-run-cud-optimizer/                # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
     ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
-    ├── drive-marketing-content-pipeline/       # Google Drive & Google Sheets 기반 무키(Keyless) 마케팅 콘텐츠 양산 및 25인 AI 페르소나 다면 평가
     ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
     ├── fcm-push-quota-guard/                   # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
     ├── gce-instance-flexibility-planner/       # GCE & GKE 인스턴스 유연성 및 CCC/MIG 스톡아웃 방어 설계
@@ -57,6 +56,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gke-ingress-502-resolver/               # GKE Ingress/Gateway 502 Bad Gateway 4대 원인 체인 역추적
     ├── gke-multi-cluster-inference-gateway/    # 멀티 클러스터 GPU L7 Anycast 직결 및 라우팅 병목 진단
     ├── gke-source-ip-snat-guard/               # GKE NLB 출발지 IP 보존 및 kube-proxy SNAT 부하 불균형 진단
+    ├── gws-marketing-content-pipeline/         # Google Workspace(Drive, Docs, Sheets) 기반 마케팅 콘텐츠 생성 및 25인 AI 페르소나 다면 평가
     ├── iam-permission-resolver/                # 403 권한 거부 감사 로그 분석 및 최소 권한 원클릭 처방
     ├── kms-key-rotation-outage-guard/          # CMEK 키 자동 순환 후 구버전 비활성화 장애 예방
     ├── korea-ai-security-checklist/            # Gemini 도입 사내 보안성 심의 20대 체크리스트 소명서 진단

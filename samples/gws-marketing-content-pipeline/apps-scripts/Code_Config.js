@@ -10,17 +10,18 @@ var CONFIG = {
   // 기본 캠페인 코드 및 구글 드라이브 루트 폴더명
   CAMPAIGN_CODE: "cp-ignite",
 
-  // 인증 방식: Google AI Studio 무료 API Key 기반 인증 (Zero-GCP Dependency)
-  // GCP 프로젝트, 신용카드 등록, 빌링 계정 없이 개인 구글 계정으로 무료 발급받아 100% 구동됨
+  // 인증 방식: Google AI Studio API Key 기반 인증 (Zero-GCP Dependency)
+  // GCP 프로젝트나 복잡한 개발 환경 설정 없이 Google AI Studio API Key 1회 등록만으로 구동됨
   AUTH_MODE: "API_KEY",
   API_KEY: "", // 공란 유지 시 PropertiesService.getUserProperties() 또는 실행 시 대화상자에서 자동 취득
-  
-  // Google AI Studio 엔드포인트 및 태스크별 최적 모델 지정 (As of 2026-10-13)
-  // 단일 모델에 의존하지 않고 작업별 특성(속도, 이미지, 영상)에 맞추어 검증된 모델을 취사선택함
+
+  // Google AI Studio 엔드포인트 및 태스크별 최적 모델 지정 (As of 2026-10-15)
+  // 단일 모델에 의존하지 않고 작업별 특성(속도, 이미지, 영상, 추론)에 맞추어 검증된 모델을 취사선택함
   BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models",
   GEMINI_MODEL: "gemini-3.8-flash",
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 생성 모델
-  MODEL_JUDGE: "gemini-3.8-flash", // 25인 AI 페르소나 다면 평가 및 가드레일 판정 모델
+  MODEL_JUDGE: "gemini-3.8-flash", // AI 페르소나 다면 평가 및 가드레일 판정 모델
+  MODEL_COPILOT: "gemini-3.8-flash", // AI 코파일럿 대화 및 상황 인지 고속 반응 모델 (Gemini 3.8 Flash)
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 모델 (Veo 3.1 Fast)
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
@@ -36,12 +37,12 @@ var CONFIG = {
   PLAN_DOC_NAME: "PLAN", // 마케팅 캠페인 기획서 전문
   SPEC_DOC_NAME: "SPEC", // 멀티 채널 콘텐츠 제작 명세서 (이미지, 숏폼, 카피 규격)
   CONTENT_DOC_NAME: "campaign_content", // 멀티 채널 마케팅 콘텐츠 전문 (카피라이팅 및 영상 콘티)
-  PERSONA_FILE_NAME: "ai_personas.json", // 25인 타깃 AI 페르소나 마스터 데이터 (캠페인 루트 직속)
+  PERSONA_FILE_NAME: "ai_personas.json", // 타깃 AI 페르소나 마스터 데이터 (캠페인 루트 직속)
   PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 구글 독스 보관 폴더명
   DIRECTIVE_DOC_NAME: "마케터 보정 지침", // 마케터 전용 의사 결정 및 보정 지침서 (AI 덮어쓰기 금지)
 
   // GitHub 퍼블릭 저장소 Raw 베이스 URL (초기화 시 최신 프롬프트 실시간 인출)
-  GITHUB_RAW_BASE: "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/drive-marketing-content-pipeline",
+  GITHUB_RAW_BASE: "https://raw.githubusercontent.com/jiangjun-forge/google-cloud-0-to-1/main/samples/gws-marketing-content-pipeline",
 
   // 멀티 채널 마케팅 콘텐츠 및 소재 기본 규격
   CONTENT_SPECS: {
@@ -71,9 +72,6 @@ var CONFIG = {
       channel: "유튜브 쇼츠, 인스타그램 릴스, 틱톡"
     }
   },
-  
-  // QuickChart REST API 엔드포인트 (t-SNE 여론 군집 지형도 렌더링)
-  QUICKCHART_ENDPOINT: "https://quickchart.io/chart",
 
   // 9대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
   DEFAULT_PROMPTS: {
@@ -91,9 +89,9 @@ var CONFIG = {
     },
     "03_persona_synthesis": {
       title: "03_persona_synthesis",
-      description: "타깃 맞춤 AI 페르소나 25인 패널 합성 및 Hugging Face 정규화 지침",
+      description: "타깃 맞춤 AI 페르소나 패널 합성 및 Hugging Face 정규화 지침",
       systemInstruction:
-        "당신은 엔터프라이즈 마케팅 페르소나 엔지니어링 AI이다. 제공된 제작 명세서(SPEC)의 타깃 오디언스 또는 Hugging Face 데이터로부터 전문 마케터 12인과 일반 소비자 13인으로 구성된 25인 슬림 AI 페르소나 패널 JSON 객체(7대 필수 필드: id, name, age, gender, category, occupation, perspective)를 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+        "당신은 엔터프라이즈 마케팅 페르소나 엔지니어링 AI이다. 제공된 제작 명세서(SPEC)의 타깃 오디언스 또는 Hugging Face 데이터로부터 전문 마케터와 일반 소비자로 균형 있게 구성된 슬림 AI 페르소나 패널 JSON 객체(7대 필수 필드: id, name, age, gender, category, occupation, perspective)를 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
     "04_content_generation": {
       title: "04_content_generation",
@@ -103,9 +101,9 @@ var CONFIG = {
     },
     "05_persona_evaluation": {
       title: "05_persona_evaluation",
-      description: "25인 한국인 마스터 AI 페르소나 다면 평가 및 세부 의견 포인트 도출 지침",
+      description: "한국인 마스터 AI 페르소나 다면 평가 및 세부 의견 포인트 도출 지침",
       systemInstruction:
-        "당신은 엔터프라이즈 마케팅 리서치 분석 AI이다. 공개된 마케팅 콘텐츠를 25인 한국인 가상 페르소나 관점에서 다면 평가하고, 1인당 2~4개의 세부 의견 포인트(points 배열, 총 50~80개)를 포함하는 순수 JSON 배열만 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+        "당신은 엔터프라이즈 마케팅 리서치 분석 AI이다. 공개된 마케팅 콘텐츠를 한국인 가상 페르소나 관점에서 다면 평가하고, 1인당 2~4개의 세부 의견 포인트(points 배열, 총 50~80개)를 포함하는 순수 JSON 배열만 반환하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
     "06_vlm_media_analysis": {
       title: "06_vlm_media_analysis",
@@ -117,7 +115,7 @@ var CONFIG = {
       title: "07_feedback_summary",
       description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
-        "당신은 CMO 전속 수석 분석관이다. 25인 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
+        "당신은 CMO 전속 수석 분석관이다. AI 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
     "08_content_revision": {
       title: "08_content_revision",
