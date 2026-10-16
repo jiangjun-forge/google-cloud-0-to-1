@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기
+# 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기 (storage-transfer-secure-uploader)
 
 온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 클라우드 KMS(Cloud KMS) 암호화 및 무결성 검증을 거쳐 클라우드 스토리지(Cloud Storage)로 안전하게 이관하는 진단 도구다. (As of 2026-09-09)
 
@@ -35,7 +35,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 진단 및 해결 흐름
 
 ```mermaid
-graph TD
+flowchart TD
     A["온프레미스 원천 디렉터리 지정"] --> B["로컬 비식별화 및 마스킹 태그 검증"]
     B --> C["STS 온프렘 에이전트 풀 통신 상태 확인"]
     C --> D["타깃 Cloud Storage 버킷 보안 점검 (PAP, CMEK)"]
@@ -50,10 +50,10 @@ graph TD
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
-| 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
-| :--- | :--- | :--- |
-| `Cloud Storage` | `roles/storage.admin` | `storage.buckets.get`, `storage.buckets.update` |
-| `Storage Transfer Service` | `roles/storagetransfer.admin` | `storagetransfer.agentpools.list`, `storagetransfer.jobs.create` |
+| 역할 (Role) | 최소 IAM 권한 |
+| :--- | :--- |
+| 스토리지 관리자(`roles/storage.admin`) | `storage.buckets.get`, `storage.buckets.update` |
+| 스토리지 전송 관리자(`roles/storagetransfer.admin`) | `storagetransfer.agentpools.list`, `storagetransfer.jobs.create` |
 
 ---
 
@@ -127,7 +127,7 @@ STS 에이전트 풀: on-prem-posix-pool
 
 ---
 
-## 7. 자원 정리 (Teardown) 가이드
+## 7. 자원 정리 안내 (Teardown)
 
 본 진단 도구는 전송 준비 상태를 검사하는 도구이며, 테스트용으로 생성한 전송 작업(Job)이나 에이전트 풀이 있다면 아래 명령어로 정리한다:
 

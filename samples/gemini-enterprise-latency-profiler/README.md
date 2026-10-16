@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 신뢰 스택 구간별 지연 시간 분석 가이드
+# 제미나이 엔터프라이즈(Gemini Enterprise) 파이프라인 구간별 지연 시간 분석기 (`gemini-enterprise-latency-profiler`)
 
 엔터프라이즈 생성형 AI 파이프라인에서 발생하는 체감 지연 시간(Latency)의 원인을 전송 네트워크(DNS, TCP, TLS), 보안 가드레일(Model Armor, Sensitive Data Protection), 컨텍스트 증강(Search Grounding), 순수 LLM 추론(TTFT, 토큰 생성 속도) 구간별로 분해 계측하여 워터폴(Waterfall) 차트 및 병목 최적화 권고안을 제공하는 실측 진단 도구다. (As of 2026-09-10)
 
@@ -38,7 +38,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["프로파일러 실행 (diagnose.py / diagnose.py)"] --> B["네트워크 전송 계층 프로파일링 (DNS, TCP, TLS)"]
+    A["프로파일러 실행 (diagnose.py)"] --> B["네트워크 전송 계층 프로파일링 (DNS, TCP, TLS)"]
     B --> C["Model Armor 가드레일 인스펙션 실측"]
     C --> D["Vertex AI 첫 토큰 도달 시간 (TTFT) 실측"]
     D --> E["출력 스트리밍 완료 시간 및 토큰 속도 계측"]
@@ -63,32 +63,18 @@ flowchart TD
 
 ---
 
-## 4. 1분 퀵스타트
+## 4. 원클릭 실행법
 
-### 옵션 A: Google Cloud Shell에서 바로 실행
-
+### 가상 검증 실행 (--dry-run)
+실제 구글 클라우드 API 호출 없이 모의 가상 데이터를 이용해 스모크 테스트 및 워터폴 분석을 수행한다:
 ```bash
-# 저장소 클론 및 폴더 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/gemini-enterprise-latency-profiler
-
-# 모의 가상 데이터 기반 스모크 테스트 (--dry-run)
 python diagnose.py --dry-run
-
-# 실제 사내 프로젝트 대상 엔드포인트 실측
-python diagnose.py --project=example-corp --location=asia-northeast3 --model=gemini-2.5-flash
 ```
 
-### 옵션 B: 로컬 파이썬 가상 환경에서 실행
-
+### 실제 환경 진단
+사내 활성 프로젝트 및 대상 엔드포인트에 대해 실측 프로파일링을 수행한다:
 ```bash
-# 가상 환경 생성 및 의존성 설치
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# 프로파일러 실행
-python diagnose.py --dry-run
+python diagnose.py --project="your-project-id" --location="asia-northeast3" --model="gemini-2.5-flash"
 ```
 
 ---
@@ -158,7 +144,7 @@ HOP-05   | 보안 통제        |   621.9 ms (13.0%)   | [====                  
 
 ---
 
-## 7. 자원 정리 가이드
+## 8. 자원 정리 안내 (Teardown)
 
 본 도구는 지연 시간 측정용 단발성 API 호출만 수행하므로 영구 인프라 자원을 생성하지 않는다.
 테스트 과정에서 발급된 임시 인증 토큰은 세션 종료 시 자동으로 만료된다.

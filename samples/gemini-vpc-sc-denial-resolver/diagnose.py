@@ -123,6 +123,82 @@ def report_denials(denials: list[dict], project_id: str, days: int):
   print("=" * 72 + "\n")
 
 
+def build_markdown_report(denials: list[dict], project_id: str, days: int, is_dry_run: bool) -> str:
+  """진단 결과를 바탕으로 표준 마크다운 리포트를 구성한다."""
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실환경 진단 (Live)"
+  header_line = (
+      "[데모 실행] --dry-run 모드가 활성화되어 가상 VPC-SC 차단 리포트를 시뮬레이션한다.\n"
+      if is_dry_run
+      else "[스캔 완료] 실제 Cloud Logging 감사 로그 역추적 완료\n"
+  )
+
+  case_lines = []
+  if not denials:
+    case_lines.append(
+        "\n[성공] 지정한 기간 내 VPC-SC 경계 차단(Perimeter Denial) 로그가 발견되지 않았다. 안전하다!\n"
+    )
+  else:
+    case_lines.append(f"\n발견된 VPC-SC 경계 거부 사례: {len(denials)}건\n")
+    for idx, d in enumerate(denials, start=1):
+      case_lines.append(f"[거부 사례 #{idx}]")
+      case_lines.append(f"  - 호출 주체 계정: {d['principal']}")
+      case_lines.append(f"  - 대상 서비스   : {d['service']}")
+      case_lines.append(f"  - 호출 메서드   : {d['method']}")
+      case_lines.append(f"  - 거부 사유 코드: {d['reason']}")
+      case_lines.append(f"  - 고유 거부 ID  : {d['denial_id']}")
+      case_lines.append("  [권장 처방 및 복구 가이드]")
+      case_lines.append(f"    - 원인 분석 및 해결책: {get_prescription(d['reason'])}")
+      case_lines.append(
+          "    - VPC-SC 문제 해결사 콘솔 ( https://console.cloud.google.com/security/vpc-service-controls/troubleshooter )"
+      )
+      case_lines.append(
+          "    - 서비스 경계 관리 콘솔 ( https://console.cloud.google.com/security/vpc-service-controls )"
+      )
+      case_lines.append("-" * 72)
+
+  cases_text = "\n".join(case_lines)
+
+  return f"""# 진단 및 분석 리포트: gemini-vpc-sc-denial-resolver
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+{header_line}========================================================================
+[진단 결과] 제미나이(Gemini) VPC Service Controls 경계 차단 진단 리포트
+  - 대상 프로젝트: {project_id}
+  - 조회 기간: 최근 {days}일
+========================================================================
+{cases_text}
+========================================================================
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+
+
+def save_markdown_report(content: str, filepath: str = "report.md"):
+  """진단 리포트를 마크다운 파일로 저장한다."""
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  target_path = os.path.join(script_dir, filepath)
+  with open(target_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+
 def fetch_denials(project_id: str, days: int, limit: int) -> list[dict]:
   """gcloud logging read 명령으로 VPC-SC 감사 로그를 조회한다."""
   start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -201,12 +277,17 @@ def main():
   )
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
-
   if args.dry_run:
+    project_id = "sample-project-id"
     print("\n[데모 실행] --dry-run 모드가 활성화되어 가상 VPC-SC 차단 리포트를 시뮬레이션한다.")
-    report_denials(get_mock_denials(), project_id, args.days)
+    denials = get_mock_denials()
+    report_denials(denials, project_id, args.days)
+    md_content = build_markdown_report(denials, project_id, args.days, is_dry_run=True)
+    save_markdown_report(md_content)
+    print("[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
     return
+
+  project_id = args.project or get_default_project(is_dry_run=False)
 
   print("=" * 72)
   print("[스캔 시작] 제미나이 API VPC-SC 경계 차단 감사 로그 역추적")
@@ -222,6 +303,10 @@ def main():
   print("[자원 정리 안내 (Teardown Guide)]")
   print("본 도구는 순수 감사 로그 조회 도구이므로 별도의 자원 정리 작업이 필요하지 않다.")
   print("=" * 72 + "\n")
+
+  md_content = build_markdown_report(denials, project_id, args.days, is_dry_run=False)
+  save_markdown_report(md_content)
+  print("[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

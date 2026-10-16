@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 가드
+# 기술 상세 설계서 (TDD): 제미나이 엔터프라이즈(Gemini Enterprise) 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
 
 ## 1. 시스템 아키텍처 및 동작 원리
 본 도구는 파이썬 표준 CLI(`diagnose.py`) 단일 실행 아키텍처로 구성되며, 화면 출력과 함께 마크다운 리포트(`report.md`)를 자동 생성/덮어쓴다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.

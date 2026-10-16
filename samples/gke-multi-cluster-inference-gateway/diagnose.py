@@ -96,7 +96,9 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "example-ai-corp") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
+    if is_dry_run:
+        return "sample-project-id"
     try:
         res = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True)
         out = res.stdout.strip()
@@ -105,7 +107,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "example-
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
+    if not sys.stdin.isatty():
         return fallback_demo
 
     try:
@@ -364,14 +366,14 @@ def save_markdown_report(report_md: str, output_path: str = "report.md") -> None
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
-        print(f"[안내] 사내 공유 및 아키텍처 리뷰용 보고서가 생성(덮어쓰기)되었습니다: {output_path}")
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
     except Exception as e:
         print(f"[경고] report.md 파일 저장 중 예외 발생: {e}", file=sys.stderr)
 
 
 def main() -> None:
     args = parse_arguments()
-    project_id = args.project or ("example-ai-corp" if args.dry_run else get_default_project(args.dry_run))
+    project_id = "sample-project-id" if args.dry_run else (args.project or get_default_project(is_dry_run=False))
     url_map_name = args.url_map
 
     eval_data = evaluate_inference_gateway(project_id, url_map_name, args.dry_run)

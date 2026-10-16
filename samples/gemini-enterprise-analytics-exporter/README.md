@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
+# 제미나이 엔터프라이즈(Gemini Enterprise) 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
 
 전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 빅쿼리(BigQuery) 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다. (As of 2026-09-09)
 
@@ -72,7 +72,7 @@ python diagnose.py --dry-run
 ### 실제 환경 진단 및 회수 명단 추출
 30일 이상 미사용 계정을 기본 기준으로 진단한다.
 ```bash
-python diagnose.py --project="your-project-id"
+python diagnose.py --project="sample-project-id"
 ```
 
 미사용 유휴 판정 기준을 60일로 조정할 경우:
@@ -115,7 +115,7 @@ CLUSTER BY department, activity_tier;
 
 ---
 
-## 6. 자원 정리(Teardown) 안내
+## 6. 자원 정리 안내 (Teardown)
 본 도구는 기본적으로 읽기 전용 분석을 수행한다. 테스트 목적으로 생성한 BigQuery 데이터세트 및 테이블을 삭제하려면 다음 명령어를 실행한다:
 ```bash
 bq rm -r -f -d [PROJECT_ID]:gemini_analytics

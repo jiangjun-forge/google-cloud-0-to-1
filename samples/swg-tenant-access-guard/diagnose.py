@@ -220,6 +220,91 @@ def print_text_report(report: Dict[str, Any]) -> None:
     print("=" * 76 + "\n")
 
 
+def build_markdown_report(report: Dict[str, Any], is_dry_run: bool) -> str:
+    """터미널 진단 결과와 완벽히 동기화된 마크다운 리포트를 생성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 (Live)"
+    lines = [
+        "# 사내 관문 SWG 헤더 및 Context-Aware Access 인가 진단 리포트 (swg-tenant-access-guard)",
+        "",
+        f"- **진단 모드**: `{mode_str}`",
+        f"- **진단 대상 조직 ID**: `{report['org_id']}`",
+        f"- **사내 승인 허용 도메인**: `{report['allowed_domain']}`",
+        f"- **인가 관리자 보안 그룹**: `{report['group_email']}`",
+        f"- **종합 진단 상태**: `{report['overall_status']}`",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 항목별 세부 진단 결과",
+        "",
+        "| 번호 | 점검 카테고리 | 진단 상태 | 상세 내용 및 권장값 |",
+        "| :--- | :--- | :--- | :--- |",
+    ]
+    for idx, f in enumerate(report["findings"], 1):
+        status_md = f"**{f['status']}**" if f['status'] in ("WARNING", "NEEDS_REMEDIATION", "FAIL") else f['status']
+        detail_parts = [f['description']]
+        if "header" in f:
+            detail_parts.append(f"대상 헤더: `{f['header']}`")
+        if "expected_value" in f:
+            detail_parts.append(f"필요 권장값: `{f['expected_value']}`")
+        detail_str = "<br/>".join(detail_parts)
+        lines.append(f"| {idx} | `{f['category']}` | {status_md} | {detail_str} |")
+
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## 2. 사내 관문 프록시(SWG) 설정 가이드",
+        "",
+        "### 1. 개인 계정 및 외부 비인가 도메인 로그인 차단",
+        "```http",
+        f"X-GoogApps-Allowed-Domains: {report['allowed_domain']}",
+        "```",
+        "",
+        "### 2. 사내 승인 계정의 외부 타사 GCP 조직 우회 접근 방지 (Tenant Restriction)",
+        "```http",
+        f"X-Goog-Allowed-Resources: {report['expected_resource_header']}",
+        "```",
+        "- **참고**: 공식 `X-Goog-Allowed-Resources` 헤더를 사용해야 한다.",
+        f"- **페이로드 원문**: `{{\"resources\":[\"organizations/{report['org_id']}\"],\"options\":\"strict\"}}`",
+        "",
+        "---",
+        "",
+        "## 3. Context-Aware Access(CAA) 인가 정책 조치",
+        "",
+        "### 1. Access Context Manager 레벨 생성",
+        "```bash",
+        "gcloud access-context-manager levels create CorpDeviceOnly \\",
+        '  --title="사내 인가 단말기 전용" \\',
+        "  --basic-level-spec=device_policy.yaml",
+        "```",
+        "",
+        "### 2. Google Cloud 콘솔 및 생성형 AI 앱 접근 바인딩",
+        f"- **대상 그룹**: `{report['group_email']}`",
+        "- **적용 레벨**: `CorpDeviceOnly`",
+        "",
+        "---",
+        "",
+        "## 4. 자원 정리 안내 (Teardown)",
+        "테스트 목적으로 생성한 Access Context Manager 임시 정책이나 모의 레벨을 삭제하려면 다음 명령을 수행한다:",
+        "```bash",
+        "gcloud access-context-manager levels delete CorpDeviceOnly --policy=<POLICY_ID> --quiet",
+        "```",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """마크다운 리포트를 파일로 기록/덮어쓴다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"\n[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main() -> None:
     args = parse_arguments()
     org_id = detect_org_id(args.org_id, is_dry_run=args.dry_run)
@@ -235,6 +320,12 @@ def main() -> None:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         print_text_report(report)
+
+    # 마크다운 리포트 자동 생성 및 덮어쓰기 (스크립트 기준 디렉터리 경로 사용)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_file_path = os.path.join(script_dir, "report.md")
+    report_content = build_markdown_report(report, args.dry_run)
+    save_markdown_report(report_content, report_file_path)
 
 
 if __name__ == "__main__":

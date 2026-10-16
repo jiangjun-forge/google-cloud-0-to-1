@@ -50,6 +50,8 @@ def parse_args() -> argparse.Namespace:
 
 def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     """프로젝트 ID를 탐지하거나 대화형으로 선택한다."""
+    if is_dry_run:
+        return "sample-project-id"
     if cli_project:
         return cli_project
     env_proj = os.getenv("PROJECT_ID")
@@ -68,8 +70,8 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
-        return "demo-nct-compliance-project"
+    if not sys.stdin.isatty():
+        return "sample-project-id"
 
     try:
         res = subprocess.run(
@@ -95,7 +97,7 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    return "demo-nct-compliance-project"
+    return "sample-project-id"
 
 
 def get_mock_check_results(region: str) -> list[dict]:
@@ -361,55 +363,109 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
     return results
 
 
-def main() -> None:
-    """메인 실행 함수."""
-    args = parse_args()
-    project_id = detect_project_id(args.project, is_dry_run=args.dry_run)
-    region = args.region
+def build_report_text(project_id: str, region: str, is_dry_run: bool, results: list) -> str:
+    """진단 리포트 문자열을 생성한다."""
+    mode_label = "가상 실행 (Dry-run)" if is_dry_run else "실제 환경 (Live)"
+    lines = []
+    lines.append("=" * 85)
+    lines.append("국가 핵심 기술(NCT) 대상 생성형 AI 보안 통제 및 데이터 주권 진단 도구")
+    lines.append(f"진단 모드: {mode_label}")
+    lines.append(f"대상 프로젝트: {project_id}")
+    lines.append(f"지정 리전: {region} (대한민국 서울 리전)")
+    lines.append("=" * 85)
+    lines.append("")
 
-    mode_label = "가상 실행 (Dry-run)" if args.dry_run else "실제 환경 (Live)"
-    print("=" * 85, flush=True)
-    print("국가 핵심 기술(NCT) 대상 생성형 AI 보안 통제 및 데이터 주권 진단 도구", flush=True)
-    print(f"진단 모드: {mode_label}", flush=True)
-    print(f"대상 프로젝트: {project_id}", flush=True)
-    print(f"지정 리전: {region} (대한민국 서울 리전)", flush=True)
-    print("=" * 85, flush=True)
-    print(flush=True)
-
-    if args.dry_run:
-        print("[*] 가상 모의 감사 데이터를 로드하고 점검 항목을 시뮬레이션한다...\n", flush=True)
-        results = get_mock_check_results(region)
-    else:
-        results = inspect_live_environment(project_id, region)
+    if is_dry_run:
+        lines.append("[*] 가상 모의 감사 데이터를 로드하고 점검 항목을 시뮬레이션한다...\n")
 
     pass_count = sum(1 for r in results if r["status"] == "PASS")
     fail_count = sum(1 for r in results if r["status"] == "FAIL")
 
-    print("\n[항목별 기술적 보안 통제 준수 현황]")
-    print("-" * 85)
-    print(f"{'구분':<18} {'보안 통제 항목':<32} {'상태':<8} {'현재 상태'}")
-    print("-" * 85)
+    lines.append("[항목별 기술적 보안 통제 준수 현황]")
+    lines.append("-" * 85)
+    lines.append(f"{'구분':<18} {'보안 통제 항목':<32} {'상태':<8} {'현재 상태'}")
+    lines.append("-" * 85)
     for r in results:
-        print(f"{r['category']:<18} {r['control']:<32} {r['status']:<8} {r['current_state']}")
-    print("-" * 85)
+        lines.append(f"{r['category']:<18} {r['control']:<32} {r['status']:<8} {r['current_state']}")
+    lines.append("-" * 85)
 
-    print(f"\n[진단 종합 점수: 총 {len(results)}개 항목 중 PASS {pass_count}건, FAIL {fail_count}건]")
+    lines.append(f"\n[진단 종합 점수: 총 {len(results)}개 항목 중 PASS {pass_count}건, FAIL {fail_count}건]")
 
     if fail_count > 0:
-        print("\n[미준수 항목 긴급 조치 가이드]")
+        lines.append("\n[미준수 항목 긴급 조치 가이드]")
         for idx, r in enumerate([item for item in results if item["status"] == "FAIL"], 1):
-            print(f"{idx}. {r['control']}")
-            print(f"   - 조치 방향: {r['remediation']}")
+            lines.append(f"{idx}. {r['control']}")
+            lines.append(f"   - 조치 방향: {r['remediation']}")
 
-    print("\n[표준 보안 처방 CLI 명령어]")
-    print(f"1. 서울 리전 Data Boundary 조직 정책 강제:")
-    print(f"   gcloud resource-manager org-policies enable-enforce constraints/gcp.resourceLocations --project={project_id}")
-    print(f"2. RAG 벡터 데이터 저장 차단 Deny Policy 배포:")
-    print(f"   gcloud iam deny-policies create nct-rag-deny --attachment-point=cloudresourcemanager.googleapis.com/projects/{project_id} --file=deny-rules.json")
-    print(f"3. 서울 리전 Cloud KMS CMEK 키 생성:")
-    print(f"   gcloud kms keyrings create nct-keyring --location={region} --project={project_id}")
-    print(f"   gcloud kms keys create nct-cmek-key --keyring=nct-keyring --location={region} --purpose=encryption --project={project_id}")
-    print("=" * 85)
+    lines.append("\n[표준 보안 처방 CLI 명령어]")
+    lines.append("1. 서울 리전 Data Boundary 조직 정책 강제:")
+    lines.append(f"   gcloud resource-manager org-policies enable-enforce constraints/gcp.resourceLocations --project={project_id}")
+    lines.append("2. RAG 벡터 데이터 저장 차단 Deny Policy 배포:")
+    lines.append(f"   gcloud iam deny-policies create nct-rag-deny --attachment-point=cloudresourcemanager.googleapis.com/projects/{project_id} --file=deny-rules.json")
+    lines.append("3. 서울 리전 Cloud KMS CMEK 키 생성:")
+    lines.append(f"   gcloud kms keyrings create nct-keyring --location={region} --project={project_id}")
+    lines.append(f"   gcloud kms keys create nct-cmek-key --keyring=nct-keyring --location={region} --purpose=encryption --project={project_id}")
+    lines.append("=" * 85)
+
+    return "\n".join(lines)
+
+
+def build_markdown_report(report_text: str, project_id: str, is_dry_run: bool) -> str:
+    """마크다운 리포트(report.md) 내용을 생성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 점검 (Live)"
+    return f"""# 진단 및 분석 리포트: korea-nct-compliance-checker
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+{report_text}
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+
+
+def save_markdown_report(content: str, filepath: str = "report.md"):
+    """마크다운 리포트를 지정된 경로에 저장한다."""
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+    except Exception as e:
+        print(f"[경고] 리포트 파일({filepath}) 저장 실패: {e}")
+
+
+def main() -> None:
+    """메인 실행 함수."""
+    args = parse_args()
+    project_id = "sample-project-id" if args.dry_run else detect_project_id(args.project, is_dry_run=args.dry_run)
+    region = args.region
+
+    if args.dry_run:
+        results = get_mock_check_results(region)
+    else:
+        results = inspect_live_environment(project_id, region)
+
+    report_text = build_report_text(project_id, region, args.dry_run, results)
+    print(report_text)
+
+    report_md = build_markdown_report(report_text, project_id, args.dry_run)
+    save_markdown_report(report_md)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

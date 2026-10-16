@@ -60,6 +60,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
+    if is_dry_run:
+        return "sample-project-id"
     if cli_project:
         return cli_project
     env_proj = os.getenv("PROJECT_ID") or os.getenv("GCP_PROJECT_ID")
@@ -76,8 +78,8 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
-        return "sample-reservation-project"
+    if not sys.stdin.isatty():
+        return "sample-project-id"
 
     try:
         res = subprocess.run(
@@ -102,7 +104,7 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    return "sample-reservation-project"
+    return "sample-project-id"
 
 
 def get_mock_diagnosis_data(project_id: str, region: str) -> Dict[str, Any]:
@@ -414,7 +416,7 @@ def save_markdown_report(report_md: str, output_path: str = "report.md") -> None
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
-        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었습니다: {output_path}")
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
     except Exception as e:
         print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
 

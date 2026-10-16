@@ -1,4 +1,4 @@
-# 진단 및 분석 리포트: korea-fsi-regulatory-perimeter-guard
+# 진단 및 분석 리포트: korea-regulatory-perimeter-guard
 
 - **생성 모드**: 모의 실행 (Dry-run)
 - **대상 프로젝트**: `sample-project-id`
@@ -11,14 +11,14 @@
 ```text
 ========================================================================================
  혁신 금융 서비스(FSI) 규제 준수 보안 경계 진단 도구
- 대상 프로젝트: example-fsi-corp | 점검 리전: asia-northeast3 | 실행 모드: 가상 진단 (Dry-Run)
+ 대상 프로젝트: sample-project-id | 점검 리전: asia-northeast3 | 실행 모드: 가상 진단 (Dry-Run)
 ========================================================================================
 
 [*] 가상 모의 감사 데이터를 로드하고 점검 항목을 시뮬레이션한다...
 
 ========================================================================================
  혁신 금융 서비스(FSI) 규제 준수 보안 경계 진단 리포트
- 대상 프로젝트: example-fsi-corp | 점검 리전: asia-northeast3 | 실행 모드: 가상 진단 (Dry-Run)
+ 대상 프로젝트: sample-project-id | 점검 리전: asia-northeast3 | 실행 모드: 가상 진단 (Dry-Run)
 ========================================================================================
 
 진단 요약: 총 9개 규제 항목 중 충족 4건, 주의 2건, 미달 3건
@@ -36,10 +36,10 @@ FR-02        | 논리적 망 분리       | [WARN] | VPC-SC 내부 실시간 웹
 FR-03        | 데이터 보호         | [FAIL] | Cloud Storage 불변 보존(Retention Policy / Bucket Lock) 5년 충족 여부 (법 제22조)
   - 현재 상태: 지정 버킷에 보존 정책 미설정 (retention_period: 0s)
   - 규제 요건: 전자금융거래법 제22조 및 전자금융감독규정 제63조에 따라 감사 로그 및 AI 입출력 저장 버킷은 최소 5년(157,680,000초) 보존 및 잠금(Bucket Lock) 필수
-  - 조치 권고: gcloud storage buckets update gs://example-fsi-corp-audit-logs --retention-period=157680000s && gcloud storage buckets lock gs://example-fsi-corp-audit-logs
+  - 조치 권고: gcloud storage buckets update gs://sample-project-id-audit-logs --retention-period=157680000s && gcloud storage buckets lock gs://sample-project-id-audit-logs
 
 FR-04        | 데이터 보호         | [PASS] | 고객 관리 암호화 키(CMEK) 전면 적용 여부 (감독규정 제14조)
-  - 현재 상태: Cloud KMS 키(projects/example-fsi-corp/locations/asia-northeast3/keyRings/fsi-ring/cryptoKeys/cmek-key) 정상 바인딩 확인
+  - 현재 상태: Cloud KMS 키(projects/sample-project-id/locations/asia-northeast3/keyRings/fsi-ring/cryptoKeys/cmek-key) 정상 바인딩 확인
 
 FR-05        | 감사 추적          | [FAIL] | 데이터 접근 감사 로그(DATA_READ, DATA_WRITE) 활성화 여부 (법 제22조)
   - 현재 상태: aiplatform.googleapis.com 데이터 접근 로그 미설정 (ADMIN_READ 만 활성화됨)
@@ -57,7 +57,7 @@ FR-07        | AI 모델 거버넌스     | [WARN] | Sensitive Data Protection (
 FR-08        | 접근 통제          | [FAIL] | 서비스 계정 키(SA Key) 발급 차단 및 WIF 강제 (감독규정 제13조)
   - 현재 상태: 조직 정책 iam.disableServiceAccountKeyCreation 미적용 (로컬 JSON 키 발급 가능 위험)
   - 규제 요건: 전자금융감독규정 제13조에 따라 단말기 및 전산 시스템 접근 자격 증명의 유출을 방지하기 위해 정적 서비스 계정 키 생성을 차단하고 Workload Identity Federation(WIF) 필수 적용
-  - 조치 권고: gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project=example-fsi-corp
+  - 조치 권고: gcloud resource-manager org-policies enable-enforce constraints/iam.disableServiceAccountKeyCreation --project=sample-project-id
 
 FR-09        | 전송 보안          | [PASS] | 전송 구간 고강도 암호화(TLS 1.2+ 강제) 통제 (감독규정 제14조)
   - 현재 상태: SSL 정책(fsi-tls-policy)을 통해 TLS 1.0, 1.1 차단 및 TLS 1.2+ 고강도 암호화 스위트 적용 확인

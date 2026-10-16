@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드
 
-빅쿼리(BigQuery) Data Agent(Gemini in BigQuery, 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, Dataplex 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다. (As of 2026-09-10)
+빅쿼리(BigQuery) Data Agent(제미나이 인 빅쿼리(Gemini in BigQuery), 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, 데이터플렉스(Dataplex) 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다. (As of 2026-09-10)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#Accuracy`, `#GenAI`, `#Governance`, `#Performance`  
@@ -40,7 +40,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (diagnose.py / diagnose.py)"] --> B["1. BigQuery 스키마 및 테이블/컬럼 설명 조회"]
+    A["진단 시작 (python diagnose.py)"] --> B["1. BigQuery 스키마 및 테이블/컬럼 설명 조회"]
     B --> C["2. Dataplex 데이터 프로파일 통계 수집 여부 점검"]
     C --> D["3. Knowledge Catalog 비즈니스 용어집(Glossary) 연동 확인"]
     D --> E["4. Data Agent NL2SQL 준비도 점수 산출 (0~100점)"]

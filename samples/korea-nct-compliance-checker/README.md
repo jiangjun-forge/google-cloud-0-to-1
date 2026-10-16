@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기
+# 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기 (korea-nct-compliance-checker)
 
 대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 AI 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 효과적으로 예방하는 진단 도구다. (As of 2026-09-10)
 
@@ -43,8 +43,8 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 진단 및 해결 흐름
 
 ```mermaid
-graph TD
-    A["진단 시작 (diagnose.py / diagnose.py)"] --> B["1. 서울 리전 Data Boundary 조직 정책 점검 (법 제11조)"]
+flowchart TD
+    A["진단 시작 (diagnose.py)"] --> B["1. 서울 리전 Data Boundary 조직 정책 점검 (법 제11조)"]
     B --> C["2. RAG 벡터 인덱스 사외 적재 차단 IAM Deny 검사 (법 제10조)"]
     C --> D["3. Cloud KMS CMEK 이중 암호화 상태 조회 (안내서 암호화 의무)"]
     D --> E["4. Vertex AI 서울 리전 엔드포인트 격리 검증 (안내서 국내 위치)"]
@@ -64,11 +64,11 @@ graph TD
 
 | 서비스 | 필요 역할(Role) | 최소 IAM 권한 | 필요 사유 |
 | :--- | :--- | :--- | :--- |
-| `Access Approval` | `roles/accessapproval.viewer` | `accessapproval.settings.get` | CSP 임의 접근 사전 승인 설정 조회 |
-| `Cloud IAM` | `roles/iam.securityReviewer` | `iam.denyPolicies.get`, `iam.denyPolicies.list` | RAG 벡터 저장 차단 IAM Deny 확인 (법 제10조) |
-| `Cloud KMS` | `roles/cloudkms.viewer` | `cloudkms.keyRings.list`, `cloudkms.cryptoKeys.list` | 서울 리전 CMEK 이중 암호화 키링 상태 조회 (안내서 기준) |
-| `Logging` | `roles/logging.viewer` | `logging.views.access` | Cloud Audit Logs 데이터 접근 감사 로깅 조회 (법 제10조) |
-| `Resource Manager` | `roles/orgpolicy.policyViewer` | `orgpolicy.policies.list`, `orgpolicy.constraints.list` | 리소스 위치 및 외부 도메인 차단 조직 정책 조회 (법 제11조) |
+| `Access Approval` | `Access Approval 뷰어(roles/accessapproval.viewer)` | `accessapproval.settings.get` | CSP 임의 접근 사전 승인 설정 조회 |
+| `Cloud IAM` | `보안 검토자(roles/iam.securityReviewer)` | `iam.denyPolicies.get`, `iam.denyPolicies.list` | RAG 벡터 저장 차단 IAM Deny 확인 (법 제10조) |
+| `Cloud KMS` | `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.keyRings.list`, `cloudkms.cryptoKeys.list` | 서울 리전 CMEK 이중 암호화 키링 상태 조회 (안내서 기준) |
+| `Logging` | `클라우드 로깅 뷰어(roles/logging.viewer)` | `logging.views.access` | Cloud Audit Logs 데이터 접근 감사 로깅 조회 (법 제10조) |
+| `Resource Manager` | `조직 정책 뷰어(roles/orgpolicy.policyViewer)` | `orgpolicy.policies.list`, `orgpolicy.constraints.list` | 리소스 위치 및 외부 도메인 차단 조직 정책 조회 (법 제11조) |
 
 ---
 
@@ -81,7 +81,7 @@ graph TD
 ```bash
 # 저장소 클론 및 이동
 git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/korea-nct-gen-ai-compliance-checker
+cd google-cloud-0-to-1/samples/korea-nct-compliance-checker
 
 # 모의 실행
 python diagnose.py --dry-run
@@ -149,7 +149,7 @@ FR-07 | 제공자 임의 접근 사전 승인  | PASS | Access Approval 정상 �
 
 ---
 
-## 7. 자원 정리 (Teardown) 가이드
+## 자원 정리 안내 (Teardown)
 
 본 진단 도구는 환경 설정을 조회하는 읽기 전용 스크립트이므로 별도의 클라우드 리소스를 생성하지 않는다. 테스트용으로 생성한 Cloud KMS 키링이나 IAM Deny 정책은 아래 명령어로 삭제하거나 폐기한다:
 

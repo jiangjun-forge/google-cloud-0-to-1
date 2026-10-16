@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 가드
+# 제미나이 엔터프라이즈(Gemini Enterprise) 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
 
-Gemini Enterprise 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(Cloud Billing)으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방하는 종합 비용 가드레일 도구다. (As of 2026-09-22)
+제미나이 엔터프라이즈 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(클라우드 빌링(Cloud Billing))으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방하는 종합 비용 가드레일 도구다. (As of 2026-09-22)
 
 **Audience**: `#Architect`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`, `#Resilience`  
@@ -66,13 +66,13 @@ flowchart TD
 
 ## 4. 원클릭 실행 및 검증
 
-### (1) 가상 모의 진단 (`--dry-run`) - 예습
+### 가상 검증 실행 (--dry-run)
 실제 클라우드 호출 없이 4대 가드레일 상태 및 에디션별 오버리지 위험 판정을 시뮬레이션한다. 실행 시 `report.md` 파일이 자동 생성된다:
 ```bash
 python diagnose.py --dry-run
 ```
 
-### (2) 운영 환경 실측 진단 - 실습 및 복습
+### 실제 환경 진단
 환경 변수 또는 CLI 인자를 지정하여 사내 환경의 결제 거버넌스를 점검한다. 진단 결과는 `report.md`에 자동으로 덮어써진다:
 ```bash
 python diagnose.py --project-id=example-corp-ai --billing-account-id=012345-6789AB-CDEF01 --spend-cap-usd=1000 --alert-threshold=80
@@ -101,13 +101,13 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 ### 4단계: 계열사 IT 관리자 결제 권한(Billing RBAC) 회수 및 거버넌스 확립
 - 계열사 관리자에게 최고 관리자(Super Admin) 권한 부여를 엄격히 금지한다.
 - Cloud Identity 관리자 콘솔에서 계열사 조직 단위(OU)에 한정된 맞춤 역할(사용자/그룹 관리)만 부여한다.
-- Google Cloud 콘솔에서 `roles/billing.admin` 및 `roles/billing.user` 권한을 회수하고, 사전 프로비저닝된 프로젝트 내 `roles/viewer`만 선별 부여한다.
+- 구글 클라우드 콘솔에서 `roles/billing.admin` 및 `roles/billing.user` 권한을 회수하고, 사전 프로비저닝된 프로젝트 내 `roles/viewer`만 선별 부여한다.
 
 ### 차단 정책 적용 후 기존 업무 영향도 평가
 - **Gemini Enterprise 웹 앱 (Chat / Search)**: 영향 없음 (자체 관리형 테넌트 및 버텍스 AI(Vertex AI) 엔드포인트를 사용하므로 정상 동작)
 - **NotebookLM Enterprise**: 영향 없음 (Enterprise 테넌트 격리 영역 내 구동)
 - **Antigravity (Google OAuth 로그인)**: 영향 없음 (사용자 라이선스 기반 인증)
-- **Antigravity (GCP Project 종량제 모드)**: 차단됨 (의도된 통제 목적에 정확히 부합)
+- **Antigravity (구글 클라우드 프로젝트 종량제 모드)**: 차단됨 (의도된 통제 목적에 정확히 부합)
 
 ### 공식 가이드 및 콘솔 링크
 - Gemini Enterprise 오버리지 빌링 공식 가이드 ( https://docs.cloud.google.com/gemini/enterprise/docs/overages )
@@ -116,7 +116,7 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 
 ---
 
-## 6. 리소스 정리 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 
 본 도구는 순수 진단 및 모니터링 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다.
 테스트 목적으로 생성한 Cloud Billing 임시 예산(Budgets)을 삭제하려면 결제 콘솔의 예산 목록에서 해당 항목을 삭제한다.

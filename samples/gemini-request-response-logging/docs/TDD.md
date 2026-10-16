@@ -13,7 +13,7 @@ All contents, designs, and code examples are subject to change, modification, or
 # 기술 상세 설계서 (TDD): 제미나이(Gemini) API 요청 및 응답 BigQuery 자동 로깅 (`gemini-request-response-logging`)
 
 ## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 파이썬 표준 CLI(`diagnose.py`)와 원클릭 배시 실행 래퍼(`diagnose.py`)를 결합한 투트랙(Two-track) 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+본 도구는 순수 파이썬 단일 실행 기반(`diagnose.py`)의 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
 
 ---
 
@@ -24,7 +24,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **FR-01** | **BR-01** | **계층형 환경 설정 및 리소스 자동 탐지** | CLI 인자(`--dataset, --demo, --dry-run, --location, --model, --project, --skip-inference`) > `.env` > `gcloud config` 활성 설정 > 대화형 번호 선택기 순으로 프로젝트 및 대상 리소스를 자동 확정한다. |
 | **FR-02** | **BR-02** | **핵심 운영 지표 및 설정 상태 정밀 진단** | 대상 GCP 리소스의 메타데이터, 정책, 할당량 또는 로그 지표를 수집하여 정상(`PASS`), 주의(`WARN`), 위험(`FAIL`) 등급을 산출한다. |
 | **FR-03** | **BR-03** | **가상 실행(`--dry-run`) 스모크 테스트 모드** | `--dry-run` 플래그 입력 시 외부 GCP API 호출을 우회하고 내장된 표준 시뮬레이션 데이터를 기반으로 전체 진단 리포트를 1초 내에 출력한다. |
-| **FR-04** | **BR-04** | **직관적 콘솔 조치 가이드 및 리소스 정리 안내** | 진단 결과 하단에 Google Cloud 콘솔 조치 URL(Bare URL 표준)과 CLI 복구 명령어를 출력하여 즉각적인 후속 조치를 지원한다. |
+| **FR-04** | **BR-04** | **직관적 콘솔 조치 가이드 및 리포트 자동 생성** | 진단 결과 하단에 Google Cloud 콘솔 조치 URL(Bare URL 표준)과 CLI 복구 명령어를 출력하고 복습용 리포트(`report.md`)를 자동으로 생성 및 갱신한다. |
 
 ---
 

@@ -13,7 +13,7 @@
 Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방 리포트
 진단 모드: 가상 실행 (Dry-run)
 대상 프로젝트: sample-project-id
-암호화 키 경로: projects/demo-kms-project/locations/asia-northeast3/keyRings/prod-keyring/cryptoKeys/customer-data-key
+암호화 키 경로: projects/sample-project-id/locations/asia-northeast3/keyRings/prod-keyring/cryptoKeys/customer-data-key
 현재 주 버전(Primary): 버전 3
 자동 순환 주기: 90일 (7,776,000초)
 ================================================================================

@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단
+# 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단 (swg-tenant-access-guard)
 
 금융권 및 엔터프라이즈 환경에서 사내 관문 프록시(SWG)의 테넌트 제한 HTTP 헤더 주입 상태와 Context-Aware Access(CAA) 인가 단말기 접근 통제 정책을 종합 진단하여, 금융보안원 생성형 AI 보안대책 이행서 준수 및 외부 비인가 조직으로의 데이터 유출을 효과적으로 방어한다. (As of 2026-09-09)
 
@@ -54,8 +54,10 @@ flowchart TD
 
 본 도구를 실행하고 관련 정책을 조회 및 배포하기 위해 다음 역할이 필요하다:
 
-- `roles/accesscontextmanager.policyReader` (또는 `roles/accesscontextmanager.policyAdmin`): Context-Aware Access 레벨 및 정책 조회/관리
-- `roles/resourcemanager.organizationViewer`: 조직 리소스 및 계층 구조 확인
+| 역할 (Role) | 설명 |
+| :--- | :--- |
+| 액세스 컨텍스트 관리자 정책 독자(`roles/accesscontextmanager.policyReader`) | Context-Aware Access 레벨 및 정책 조회/관리 |
+| 조직 뷰어(`roles/resourcemanager.organizationViewer`) | 조직 리소스 및 계층 구조 확인 |
 - 사내 관문 프록시(SWG, Forward Proxy) 설정 권한: 헤더 주입 룰 작성 및 배포
 
 ---
@@ -102,7 +104,7 @@ python diagnose.py --org-id 123456789012 --domain example-corp.com --group-email
 
 ---
 
-## 6. 리소스 정리 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 
 테스트 목적으로 생성한 Access Context Manager 임시 정책이나 모의 레벨을 삭제하려면 다음 명령을 수행한다:
 ```bash

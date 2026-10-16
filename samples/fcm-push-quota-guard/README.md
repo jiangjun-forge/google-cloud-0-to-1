@@ -57,7 +57,7 @@ flowchart TD
 본 도구를 실행하고 할당량 및 모니터링 지표를 진단하기 위해 다음 권한이 필요하다:
 
 - `roles/serviceusage.serviceUsageViewer`: FCM API 할당량 및 제한 수치 조회
-- `roles/monitoring.viewer`: Cloud Monitoring 다운스트림 메시지 전송량 및 429 에러율 지표 조회
+- `roles/monitoring.viewer`: 클라우드 모니터링(Cloud Monitoring) 다운스트림 메시지 전송량 및 429 에러율 지표 조회
 - `roles/serviceusage.quotaAdmin`: (선택) 콘솔에서 할당량 상향 요청 승인 및 관리
 
 ---
@@ -73,7 +73,7 @@ python diagnose.py --dry-run
 ### (2) 운영 환경 진단
 환경 변수 또는 CLI 인자를 지정하여 실행한다:
 ```bash
-python diagnose.py --project-id demo-project --peak-msg-per-min 750000 --quota-limit-per-min 600000
+python diagnose.py --project-id sample-project-id --peak-msg-per-min 750000 --quota-limit-per-min 600000
 ```
 
 ---
@@ -81,7 +81,7 @@ python diagnose.py --project-id demo-project --peak-msg-per-min 750000 --quota-l
 ## 5. 단계별 조치 가이드
 
 ### 1단계: Google Cloud 콘솔 할당량 상향(Quota Increase) 신청
-1. 구글 클라우드 콘솔의 **IAM 및 관리자 > 할당량 및 시스템 한도** 메뉴로 이동한다.
+1. 구글 클라우드 콘솔(Google Cloud Console)의 **IAM 및 관리자 > 할당량 및 시스템 한도** 메뉴로 이동한다.
 2. 서비스 필터에서 `Firebase Cloud Messaging API`를 선택한다.
 3. 지표 `Downstream messages per minute`를 선택하고 **할당량 수정**을 클릭한다.
 4. 비즈니스 정당성(대규모 프로모션 일정, 예상 동시 발송량)과 함께 최소 피크 대비 1.5배의 수치를 입력하여 상향을 요청한다.
@@ -116,7 +116,7 @@ def exponential_backoff_retry(attempt, base=1.0, max_backoff=32.0):
 
 ---
 
-## 6. 리소스 정리 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 
 본 도구는 순수 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다.
 상향된 FCM 할당량은 별도 비용이 발생하지 않으며, 이벤트 종료 후 필요 시 콘솔에서 기본값으로 다시 하향 조정할 수 있다.

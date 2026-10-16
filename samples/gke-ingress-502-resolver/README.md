@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기
+# GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기 (`gke-ingress-502-resolver`)
 
 GKE 클러스터의 파드가 정상 기동 중임에도 외부 또는 내부 HTTP(S) 로드 밸런서에서 간헐적 또는 전면적으로 반환되는 502 Bad Gateway 오류의 4대 원인(헬스 체크 방화벽 차단, 프로브 경로 불일치, NEG Pod Readiness Gate 미충족, Keepalive 타임아웃 역전)을 1분 만에 교차 진단하고 복구 YAML 및 방화벽 명령을 도출하는 도구다. (As of 2026-09-10)
 
@@ -37,7 +37,7 @@ GKE 클러스터의 파드가 정상 기동 중임에도 외부 또는 내부 HT
 ## 2. 진단 및 해결 흐름
 
 ```mermaid
-graph TD
+flowchart TD
     A["GKE 클러스터 및 Ingress 리소스 수집"] --> B["GCP 헬스 체크 방화벽 규칙 검증"]
     B --> C["컨테이너 Readiness vs GCP HealthCheck 경로 비교"]
     C --> D["NEG 및 Pod Readiness Gate 주입 상태 확인"]
@@ -56,8 +56,8 @@ graph TD
 
 | 서비스 | 필요 역할 (Role) | 최소 IAM 권한 |
 | :--- | :--- | :--- |
-| `Google Kubernetes Engine` | `roles/container.viewer` | `container.clusters.get`, `container.clusters.list` |
-| `Compute Engine` | `roles/compute.networkViewer` | `compute.firewalls.list`, `compute.backendServices.get` |
+| `구글 쿠버네티스 엔진(GKE)` | `roles/container.viewer` | `container.clusters.get`, `container.clusters.list` |
+| `컴퓨트 엔진(Compute Engine)` | `roles/compute.networkViewer` | `compute.firewalls.list`, `compute.backendServices.get` |
 
 ---
 
@@ -165,7 +165,7 @@ kubectl annotate service [SERVICE_NAME] \
 
 ---
 
-## 7. 리소스 정리 (Teardown) 안내
+## 7. 자원 정리 안내 (Teardown)
 
 본 진단 도구는 읽기 전용(Read-Only) 명령어로 작동하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 로컬 임시 설정 파일만 정리하면 된다:
 ```bash

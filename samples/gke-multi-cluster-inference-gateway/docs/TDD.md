@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): Multi-Cluster GKE Inference Gateway 라우팅 진단기
+# 기술 상세 설계서 (TDD): Multi-Cluster GKE Inference Gateway 라우팅 진단기 (`gke-multi-cluster-inference-gateway`)
 
 ## 1. 아키텍처 개요 및 설계 원칙
 본 도구는 복수 리전 및 이종 클라우드에 분산된 GKE 및 GPU 인퍼런스 클러스터 진입 트래픽 제어 평면을 감사하고, 다계층 서비스 메시(As-Is)에서 구글 글로벌 L7 로드 밸런서(To-Be: Global ALB + Hybrid/Internet NEG) 플랫 직결 구조로 전환할 수 있도록 진단과 최적화 정책 생성을 수행하는 순수 파이썬 단일 실행 도구(`diagnose.py`)다.

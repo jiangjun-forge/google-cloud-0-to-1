@@ -282,7 +282,7 @@ def build_markdown_report(
 
     mode_str = "모의 실행 (Dry-run)" if dry_run else "사내 실측 진단"
 
-    report = f"""# Google Cloud LRO 비동기 폴링 쿼터 진단 리포트
+    report = f"""# Google Cloud LRO 비동기 폴링 쿼터 진단 리포트 (lro-polling-quota-guard)
 
 - **진단 일시**: (실행 결과 자동 생성)
 - **대상 서비스**: {svc['name']} (`{svc['api_name']}`)
@@ -354,7 +354,7 @@ def save_markdown_report(report_md: str, output_path: str = "report.md") -> None
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
-        print(f"\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었습니다: {output_path}")
+        print(f"\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
     except Exception as e:
         print(f"\n[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
 
@@ -370,9 +370,11 @@ def main() -> None:
     render_assessment_table(res)
     render_rca_and_prescription(res, reported_project, args.location)
 
-    # 마크다운 리포트 자동 생성 및 덮어쓰기
+    # 마크다운 리포트 자동 생성 및 덮어쓰기 (스크립트 기준 디렉터리 경로 사용)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_file_path = os.path.join(script_dir, "report.md")
     report_content = build_markdown_report(res, reported_project, args.location, args.dry_run)
-    save_markdown_report(report_content, "report.md")
+    save_markdown_report(report_content, report_file_path)
 
 
 if __name__ == "__main__":

@@ -10,8 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD: Technical Design Document)
-## 프로젝트명: Korea FSI Regulatory Perimeter Guard for Gen AI
+# 기술 상세 설계서 (TDD: Technical Design Document): 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드 (korea-regulatory-perimeter-guard)
 
 ---
 
@@ -21,7 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 대한민국 금융권의 엄격한 클라우드 보안 컴플라이언스(전자금융거래법, 전자금융감독규정, 신용정보법)를 Google Cloud 환경에서 자동 검증하기 위한 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **투트랙(Two-track) 실행 모델**: CLI 기반 핵심 파이썬 스크립트(`diagnose.py`)와 Cloud Shell 실행 래퍼(`diagnose.py`)의 결합.
+1. **순수 파이썬 단일 실행 모델**: CLI 기반 핵심 파이썬 스크립트(`diagnose.py`)를 통해 상위 폴더 의존성 없이 단일 명령 실행을 지원한다.
 2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 모든 GCP 리소스에 대해 `describe`, `list`, `get` 조회 명령만 수행하여 운영 환경에 영향을 주지 않고 안전함.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증이나 IAM 권한이 없는 환경에서도 결정론적(Deterministic) 모의 진단 데이터를 반환하여 빠른 데모 및 검증 보장.
 4. **선언적 처방(Prescriptive Remediation)**: 결격 항목(FAIL/WARN) 식별 시 관리자가 즉시 복구할 수 있는 표준 `gcloud` CLI 명령어를 1:1 매핑하여 출력.
@@ -34,7 +33,6 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
         User["사용자 / 아키텍트 / 감사관"]
-        RunSh["diagnose.py (환경 감지 & 가상 환경 설정)"]
         DiagnosePy["diagnose.py (진단 메인 컨트롤러)"]
     end
 
@@ -56,8 +54,7 @@ flowchart TD
         DLP["Cloud DLP / SDP API (가명 처리 템플릿)"]
     end
 
-    User -->|명령 실행| RunSh
-    RunSh --> DiagnosePy
+    User -->|명령 실행 (python diagnose.py)| DiagnosePy
     DiagnosePy --> ArgParser
     ArgParser -->|dry-run 플래그| MockProvider
     ArgParser -->|실제 프로젝트| LiveScanner
@@ -94,6 +91,7 @@ flowchart TD
 - 9개 항목의 상태를 `[PASS]`, `[WARN]`, `[FAIL]`로 분류.
 - 총 통제 항목 수 대비 충족, 주의, 미달 건수 요약 통계 집계.
 - 결격 항목 발생 시 `규제 요건` 및 `조치 권고`를 2줄 들여쓰기로 명확히 시각화.
+- 진단 완료 시 사내 공유 및 복습용 마크다운 리포트(`report.md`)를 자동 생성(덮어쓰기).
 - 미달 항목(`FAIL`) 존재 시 프로세스 종료 코드 `1`을 반환하여 CI/CD 파이프라인 연동 지원.
 
 ---

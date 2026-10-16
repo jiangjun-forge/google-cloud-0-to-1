@@ -337,22 +337,131 @@ def print_report(project_id: str, region: str, is_dry_run: bool, services: List[
     print("=" * 80)
 
 
+def build_markdown_report(
+    project_id: str, region: str, is_dry_run: bool, services: List[Dict[str, Any]]
+) -> str:
+    """진단 결과를 표준 마크다운 리포트로 구성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "사내 실측 진단"
+
+    lines = [
+        "# 진단 및 분석 리포트: cloud-run-direct-vpc-egress-checker",
+        "",
+        f"- **생성 모드**: {mode_str}",
+        f"- **대상 프로젝트**: `{project_id}`",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 진단 실행 콘솔 출력 결과",
+        "",
+        "```text",
+        "=" * 80,
+        "Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단 리포트",
+        f"진단 모드: {mode_str}",
+        f"대상 프로젝트: {project_id}",
+        f"대상 리전: {region}",
+        f"점검 대상 서비스 수: {len(services)}개",
+        "=" * 80,
+        "",
+        "[1단계] Cloud Run 서비스별 VPC 이그레스 아키텍처 현황",
+        "-" * 80,
+        f"{'서비스 이름':<25} {'이그레스 방식':<14} {'트래픽 범위':<19} {'상태'}",
+        "-" * 80,
+    ]
+
+    for svc in services:
+        lines.append(
+            f"{svc['name']:<25} {svc['egress_type']:<14} {svc['vpc_egress']:<19} {svc['status']}"
+        )
+
+    lines.extend([
+        "-" * 80,
+        "",
+        "[2단계] 서브넷 IP 고갈 위험 및 네트워크 라우팅 세부 진단",
+        "-" * 80,
+    ])
+
+    for svc in services:
+        lines.append(f"- 서비스: {svc['name']}")
+        lines.append(f"  * 연동 방식: {svc['egress_type']}")
+        if svc["connector"]:
+            lines.append(f"  * VPC 커넥터: {svc['connector']}")
+        if svc["subnetwork"]:
+            lines.append(f"  * 대상 서브넷: {svc['subnetwork']} (대역: {svc['subnet_cidr'] or '확인 불가'})")
+            lines.append(f"  * Private Google Access: {'활성화 (OK)' if svc['subnet_pga'] else '비활성화 (경고)'}")
+            lines.append(f"  * Cloud NAT 구비 여부: {'구성됨 (OK)' if svc['has_nat'] else '미구성 (위험)'}")
+            lines.append(f"  * 최대 인스턴스(maxScale): {svc['max_scale']}개")
+        lines.append(f"  * 진단 결과: [{svc['status']}] {svc['detail']}")
+        lines.append("")
+
+    lines.extend([
+        "-" * 80,
+        "",
+        "[3단계] 아키텍처 현대화 및 즉각 조치 처방",
+        "1. Serverless VPC Access 커넥터에서 Direct VPC Egress 로 전환:",
+        "   gcloud run services update <SERVICE_NAME> \\",
+        f"     --region={region} \\",
+        "     --network=<VPC_NETWORK> \\",
+        "     --subnetwork=<SUBNET_NAME> \\",
+        "     --vpc-egress=private-ranges-only \\",
+        "     --clear-vpc-connector",
+        "",
+        "2. 서브넷 Private Google Access 활성화 (구글 API 직결 보장):",
+        "   gcloud compute networks subnets update <SUBNET_NAME> \\",
+        f"     --region={region} \\",
+        "     --enable-private-ip-google-access",
+        "",
+        "3. all-traffic 라우팅 시 외부 통신용 Cloud NAT 생성:",
+        f"   gcloud compute routers create nat-router --network=<VPC_NETWORK> --region={region}",
+        f"   gcloud compute routers nats create nat-gw --router=nat-router --auto-allocate-nat-external-ips --region={region}",
+        "=" * 80,
+        "```",
+        "",
+        "---",
+        "",
+        "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+        "",
+        "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+        "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+        "",
+        "```bash",
+        "python diagnose.py",
+        "```",
+        "",
+    ])
+
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """리포트 내용을 파일에 저장한다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main() -> None:
     """메인 실행 함수."""
     args = parse_args()
     project_id = detect_project_id(args.project, args.dry_run)
+    reported_project = "sample-project-id" if args.dry_run else project_id
 
     if args.dry_run:
         services = get_mock_services()
         if args.service:
             services = [s for s in services if s["name"] == args.service]
     else:
-        services = inspect_cloud_run(project_id, args.region, args.service)
+        services = inspect_cloud_run(reported_project, args.region, args.service)
         if not services:
-            print(f"프로젝트 [{project_id}]의 리전 [{args.region}]에서 점검 대상 Cloud Run 서비스를 찾지 못했다.")
+            print(f"프로젝트 [{reported_project}]의 리전 [{args.region}]에서 점검 대상 Cloud Run 서비스를 찾지 못했다.")
             sys.exit(0)
 
-    print_report(project_id, args.region, args.dry_run, services)
+    print_report(reported_project, args.region, args.dry_run, services)
+    report_md = build_markdown_report(reported_project, args.region, args.dry_run, services)
+    save_markdown_report(report_md, "report.md")
 
 
 if __name__ == "__main__":

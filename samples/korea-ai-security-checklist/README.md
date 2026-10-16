@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini & Gemini Enterprise 도입을 위한 한국형 AI 보안성 심의 체크리스트 진단기
+# Gemini & Gemini Enterprise 도입을 위한 한국형 AI 보안성 심의 체크리스트 진단기 (korea-ai-security-checklist)
 
 사내 정보보호팀, CISO 및 금융감독원/금융보안원의 생성형 AI 도입 보안성 심의에 대비하여, 구글의 고객 데이터 비학습(No-Training) 정책, 인적 검토 배제(No Human Review), ISO/IEC 42001 국제 인증 및 사내 GCP 프로젝트의 실제 기술적 통제(VPC-SC, CMEK, Audit Logs) 상태를 실시간 대조하여 20대 핵심 보안 체크리스트 완제품 소명서(`report.md`)를 1분 만에 자동 생성하는 컴플라이언스 진단 도구다. (As of 2026-09-30)
 
@@ -29,7 +29,7 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 사내 업무 혁신을 위해 Gemini API(버텍스 AI(Vertex AI)) 또는 Gemini Enterprise App을 도입하려 하나, 사내 정보보호팀 및 CISO의 보안성 심의 승인 장벽에 부딪혔을 때
 - [ ] 보안팀으로부터 수십 개 문항의 엑셀/워드 체크리스트(데이터 재학습 여부, 전송 암호화, 인적 검토, 접근 통제 등)를 수신했으나, 구글 공식 약관과 기술적 증적 작성이 막막할 때
 - [ ] 금융감독원/금융보안원 보안성 심의 또는 K-ISMS 심사를 앞두고, 클라우드 프로젝트의 실제 보안 설정(CMEK, Audit Logs, Bucket Lock)을 객관적으로 입증해야 할 때
-- [ ] 파트너사나 고객사 엔지니어 입장에서 도입 검토 초기 단계에 사내 승인용 보안 보고서를 신속하게 확보하고자 할 때
+- [ ] 사내 도입 검토 초기 단계에 승인용 보안 보고서를 신속하게 확보하고자 할 때
 
 ---
 
@@ -57,9 +57,9 @@ gcloud services enable compute.googleapis.com logging.googleapis.com cloudresour
 
 | 역할 (Role) | 설명 |
 | :--- | :--- |
-| `roles/resourcemanager.organizationViewer` | 사내 조직 정책(`resourceLocations`, `allowedPolicyMemberDomains` 등) 조회 권한 |
-| `roles/logging.viewer` | Cloud Audit Logs 데이터 접근 감사 로깅 활성화 상태 조회 권한 |
-| `roles/cloudkms.viewer` | 클라우드 KMS(Cloud KMS) 키링 및 CMEK 적용 상태 확인 권한 |
+| `조직 뷰어(roles/resourcemanager.organizationViewer)` | 사내 조직 정책(`resourceLocations`, `allowedPolicyMemberDomains` 등) 조회 권한 |
+| `클라우드 로깅 뷰어(roles/logging.viewer)` | Cloud Audit Logs 데이터 접근 감사 로깅 활성화 상태 조회 권한 |
+| `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | 클라우드 KMS(Cloud KMS) 키링 및 CMEK 적용 상태 확인 권한 |
 
 ---
 
@@ -100,5 +100,5 @@ python diagnose.py --dry-run --json
 
 ---
 
-## 6. 자원 정리 가이드 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

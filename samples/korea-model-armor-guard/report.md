@@ -1,4 +1,4 @@
-# 진단 및 분석 리포트: model-armor-regional-compliance-guard
+# 진단 및 분석 리포트: korea-model-armor-guard
 
 - **생성 모드**: 모의 실행 (Dry-run)
 - **대상 프로젝트**: `sample-project-id`

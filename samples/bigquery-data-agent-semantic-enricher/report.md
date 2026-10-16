@@ -11,7 +11,7 @@
 ```text
 ==========================================================================================
 BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강기
-진단 모드  : 가상 실행 (Dry-run)
+진단 모드  : 모의 실행 (Dry-run)
 대상 프로젝트: sample-project-id
 대상 데이터셋: cymbal_gold
 리전      : asia-northeast3
@@ -38,8 +38,37 @@ historical_transactional_data       X (누락/부실)    0/22 (0%)      X (미�
 종합 준비도 점수: 15.3 / 100.0점  [FAIL (미달: Data Agent 라우팅 실패 및 SQL 수식 왜곡 주의 요구)]
 ==========================================================================================
 
-[안내] 메타데이터 자동 보강 계획 및 비즈니스 공식 생성을 확인하려면 '--enrich' 플래그를 추가하라.
-  실행 예시: python3 diagnose.py --dry-run --enrich
+==========================================================================================
+Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (Enrichment Plan)
+==========================================================================================
+
+[1. 테이블: pos_transactions_gold]
+  * 추천 테이블 표준 설명 (AI 라우팅 최적화):
+    "Operational dataset"
+  * 누락 컬럼 표준 설명 및 제약조건 자동 보강 내역:
+  * Dataplex 비즈니스 용어집(Glossary) 계산 공식 매핑:
+    - 공식: Net Revenue = subtotal_amount - discount + tax_amount (Filter: total > 0)
+
+[2. 테이블: gold_inventory_reconciliation_ledger]
+  * 추천 테이블 표준 설명 (AI 라우팅 최적화):
+    "Operational dataset"
+  * 누락 컬럼 표준 설명 및 제약조건 자동 보강 내역:
+  * Dataplex 비즈니스 용어집(Glossary) 계산 공식 매핑:
+    - 공식: Inventory Cover Hours = SAFE_DIVIDE((shelf_qty + backroom_qty), (total_units_sold_intraday / 12.0)) (Critical Flag: <= 6.0h)
+
+[3. 테이블: pos_anomaly_alerts]
+  * 추천 테이블 표준 설명 (AI 라우팅 최적화):
+    "Operational dataset"
+  * 누락 컬럼 표준 설명 및 제약조건 자동 보강 내역:
+  * Dataplex 비즈니스 용어집(Glossary) 계산 공식 매핑:
+    - 공식: Cashier Promo Override Rate = SAFE_DIVIDE(COUNTIF(alert_type = 'cashier_promo_abuse'), COUNT(*))
+
+[4. 테이블: historical_transactional_data]
+  * 추천 테이블 표준 설명 (AI 라우팅 최적화):
+    "Operational dataset"
+  * 누락 컬럼 표준 설명 및 제약조건 자동 보강 내역:
+  * Dataplex 비즈니스 용어집(Glossary) 계산 공식 매핑:
+    - 공식: Warranty Duration Validation = DATE_DIFF(CURRENT_DATE(), purchase_date, MONTH) <= warranty_duration_months
 ```
 
 ---

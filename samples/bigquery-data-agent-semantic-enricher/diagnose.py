@@ -517,10 +517,129 @@ def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location
             print_diagnostic_report({"dataset": dataset_id, "tables": after_records}, after_score)
 
 
+def build_markdown_report(
+    project_id: str,
+    dataset_id: str,
+    location: str,
+    dry_run: bool,
+    audit_data: dict[str, Any],
+    score: dict[str, Any],
+    enrich: bool = False,
+) -> str:
+    """진단 결과를 표준 마크다운 리포트로 구성한다."""
+    mode_str = "모의 실행 (Dry-run)" if dry_run else "실제 환경 (Live)"
+    tot_score = score["total_score"]
+    status_label = "PASS (우수: 프로덕션 운영 준비 완료)" if tot_score >= 80 else ("WARN (주의: 라우팅 오류 가능성 존재)" if tot_score >= 60 else "FAIL (미달: Data Agent 라우팅 실패 및 SQL 수식 왜곡 주의 요구)")
+
+    lines = [
+        "# 진단 및 분석 리포트: bigquery-data-agent-semantic-enricher",
+        "",
+        f"- **생성 모드**: {mode_str}",
+        f"- **대상 프로젝트**: `{project_id}`",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 진단 실행 콘솔 출력 결과",
+        "",
+        "```text",
+        "=" * 90,
+        "BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강기",
+        f"진단 모드  : {mode_str}",
+        f"대상 프로젝트: {project_id}",
+        f"대상 데이터셋: {dataset_id}",
+        f"리전      : {location}",
+        "=" * 90,
+        "",
+        "=" * 90,
+        "BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 결과 표",
+        f"대상 데이터셋: {dataset_id}",
+        "=" * 90,
+        f"{'테이블 ID':<35} {'테이블 설명':<12} {'컬럼 설명율':<14} {'데이터 프로파일':<14} {'용어집 바인딩'}",
+        "-" * 90,
+    ]
+
+    for t in audit_data["tables"]:
+        t_desc_status = "O (적합)" if (t["table_desc_present"] and len(t["current_table_desc"]) > 10) else "X (누락/부실)"
+        col_ratio = f"{t['described_columns']}/{t['total_columns']} ({(t['described_columns']/t['total_columns']*100):.0f}%)"
+        prof_status = "O (수집됨)" if t["profile_scanned"] else "X (미수행)"
+        gloss_status = "O (연동됨)" if t["glossary_bound"] else "X (미연동)"
+        lines.append(f"{t['table_id']:<35} {t_desc_status:<12} {col_ratio:<14} {prof_status:<14} {gloss_status}")
+
+    lines.extend([
+        "-" * 90,
+        "",
+        "[영역별 평가 세부 내역 및 준비도 점수]",
+        f"1. 테이블 수준 설명 (Table Description)    : {score['table_desc_count']}/{score['total_tables']}개 충족 -> {score['table_score']} / 30.0점",
+        f"2. 컬럼 수준 설명 (Column Description)      : {score['described_cols']}/{score['total_cols']}개 충족 -> {score['col_score']} / 30.0점",
+        f"3. 데이터 프로파일 통계 (Data Profile Stats) : {score['profile_count']}/{score['total_tables']}개 수집 -> {score['profile_score']} / 20.0점",
+        f"4. 비즈니스 용어집 공식 (Glossary Formula)   : {score['glossary_count']}/{score['total_tables']}개 연동 -> {score['glossary_score']} / 20.0점",
+        "-" * 90,
+        f"종합 준비도 점수: {tot_score} / 100.0점  [{status_label}]",
+        "=" * 90,
+    ])
+
+    if enrich:
+        lines.extend([
+            "",
+            "=" * 90,
+            "Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (Enrichment Plan)",
+            "=" * 90,
+        ])
+        for idx, t in enumerate(audit_data["tables"], 1):
+            lines.extend([
+                f"\n[{idx}. 테이블: {t['table_id']}]",
+                f"  * 추천 테이블 표준 설명 (AI 라우팅 최적화):",
+                f"    \"{t.get('enrichment_desc', 'Operational dataset')}\"",
+                f"  * 누락 컬럼 표준 설명 및 제약조건 자동 보강 내역:",
+            ])
+            for col, desc in t.get("enriched_columns", {}).items():
+                lines.append(f"    - {col:<20}: {desc}")
+            lines.extend([
+                f"  * Dataplex 비즈니스 용어집(Glossary) 계산 공식 매핑:",
+                f"    - 공식: {t.get('glossary_formula', 'N/A')}",
+            ])
+    else:
+        lines.extend([
+            "",
+            "[안내] 메타데이터 자동 보강 계획 및 비즈니스 공식 생성을 확인하려면 '--enrich' 플래그를 추가하라.",
+            "  실행 예시: python3 diagnose.py --dry-run --enrich",
+        ])
+
+    lines.extend([
+        "```",
+        "",
+        "---",
+        "",
+        "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+        "",
+        "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+        "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+        "",
+        "```bash",
+        "python diagnose.py",
+        "```",
+        "",
+    ])
+
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """리포트 내용을 파일에 저장한다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main() -> None:
     """메인 실행 함수."""
     args = parse_args()
     project_id = detect_project_id(args.project, is_dry_run=args.dry_run)
+    reported_project = "sample-project-id" if args.dry_run else project_id
     location = args.location
 
     if args.dry_run:
@@ -528,7 +647,7 @@ def main() -> None:
         print("=" * 90)
         print("BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강기")
         print("진단 모드  : 가상 실행 (Dry-run)")
-        print(f"대상 프로젝트: {project_id}")
+        print(f"대상 프로젝트: {reported_project}")
         print(f"대상 데이터셋: {dataset_id}")
         print(f"리전      : {location}")
         print("=" * 90)
@@ -543,6 +662,18 @@ def main() -> None:
         else:
             print("\n[안내] 메타데이터 자동 보강 계획 및 비즈니스 공식 생성을 확인하려면 '--enrich' 플래그를 추가하라.")
             print("  실행 예시: python3 diagnose.py --dry-run --enrich")
+
+        # 표준 리포트 자동 생성 및 덮어쓰기
+        report_md = build_markdown_report(
+            project_id=reported_project,
+            dataset_id=dataset_id,
+            location=location,
+            dry_run=True,
+            audit_data=mock_data,
+            score=score,
+            enrich=args.enrich,
+        )
+        save_markdown_report(report_md, "report.md")
         return
 
     # 실제 환경 (Live)
@@ -565,13 +696,23 @@ def main() -> None:
     print("=" * 90)
 
     if not dataset_id:
-        print("\n[알림] 점검할 데이터셋이 없습니다. 모의 데이터셋(--dry-run)으로 시뮬레이션을 진행합니다.\n")
+        print("\n[알림] 점검할 데이터셋이 없다. 모의 데이터셋(--dry-run)으로 시뮬레이션을 진행한다.\n")
         mock_data = get_mock_audit_data()
         score = calculate_readiness_score(mock_data["tables"])
         print_diagnostic_report(mock_data, score)
         if args.enrich:
             print_enrichment_plan(mock_data)
             generate_glossary_yaml(mock_data, "dataplex_glossary_terms_sample.yaml")
+        report_md = build_markdown_report(
+            project_id=reported_project,
+            dataset_id="cymbal_gold",
+            location=location,
+            dry_run=True,
+            audit_data=mock_data,
+            score=score,
+            enrich=args.enrich,
+        )
+        save_markdown_report(report_md, "report.md")
         return
 
     inspect_live_dataset(client, project_id, dataset_id, location, args.enrich, args.apply)

@@ -14,13 +14,13 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이(Gemini) API 비용 및 쿼터 임계치 실시간 경보 자동화 (`gemini-quota-cost-alert`)
+# 제미나이(Gemini) API 비용 및 쿼터 임계치 실시간 경보 자동화 진단기 (`gemini-quota-cost-alert`)
 
-제미나이(Gemini) API 비용 급증 및 예산 임계치 도달 시, Cloud Pub/Sub과 Cloud Functions를 연동하여 **실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로 차단하는 안전 아키텍처**를 검증 및 시뮬레이션하는 도구다. (As of 2026-06-16)
+제미나이(Gemini) API 비용 급증 및 예산 임계치 도달 시, 클라우드 펍/섭(Cloud Pub/Sub)과 클라우드 펑션스(Cloud Functions)를 연동하여 **실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로 차단하는 안전 아키텍처**를 검증 및 시뮬레이션하는 도구다. (As of 2026-06-16)
 
 **Audience**: `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Resilience`  
-**Service**: `#CloudFunctions`, `#CloudPubSub`, `#GeminiAPI`, `#GoogleCloudBilling`
+**Service**: `#CloudBilling`, `#CloudFunctions`, `#CloudPubSub`, `#GeminiAPI`
 
 ---
 
@@ -67,9 +67,9 @@ flowchart TD
 
 | 역할 (Role) | 권한 ID | 용도 |
 | :--- | :--- | :--- |
-| **결제 관리자 (또는 뷰어)** | `roles/billing.costsManager` 또는 `roles/billing.viewer` | 결제 예산 규칙 확인 및 생성 |
-| **Pub/Sub 관리자** | `roles/pubsub.admin` | 알림 전달용 Pub/Sub 주제 생성 및 메시지 테스트 |
-| **Cloud Functions 개발자** | `roles/cloudfunctions.developer` | 자동 차단 함수 배포 |
+| **클라우드 빌링 관리자 (또는 뷰어)** | `roles/billing.costsManager` 또는 `roles/billing.viewer` | 결제 예산 규칙 확인 및 생성 |
+| **클라우드 펍/섭 관리자** | `roles/pubsub.admin` | 알림 전달용 Cloud Pub/Sub 주제 생성 및 메시지 테스트 |
+| **클라우드 펑션스 개발자** | `roles/cloudfunctions.developer` | 자동 차단 Cloud Functions 배포 |
 
 > [!NOTE]
 > `--dry-run` 모드로 실행할 경우 실제 클라우드 리소스 생성이나 IAM 권한 없이도 파이프라인 구조와 페이로드 스키마를 즉시 확인할 수 있다.
@@ -143,7 +143,7 @@ python diagnose.py --project your-project-id --topic gemini-cost-alerts
 
 ---
 
-## 자원 정리 (Teardown Guide)
+## 자원 정리 안내 (Teardown)
 
 실습 및 테스트가 끝난 후 불필요한 과금과 리소스 누수를 방지하기 위해 생성한 자원을 아래 순서로 반드시 정리한다:
 

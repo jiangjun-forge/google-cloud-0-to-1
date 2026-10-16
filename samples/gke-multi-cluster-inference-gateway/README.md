@@ -14,13 +14,13 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기
+# Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기 (`gke-multi-cluster-inference-gateway`)
 
 대규모 AI/LLM 서빙 환경에서 GPU/TPU 공급 부족으로 여러 리전과 멀티 클라우드에 분산된 수십 개 쿠버네티스 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연 시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검 및 처방하는 아키텍처 진단 도구다. (As of 2026-10-01)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`, `#Resilience`  
-**Service**: `#CloudLoadBalancing`, `#ComputeEngine`, `#GoogleKubernetesEngine`  
+**Service**: `#CloudLoadBalancing`, `#ComputeEngine`, `#GKE`  
 
 ---
 
@@ -99,5 +99,5 @@ python3 diagnose.py -p <PROJECT_ID>
 
 ---
 
-## 7. 자원 정리 (Teardown) 안내
+## 7. 자원 정리 안내 (Teardown)
 본 도구는 읽기 전용 진단 스크립트로 클라우드 리소스를 생성하거나 변경하지 않으므로 별도의 자원 정리가 필요하지 않다.

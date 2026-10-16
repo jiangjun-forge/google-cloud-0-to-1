@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Compute Engine & GKE 인스턴스 유연성(Instance Flexibility) 및 스톡아웃 방어 설계기
+# 컴퓨트 엔진(Compute Engine) & GKE 인스턴스 유연성(Instance Flexibility) 및 스톡아웃 방어 설계기
 
-업계 전반의 AI 및 대규모 컴퓨트 수요 급증으로 인한 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 상황에서, 단일 머신 타입/단일 존 고착 위험을 진단하고 GKE Custom ComputeClass(CCC)의 능동적 마이그레이션(Active Migration) 및 Compute Engine Regional MIG의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하여 무중단 복원력을 확보하는 올인원 아키텍처 진단 도구다. (As of 2026-09-29)
+업계 전반의 AI 및 대규모 컴퓨트 수요 급증으로 인한 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 상황에서, 단일 머신 타입/단일 존 고착 위험을 진단하고 GKE(Google Kubernetes Engine) 커스텀 컴퓨트 클래스(Custom ComputeClass, CCC)의 능동적 마이그레이션(Active Migration) 및 컴퓨트 엔진(Compute Engine) 리전 관리형 인스턴스 그룹(Regional MIG)의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하여 무중단 복원력을 확보하는 올인원 아키텍처 진단 도구다. (As of 2026-09-29)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`, `#Resilience`  
@@ -64,7 +64,7 @@ gcloud services enable compute.googleapis.com container.googleapis.com
 
 | 역할 (Role) | 설명 |
 | :--- | :--- |
-| `roles/compute.viewer` | Compute Engine 인스턴스 템플릿 및 MIG 설정 조회 권한 |
+| `roles/compute.viewer` | 컴퓨트 엔진(Compute Engine) 인스턴스 템플릿 및 MIG 설정 조회 권한 |
 | `roles/container.viewer` | GKE 클러스터 및 노드 풀 구성 상태 조회 권한 |
 
 ---
@@ -84,7 +84,7 @@ python diagnose.py --dry-run
 python diagnose.py
 
 # 특정 프로젝트, 특정 리전 및 기준 머신(16코어 표준) 지정
-python diagnose.py --project-id=my-compute-project --region=asia-northeast3 --base-machine=n2-standard-16
+python diagnose.py --project-id=sample-project-id --region=asia-northeast3 --base-machine=n2-standard-16
 
 # GPU 인퍼런스/서빙 워크로드 (NVIDIA L4 기준 대체 랭킹 및 GKE CCC/MIG 정책 산출)
 python diagnose.py --base-machine=g2-standard-8
@@ -136,5 +136,5 @@ gcloud compute instance-groups managed create [MIG_NAME] \
 
 ---
 
-## 6. 자원 정리 가이드 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

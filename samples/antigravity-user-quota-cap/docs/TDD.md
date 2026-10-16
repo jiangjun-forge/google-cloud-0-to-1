@@ -13,7 +13,7 @@ All contents, designs, and code examples are subject to change, modification, or
 # 기술 상세 설계서 (TDD): Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기
 
 ## 1. 아키텍처 개요 및 설계 원칙
-본 도구는 Cloud Logging API를 통해 Antigravity 인퍼런스 로그(`businessaicode.googleapis.com/inference_response`)를 수집하고, 사용자별 토큰 소비량 및 쿼터 캡 초과 상태를 진단하는 순수 파이썬 단일 실행 도구(`diagnose.py`)로 구성되며 터미널 출력과 함께 마크다운 리포트(`report.md`)를 자동 생성한다.
+본 도구는 클라우드 로깅(Cloud Logging) API를 통해 Antigravity 인퍼런스 로그(`businessaicode.googleapis.com/inference_response`)를 수집하고, 사용자별 토큰 소비량 및 쿼터 캡 초과 상태를 진단하는 순수 파이썬 단일 실행 도구(`diagnose.py`)로 구성되며 터미널 출력과 함께 마크다운 리포트(`report.md`)를 자동 생성한다.
 
 ---
 

@@ -21,8 +21,10 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-gke-project") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
   """환경 변수, gcloud 설정, 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+  if is_dry_run:
+    return "sample-project-id"
   env_proj = os.getenv("PROJECT_ID")
   if env_proj:
     return env_proj
@@ -30,7 +32,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-gke
   if stdout and "(unset)" not in stdout:
     return stdout
 
-  if is_dry_run or not sys.stdin.isatty():
+  if not sys.stdin.isatty():
     return fallback_demo
 
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
@@ -253,6 +255,91 @@ def print_table(diagnoses: list[dict]):
     print("\n모든 서비스의 소스 IP 보존 및 부하 분산 정책이 정상 상태다.")
 
 
+def build_markdown_report(diagnoses: list[dict], project_id: str, cluster: str, is_dry_run: bool) -> str:
+  """진단 결과를 바탕으로 표준 마크다운 리포트를 구성한다."""
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실환경 진단 (Live)"
+  header_line = (
+      "--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 클러스터 및 인그레스 데이터를 분석한다.\n"
+      if is_dry_run
+      else f"--> GKE 클러스터({cluster})의 LoadBalancer 및 Ingress 서비스를 조회하여 분석했다.\n"
+  )
+
+  table_lines = [
+      "=" * 105,
+      f"{'네임스페이스/서비스':<34} {'LB 유형':<24} {'extPolicy':<12} {'노드/파드':<14} {'심각도':<10}",
+      "-" * 105,
+  ]
+  for d in diagnoses:
+    svc_name = f"{d['namespace']}/{d['name']}"
+    node_pod = f"{d['totalNodes']}노드/{d['totalPods']}파드"
+    table_lines.append(
+        f"{svc_name:<34} {d['loadBalancerType']:<24} {d['externalTrafficPolicy']:<12} {node_pod:<14} {d['severity']:<10}"
+    )
+  table_lines.append("=" * 105)
+
+  criticals = [d for d in diagnoses if d["severity"] == "CRITICAL"]
+  warnings = [d for d in diagnoses if d["severity"] == "WARNING"]
+  infos = [d for d in diagnoses if d["severity"] == "INFO"]
+
+  detail_lines = []
+  if criticals or warnings or infos:
+    detail_lines.append("\n[발견된 주요 네트워크 결함 및 권고 조치]")
+    for item in criticals + warnings + infos:
+      prefix = f"[{item['severity']}]"
+      detail_lines.append(
+          f"\n* {prefix} {item['namespace']}/{item['name']} (IP: {item['loadBalancerIP']}, extPolicy: {item['externalTrafficPolicy']})"
+      )
+      for iss in item["issues"]:
+        detail_lines.append(f"  - 원인: {iss}")
+      for rem in item["remediations"]:
+        detail_lines.append(f"  - 처방: {rem}")
+  else:
+    detail_lines.append("\n모든 서비스의 소스 IP 보존 및 부하 분산 정책이 정상 상태다.")
+
+  console_text = (
+      f"GKE 소스 IP(Client IP) 보존 및 SNAT 상태 진단 시작 (프로젝트: {project_id}, 클러스터: {cluster})\n"
+      + header_line
+      + "\n"
+      + "\n".join(table_lines)
+      + "\n"
+      + "\n".join(detail_lines)
+  )
+
+  return f"""# 진단 및 분석 리포트: gke-source-ip-snat-guard
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+{console_text}
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+
+
+def save_markdown_report(content: str, filepath: str = "report.md"):
+  """진단 리포트를 마크다운 파일로 저장한다."""
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  target_path = os.path.join(script_dir, filepath)
+  with open(target_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="GKE Internal Passthrough NLB 원본 Client IP 보존 및 SNAT/부하 불균형 진단기"
@@ -265,12 +352,12 @@ def main():
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
+  project_id = "sample-project-id" if args.dry_run else (args.project or get_default_project(is_dry_run=False))
   if not project_id and not args.dry_run:
     print("GCP 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
     sys.exit(1)
 
-  print(f"GKE 소스 IP(Client IP) 보존 및 SNAT 상태 진단 시작 (프로젝트: {project_id or 'dry-run-mode'}, 클러스터: {args.cluster})")
+  print(f"GKE 소스 IP(Client IP) 보존 및 SNAT 상태 진단 시작 (프로젝트: {project_id}, 클러스터: {args.cluster})")
 
   if args.dry_run:
     print("--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 클러스터 및 인그레스 데이터를 분석한다.")
@@ -289,6 +376,10 @@ def main():
     print(json.dumps(diagnoses, indent=2, ensure_ascii=False))
   else:
     print_table(diagnoses)
+
+  md_content = build_markdown_report(diagnoses, project_id, args.cluster, is_dry_run=args.dry_run)
+  save_markdown_report(md_content)
+  print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

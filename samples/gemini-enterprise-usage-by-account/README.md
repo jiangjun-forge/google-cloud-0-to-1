@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 엔터프라이즈 Model Armor 감사 및 토큰 소모량 추정 (`gemini-enterprise-usage-by-account`)
+# 제미나이 엔터프라이즈(Gemini Enterprise) Model Armor 감사 및 토큰 소모량 추정기 (`gemini-enterprise-usage-by-account`)
 
 Model Armor의 살균(Sanitize) 검사 로그를 빅쿼리(BigQuery) 로그 싱크로 실시간 적재하여, **엔터프라이즈 Gemini 환경에서 사용자별 프롬프트 검사 이력과 추정 토큰 소모량을 1분 만에 분석**하는 가이드다. (As of 2026-07-01)
 
@@ -24,7 +24,7 @@ Model Armor의 살균(Sanitize) 검사 로그를 빅쿼리(BigQuery) 로그 싱�
 
 ---
 
-## 이 가이드가 필요한 상황 (증상 체크리스트)
+## 1. 문제 증상 체크리스트
 
 - **Gemini Enterprise 토큰 추적**: 엔터프라이즈 포털이나 사내 챗봇에서 사용자별로 소모된 토큰량을 상세히 추적 및 정산하고자 할 때
 - **Model Armor 살균 이력 감사**: 보안 위협(탈옥, 프롬프트 인젝션, 민감 정보)으로 인해 Model Armor에서 살균되거나 차단된 프롬프트 본문을 영구 보관 및 감사할 때
@@ -32,7 +32,7 @@ Model Armor의 살균(Sanitize) 검사 로그를 빅쿼리(BigQuery) 로그 싱�
 
 ---
 
-## 감사 및 적재 흐름 (Activity Diagram)
+## 2. 처리 흐름도
 
 ```mermaid
 flowchart TD
@@ -57,7 +57,7 @@ flowchart TD
 
 ---
 
-## 사전 준비 사항 (필요 권한 - IAM)
+## 3. 필요 IAM 권한
 
 로그 싱크 생성 및 BigQuery 데이터세트 권한 위임을 위한 IAM 역할이다:
 
@@ -67,42 +67,27 @@ flowchart TD
 | **BigQuery 관리자** | `roles/bigquery.admin` | BigQuery 데이터세트 생성 및 싱크 서비스 계정 권한 위임 |
 
 > [!NOTE]
-> `--dry-run` 모드로 실행할 경우 GCP IAM 권한 없이도 파이프라인 구성과 토큰 추정 SQL 쿼리를 즉시 확인할 수 있다.
+> `--dry-run` 모드로 실행할 경우 구글 클라우드 IAM 권한 없이도 파이프라인 구성과 토큰 추정 SQL 쿼리를 즉시 확인할 수 있다.
 
 ---
 
-## 1분 퀵스타트 (실행 방법)
+## 4. 원클릭 실행법
 
-### 방법 1: 구글 클라우드 쉘 (Google Cloud Shell) - *가장 권장*
-
+### 가상 검증 실행 (--dry-run)
+실제 리소스 생성 및 쿼리 없이 가상 분석 리포트를 시뮬레이션한다. 실행 시 `report.md` 파일이 자동 생성된다:
 ```bash
-# 1. 저장소 클론 및 폴더 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/gemini-enterprise-usage-by-account
-
-# 2. 사전 가상 체험 또는 데모 모드 (권한 없이 즉시 시뮬레이션)
 python diagnose.py --dry-run
-
-# 3. 실제 프로젝트 대상 로그 싱크 구성 및 분석
-python diagnose.py -p your-project-id -d 14
 ```
 
-### 방법 2: 로컬 환경 (Local Python)
-
+### 실제 환경 진단
+사내 활성 프로젝트 대상 로그 싱크 구성 및 토큰 사용량을 분석한다. 진단 결과는 `report.md`에 자동으로 덮어써진다:
 ```bash
-# 의존성 설치
-pip install -r requirements.txt
-
-# 가상 실행
-python diagnose.py --dry-run
-
-# 실제 실행
-python diagnose.py --project your-project-id --dataset gcp_logs --days 7
+python diagnose.py --project="your-project-id" --dataset="gcp_logs" --days=7
 ```
 
 ---
 
-## 결과 출력 및 쿼리 예시
+## 5. 결과 확인 후 즉각 조치 가이드
 
 스크립트가 완료되면 아래와 같이 **사용자별 검사 횟수 및 추정 토큰 소모량**이 출력된다:
 
@@ -127,7 +112,7 @@ python diagnose.py --project your-project-id --dataset gcp_logs --days 7
 
 ---
 
-## 자원 정리 (Teardown Guide)
+## 6. 자원 정리 안내 (Teardown)
 
 테스트 완료 후 과금 방지 및 자원 잔존을 막기 위해 생성된 로그 싱크와 데이터세트를 삭제한다:
 

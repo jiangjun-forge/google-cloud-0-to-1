@@ -34,7 +34,7 @@ Workforce Identity SSO 인증        CRITICAL     WIF 풀 속성 매핑에 필�
 
 * [심각] Workforce Identity SSO 인증
   - 위험: WIF 풀 속성 매핑에 필수 클레임(attribute.user_email, attribute.display_name)이 누락되어 Entra ID 로그인 시 HTTP 400 오류 발생
-  - 처방: GCP WIF 공급업체 매핑에 attribute.user_email='assertion.email' 및 attribute.display_name='assertion.name'을 추가하고, Entra ID 앱 등록 토큰 구성에서 email 클레임 발행을 활성화한다.
+  - 처방: 구글 클라우드 WIF 공급업체 매핑에 attribute.user_email='assertion.email' 및 attribute.display_name='assertion.name'을 추가하고, Entra ID 앱 등록 토큰 구성에서 email 클레임 발행을 활성화한다.
 ```
 
 ---

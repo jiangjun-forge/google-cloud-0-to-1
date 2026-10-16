@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기
 
-버텍스 AI(Vertex AI) 및 Gemini API 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다. (As of 2026-09-09)
+버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다. (As of 2026-09-09)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
@@ -37,7 +37,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 진단 및 해결 흐름
 
 ```mermaid
-graph TD
+flowchart TD
     A["사내 실데이터(CSV/JSONL/TXT) 또는 표본 1,000건 로드"] --> B["비교 차원 목록 수집 및 내림차순(큰 차원 -> 작은 차원) 정렬"]
     B --> C["최대 차원(768d) 기준점(Baseline) 벡터 추출 및 평가"]
     C --> D["축소 대상 차원들(512d, 256d, 128d) 일괄 추출 및 평가"]
@@ -169,7 +169,7 @@ python diagnose.py --sample-count=1000 -d 768,512,256
 
 2. 권장 최적 차원 티어링(Tiering):
    - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (스토리지 비용 대폭 절감)
-   - [Tier 2: 균형/범용]: 사내 지식 검색 및 대고객 지원 FAQ -> 256d 또는 512d 채택 (비용 33~67% 절감, 정확도 98% 이상)
+   - [Tier 2: 균형/범용]: 사내 지식 검색 및 사내외 사용자 지원 FAQ -> 256d 또는 512d 채택 (비용 33~67% 절감, 정확도 98% 이상)
    - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> 768d 최대 차원 유지
 
 3. 사내 실데이터 적용 코드:

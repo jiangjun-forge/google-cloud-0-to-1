@@ -12,17 +12,17 @@
 [데모 실행] --dry-run 모드가 활성화되어 가상 샘플 데이터를 기반으로 리포트를 시뮬레이션한다.
 ========================================================================
 [진단 결과] 제미나이(Gemini) 사용량 및 비용 급증 원인 분석 리포트
-   - 대상 프로젝트: demo-gemini-project
+   - 대상 프로젝트: sample-project-id
    - 조회 대상 기간: 최근 90일
 ========================================================================
 
 총 집계된 API 호출 수: 148,250 건 (시계열 레코드: 2개)
 
 ┌──────────────────────────────────────────────────────────────────────┐
-│ 1. 호출 주체(자격 증명)별 점유율 및 호출 횟수                             │
+│ 1. 호출 주체(자격 증명)별 점유율 및 호출 횟수                           │
 ├──────────────────────────────────────────────────────────────────────┤
-│  - apikey:AIzaSyB1234567890abcdefghijklmnopqr   :  135,200회 ( 91.2%) │
-│  - serviceAccount:gemini-batch-sa@demo-ai-pro.. :   13,050회 (  8.8%) │
+│  - apikey:AIzaSyB1234567890abcdefghijklmnopqr      :  135,200회 ( 91.2%) │
+│  - serviceAccount:gemini-batch-sa@sample-project.. :   13,050회 (  8.8%) │
 └──────────────────────────────────────────────────────────────────────┘
 
 [2. 호출된 서비스 및 API 메서드]
@@ -39,18 +39,18 @@
 [API 키 발견] 'apikey:AIzaSy...' 형태의 호출 감지:
   1. 소스 코드나 클라이언트 앱에 API 키가 노출되었을 가능성이 있다.
   2. GCP 콘솔 사용자 인증 정보 페이지로 이동:
-     사용자 인증 정보 콘솔 ( https://console.cloud.google.com/apis/credentials?project=demo-gemini-project )
+     사용자 인증 정보 콘솔 ( https://console.cloud.google.com/apis/credentials?project=sample-project-id )
   3. 해당 키를 찾아 'API 제한사항'을 점검하거나, 즉시 삭제 또는 재발급 조치한다.
 
 [서비스 계정 발견] 'serviceAccount:...' 형태의 호출 감지:
   1. 백엔드 배치 잡이나 유출된 서비스 계정 키 파일(JSON)을 통한 호출이다.
   2. GCP 콘솔 서비스 계정 페이지로 이동:
-     서비스 계정 콘솔 ( https://console.cloud.google.com/iam-admin/serviceaccounts?project=demo-gemini-project )
+     서비스 계정 콘솔 ( https://console.cloud.google.com/iam-admin/serviceaccounts?project=sample-project-id )
   3. 해당 계정의 활성 키를 점검하고 미사용 키는 즉시 삭제 조치한다.
 
 추가 비용 누수 방지 권장 사항:
    - Cloud Billing 예산 설정 ( https://console.cloud.google.com/billing/budgets )
-   - IAM 및 관리자 할당량 설정 ( https://console.cloud.google.com/iam-admin/quotas?project=demo-gemini-project )
+   - IAM 및 관리자 할당량 설정 ( https://console.cloud.google.com/iam-admin/quotas?project=sample-project-id )
 ========================================================================
 ```
 

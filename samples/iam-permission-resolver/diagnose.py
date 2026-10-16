@@ -21,8 +21,10 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-project-id") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
   """gcloud 설정 및 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+  if is_dry_run:
+    return fallback_demo
   env_proj = os.getenv("PROJECT_ID")
   if env_proj:
     return env_proj
@@ -30,7 +32,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-pro
   if stdout and "(unset)" not in stdout:
     return stdout
 
-  if is_dry_run or not sys.stdin.isatty():
+  if not sys.stdin.isatty():
     return fallback_demo
 
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
@@ -168,6 +170,80 @@ def fetch_failures(project_id: str, days: int, limit: int) -> list[dict]:
   return results
 
 
+def build_markdown_report(failures: list[dict], project_id: str, days: int, is_dry_run: bool) -> str:
+  """진단 결과를 표준 마크다운 리포트(report.md) 형식으로 생성한다."""
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 진단 (Live)"
+
+  lines = []
+  if is_dry_run:
+    lines.append("[데모 실행] --dry-run 모드가 활성화되어 가상 권한 거부 리포트를 시뮬레이션한다.")
+  lines.append("=" * 72)
+  lines.append("[진단 결과] GCP IAM 권한 거부(403) 감사 추적 및 해결 처방 리포트")
+  lines.append(f"  - 대상 프로젝트: {project_id}")
+  lines.append(f"  - 조회 기간: 최근 {days}일")
+  lines.append("=" * 72)
+
+  if not failures:
+    lines.append("\n[성공] 데이터 액세스 권한 거부(403) 실패 감사 로그가 발견되지 않았다. 안전하다!\n")
+  else:
+    lines.append(f"\n발견된 권한 거부 실패 내역: {len(failures)}건\n")
+    for idx, f in enumerate(failures, start=1):
+      role, role_desc = map_role(f["service"])
+      member_type = "serviceAccount" if "gserviceaccount.com" in f["principal"] else "user"
+      lines.append(f"[실패 건 #{idx}]")
+      lines.append(f"  - 실패 주체 계정: {f['principal']}")
+      lines.append(f"  - 요청 대상 서비스: {f['service']}")
+      lines.append(f"  - 실행 실패 액션: {f['method']}")
+      lines.append(f"  - 실제 오류 내용: {f['message']}")
+      lines.append("  [정밀 처방 역할 추천]")
+      lines.append(f"    - 권장 역할: {role}")
+      lines.append(f"    - 역할 상세: {role_desc}")
+      lines.append("  [즉시 조치 가능한 원클릭 gcloud 해결 명령어]")
+      lines.append(f"    gcloud projects add-iam-policy-binding \"{project_id}\" \\")
+      lines.append(f"      --member=\"{member_type}:{f['principal']}\" \\")
+      lines.append(f"      --role=\"{role}\"")
+      lines.append("-" * 72)
+  lines.append("=" * 72)
+
+  console_output = "\n".join(lines)
+
+  report = f"""# 진단 및 분석 리포트: iam-permission-resolver
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+{console_output}
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+  return report
+
+
+def save_markdown_report(content: str, filepath: str = "report.md"):
+  """마크다운 리포트를 지정된 경로에 저장한다."""
+  try:
+    with open(filepath, "w", encoding="utf-8") as f:
+      f.write(content)
+  except Exception as e:
+    print(f"[경고] 리포트 파일({filepath}) 저장 실패: {e}")
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="GCP IAM 권한 거부(403) 로그 역추적 및 원클릭 복구 처방 도구"
@@ -202,11 +278,15 @@ def main():
   )
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
+  project_id = "sample-project-id" if args.dry_run else (args.project or get_default_project(is_dry_run=args.dry_run))
 
   if args.dry_run:
     print("\n[데모 실행] --dry-run 모드가 활성화되어 가상 권한 거부 리포트를 시뮬레이션한다.")
-    report_failures(get_mock_failures(), project_id, args.days)
+    failures = get_mock_failures()
+    report_failures(failures, project_id, args.days)
+    report_md = build_markdown_report(failures, project_id, args.days, is_dry_run=True)
+    save_markdown_report(report_md)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
     return
 
   print("=" * 72)
@@ -218,6 +298,10 @@ def main():
 
   failures = fetch_failures(project_id, args.days, args.limit)
   report_failures(failures, project_id, args.days)
+
+  report_md = build_markdown_report(failures, project_id, args.days, is_dry_run=False)
+  save_markdown_report(report_md)
+  print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
   print("=" * 72)
   print("[자원 정리 안내 (Teardown Guide)]")

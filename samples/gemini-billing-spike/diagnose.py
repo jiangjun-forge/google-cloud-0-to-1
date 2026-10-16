@@ -19,10 +19,12 @@ import urllib.parse
 import urllib.request
 
 
-def get_target_project(args_project: str | None) -> str:
+def get_default_project(cli_project: str | None = None, is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
   """우선순위에 따라 활성 GCP 프로젝트 ID를 결정한다."""
-  if args_project:
-    return args_project
+  if is_dry_run:
+    return fallback_demo
+  if cli_project:
+    return cli_project
   for env_var in ("GOOGLE_CLOUD_PROJECT", "PROJECT_ID", "CLOUDSDK_CORE_PROJECT"):
     val = os.getenv(env_var)
     if val:
@@ -41,7 +43,7 @@ def get_target_project(args_project: str | None) -> str:
   except Exception:
     pass
 
-  if is_dry_run or not sys.stdin.isatty():
+  if not sys.stdin.isatty():
     return fallback_demo
 
   try:
@@ -49,6 +51,7 @@ def get_target_project(args_project: str | None) -> str:
         ["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"],
         capture_output=True,
         text=True,
+        check=False,
     )
     projects = [p.strip() for p in res.stdout.splitlines() if p.strip()]
     if projects:
@@ -68,7 +71,7 @@ def get_target_project(args_project: str | None) -> str:
   except Exception:
     pass
 
-  return None
+  return fallback_demo
 
 
 def get_access_token() -> str | None:
@@ -247,7 +250,7 @@ def get_mock_metrics() -> dict:
           {
               "metric": {
                   "labels": {
-                      "credential_id": "serviceAccount:gemini-batch-sa@demo-ai-project.iam.gserviceaccount.com",
+                      "credential_id": "serviceAccount:gemini-batch-sa@sample-project-id.iam.gserviceaccount.com",
                       "method": "StreamGenerateContent",
                   }
               },
@@ -260,6 +263,141 @@ def get_mock_metrics() -> dict:
           },
       ]
   }
+
+
+def build_markdown_report(project_id: str, days: int, data: dict, is_dry_run: bool) -> str:
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "운영 환경 진단 (Production)"
+  time_series = data.get("timeSeries", [])
+  total_count = 0
+  credential_counts = defaultdict(int)
+  method_counts = defaultdict(int)
+  service_counts = defaultdict(int)
+
+  for ts in time_series:
+    cred = ts.get("metric", {}).get("labels", {}).get("credential_id", "알 수 없음")
+    method = ts.get("metric", {}).get("labels", {}).get("method", "알 수 없음")
+    svc = ts.get("resource", {}).get("labels", {}).get("service", "알 수 없음")
+
+    cnt = 0
+    for pt in ts.get("points", []):
+      val = pt.get("value", {})
+      cnt += int(val.get("int64Value", 0))
+
+    total_count += cnt
+    credential_counts[cred] += cnt
+    method_counts[method] += cnt
+    service_counts[svc] += cnt
+
+  lines = [
+      "# 진단 및 분석 리포트: gemini-billing-spike",
+      "",
+      f"- **생성 모드**: {mode_str}",
+      f"- **대상 프로젝트**: `{project_id}`",
+      "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+      "",
+      "---",
+      "",
+      "## 1. 진단 실행 콘솔 출력 결과",
+      "",
+      "```text",
+  ]
+  if is_dry_run:
+    lines.append("[데모 실행] --dry-run 모드가 활성화되어 가상 샘플 데이터를 기반으로 리포트를 시뮬레이션한다.")
+  lines.extend([
+      "=" * 72,
+      "[진단 결과] 제미나이(Gemini) 사용량 및 비용 급증 원인 분석 리포트",
+      f"   - 대상 프로젝트: {project_id}",
+      f"   - 조회 대상 기간: 최근 {days}일",
+      "=" * 72,
+      "",
+      f"총 집계된 API 호출 수: {total_count:,} 건 (시계열 레코드: {len(time_series)}개)",
+      "",
+      "┌" + "─" * 70 + "┐",
+      "│ 1. 호출 주체(자격 증명)별 점유율 및 호출 횟수" + " " * 27 + "│",
+      "├" + "─" * 70 + "┤",
+  ])
+
+  sorted_creds = sorted(credential_counts.items(), key=lambda x: x[1], reverse=True)
+  for cred, count in sorted_creds:
+    pct = (count / total_count * 100) if total_count else 0
+    display_cred = (cred[:45] + "..") if len(cred) > 47 else cred.ljust(47)
+    lines.append(f"│  - {display_cred} : {count:>8,}회 ({pct:>5.1f}%) │")
+  lines.append("└" + "─" * 70 + "┘")
+
+  lines.extend([
+      "",
+      "[2. 호출된 서비스 및 API 메서드]",
+  ])
+  for svc, count in service_counts.items():
+    alias = "Vertex AI Gemini" if "aiplatform" in svc else "AI Studio Gemini"
+    lines.append(f"  - {svc} ({alias}): {count:,}회")
+
+  lines.extend([
+      "",
+      "[상위 호출 메서드]",
+  ])
+  sorted_methods = sorted(method_counts.items(), key=lambda x: x[1], reverse=True)
+  for method, count in sorted_methods:
+    lines.append(f"  - {method}: {count:,}회")
+
+  lines.extend([
+      "",
+      "=" * 72,
+      "[추천 즉시 조치 가이드]",
+      "=" * 72,
+  ])
+
+  has_api_key = any("apikey:" in cred for cred in credential_counts)
+  has_sa = any("serviceAccount:" in cred for cred in credential_counts)
+
+  if has_api_key:
+    lines.extend([
+        "",
+        "[API 키 발견] 'apikey:AIzaSy...' 형태의 호출 감지:",
+        "  1. 소스 코드나 클라이언트 앱에 API 키가 노출되었을 가능성이 있다.",
+        "  2. GCP 콘솔 사용자 인증 정보 페이지로 이동:",
+        f"     사용자 인증 정보 콘솔 ( https://console.cloud.google.com/apis/credentials?project={project_id} )",
+        "  3. 해당 키를 찾아 'API 제한사항'을 점검하거나, 즉시 삭제 또는 재발급 조치한다.",
+    ])
+
+  if has_sa:
+    lines.extend([
+        "",
+        "[서비스 계정 발견] 'serviceAccount:...' 형태의 호출 감지:",
+        "  1. 백엔드 배치 잡이나 유출된 서비스 계정 키 파일(JSON)을 통한 호출이다.",
+        "  2. GCP 콘솔 서비스 계정 페이지로 이동:",
+        f"     서비스 계정 콘솔 ( https://console.cloud.google.com/iam-admin/serviceaccounts?project={project_id} )",
+        "  3. 해당 계정의 활성 키를 점검하고 미사용 키는 즉시 삭제 조치한다.",
+    ])
+
+  lines.extend([
+      "",
+      "추가 비용 누수 방지 권장 사항:",
+      "   - Cloud Billing 예산 설정 ( https://console.cloud.google.com/billing/budgets )",
+      f"   - IAM 및 관리자 할당량 설정 ( https://console.cloud.google.com/iam-admin/quotas?project={project_id} )",
+      "=" * 72,
+      "```",
+      "",
+      "---",
+      "",
+      "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+      "",
+      "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+      "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+      "",
+      "```bash",
+      "python diagnose.py",
+      "```",
+      "",
+  ])
+  return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  report_path = os.path.join(current_dir, filename)
+  with open(report_path, "w", encoding="utf-8") as f:
+    f.write(content)
 
 
 def main():
@@ -289,11 +427,15 @@ def main():
 
   if args.dry_run:
     print("\n[데모 실행] --dry-run 모드가 활성화되어 가상 샘플 데이터를 기반으로 리포트를 시뮬레이션한다.")
-    demo_project = args.project or "demo-gemini-project"
-    parse_and_report(demo_project, args.days, get_mock_metrics())
+    demo_project = args.project or "sample-project-id"
+    mock_data = get_mock_metrics()
+    parse_and_report(demo_project, args.days, mock_data)
+    md_content = build_markdown_report(demo_project, args.days, mock_data, is_dry_run=True)
+    save_markdown_report(md_content)
+    print("[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
     return
 
-  project_id = get_gcp_project_id(args.project, is_dry_run=args.dry_run)
+  project_id = get_default_project(args.project, is_dry_run=args.dry_run)
   if not project_id:
     print(
         "[오류] 분석할 GCP 프로젝트 ID를 확인할 수 없다.\n"
@@ -318,6 +460,9 @@ def main():
 
   print("[2/2] 호출 데이터 분석 및 요약 완료.\n")
   parse_and_report(project_id, args.days, data)
+  md_content = build_markdown_report(project_id, args.days, data, is_dry_run=False)
+  save_markdown_report(md_content)
+  print("[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

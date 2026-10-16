@@ -63,6 +63,8 @@ def parse_args() -> argparse.Namespace:
 
 def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     """프로젝트 ID를 탐지하거나 대화형으로 선택한다."""
+    if is_dry_run:
+        return "sample-project-id"
     if cli_project:
         return cli_project
     env_proj = os.getenv("PROJECT_ID")
@@ -81,8 +83,8 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
-        return "demo-secure-multimodal-transfer"
+    if not sys.stdin.isatty():
+        return "sample-project-id"
 
     try:
         res = subprocess.run(
@@ -108,7 +110,7 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    return "demo-secure-multimodal-transfer"
+    return "sample-project-id"
 
 
 def get_mock_preflight_checks(bucket: str, pool: str) -> list[dict]:
@@ -228,10 +230,86 @@ def inspect_live_sts(project_id: str, bucket: str, pool: str) -> list[dict]:
     return checks
 
 
+def build_markdown_report(
+    checks: list[dict],
+    project_id: str,
+    bucket: str,
+    pool: str,
+    limit_mb: int,
+    is_dry_run: bool,
+) -> str:
+    """터미널 진단 결과와 완벽히 동기화된 마크다운 리포트를 생성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 (Live)"
+    lines = [
+        "# 온프레미스 대용량 미디어 STS 전송 및 보안 무결성 사전 진단 리포트 (storage-transfer-secure-uploader)",
+        "",
+        f"- **진단 모드**: `{mode_str}`",
+        f"- **대상 프로젝트**: `{project_id}`",
+        f"- **타깃 버킷**: `gs://{bucket}`",
+        f"- **STS 에이전트 풀**: `{pool}`",
+        f"- **설정 대역폭 제한**: {limit_mb} MB/s",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 안전 전송 파이프라인 점검 현황",
+        "",
+        "| 단계 | 점검 항목 | 결과 | 상세 상태 |",
+        "| :--- | :--- | :--- | :--- |",
+    ]
+    for c in checks:
+        status_md = f"**{c['status']}**" if c['status'] in ("FAIL", "WARN") else c['status']
+        lines.append(f"| {c['step']} | {c['item']} | {status_md} | {c['detail']} |")
+
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## 2. 전송 작업(Job) 생성 및 실행 가이드",
+        "",
+        "### 1. 온프레미스 에이전트 풀 생성 및 실행 토큰 발급",
+        "```bash",
+        f"gcloud transfer agent-pools create {pool} --project={project_id} --display-name='Secure On-Prem Pool'",
+        "```",
+        "",
+        "### 2. 타깃 버킷 공개 접근 차단 및 CMEK 강제",
+        "```bash",
+        f"gcloud storage buckets update gs://{bucket} --public-access-prevention",
+        f"gcloud storage buckets update gs://{bucket} --default-kms-key=projects/{project_id}/locations/asia-northeast3/keyRings/media-ring/cryptoKeys/video-key",
+        "```",
+        "",
+        f"### 3. 대역폭 제한({limit_mb} MB/s) 적용 온프렘-to-GCS 전송 작업 생성",
+        "```bash",
+        f"gcloud transfer jobs create posix-to-gcs /mnt/on-prem/cctv gs://{bucket}/cctv-2026/ --source-agent-pool={pool} --project={project_id}",
+        "```",
+        "",
+        "---",
+        "",
+        "## 3. 자원 정리 안내 (Teardown)",
+        "본 진단 도구는 전송 준비 상태를 검사하는 도구이며, 테스트용으로 생성한 전송 작업(Job)이나 에이전트 풀이 있다면 아래 명령어로 정리한다:",
+        "```bash",
+        f"gcloud transfer jobs delete JOB_NAME --project={project_id}",
+        f"gcloud transfer agent-pools delete {pool} --project={project_id}",
+        "```",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """마크다운 리포트를 파일로 기록/덮어쓴다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"\n[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main() -> None:
     """메인 실행 함수."""
     args = parse_args()
-    project_id = detect_project_id(args.project, is_dry_run=args.dry_run)
+    project_id = "sample-project-id" if args.dry_run else detect_project_id(args.project, is_dry_run=args.dry_run)
     bucket = args.bucket
     pool = args.agent_pool
     limit_mb = args.bandwidth_limit
@@ -268,6 +346,12 @@ def main() -> None:
     print(f"3. 대역폭 제한({limit_mb} MB/s) 적용 온프렘-to-GCS 전송 작업 생성:")
     print(f"   gcloud transfer jobs create posix-to-gcs /mnt/on-prem/cctv gs://{bucket}/cctv-2026/ --source-agent-pool={pool} --project={project_id}")
     print("=" * 85)
+
+    # 마크다운 리포트 자동 생성 및 덮어쓰기 (스크립트 기준 디렉터리 경로 사용)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_file_path = os.path.join(script_dir, "report.md")
+    report_content = build_markdown_report(checks, project_id, bucket, pool, limit_mb, args.dry_run)
+    save_markdown_report(report_content, report_file_path)
 
 
 if __name__ == "__main__":

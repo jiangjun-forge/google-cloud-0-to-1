@@ -167,6 +167,6 @@ def generate_with_fallback(client, prompt):
 
 ---
 
-## 자원 정리 (Teardown) 안내
+## 자원 정리 안내 (Teardown)
 
 이 도구는 소스 코드 정적 분석기이므로 클라우드 상에 생성된 리소스가 없으며, 별도의 자원 정리 작업이 필요하지 않다.

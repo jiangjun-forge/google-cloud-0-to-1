@@ -31,8 +31,10 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 
-def get_gcloud_active_project(is_dry_run: bool = False, fallback_demo: str = "example-trust-stack-corp") -> Optional[str]:
+def get_gcloud_active_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> Optional[str]:
     """현재 활성화된 gcloud 프로젝트 ID를 조회하거나 대화형으로 선택한다."""
+    if is_dry_run:
+        return fallback_demo
     try:
         res = subprocess.run(
             ["gcloud", "config", "get-value", "project"],
@@ -46,7 +48,7 @@ def get_gcloud_active_project(is_dry_run: bool = False, fallback_demo: str = "ex
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
+    if not sys.stdin.isatty():
         return fallback_demo
 
     try:
@@ -57,7 +59,7 @@ def get_gcloud_active_project(is_dry_run: bool = False, fallback_demo: str = "ex
         )
         projects = [p.strip() for p in res.stdout.splitlines() if p.strip()]
         if projects:
-            print("\n[?] 대상 GCP 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
+            print("\n[?] 대상 구글 클라우드(Google Cloud) 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
             for idx, p in enumerate(projects, 1):
                 print(f"  [{idx}] {p}")
             print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
@@ -417,24 +419,25 @@ def measure_live(
   }
 
 
-def print_waterfall(profile: Dict[str, Any]) -> None:
-  """지연 시간 워터폴 차트 및 Vertex AI API vs GE App 정밀 비교 분석 리포트를 출력한다."""
-  print("=" * 92)
-  print(" Vertex AI Gemini API vs Gemini Enterprise App (GE App) 완결형 파이프라인 지연 시간 비교 리포트")
-  print(f" 프로젝트: {profile['project_id']} | 리전: {profile['location']} | 모델: {profile['model_id']}")
-  print(f" 테스트 프롬프트: \"{profile.get('prompt', '기본 쿼리')}\"")
-  print(" ※ 참고: GE App은 웹 UI 접근이 아닌 Discovery Engine 엔드포인트 직접 호출과")
-  print("         Model Armor 가드레일 체인을 완결 결합하여 사내 엔터프라이즈 RAG 파이프라인을 모사함.")
-  print("=" * 92)
-  print()
+def format_waterfall_text(profile: Dict[str, Any]) -> str:
+  """지연 시간 워터폴 차트 및 Vertex AI API vs GE App 정밀 비교 분석 텍스트를 생성한다."""
+  lines = []
+  lines.append("=" * 92)
+  lines.append(" Vertex AI Gemini API vs Gemini Enterprise App (GE App) 완결형 파이프라인 지연 시간 비교 리포트")
+  lines.append(f" 프로젝트: {profile['project_id']} | 리전: {profile['location']} | 모델: {profile['model_id']}")
+  lines.append(f" 테스트 프롬프트: \"{profile.get('prompt', '기본 쿼리')}\"")
+  lines.append(" ※ 참고: GE App은 웹 UI 접근이 아닌 Discovery Engine 엔드포인트 직접 호출과")
+  lines.append("         Model Armor 가드레일 체인을 완결 결합하여 사내 엔터프라이즈 RAG 파이프라인을 모사함.")
+  lines.append("=" * 92)
+  lines.append("")
 
   hops = profile["hops"]
   total_latency = sum(h["latency_ms"] for h in hops)
 
-  print(f"[1] Gemini Enterprise App (GE App) 완결형 파이프라인 구간별 지연 시간 (총 소요: {total_latency:,.1f} ms)")
-  print("-" * 92)
-  print(f"{'구간 ID':<8} | {'계층':<12} | {'소요 시간 (비중)':<20} | {'워터폴 차트'}")
-  print("-" * 92)
+  lines.append(f"[1] Gemini Enterprise App (GE App) 완결형 파이프라인 구간별 지연 시간 (총 소요: {total_latency:,.1f} ms)")
+  lines.append("-" * 92)
+  lines.append(f"{'구간 ID':<8} | {'계층':<12} | {'소요 시간 (비중)':<20} | {'워터폴 차트'}")
+  lines.append("-" * 92)
 
   max_bar_width = 36
   for h in hops:
@@ -443,10 +446,10 @@ def print_waterfall(profile: Dict[str, Any]) -> None:
     bar_len = int(ratio * max_bar_width)
     bar = "=" * bar_len + " " * (max_bar_width - bar_len)
     time_ratio_str = f"{ms:>7.1f} ms ({ratio * 100:>4.1f}%)"
-    print(f"{h['id']:<8} | {h['category']:<12} | {time_ratio_str:<20} | [{bar}] {h['name']}")
+    lines.append(f"{h['id']:<8} | {h['category']:<12} | {time_ratio_str:<20} | [{bar}] {h['name']}")
 
-  print("-" * 92)
-  print()
+  lines.append("-" * 92)
+  lines.append("")
 
   if "comparison" in profile:
     comp = profile["comparison"]
@@ -457,59 +460,106 @@ def print_waterfall(profile: Dict[str, Any]) -> None:
     perceived_ratio = ge_ms / api_ttft if api_ttft > 0 else 1.0
     e2e_ratio = ge_ms / api_total if api_total > 0 else 1.0
 
-    print("[2] 엔드유저 초기 응답 지연(TTFT) 및 완결 E2E 소요 시간 비교 분석:")
-    print("=" * 92)
-    print(f"  * Vertex AI Gemini API 첫 토큰 수신 (TTFT) : {api_ttft:>8.1f} ms (스트리밍 즉시 수신)")
-    print(f"  * Vertex AI Gemini API 전체 응답 완료 시간  : {api_total:>8.1f} ms")
-    print(f"  * Gemini Enterprise App 완결 E2E 소요 시간  : {ge_ms:>8.1f} ms (보안 가드레일 + 사내 RAG)")
-    print("-" * 92)
-    print(f"  * 1) 첫 토큰 수신 시점 차이 : GE App 파이프라인에서 약 {perceived_ratio:.1f}배 추가 시간 소요")
-    print(f"       (선행 조건: Model Armor 인스펙션 및 사내 인덱스 검색 완료 후 토큰 생성 착수)")
-    print(f"  * 2) 전체 E2E 완료 시간 차이 : GE App 파이프라인에서 약 {e2e_ratio:.1f}배 소요 (+{ge_ms - api_total:.1f} ms)")
+    lines.append("[2] 엔드유저 초기 응답 지연(TTFT) 및 완결 E2E 소요 시간 비교 분석:")
+    lines.append("=" * 92)
+    lines.append(f"  * Vertex AI Gemini API 첫 토큰 수신 (TTFT) : {api_ttft:>8.1f} ms (스트리밍 즉시 수신)")
+    lines.append(f"  * Vertex AI Gemini API 전체 응답 완료 시간  : {api_total:>8.1f} ms")
+    lines.append(f"  * Gemini Enterprise App 완결 E2E 소요 시간  : {ge_ms:>8.1f} ms (보안 가드레일 + 사내 RAG)")
+    lines.append("-" * 92)
+    lines.append(f"  * 1) 첫 토큰 수신 시점 차이 : GE App 파이프라인에서 약 {perceived_ratio:.1f}배 추가 시간 소요")
+    lines.append(f"       (선행 조건: Model Armor 인스펙션 및 사내 인덱스 검색 완료 후 토큰 생성 착수)")
+    lines.append(f"  * 2) 전체 E2E 완료 시간 차이 : GE App 파이프라인에서 약 {e2e_ratio:.1f}배 소요 (+{ge_ms - api_total:.1f} ms)")
     if comp.get("api_sample"):
-      print(f"  * Vertex AI API 생성 샘플: \"{comp['api_sample'][:70]}...\"")
-    print("=" * 92)
-    print()
+      lines.append(f"  * Vertex AI API 생성 샘플: \"{comp['api_sample'][:70]}...\"")
+    lines.append("=" * 92)
+    lines.append("")
 
-  print("신뢰 스택 세부 진단 및 권고안:")
-  print("=" * 92)
+  lines.append("신뢰 스택 세부 진단 및 권고안:")
+  lines.append("=" * 92)
   for h in hops:
     ratio = (h["latency_ms"] / total_latency) * 100 if total_latency > 0 else 0
-    print(f"* {h['id']} [{h['name']}] - {h['latency_ms']:.1f} ms ({ratio:.1f}%)")
-    print(f"  - 원인 분석: {h['description']}")
-    print(f"  - 최적화안: {h['optimization']}")
-    print()
+    lines.append(f"* {h['id']} [{h['name']}] - {h['latency_ms']:.1f} ms ({ratio:.1f}%)")
+    lines.append(f"  - 원인 분석: {h['description']}")
+    lines.append(f"  - 최적화안: {h['optimization']}")
+    lines.append("")
 
-  print("=" * 92)
-  print("종합 분석 및 아키텍처 해석:")
-  print("1. [초기 토큰 수신 지연(TTFT) 차이 분석]:")
-  print("   - Vertex AI 순수 API는 사전 필터 없이 스트리밍이 즉시 시작되어 초기 토큰 도달이 빠르다.")
-  print("   - GE App은 Model Armor 사전 검증(약 0.7초)과 사내 데이터스토어 인덱스 검색(약 1.5~2초)이")
-  print("     동기식으로 선행 완료된 이후에 생성을 개시하므로 초기 토큰 수신까지 대기 시간이 발생한다.")
-  print("2. [사내 RAG 및 사후 보안 검증 파이프라인]:")
-  print("   - 검색된 문서를 프롬프트 문맥에 주입하여 답변을 요약하고, 생성된 답변에 대한 사후 민감정보")
-  print("     검사(Model Armor Egress)가 추가로 실행되므로 전체 파이프라인 소요 시간이 늘어난다.")
-  print("3. [결론]:")
-  print("   - 관측된 지연 시간의 차이는 모델 자체의 추론 지연이 아니라 사내 지식 기반 환각 방지(Grounding)와")
-  print("     엔터프라이즈 보안 거버넌스(Model Armor) 계층의 동기 실행에 따른 구조적 파이프라인 차이다.")
-  print("=" * 92)
+  lines.append("=" * 92)
+  lines.append("종합 분석 및 아키텍처 해석:")
+  lines.append("1. [초기 토큰 수신 지연(TTFT) 차이 분석]:")
+  lines.append("   - Vertex AI 순수 API는 사전 필터 없이 스트리밍이 즉시 시작되어 초기 토큰 도달이 빠르다.")
+  lines.append("   - GE App은 Model Armor 사전 검증(약 0.7초)과 사내 데이터스토어 인덱스 검색(약 1.5~2초)이")
+  lines.append("     동기식으로 선행 완료된 이후에 생성을 개시하므로 초기 토큰 수신까지 대기 시간이 발생한다.")
+  lines.append("2. [사내 RAG 및 사후 보안 검증 파이프라인]:")
+  lines.append("   - 검색된 문서를 프롬프트 문맥에 주입하여 답변을 요약하고, 생성된 답변에 대한 사후 민감정보")
+  lines.append("     검사(Model Armor Egress)가 추가로 실행되므로 전체 파이프라인 소요 시간이 늘어난다.")
+  lines.append("3. [결론]:")
+  lines.append("   - 관측된 지연 시간의 차이는 모델 자체의 추론 지연이 아니라 사내 지식 기반 환각 방지(Grounding)와")
+  lines.append("     엔터프라이즈 보안 거버넌스(Model Armor) 계층의 동기 실행에 따른 구조적 파이프라인 차이다.")
+  lines.append("=" * 92)
+  return "\n".join(lines)
+
+
+def print_waterfall(profile: Dict[str, Any]) -> None:
+  """지연 시간 워터폴 차트 및 Vertex AI API vs GE App 정밀 비교 분석 리포트를 출력한다."""
+  print(format_waterfall_text(profile))
+
+
+def build_markdown_report(profile: Dict[str, Any], is_dry_run: bool = False) -> str:
+  """진단 결과를 Markdown 리포트 문자열로 생성한다."""
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 진단"
+  console_output = format_waterfall_text(profile)
+  lines = [
+      "# 진단 및 분석 리포트: gemini-enterprise-latency-profiler",
+      "",
+      f"- **생성 모드**: {mode_str}",
+      f"- **대상 프로젝트**: `{profile['project_id']}`",
+      "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+      "",
+      "---",
+      "",
+      "## 1. 진단 실행 콘솔 출력 결과",
+      "",
+      "```text",
+      console_output,
+      "```",
+      "",
+      "---",
+      "",
+      "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+      "",
+      "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+      "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+      "",
+      "```bash",
+      "python diagnose.py",
+      "```",
+      "",
+  ]
+  return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  report_path = os.path.join(current_dir, filename)
+  with open(report_path, "w", encoding="utf-8") as f:
+    f.write(content)
 
 
 def main() -> None:
   parser = argparse.ArgumentParser(
     description="제미나이 엔터프라이즈 신뢰 스택(Trust Stack) 구간별 지연 시간 분석 프로파일러"
   )
-  parser.add_argument("-p", "--project", help="대상 Google Cloud 프로젝트 ID")
+  parser.add_argument("-p", "--project", help="대상 구글 클라우드(Google Cloud) 프로젝트 ID")
   parser.add_argument("-l", "--location", default=os.getenv("LOCATION") or "asia-northeast3", help="엔드포인트 리전 (기본값: asia-northeast3)")
   parser.add_argument("-m", "--model", default=os.getenv("MODEL_ID") or "gemini-2.5-flash", help="테스트 대상 모델 ID (기본값: gemini-2.5-flash)")
   parser.add_argument("--prompt", default=os.getenv("PROMPT") or "사내 보안 정책 가이드라인", help="벤치마크 테스트 프롬프트")
   parser.add_argument("--template", default=os.getenv("MODEL_ARMOR_TEMPLATE") or None, help="Model Armor 검사용 템플릿 리소스 경로")
-  parser.add_argument("--dry-run", action="store_true", help="실제 GCP API 호출 없이 모의 가상 데이터를 이용해 스모크 테스트 수행")
+  parser.add_argument("--dry-run", action="store_true", help="실제 구글 클라우드 API 호출 없이 모의 가상 데이터를 이용해 스모크 테스트 수행")
 
   args = parser.parse_args()
 
   if args.dry_run:
-    project_id = args.project or "example-corp"
+    project_id = "sample-project-id"
     profile = get_mock_profile(project_id, args.location, args.model)
     profile["prompt"] = args.prompt
     profile["comparison"] = {
@@ -521,11 +571,15 @@ def main() -> None:
   else:
     project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_active_project(is_dry_run=args.dry_run)
     if not project_id:
-      print("오류: 프로젝트 ID가 지정되지 않았다. -p/--project 인자 또는 PROJECT_ID 환경 변수를 설정해야 한다.", file=sys.stderr)
+      print("오류: 프로젝트 ID가 지정되지 않았다. -p/--project 인자 또는 PROJECT_ID 환경 변수를 설정하여야 한다.", file=sys.stderr)
       sys.exit(2)
     profile = measure_live(project_id, args.location, args.model, args.prompt, args.template)
 
   print_waterfall(profile)
+
+  report_content = build_markdown_report(profile, is_dry_run=args.dry_run)
+  save_markdown_report(report_content)
+  print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

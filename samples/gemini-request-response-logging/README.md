@@ -63,8 +63,8 @@ BigQuery 데이터세트 생성 및 제미나이 모델 호출을 위한 IAM 권
 
 | 역할 (Role) | 권한 ID | 용도 |
 | :--- | :--- | :--- |
-| **BigQuery 데이터 편집자 (권장)** | `roles/bigquery.dataEditor` | 로그 저장용 데이터세트 및 테이블 생성 |
-| **Vertex AI 사용자** | `roles/aiplatform.user` | 제미나이 모델 호출 및 로깅 파라미터 설정 |
+| **빅쿼리 데이터 편집자 (권장)** | `roles/bigquery.dataEditor` | 로그 저장용 데이터세트 및 테이블 생성 |
+| **버텍스 AI 사용자** | `roles/aiplatform.user` | 제미나이 모델 호출 및 로깅 파라미터 설정 |
 
 ---
 
@@ -135,7 +135,7 @@ ORDER BY total_tokens DESC;
 
 ---
 
-## 자원 정리 (Teardown Guide)
+## 자원 정리 안내 (Teardown)
 
 테스트 및 실습 완료 후 불필요한 BigQuery 스토리지 과금을 방지하기 위해 데이터세트를 삭제한다:
 

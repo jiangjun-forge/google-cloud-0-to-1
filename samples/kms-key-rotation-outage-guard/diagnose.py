@@ -69,6 +69,8 @@ def parse_args() -> argparse.Namespace:
 
 def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     """프로젝트 ID를 탐지하거나 대화형으로 선택한다."""
+    if is_dry_run:
+        return "sample-project-id"
     if cli_project:
         return cli_project
     env_proj = os.getenv("PROJECT_ID")
@@ -87,8 +89,8 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
-        return "demo-kms-project"
+    if not sys.stdin.isatty():
+        return "sample-project-id"
 
     try:
         res = subprocess.run(
@@ -114,13 +116,13 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    return "demo-kms-project"
+    return "sample-project-id"
 
 
 def get_mock_kms_data() -> Dict[str, Any]:
     """가상 실행용 모의 Cloud KMS 및 Cloud Storage 객체 버전 데이터를 반환한다."""
     return {
-        "key_path": "projects/demo-kms-project/locations/asia-northeast3/keyRings/prod-keyring/cryptoKeys/customer-data-key",
+        "key_path": "projects/sample-project-id/locations/asia-northeast3/keyRings/prod-keyring/cryptoKeys/customer-data-key",
         "primary_version": "3",
         "rotation_period": "90일 (7,776,000초)",
         "versions": [
@@ -255,63 +257,104 @@ def inspect_kms(project_id: str, location: str, keyring: str, key_name: str, buc
     }
 
 
-def print_report(project_id: str, is_dry_run: bool, data: Dict[str, Any]) -> None:
-    """진단 리포트를 출력한다."""
-    print("=" * 80)
-    print("Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방 리포트")
-    print(f"진단 모드: {'가상 실행 (Dry-run)' if is_dry_run else '실제 환경 점검'}")
-    print(f"대상 프로젝트: {project_id}")
-    print(f"암호화 키 경로: {data.get('key_path', '')}")
-    print(f"현재 주 버전(Primary): 버전 {data.get('primary_version', '')}")
-    print(f"자동 순환 주기: {data.get('rotation_period', '')}")
-    print("=" * 80)
-    print()
+def build_report_text(project_id: str, is_dry_run: bool, data: Dict[str, Any]) -> str:
+    """진단 리포트 문자열을 생성한다."""
+    lines = []
+    lines.append("=" * 80)
+    lines.append("Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방 리포트")
+    lines.append(f"진단 모드: {'가상 실행 (Dry-run)' if is_dry_run else '실제 환경 점검'}")
+    lines.append(f"대상 프로젝트: {project_id}")
+    lines.append(f"암호화 키 경로: {data.get('key_path', '')}")
+    lines.append(f"현재 주 버전(Primary): 버전 {data.get('primary_version', '')}")
+    lines.append(f"자동 순환 주기: {data.get('rotation_period', '')}")
+    lines.append("=" * 80)
+    lines.append("")
 
-    print("[1단계] Cloud KMS CryptoKey 버전별 라이프사이클 상태 점검")
-    print("-" * 80)
-    print(f"{'버전':<8} {'기본 키':<10} {'상태':<20} {'생성 일자':<22} {'위험 등급':<10}")
-    print("-" * 80)
+    lines.append("[1단계] Cloud KMS CryptoKey 버전별 라이프사이클 상태 점검")
+    lines.append("-" * 80)
+    lines.append(f"{'버전':<8} {'기본 키':<10} {'상태':<20} {'생성 일자':<22} {'위험 등급':<10}")
+    lines.append("-" * 80)
     for v in data.get("versions", []):
         pri_str = "YES (Primary)" if v["is_primary"] else "NO"
-        print(f"v{v['version']:<7} {pri_str:<10} {v['state']:<20} {v['create_time']:<22} {v['status']:<10}")
-    print("-" * 80)
-    print()
+        lines.append(f"v{v['version']:<7} {pri_str:<10} {v['state']:<20} {v['create_time']:<22} {v['status']:<10}")
+    lines.append("-" * 80)
+    lines.append("")
 
-    print("[2단계] Cloud Storage 버킷 내 구버전 키 종속성 및 객체 분포 분석")
-    print("-" * 80)
-    print(f"대상 버킷: gs://{data.get('storage_bucket', '미지정')}")
-    print(f"점검 객체 총합: {data.get('total_objects', 0):,}개")
-    print()
-    print(f"{'암호화 버전':<16} {'객체 수':<12} {'비율':<10} {'위험도':<10}")
-    print("-" * 80)
+    lines.append("[2단계] Cloud Storage 버킷 내 구버전 키 종속성 및 객체 분포 분석")
+    lines.append("-" * 80)
+    lines.append(f"대상 버킷: gs://{data.get('storage_bucket', '미지정')}")
+    lines.append(f"점검 객체 총합: {data.get('total_objects', 0):,}개")
+    lines.append("")
+    lines.append(f"{'암호화 버전':<16} {'객체 수':<12} {'비율':<10} {'위험도':<10}")
+    lines.append("-" * 80)
     for item in data.get("object_distribution", []):
-        print(f"버전 {item['version']:<12} {item['count']:<12} {item['percentage']}%      {item['risk']:<10}")
-    print("-" * 80)
-    print()
+        lines.append(f"버전 {item['version']:<12} {item['count']:<12} {item['percentage']}%      {item['risk']:<10}")
+    lines.append("-" * 80)
+    lines.append("")
 
-    print("[3단계] 서비스 장애 방지 긴급 처방 및 데이터 재암호화 가이드")
-    print("1. [긴급] 파기 예정 또는 비활성화된 구버전 키 즉각 복구 (장애 방어):")
-    print("   gcloud kms keys versions restore 1 \\")
-    print(f"     --key={os.getenv('KEY_NAME', 'customer-data-key')} \\")
-    print(f"     --keyring={os.getenv('KEY_RING', 'prod-keyring')} \\")
-    print(f"     --location={os.getenv('KMS_LOCATION', 'asia-northeast3')}")
-    print()
-    print("2. [필수] 구버전 키로 암호화된 객체를 최신 주 버전(Primary)으로 일괄 재암호화(Rewrite):")
-    print(f"   # 최신 주 키(v{data.get('primary_version', '3')})로 객체 메타데이터 및 암호화 블록 갱신:")
-    print(f"   gcloud storage objects rewrite gs://{data.get('storage_bucket', 'BUCKET_NAME')}/**")
-    print()
-    print("3. [검증] 모든 객체가 최신 주 버전 키로 마이그레이션 완료된 후에만 구버전 비활성화(Disable):")
-    print("   gcloud kms keys versions disable 1 \\")
-    print(f"     --key={os.getenv('KEY_NAME', 'customer-data-key')} \\")
-    print(f"     --keyring={os.getenv('KEY_RING', 'prod-keyring')} \\")
-    print(f"     --location={os.getenv('KMS_LOCATION', 'asia-northeast3')}")
-    print("=" * 80)
+    lines.append("[3단계] 서비스 장애 방지 긴급 처방 및 데이터 재암호화 가이드")
+    lines.append("1. [긴급] 파기 예정 또는 비활성화된 구버전 키 즉각 복구 (장애 방어):")
+    lines.append("   gcloud kms keys versions restore 1 \\")
+    lines.append(f"     --key={os.getenv('KEY_NAME', 'customer-data-key')} \\")
+    lines.append(f"     --keyring={os.getenv('KEY_RING', 'prod-keyring')} \\")
+    lines.append(f"     --location={os.getenv('KMS_LOCATION', 'asia-northeast3')}")
+    lines.append("")
+    lines.append("2. [필수] 구버전 키로 암호화된 객체를 최신 주 버전(Primary)으로 일괄 재암호화(Rewrite):")
+    lines.append(f"   # 최신 주 키(v{data.get('primary_version', '3')})로 객체 메타데이터 및 암호화 블록 갱신:")
+    lines.append(f"   gcloud storage objects rewrite gs://{data.get('storage_bucket', 'BUCKET_NAME')}/**")
+    lines.append("")
+    lines.append("3. [검증] 모든 객체가 최신 주 버전 키로 마이그레이션 완료된 후에만 구버전 비활성화(Disable):")
+    lines.append("   gcloud kms keys versions disable 1 \\")
+    lines.append(f"     --key={os.getenv('KEY_NAME', 'customer-data-key')} \\")
+    lines.append(f"     --keyring={os.getenv('KEY_RING', 'prod-keyring')} \\")
+    lines.append(f"     --location={os.getenv('KMS_LOCATION', 'asia-northeast3')}")
+    lines.append("=" * 80)
+    return "\n".join(lines)
+
+
+def build_markdown_report(report_text: str, project_id: str, is_dry_run: bool) -> str:
+    """마크다운 리포트(report.md) 내용을 생성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 점검 (Live)"
+    return f"""# 진단 및 분석 리포트: kms-key-rotation-outage-guard
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+{report_text}
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+
+
+def save_markdown_report(content: str, filepath: str = "report.md") -> None:
+    """마크다운 리포트를 지정된 경로에 저장한다."""
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+    except Exception as e:
+        print(f"[경고] 리포트 파일({filepath}) 저장 실패: {e}")
 
 
 def main() -> None:
     """메인 실행 함수."""
     args = parse_args()
-    project_id = detect_project_id(args.project, args.dry_run)
+    project_id = "sample-project-id" if args.dry_run else detect_project_id(args.project, args.dry_run)
 
     if args.dry_run:
         data = get_mock_kms_data()
@@ -321,7 +364,12 @@ def main() -> None:
             print(f"프로젝트 [{project_id}]에서 지정된 Cloud KMS 키 [{args.key_name}]를 찾지 못했다.")
             sys.exit(0)
 
-    print_report(project_id, args.dry_run, data)
+    report_text = build_report_text(project_id, args.dry_run, data)
+    print(report_text)
+
+    report_md = build_markdown_report(report_text, project_id, args.dry_run)
+    save_markdown_report(report_md)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

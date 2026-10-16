@@ -48,7 +48,7 @@ from google.genai import types
 # API 키 기반 (AI Studio)
 client = genai.Client(api_key="YOUR_API_KEY")
 
-# 또는 GCP 프로젝트 기반 (Vertex AI)
+# 또는 구글 클라우드(Google Cloud) 프로젝트 기반 (Vertex AI)
 # client = genai.Client(vertexai=True, project="YOUR_PROJECT_ID", location="us-central1")
 
 # 2. 콘텐츠 생성 호출
@@ -57,7 +57,6 @@ response = client.models.generate_content(
     contents="최신 SDK 적용 테스트용 프롬프트다."
 )
 print(response.text)
-
 ========================================================================
 ```
 

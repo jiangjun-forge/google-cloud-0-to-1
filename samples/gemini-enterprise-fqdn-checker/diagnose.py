@@ -320,6 +320,91 @@ def print_table(results: list[dict]):
     print("\n모든 Gemini Enterprise 필수 FQDN과의 443 통신 및 DNS 해석이 정상이다.")
 
 
+def build_markdown_report(results: list[dict], is_dry_run: bool) -> str:
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "운영 환경 진단 (Production)"
+  lines = [
+      "# 진단 및 분석 리포트: gemini-enterprise-fqdn-checker",
+      "",
+      f"- **생성 모드**: {mode_str}",
+      "- **대상 프로젝트**: `sample-project-id`",
+      "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+      "",
+      "---",
+      "",
+      "## 1. 진단 실행 콘솔 출력 결과",
+      "",
+      "```text",
+      "Gemini Enterprise 필수 FQDN 사내망 연결성 진단 시작",
+  ]
+  if is_dry_run:
+    lines.append("--> 가상 실행 모드 (--dry-run) 활성화: 모의 방화벽 차단 시나리오를 분석한다.")
+  else:
+    lines.append("--> 병렬 네트워크 프로브 실행 완료.")
+
+  lines.extend([
+      "",
+      "=" * 105,
+      f"{'카테고리':<16} {'FQDN':<42} {'DNS':<6} {'TLS/443':<8} {'지연(ms)':<10} {'결과':<10}",
+      "-" * 105,
+  ])
+  for r in results:
+    dns_str = "OK" if r["dns_ok"] else "FAIL"
+    tcp_str = "OK" if r["tls_ok"] else "FAIL"
+    res_str = "[정상]" if r["status"] == "PASS" else "[차단]"
+    lines.append(f"{r['category']:<16} {r['fqdn']:<42} {dns_str:<6} {tcp_str:<8} {r['latency_ms']:<10} {res_str:<10}")
+  lines.append("=" * 105)
+
+  failures = [r for r in results if r["status"] != "PASS"]
+  critical_fails = [r for r in failures if r["critical"]]
+  warning_fails = [r for r in failures if not r["critical"]]
+  total_count = len(results)
+  pass_count = total_count - len(failures)
+
+  lines.append(f"\n[진단 요약] 총 {total_count}개 FQDN 중 {pass_count}개 정상, {len(failures)}개 차단 또는 실패")
+
+  if failures:
+    lines.append("\n[발견된 방화벽 차단 항목 및 처방]")
+    for f in critical_fails:
+      lines.append(f"\n* [심각-서비스불가] {f['fqdn']} (카테고리: {f['category']}, 용도: {f['purpose']})")
+      lines.append(f"  - 증상: {f['error']}")
+      if "discoveryengine.clients6.google.com" in f["fqdn"]:
+        lines.append("  - 처방: 본 FQDN은 Gemini Enterprise App 웹 UI 렌더링, Deep Research 및 동적 에셋 처리에 필수적이다.")
+        lines.append("         사내 방화벽 및 프록시 Allowlist에 TCP 443 아웃바운드 규칙을 즉시 추가한다.")
+      else:
+        lines.append("  - 처방: 사내 방화벽 아웃바운드 규칙(TCP 443) 또는 프록시 허용 목록에 해당 FQDN을 등록한다.")
+
+    for f in warning_fails:
+      lines.append(f"\n* [주의-일부기능제한] {f['fqdn']} (카테고리: {f['category']}, 용도: {f['purpose']})")
+      lines.append(f"  - 증상: {f['error']}")
+      lines.append("  - 처방: 폰트, 이미지 등 부가 자산 허용을 위해 방화벽 규칙에 FQDN을 추가 등록한다.")
+  else:
+    lines.append("\n모든 Gemini Enterprise 필수 FQDN과의 443 통신 및 DNS 해석이 정상이다.")
+
+  lines.extend([
+      "```",
+      "",
+      "---",
+      "",
+      "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+      "",
+      "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+      "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+      "",
+      "```bash",
+      "python diagnose.py",
+      "```",
+      "",
+  ])
+  return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  report_path = os.path.join(current_dir, filename)
+  with open(report_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="Gemini Enterprise 사내망 FQDN 방화벽 연결성 진단기"
@@ -359,6 +444,10 @@ def main():
     print(json.dumps(results, indent=2, ensure_ascii=False))
   else:
     print_table(results)
+
+  report_content = build_markdown_report(results, is_dry_run=args.dry_run)
+  save_markdown_report(report_content)
+  print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

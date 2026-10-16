@@ -10,8 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD: Business Requirements Document)
-## 프로젝트명: Korea National Core Technology (NCT) Gen AI Compliance Checker
+# 비즈니스 요구 사항 명세서 (BRD): 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기 (korea-nct-compliance-checker)
 
 ---
 

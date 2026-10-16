@@ -496,7 +496,7 @@ def save_markdown_report(report_md: str, output_path: str = "report.md") -> None
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
-        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었습니다: {output_path}")
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
     except Exception as e:
         print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
 

@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): Compute Engine 하드웨어 예약 및 CUD 용량 보장 통합 진단기
+# 기술 상세 설계서 (TDD): 컴퓨트 엔진(Compute Engine) 하드웨어 예약 및 CUD 용량 보장 통합 진단기
 
 ## 1. 아키텍처 개요 및 설계 원칙
 본 도구는 Cloud Logging API, Compute Engine Commitments API, Reservations API, Future Reservations API를 종합 조회하여 CUD 용량 정합성과 사전 예약 승인 상태를 원클릭으로 검증하는 순수 파이썬 단일 실행 도구(`diagnose.py`)로 구성된다.

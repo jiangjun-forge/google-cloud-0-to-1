@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 가드
+# 비즈니스 요구 사항 명세서 (BRD): 제미나이 엔터프라이즈(Gemini Enterprise) 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
 
 ## 1. 배경 및 목적
 Gemini Enterprise 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(Cloud Billing)으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방한다.
@@ -23,10 +23,10 @@ Gemini Enterprise 전사 도입 환경에서 라이선스 일일 풀링 쿼터 �
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 설명 | 우선순위 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** | **Gemini Enterprise Overage 과금 및 쓰로틀링 위험 탐지** | 에디션별 일일 풀링 쿼터 소진율 및 Overage Toggle(ON/OFF) 상태를 점검하여 업무 중단과 초과 과금 위험을 동시 차단해야 하는 경우 | 필수 (P0) |
-| **BR-02** | **Google AI Studio 비의도적 API 키 발급 차단 점검** | 일반 사용자가 AI Studio에서 회사 결제 계정 프로젝트를 선택해 API 키를 발급하지 못하도록 조직 정책 적용 상태를 검증해야 하는 경우 | 필수 (P0) |
-| **BR-03** | **Generative Language API 활성화 및 백엔드 호출 제한** | 계열사 프로젝트 내 `generativelanguage.googleapis.com` 비활성화 및 제한 여부를 점검하여 유료 API 호출 경로를 원천 차단해야 하는 경우 | 필수 (P0) |
-| **BR-04** | **계열사 위임 관리자 결제 권한(Billing RBAC) 거버넌스** | 계열사 IT 관리자에게 `roles/billing.admin` 또는 `roles/billing.user`가 과다 부여되지 않고 OU 맞춤 역할만 부여되었는지 점검해야 하는 경우 | 필수 (P0) |
+| **BR-01** | **Gemini Enterprise Overage 과금 및 쓰로틀링 위험 탐지** | 에디션별 일일 풀링 쿼터 소진율 및 Overage Toggle(ON/OFF) 상태를 점검하여 업무 중단과 초과 과금 위험을 동시 차단하여야 한다. | 필수 (P0) |
+| **BR-02** | **Google AI Studio 비의도적 API 키 발급 차단 점검** | 일반 사용자가 AI Studio에서 회사 결제 계정 프로젝트를 선택해 API 키를 발급하지 못하도록 조직 정책 적용 상태를 검증하여야 한다. | 필수 (P0) |
+| **BR-03** | **Generative Language API 활성화 및 백엔드 호출 제한** | 계열사 프로젝트 내 `generativelanguage.googleapis.com` 비활성화 및 제한 여부를 점검하여 유료 API 호출 경로를 원천 차단하여야 한다. | 필수 (P0) |
+| **BR-04** | **계열사 위임 관리자 결제 권한(Billing RBAC) 거버넌스** | 계열사 IT 관리자에게 `roles/billing.admin` 또는 `roles/billing.user`가 과다 부여되지 않고 OU 맞춤 역할만 부여되었는지 점검하여야 한다. | 필수 (P0) |
 
 ---
 

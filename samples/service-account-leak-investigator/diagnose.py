@@ -59,6 +59,8 @@ def parse_args() -> argparse.Namespace:
 
 def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     """프로젝트 ID를 탐지하거나 대화형으로 선택한다."""
+    if is_dry_run:
+        return "sample-project-id"
     if cli_project:
         return cli_project
     env_proj = os.getenv("PROJECT_ID")
@@ -77,8 +79,8 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
-        return "demo-compromised-investigation"
+    if not sys.stdin.isatty():
+        return "sample-project-id"
 
     try:
         res = subprocess.run(
@@ -104,7 +106,7 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    return "demo-compromised-investigation"
+    return "sample-project-id"
 
 
 def get_mock_audit_records(sa_list: list[str]) -> list[dict]:
@@ -262,10 +264,106 @@ def inspect_service_account_keys(project_id: str, sa_email: str, is_dry_run: boo
         return []
 
 
+def build_markdown_report(
+    all_keys: list[dict],
+    records: list[dict],
+    project_id: str,
+    days: int,
+    is_dry_run: bool,
+) -> str:
+    """터미널 진단 결과와 완벽히 동기화된 마크다운 리포트를 생성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 (Live)"
+    lines = [
+        "# 유출 의심 서비스 계정 감사 로그 역추적 및 침해 진단 리포트 (service-account-leak-investigator)",
+        "",
+        f"- **진단 모드**: `{mode_str}`",
+        f"- **대상 프로젝트**: `{project_id}`",
+        f"- **조사 기간**: 최근 {days}일",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 서비스 계정 활성 키(User-Managed Key) 현황 점검",
+        "",
+    ]
+    if all_keys:
+        lines.extend([
+            "| 서비스 계정 | 키 ID | 생성 일자 | 상태 | 권장 조치 |",
+            "| :--- | :--- | :--- | :--- | :--- |",
+        ])
+        for k in all_keys:
+            lines.append(f"| `{k['sa']}` | `{k['key_id']}` | {k['created']} | {k['status']} | {k['recommendation']} |")
+    else:
+        lines.append("사용자 관리 키가 발견되지 않았다.")
+
+    lines.extend([
+        "",
+        "---",
+        "",
+        f"## 2. 최근 {days}일간 Cloud Audit Logs 위험 활동 역추적",
+        "",
+    ])
+    if records:
+        high_risk_count = sum(1 for r in records if r["risk"] == "HIGH")
+        lines.extend([
+            "| 발생 시각 | 계정 | 서비스 | 메서드 | 호출 IP | 위험도 | 상세 내용 |",
+            "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
+        ])
+        for r in records:
+            sa_short = r["principal"].split("@")[0]
+            svc_short = r["service"].replace(".googleapis.com", "")
+            method_short = r["method"].split(".")[-1]
+            lines.append(f"| {r['timestamp']} | `{sa_short}` | {svc_short} | `{method_short}` | `{r['caller_ip']}` | **{r['risk']}** | {r['detail']} |")
+        lines.extend([
+            "",
+            f"**진단 요약**: 총 {len(records)}건의 활동 중 고위험(HIGH) 이벤트 {high_risk_count}건 탐지",
+        ])
+    else:
+        lines.append("해당 기간 동안 의심스러운 활동 기록이 발견되지 않았다.")
+
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## 3. 긴급 대응 조치 및 Workload Identity Federation 전환 처방",
+        "",
+        "### 처방 1: 유출된 서비스 계정 키 즉시 비활성화(Disable)",
+        "```bash",
+        "gcloud iam service-accounts keys disable <KEY_ID> --iam-account=<SA_EMAIL>",
+        "```",
+        "",
+        "### 처방 2: 악의적으로 부여된 비인가 IAM 바인딩 제거",
+        "```bash",
+        "gcloud projects remove-iam-policy-binding <PROJECT_ID> --member=<USER> --role=<ROLE>",
+        "```",
+        "",
+        "### 처방 3: 영구 자격 증명 폐기 및 Workload Identity Federation 전환",
+        "- **깃허브 액션(GitHub Actions) 환경**: OIDC 연동 풀(Pool) 생성 후 단기 토큰 발급 체계로 전면 전환",
+        "- **온프레미스 서버 환경**: mTLS 기반 SPIFFE/SPIRE 또는 IdP SAML/OIDC 페더레이션 적용",
+        "",
+        "---",
+        "",
+        "## 4. 자원 정리 안내 (Teardown)",
+        "본 진단 도구는 읽기 전용 감사 로그 및 키 상태 점검만 수행하므로 별도의 클라우드 인프라 자원을 생성하지 않는다.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """마크다운 리포트를 파일로 기록/덮어쓴다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"\n[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main() -> None:
     """메인 실행 함수."""
     args = parse_args()
-    project_id = detect_project_id(args.project, is_dry_run=args.dry_run)
+    project_id = "sample-project-id" if args.dry_run else detect_project_id(args.project, is_dry_run=args.dry_run)
 
     sa_input = args.service_accounts
     if sa_input:
@@ -345,6 +443,12 @@ def main() -> None:
     print("   - 깃허브 액션(GitHub Actions) 환경: OIDC 연동 풀(Pool) 생성 후 단기 토큰 발급 체계로 전면 전환")
     print("   - 온프레미스 서버 환경: mTLS 기반 SPIFFE/SPIRE 또는 IdP SAML/OIDC 페더레이션 적용")
     print("=" * 80)
+
+    # 마크다운 리포트 자동 생성 및 덮어쓰기 (스크립트 기준 디렉터리 경로 사용)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_file_path = os.path.join(script_dir, "report.md")
+    report_content = build_markdown_report(all_keys, records, project_id, args.days, args.dry_run)
+    save_markdown_report(report_content, report_file_path)
 
 
 if __name__ == "__main__":

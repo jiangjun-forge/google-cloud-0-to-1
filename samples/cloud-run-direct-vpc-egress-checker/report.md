@@ -11,7 +11,7 @@
 ```text
 ================================================================================
 Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단 리포트
-진단 모드: 가상 실행 (Dry-run)
+진단 모드: 모의 실행 (Dry-run)
 대상 프로젝트: sample-project-id
 대상 리전: asia-northeast3
 점검 대상 서비스 수: 4개
@@ -19,12 +19,12 @@ Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단 리포트
 
 [1단계] Cloud Run 서비스별 VPC 이그레스 아키텍처 현황
 --------------------------------------------------------------------------------
-서비스 이름                   이그레스 방식        트래픽 범위             상태        
+서비스 이름                    이그레스 방식        트래픽 범위              상태
 --------------------------------------------------------------------------------
-order-api-prod           CONNECTOR      private-ranges-only WARNING   
-payment-gateway-prod     DIRECT_VPC     private-ranges-only CRITICAL  
-analytics-collector-prod DIRECT_VPC     all-traffic        CRITICAL  
-user-auth-service-prod   DIRECT_VPC     private-ranges-only OK        
+order-api-prod            CONNECTOR      private-ranges-only WARNING
+payment-gateway-prod      DIRECT_VPC     private-ranges-only CRITICAL
+analytics-collector-prod  DIRECT_VPC     all-traffic         CRITICAL
+user-auth-service-prod    DIRECT_VPC     private-ranges-only OK
 --------------------------------------------------------------------------------
 
 [2단계] 서브넷 IP 고갈 위험 및 네트워크 라우팅 세부 진단

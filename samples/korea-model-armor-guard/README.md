@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 (`korea-model-armor-guard`)
+# 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 (korea-model-armor-guard)
 
 대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전 규제 위반 위험을 1분 만에 자동 진단하고, 한국형 개인 정보(Korea-specific InfoTypes) 및 로컬 하이브리드 가드레일 파이프라인 처방을 제공하는 도구다. (As of 2026-09-30)
 
@@ -59,12 +59,11 @@ flowchart TD
 ---
 
 ## 3. 필요 IAM 권한
-- `roles/modelarmor.viewer` (Model Armor 템플릿 읽기 권한)
-- `roles/dlp.reader` (Sensitive Data Protection 검사 템플릿 조회)
-- 세부 권한:
-  - `modelarmor.templates.get`
-  - `modelarmor.templates.list`
-  - `dlp.inspectTemplates.get`
+
+| 역할 (Role) | 설명 |
+| :--- | :--- |
+| `Model Armor 뷰어(roles/modelarmor.viewer)` | Model Armor 템플릿 읽기 권한 (`modelarmor.templates.get`, `modelarmor.templates.list`) |
+| `DLP 리더(roles/dlp.reader)` | Sensitive Data Protection 검사 템플릿 조회 권한 (`dlp.inspectTemplates.get`) |
 
 ---
 
@@ -142,7 +141,7 @@ def sanitize_on_soil(prompt: str) -> tuple[str, bool]:
 
 ---
 
-## 6. 자원 정리 (Teardown) 안내
+## 자원 정리 안내 (Teardown)
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하지 않는다. 테스트 목적으로 생성한 Model Armor 템플릿이나 DLP 템플릿은 다음 명령어로 삭제한다:
 ```bash
 gcloud beta model-armor templates delete [TEMPLATE_NAME] --location=asia-northeast3 --quiet

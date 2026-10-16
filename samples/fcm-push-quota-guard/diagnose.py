@@ -18,8 +18,11 @@ except ImportError:
     pass
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-project") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
     """gcloud 설정 및 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+    if is_dry_run:
+        return fallback_demo
+
     try:
         res = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True)
         out = res.stdout.strip()
@@ -28,7 +31,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-pro
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
+    if not sys.stdin.isatty():
         return fallback_demo
 
     try:
@@ -187,9 +190,79 @@ def print_text_report(report: Dict[str, Any]) -> None:
     print("=" * 76 + "\n")
 
 
+def build_markdown_report(report: Dict[str, Any], is_dry_run: bool) -> str:
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "운영 환경 진단 (Production)"
+    lines = [
+        "# 진단 및 분석 리포트: fcm-push-quota-guard",
+        "",
+        f"- **생성 모드**: {mode_str}",
+        f"- **대상 프로젝트**: `{report['project_id']}`",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 진단 실행 콘솔 출력 결과",
+        "",
+        "```text",
+        "=" * 76,
+        " [FCM 대량 푸시 쿼터 고갈 및 429 쓰로틀링 복원력 진단 리포트]",
+        "=" * 76,
+        f"진단 대상 프로젝트 ID   : {report['project_id']}",
+        f"피크 분당 발송 시도량   : {report['peak_messages_per_minute']:,} 건/분",
+        f"현재 분당 할당량 한도   : {report['quota_limit_per_minute']:,} 건/분",
+        f"할당량 소진율           : {report['quota_utilization_pct']}%",
+        f"추정 429 쓰로틀링 실패율: {report['estimated_429_error_rate_pct']}%",
+        f"종합 진단 상태          : {report['overall_status']}",
+        "-" * 76,
+        "",
+        "[항목별 세부 진단 결과]",
+    ]
+    for idx, f in enumerate(report["findings"], 1):
+        lines.append(f"{idx}. [{f['status']}] {f['item']}")
+        lines.append(f"   내용: {f['description']}")
+
+    lines.extend([
+        "",
+        "[복원력 강화 및 긴급 조치 가이드]",
+        "1. Google Cloud 콘솔 할당량 상향(Quota Increase) 신청:",
+        "   - 콘솔 경로: IAM 및 관리자 > 할당량 및 시스템 한도",
+        "   - 대상 지표: Firebase Cloud Messaging API - Downstream messages per minute",
+        f"   - 권장 신청값: 피크 대비 1.5배 여유 확보 (최소 {int(report['peak_messages_per_minute'] * 1.5):,} 건/분)",
+        "2. 클라이언트/백엔드 토큰 버킷 속도 제한(Rate Limiting) 구현:",
+        f"   - 발송 큐에서 초당 최대 전송량을 {int(report['quota_limit_per_minute'] / 60):,} msg/sec 이하로 스로틀링한다.",
+        "3. Full Jitter 지수 백오프 재시도 적용:",
+        "   - wait_time = min(max_backoff, base_backoff * (2 ** attempt)) * random.uniform(0.5, 1.5)",
+        "=" * 76,
+        "```",
+        "",
+        "---",
+        "",
+        "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+        "",
+        "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+        "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+        "",
+        "```bash",
+        "python diagnose.py",
+        "```",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    report_path = os.path.join(current_dir, filename)
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
 def main() -> None:
     args = parse_arguments()
     proj_id = args.project_id or get_default_project(is_dry_run=args.dry_run)
+    if args.dry_run and not args.project_id:
+        proj_id = "sample-project-id"
+
     report = run_diagnostics(
         project_id=proj_id,
         peak_msg_per_min=args.peak_msg_per_min,
@@ -197,10 +270,14 @@ def main() -> None:
         dry_run=args.dry_run,
     )
 
+    md_content = build_markdown_report(report, is_dry_run=args.dry_run)
+    save_markdown_report(md_content)
+
     if args.json_output:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         print_text_report(report)
+        print("[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

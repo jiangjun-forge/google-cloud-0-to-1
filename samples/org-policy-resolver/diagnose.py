@@ -22,8 +22,10 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-project-id") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
   """gcloud 설정 및 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+  if is_dry_run:
+    return "sample-project-id"
   env_proj = os.getenv("PROJECT_ID")
   if env_proj:
     return env_proj
@@ -31,7 +33,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-pro
   if stdout and "(unset)" not in stdout:
     return stdout
 
-  if is_dry_run or not sys.stdin.isatty():
+  if not sys.stdin.isatty():
     return fallback_demo
 
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
@@ -190,6 +192,68 @@ def fetch_violations(project_id: str, days: int, limit: int) -> list[dict]:
   return results
 
 
+def build_markdown_report(violations: list[dict], project_id: str, days: int, is_dry_run: bool) -> str:
+  """터미널 진단 결과와 완벽히 동기화된 마크다운 리포트를 생성한다."""
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "사내 실측 진단"
+  lines = [
+      "# GCP 조직 정책 위반 감사 역추적 및 복구 진단 리포트 (org-policy-resolver)",
+      "",
+      f"- **생성 모드**: {mode_str}",
+      f"- **대상 프로젝트**: `{project_id}`",
+      f"- **조회 기간**: 최근 {days}일",
+      "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+      "",
+      "---",
+      "",
+      f"## 1. 발견된 조직 정책 위반 실패 내역: {len(violations)}건",
+      "",
+  ]
+  if not violations:
+    lines.append("조직 정책 제약 조건(Constraints) 위반 실패 감사 로그가 발견되지 않았다. 안전하다!\n")
+  else:
+    for idx, v in enumerate(violations, start=1):
+      desc, action = map_policy_info(v["constraint"])
+      c_name = v["constraint"]
+      lines.extend([
+          f"### [위반 건 #{idx}]",
+          f"- **실패 주체 계정**: `{v['principal']}`",
+          f"- **요청 대상 서비스**: `{v['service']}`",
+          f"- **실행 실패 액션**: `{v['method']}`",
+          f"- **실제 오류 내용**: `{v['message']}`",
+          "",
+          "#### 정밀 처방 제약 조건 분석",
+          f"- **검출 제약 사항**: `constraints/{c_name}`",
+          f"- **제약 조건 설명**: {desc}",
+          f"- **권장 임시 방안**: {action}",
+          "",
+          "#### 즉시 조치 가능한 원클릭 gcloud 해결 명령어",
+          "```bash",
+          f'gcloud resource-manager org-policies disable-enforce "{c_name}" \\',
+          f'  --project="{project_id}"',
+          "```",
+          "",
+      ])
+
+  lines.extend([
+      "---",
+      "",
+      "## 2. 자원 정리 안내 (Teardown)",
+      "본 도구는 순수 감사 로그 조회 도구이므로 별도의 자원 정리 작업이 필요하지 않다.",
+      "",
+  ])
+  return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+  """마크다운 리포트를 파일로 기록/덮어쓴다."""
+  try:
+    with open(output_path, "w", encoding="utf-8") as f:
+      f.write(report_md)
+    print(f"\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+  except Exception as e:
+    print(f"\n[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="GCP 조직 정책(Organization Policy) 위반 감사 추적 및 복구 처방 도구"
@@ -224,27 +288,30 @@ def main():
   )
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
+  reported_project = "sample-project-id" if args.dry_run else (args.project or get_default_project(is_dry_run=args.dry_run))
 
   if args.dry_run:
     print("\n[데모 실행] --dry-run 모드가 활성화되어 가상 조직 정책 위반 리포트를 시뮬레이션한다.")
-    report_violations(get_mock_violations(), project_id, args.days)
-    return
+    violations = get_mock_violations()
+    report_violations(violations, reported_project, args.days)
+  else:
+    print("=" * 72)
+    print("[스캔 시작] GCP 최근 조직 정책 제약 조건 위반 감사 로그 역추적")
+    print(f"  - 프로젝트 ID: {reported_project}")
+    print(f"  - 조회 기간: 최근 {args.days}일")
+    print(f"  - 최대 건수: {args.limit}건")
+    print("=" * 72)
+    violations = fetch_violations(reported_project, args.days, args.limit)
+    report_violations(violations, reported_project, args.days)
+    print("=" * 72)
+    print("[자원 정리 안내 (Teardown)]")
+    print("본 도구는 순수 감사 로그 조회 도구이므로 별도의 자원 정리 작업이 필요하지 않다.")
+    print("=" * 72 + "\n")
 
-  print("=" * 72)
-  print("[스캔 시작] GCP 최근 조직 정책 제약 조건 위반 감사 로그 역추적")
-  print(f"  - 프로젝트 ID: {project_id}")
-  print(f"  - 조회 기간: 최근 {args.days}일")
-  print(f"  - 최대 건수: {args.limit}건")
-  print("=" * 72)
-
-  violations = fetch_violations(project_id, args.days, args.limit)
-  report_violations(violations, project_id, args.days)
-
-  print("=" * 72)
-  print("[자원 정리 안내 (Teardown Guide)]")
-  print("본 도구는 순수 감사 로그 조회 도구이므로 별도의 자원 정리 작업이 필요하지 않다.")
-  print("=" * 72 + "\n")
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  report_file_path = os.path.join(script_dir, "report.md")
+  report_content = build_markdown_report(violations, reported_project, args.days, args.dry_run)
+  save_markdown_report(report_content, report_file_path)
 
 
 if __name__ == "__main__":

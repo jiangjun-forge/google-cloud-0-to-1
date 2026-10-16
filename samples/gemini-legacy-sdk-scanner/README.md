@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 (`gemini-legacy-sdk-scanner`)
+# 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 진단기 (`gemini-legacy-sdk-scanner`)
 
 소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 **`google-genai`로의 마이그레이션 가이드를 1분 만에 제공**하는 도구다. (As of 2026-06-16)
 
@@ -24,7 +24,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 이 가이드가 필요한 상황 (증상 체크리스트)
+## 1. 문제 증상 체크리스트
 
 - **구형 라이브러리 지원 중단 대비**: 구형 SDK(`google-generativeai`) 지원 종료 예정에 따라 신규 라이브러리로 사전 전환이 필요한 경우
 - **통일 클라이언트 전환**: AI Studio 환경과 버텍스 AI(Vertex AI) 환경에서 각각 파편화되어 사용되던 코드를 최신 `google-genai` 단일 클라이언트로 일원화하고자 할 때
@@ -32,7 +32,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 진단 및 마이그레이션 흐름 (Activity Diagram)
+## 2. 처리 흐름도
 
 ```mermaid
 flowchart TD
@@ -59,46 +59,34 @@ flowchart TD
 
 ---
 
-## 사전 준비 사항 (필요 권한 - IAM)
+## 3. 필요 IAM 권한
 
 이 도구는 소스 코드 및 노트북 파일을 정적으로 분석하는 도구로, 별도의 클라우드 인프라 자원을 생성하거나 변경하지 않는다.
 
 | 권한 항목 | 요구 조건 | 비고 |
 | :--- | :--- | :--- |
-| **GCP IAM 권한** | 필요 없음 | 순수 로컬 또는 Cloud Shell 환경 정적 진단 도구 |
+| **구글 클라우드 IAM 권한** | 필요 없음 | 순수 로컬 또는 Cloud Shell 환경 정적 진단 도구 |
 | **로컬 환경 권한** | 소스 코드 읽기 권한 | 스캔 대상 프로젝트 디렉터리 접근 권한 |
 
 ---
 
-## 1분 퀵스타트 (실행 방법)
+## 4. 원클릭 실행법
 
-### 방법 1: 구글 클라우드 쉘 (Google Cloud Shell) - *가장 권장*
-
+### 가상 검증 실행 (--dry-run)
+실제 디렉터리 스캔 없이 가상 모의 취약 코드를 기반으로 마이그레이션 리포트를 시뮬레이션한다. 실행 시 `report.md` 파일이 자동 생성된다:
 ```bash
-# 1. 저장소 클론 및 폴더 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/gemini-legacy-sdk-scanner
-
-# 2. 사전 가상 체험 또는 데모 모드 (모의 데이터로 결과 리포트 확인)
 python diagnose.py --dry-run
-
-# 3. 실제 애플리케이션 소스 코드 경로 진단 (예: ../my-app)
-python diagnose.py -p /path/to/your/project
 ```
 
-### 방법 2: 로컬 환경 (Local Python)
-
+### 실제 환경 진단
+사내 애플리케이션 소스 코드 디렉터리를 대상으로 구형 SDK 호출부를 정적 스캔한다. 진단 결과는 `report.md`에 자동으로 덮어써진다:
 ```bash
-# 실행 권한 부여 및 진단 실행
-python diagnose.py --path /path/to/your/project
-
-# 가상 데모 실행
-python diagnose.py --dry-run
+python diagnose.py --path="/path/to/your/project"
 ```
 
 ---
 
-## 결과 출력 예시
+## 5. 결과 확인 후 즉각 조치 가이드
 
 스크립트가 완료되면 아래와 같이 **구형 SDK 호출 부위와 행 번호**가 정밀하게 출력된다:
 
@@ -130,10 +118,6 @@ python diagnose.py --dry-run
 ...
 ```
 
----
-
-## 최신 SDK 마이그레이션 가이드
-
 진단 결과 구형 코드가 발견된 경우 아래와 같이 코드를 현대화한다:
 
 ### 1. 패키지 설치 변경
@@ -156,6 +140,6 @@ pip install google-genai
 
 ---
 
-## 자원 정리 (Teardown) 안내
+## 6. 자원 정리 안내 (Teardown)
 
 이 도구는 소스 코드 정적 분석기이므로 클라우드 상에 생성된 리소스가 없으며, 별도의 자원 정리 작업이 필요하지 않다.

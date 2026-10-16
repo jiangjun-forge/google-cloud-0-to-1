@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise Cross-Org 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-cross-org-agent-resolver`)
+# 제미나이 엔터프라이즈(Gemini Enterprise) 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-agent-resolver`)
 
 Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책(Domain Restricted Sharing) 차단, 서비스 에이전트 IAM 권한 부재, VPC-SC 경계 위반을 1분 만에 자동 진단하고 복구 명령어를 처방하는 도구다. (As of 2026-09-09)
 
@@ -40,7 +40,7 @@ flowchart TD
     FetchMetadata --> CheckOrg{"동일 조직 여부 검사"}
     
     CheckOrg -->|"서로 다른 조직 (Cross-Org)"| CheckDomainPolicy{"도메인 제한 공유(Domain Restricted Sharing) 정책 검사"}
-    CheckDomainPolicy -->|"정책 차단 활성"| CriticalOrgPolicy["[심각] 도메인 제한 차단 판정: 고객 ID 허용 예외 처방"]
+    CheckDomainPolicy -->|"정책 차단 활성"| CriticalOrgPolicy["[심각] 도메인 제한 차단 판정: 조직 고객 식별자(Customer ID) 허용 예외 처방"]
     CheckDomainPolicy -->|"예외 허용됨"| CheckIAM["IAM 권한 바인딩 검사"]
     CheckOrg -->|"동일 조직 (Same Org)"| CheckIAM
     
@@ -78,7 +78,7 @@ python diagnose.py --dry-run
 ### 실제 환경 진단
 두 프로젝트 간 연동 상태를 점검한다.
 ```bash
-python diagnose.py --ge-project="ge-app-prod" --agent-project="custom-agent-ml-prod" --engine-id="8492049182740192841"
+python diagnose.py --ge-project="sample-ge-project" --agent-project="sample-agent-project" --engine-id="8492049182740192841"
 ```
 
 결과를 JSON 포맷으로 수집할 경우:
@@ -108,7 +108,7 @@ gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDo
 
 ---
 
-## 6. 자원 정리 (Teardown) 안내
+## 6. 자원 정리 안내 (Teardown)
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하지 않는다. 테스트 목적으로 부여한 크로스 프로젝트 IAM 권한은 다음 명령어로 회수할 수 있다:
 ```bash
 gcloud projects remove-iam-policy-binding [AGENT_PROJECT_ID] \

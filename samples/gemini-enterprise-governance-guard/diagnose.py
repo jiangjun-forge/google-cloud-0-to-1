@@ -21,8 +21,10 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-agent-project") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
   """환경 변수, gcloud 설정, 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+  if is_dry_run:
+    return fallback_demo
   env_proj = os.getenv("PROJECT_ID")
   if env_proj:
     return env_proj
@@ -30,13 +32,13 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-age
   if stdout and "(unset)" not in stdout:
     return stdout
 
-  if is_dry_run or not sys.stdin.isatty():
+  if not sys.stdin.isatty():
     return fallback_demo
 
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
   projects = [p.strip() for p in stdout.splitlines() if p.strip()] if code == 0 and stdout else []
   if projects:
-    print("\n[?] 대상 GCP 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
+    print("\n[?] 대상 구글 클라우드(Google Cloud) 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
     for idx, p in enumerate(projects, 1):
       print(f"  [{idx}] {p}")
     print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
@@ -137,7 +139,7 @@ def evaluate_governance(data: dict) -> list[dict]:
         "status": "CRITICAL",
         "description": f"WIF 풀 속성 매핑에 필수 클레임({', '.join(missing_claims)})이 누락되어 Entra ID 로그인 시 HTTP 400 오류 발생",
         "remediation": (
-            "GCP WIF 공급업체 매핑에 attribute.user_email='assertion.email' 및 "
+            "구글 클라우드 WIF 공급업체 매핑에 attribute.user_email='assertion.email' 및 "
             "attribute.display_name='assertion.name'을 추가하고, Entra ID 앱 등록 토큰 구성에서 email 클레임 발행을 활성화한다."
         ),
     })
@@ -152,53 +154,98 @@ def evaluate_governance(data: dict) -> list[dict]:
   return results
 
 
-def print_table(results: list[dict], app_name: str):
-  """진단 결과를 정돈된 표 형식으로 출력한다."""
-  print("\n" + "=" * 105)
-  print(f"Gemini Enterprise 애플리케이션 거버넌스 진단 리포트 ({app_name})")
-  print("=" * 105)
-  print(f"{'거버넌스 점검 범주':<32} {'상태':<12} {'진단 내용'}")
-  print("-" * 105)
+def format_console_text(results: list[dict], app_name: str, project_id: str, is_dry_run: bool) -> str:
+  """진단 결과를 텍스트 형식으로 서식화한다."""
+  lines = []
+  lines.append(f"Gemini Enterprise 에이전트 거버넌스 및 SSO 상태 진단 시작 (프로젝트: {project_id}, 앱: {app_name})")
+  if is_dry_run:
+    lines.append("--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 거버넌스 및 WIF 데이터를 분석한다.")
+  else:
+    lines.append("--> Gemini Enterprise 관리 설정 및 Workforce Identity Federation 풀 조회 중...")
+  lines.append("")
+  lines.append("=" * 105)
+  lines.append(f"Gemini Enterprise 애플리케이션 거버넌스 진단 리포트 ({app_name})")
+  lines.append("=" * 105)
+  lines.append(f"{'거버넌스 점검 범주':<32} {'상태':<12} {'진단 내용'}")
+  lines.append("-" * 105)
   for r in results:
-    print(f"{r['category']:<32} {r['status']:<12} {r['description']}")
-  print("=" * 105)
+    lines.append(f"{r['category']:<32} {r['status']:<12} {r['description']}")
+  lines.append("=" * 105)
 
   criticals = [r for r in results if r["status"] == "CRITICAL"]
   warnings = [r for r in results if r["status"] == "WARNING"]
 
   if criticals or warnings:
-    print("\n[발견된 거버넌스 취약점 및 권고 조치]")
+    lines.append("\n[발견된 거버넌스 취약점 및 권고 조치]")
     for item in criticals + warnings:
       prefix = "[심각]" if item["status"] == "CRITICAL" else "[주의]"
-      print(f"\n* {prefix} {item['category']}")
-      print(f"  - 위험: {item['description']}")
-      print(f"  - 처방: {item['remediation']}")
+      lines.append(f"\n* {prefix} {item['category']}")
+      lines.append(f"  - 위험: {item['description']}")
+      lines.append(f"  - 처방: {item['remediation']}")
   else:
-    print("\n모든 에이전트 거버넌스 및 SSO 설정이 엔터프라이즈 보안 요건을 충족한다.")
+    lines.append("\n모든 에이전트 거버넌스 및 SSO 설정이 엔터프라이즈 보안 요건을 충족한다.")
+  return "\n".join(lines)
+
+
+def build_markdown_report(results: list[dict], app_name: str, project_id: str, is_dry_run: bool = False) -> str:
+  """진단 결과를 Markdown 리포트 문자열로 생성한다."""
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 진단"
+  console_output = format_console_text(results, app_name, project_id, is_dry_run)
+  lines = [
+      "# 진단 및 분석 리포트: gemini-enterprise-governance-guard",
+      "",
+      f"- **생성 모드**: {mode_str}",
+      f"- **대상 프로젝트**: `{project_id}`",
+      "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+      "",
+      "---",
+      "",
+      "## 1. 진단 실행 콘솔 출력 결과",
+      "",
+      "```text",
+      console_output,
+      "```",
+      "",
+      "---",
+      "",
+      "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+      "",
+      "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+      "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+      "",
+      "```bash",
+      "python diagnose.py",
+      "```",
+      "",
+  ]
+  return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  report_path = os.path.join(current_dir, filename)
+  with open(report_path, "w", encoding="utf-8") as f:
+    f.write(content)
 
 
 def main():
   parser = argparse.ArgumentParser(
       description="Gemini Enterprise 에이전트 마켓플레이스 차단 및 사내 커스텀 에이전트 거버넌스 진단기"
   )
-  parser.add_argument("--project", help="대상 GCP 프로젝트 ID")
+  parser.add_argument("--project", help="대상 구글 클라우드(Google Cloud) 프로젝트 ID")
   parser.add_argument("--app-id", default=os.getenv("APP_ID") or "default-enterprise-agent-app", help="대상 Gemini Enterprise 앱 ID")
   parser.add_argument("--dry-run", action="store_true", help="실제 API 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
+  project_id = "sample-project-id" if args.dry_run else (args.project or get_default_project())
   if not project_id and not args.dry_run:
-    print("GCP 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
+    print("구글 클라우드(Google Cloud) 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
     sys.exit(1)
 
-  print(f"Gemini Enterprise 에이전트 거버넌스 및 SSO 상태 진단 시작 (프로젝트: {project_id or 'dry-run-mode'}, 앱: {args.app_id})")
-
   if args.dry_run:
-    print("--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 거버넌스 및 WIF 데이터를 분석한다.")
     data = get_mock_governance_data()
   else:
-    print("--> Gemini Enterprise 관리 설정 및 Workforce Identity Federation 풀 조회 중...")
     data = get_mock_governance_data()
 
   diagnoses = evaluate_governance(data)
@@ -206,7 +253,11 @@ def main():
   if args.json:
     print(json.dumps(diagnoses, indent=2, ensure_ascii=False))
   else:
-    print_table(diagnoses, args.app_id)
+    print(format_console_text(diagnoses, args.app_id, project_id, args.dry_run))
+
+  report_content = build_markdown_report(diagnoses, args.app_id, project_id, is_dry_run=args.dry_run)
+  save_markdown_report(report_content)
+  print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

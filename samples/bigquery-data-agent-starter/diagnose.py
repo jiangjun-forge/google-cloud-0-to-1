@@ -17,7 +17,7 @@
 """
 BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional GE App).
 
-45분 핸즈온 워크숍 내에 참석자(고객)가 CLI 명령어 한 줄로 BigQuery 스몰셋 데이터셋(cymbal_gold)과
+45분 핸즈온 워크숍 내에 참석자(실무자)가 CLI 명령어 한 줄로 BigQuery 스몰셋 데이터셋(cymbal_gold)과
 실데이터를 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 단독(Standalone)으로 Data Agent를 생성 및
 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 실무 시나리오를
 시연할 수 있도록 설계된 스타터 키트다.
@@ -78,7 +78,9 @@ def interactive_select(prompt_msg: str, candidates: List[str], default_idx: int 
 def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
     """CLI 인자 > .env > gcloud config > 대화형 선택기 > 사내 권장 기본값 순으로 설정을 확정한다."""
     project_id = cli_args.project or os.environ.get("PROJECT_ID", "").strip()
-    if not project_id and not cli_args.dry_run:
+    if cli_args.dry_run:
+        project_id = project_id or "sample-project-id"
+    elif not project_id:
         gcloud_proj = run_gcloud_cmd(["config", "get-value", "project"])
         if gcloud_proj and gcloud_proj != "(unset)":
             project_id = gcloud_proj
@@ -88,7 +90,7 @@ def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
                 candidates = [p.strip() for p in proj_list_str.splitlines() if p.strip()]
                 project_id = interactive_select("대상 Google Cloud 프로젝트를 선택하시오:", candidates)
     if not project_id:
-        project_id = "demo-data-agent-project"
+        project_id = "sample-project-id"
 
     location = cli_args.location or os.environ.get("LOCATION", "").strip()
     if not location and not cli_args.dry_run:
@@ -515,6 +517,85 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     print("\n" + "=" * 88)
 
 
+def build_markdown_report(cfg: Dict[str, Any]) -> str:
+    """워크숍 가이드 및 골든 프롬프트 3선 출력을 표준 마크다운 리포트로 구성한다."""
+    project_id = cfg["project_id"]
+    dataset_id = cfg["dataset_id"]
+    mode_str = "모의 실행 (Dry-run)" if cfg["dry_run"] else "실제 GCP 연동 실행"
+
+    lines = [
+        "# 진단 및 분석 리포트: bigquery-data-agent-starter",
+        "",
+        f"- **생성 모드**: {mode_str}",
+        f"- **대상 프로젝트**: `{project_id}`",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 진단 실행 콘솔 출력 결과",
+        "",
+        "```text",
+        "=" * 88,
+        " [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional GE App)]",
+        "=" * 88,
+        f" - 대상 프로젝트 : {project_id} (리전: {cfg['location']})",
+        f" - 호환 데이터셋 : {dataset_id} (테이블 4개 + 시맨틱 뷰 1개 + 실데이터 적재 완료)",
+        f" - 데이터 에이전트: {cfg['data_agent_name']} (단독 실행 가능 / 선택 시 GE App 연동: {cfg['ge_app_id']})",
+        f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}",
+        "-" * 88,
+        "",
+        " [45분 핸즈온 워크숍 역할 분담 타임라인 (CLI 자동화 vs 콘솔 UI 전용 조작)]",
+        "  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)",
+        "  * 05~10분 [CLI -> UI]  : Agents에 붙여넣을 System Instructions 및 Verified Queries 출력 (python diagnose.py --agent-config)",
+        "  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agents에서 단독(Standalone) Data Agent 생성 및 질의 테스트",
+        "  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 추가 연동 (python diagnose.py --register-ge-app)",
+        "-" * 88,
+        "",
+        " [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 GE App 공용)]",
+    ]
+
+    for p in GOLDEN_PROMPTS:
+        sql_formatted = p["expected_sql"].format(project_id=project_id, dataset_id=dataset_id)
+        lines.extend([
+            f"\n  [{p['id']}] {p['title']}",
+            f"    - 자연어 질문(Prompt) : \"{p['user_prompt']}\"",
+            f"    - 에이전트 생성 SQL   : {sql_formatted}",
+            f"    - 실데이터 응답 결과  :",
+        ])
+        for row in p["sample_rows"]:
+            lines.append(f"        {json.dumps(row, ensure_ascii=False)}")
+
+    lines.extend([
+        "",
+        "=" * 88,
+        "```",
+        "",
+        "---",
+        "",
+        "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+        "",
+        "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+        "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+        "",
+        "```bash",
+        "python diagnose.py",
+        "```",
+        "",
+    ])
+
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """리포트 내용을 파일에 저장한다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def teardown_demo_environment(cfg: Dict[str, Any]) -> None:
     """실습 종료 후 생성된 BigQuery 데모 데이터셋을 삭제하여 비용 발생을 차단한다."""
     project_id = cfg["project_id"]
@@ -605,6 +686,8 @@ def main() -> None:
         return
 
     print_workshop_guide_and_prompts(cfg, custom_query=args.query)
+    report_md = build_markdown_report(cfg)
+    save_markdown_report(report_md, "report.md")
 
 
 if __name__ == "__main__":

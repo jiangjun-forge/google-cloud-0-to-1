@@ -18,8 +18,10 @@ except ImportError:
     pass
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-project") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
     """gcloud 설정 및 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+    if is_dry_run:
+        return fallback_demo
     try:
         res = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True)
         out = res.stdout.strip()
@@ -28,7 +30,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-pro
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
+    if not sys.stdin.isatty():
         return fallback_demo
 
     try:
@@ -39,7 +41,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-pro
         )
         projects = [p.strip() for p in res.stdout.splitlines() if p.strip()]
         if projects:
-            print("\n[?] 대상 GCP 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
+            print("\n[?] 대상 구글 클라우드(Google Cloud) 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
             for idx, p in enumerate(projects, 1):
                 print(f"  [{idx}] {p}")
             print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
@@ -422,7 +424,7 @@ def save_markdown_report(report_md: str, output_path: str = "report.md") -> None
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
-        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었습니다: {output_path}")
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
     except Exception as e:
         print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
 

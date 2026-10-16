@@ -11,7 +11,7 @@
 ```text
 ============================================================================================
  Vertex AI Gemini API vs Gemini Enterprise App (GE App) 완결형 파이프라인 지연 시간 비교 리포트
- 프로젝트: example-corp | 리전: asia-northeast3 | 모델: gemini-2.5-flash
+ 프로젝트: sample-project-id | 리전: asia-northeast3 | 모델: gemini-2.5-flash
  테스트 프롬프트: "사내 보안 정책 가이드라인"
  ※ 참고: GE App은 웹 UI 접근이 아닌 Discovery Engine 엔드포인트 직접 호출과
          Model Armor 가드레일 체인을 완결 결합하여 사내 엔터프라이즈 RAG 파이프라인을 모사함.

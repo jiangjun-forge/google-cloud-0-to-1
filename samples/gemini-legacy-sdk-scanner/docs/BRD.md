@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 (`gemini-legacy-sdk-scanner`)
+# 비즈니스 요구 사항 명세서 (BRD): 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 진단기 (`gemini-legacy-sdk-scanner`)
 
 ## 1. 배경 및 목적
 소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 **`google-genai`로의 마이그레이션 가이드를 1분 만에 제공**하는 도구다.
@@ -23,10 +23,10 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 설명 | 우선순위 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** | **현장 장애 및 리스크 사전 탐지** | 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 (`gemini-legacy-sdk-scanner`) 관련 운영 리스크 및 설정 누락을 사전에 식별해야 하는 경우 | 필수 (P0) |
-| **BR-02** | **표준화된 자동 진단 체계 구축** | 수동 콘솔 점검에 따른 인적 오류와 장애 복구 지연 시간을 단축해야 하는 경우 | 필수 (P0) |
-| **BR-03** | **가상 실행(Dry-run) 기반 무중단 사전 검증** | 실제 GCP 과금 발생 전 가상 실행(--dry-run)으로 안전하게 정책을 검증해야 하는 경우 | 필수 (P0) |
-| **BR-04** | **실무자 조치 가이드 및 자원 정리(Teardown) 안내** | 비개발 직군과 운영 실무자가 즉시 참조할 수 있는 콘솔 조치 경로와 테스트 리소스 정리 절차를 제공한다. | 권장 (P1) |
+| **BR-01** | **현장 장애 및 리스크 사전 탐지** | 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 진단기 (`gemini-legacy-sdk-scanner`) 관련 운영 리스크 및 설정 누락을 사전에 식별하여야 한다. | 필수 (P0) |
+| **BR-02** | **표준화된 자동 진단 체계 구축** | 수동 콘솔 점검에 따른 인적 오류와 장애 복구 지연 시간을 단축하여야 한다. | 필수 (P0) |
+| **BR-03** | **가상 실행(Dry-run) 기반 무중단 사전 검증** | 실제 구글 클라우드(Google Cloud) 과금 발생 전 가상 실행(--dry-run)으로 안전하게 정책을 검증하여야 한다. | 필수 (P0) |
+| **BR-04** | **실무자 조치 가이드 및 자원 정리(Teardown) 안내** | 비개발 직군과 운영 실무자가 즉시 참조할 수 있는 콘솔 조치 경로와 테스트 리소스 정리 절차를 제공하여야 한다. | 권장 (P1) |
 
 ---
 

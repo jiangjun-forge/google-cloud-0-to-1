@@ -234,7 +234,9 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "example-corp-ai") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
+    if is_dry_run:
+        return fallback_demo
     try:
         res = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True)
         out = res.stdout.strip()
@@ -243,7 +245,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "example-
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
+    if not sys.stdin.isatty():
         return fallback_demo
 
     try:
@@ -373,8 +375,8 @@ def print_text_report(project_id: str, region: str, dry_run: bool, items: List[D
 
     print("\n" + "=" * 104)
     print("[실무자 가이드: 사내 정보보호팀 및 CISO 보고서 제출 안내]")
-    print("  * 본 진단 결과는 report.md 파일에 완제품 'AI 보안성 심의 소명서' 양식으로 자동 생성되었습니다.")
-    print("  * 사내 보안팀 또는 금융감독원/금융보안원 보안성 심의 질의서 대응 시 report.md 표를 즉시 활용할 수 있습니다.")
+    print("  * 본 진단 결과는 report.md 파일에 완제품 'AI 보안성 심의 소명서' 양식으로 자동 생성되었다.")
+    print("  * 사내 보안팀 또는 금융감독원/금융보안원 보안성 심의 질의서 대응 시 report.md 표를 즉시 활용할 수 있다.")
     print("=" * 104 + "\n")
 
 
@@ -457,7 +459,7 @@ def save_markdown_report(report_md: str, output_path: str = "report.md") -> None
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
-        print(f"[안내] 복습 및 사내 보안팀 제출용 소명서가 생성(덮어쓰기)되었습니다: {output_path}")
+        print(f"\n[안내] 복습 및 사내 보안팀 제출용 소명서가 생성(덮어쓰기)되었다: {output_path}")
     except Exception as e:
         print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
 
@@ -465,7 +467,7 @@ def save_markdown_report(report_md: str, output_path: str = "report.md") -> None
 def main() -> None:
     args = parse_arguments()
     proj_id = args.project or get_default_project(is_dry_run=args.dry_run)
-    reported_project = "sample-ai-project" if args.dry_run else proj_id
+    reported_project = "sample-project-id" if args.dry_run else proj_id
 
     if not args.dry_run:
         print(f"[*] '{reported_project}' 프로젝트({args.region})의 생성형 AI 보안성 심의 통제를 점검 중...")

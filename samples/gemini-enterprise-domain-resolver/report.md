@@ -1,7 +1,7 @@
-# 진단 및 분석 리포트: gemini-enterprise-domain-in-use-resolver
+# 진단 및 분석 리포트: gemini-enterprise-domain-resolver
 
 - **생성 모드**: 모의 실행 (Dry-run)
-- **대상 프로젝트**: `sample-project-id`
+- **점검 대상 도메인**: `example.com`
 - **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
 
 ---
@@ -11,7 +11,7 @@
 ```text
 =====================================================================================
 Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Identity 진단 리포트
-진단 모드: 가상 실행 (Dry-run)
+진단 모드: 모의 실행 (Dry-run)
 점검 대상 도메인: example.com
 =====================================================================================
 
@@ -31,7 +31,7 @@ Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Ide
 
 [3단계] 라이선스 최적화 및 Gemini Enterprise 배포 전략
 -------------------------------------------------------------------------------------
-* Cloud Identity Free 지원 여부: 지원 가능 (50개 무료 라이선스 즉시 제공)
+* Cloud Identity Free 지원 여부: 지원 가능 (50+개 무료 라이선스 즉시 제공)
 * 비용 최적화 제안: 전사 Google Workspace 유료 라이선스 구매 없이도 Cloud Identity Free 계정에
   Gemini Enterprise 전용 애드온 라이선스만 할당하여 그룹사 분할 배포 가능
 -------------------------------------------------------------------------------------

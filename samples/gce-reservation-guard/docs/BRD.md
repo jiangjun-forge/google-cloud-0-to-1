@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): Compute Engine 하드웨어 예약 및 CUD 용량 보장 통합 진단기
+# 비즈니스 요구 사항 명세서 (BRD): 컴퓨트 엔진(Compute Engine) 하드웨어 예약 및 CUD 용량 보장 통합 진단기
 
 ## 1. 비즈니스 배경 및 문제 정의
 대규모 클라우드 인프라를 운영하는 기업에서 CUD(지속 사용 약정)는 비용 절감을 위한 핵심 수단이지만, 이는 요금 할인에 불과하며 물리적 하드웨어 가용성을 보장하지 않는다. CUD 약정만 체결하고 물리적 온디맨드 Reservation을 선점하지 않은 '무방비 약정(Unreserved CUD)' 상태에서 리전 스톡아웃(ZONE_RESOURCE_POOL_EXHAUSTED)이 발생하면 요금은 지속 청구되면서 인스턴스를 띄우지 못하는 심각한 FinOps 손실이 발생한다.

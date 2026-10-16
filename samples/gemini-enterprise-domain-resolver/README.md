@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 진단기
+# 제미나이 엔터프라이즈(Gemini Enterprise) 도입을 위한 도메인 충돌(domain_in_use) 진단기
 
 Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의해 선점되어 발생하는 도메인 충돌(domain_in_use)을 진단하고, Google Workspace 라이선스 구매 없이 Cloud Identity Free를 활용하여 독립적인 엔터프라이즈 AI 환경을 배포하도록 지원하는 진단 도구다. (As of 2026-09-09)
 
@@ -35,7 +35,7 @@ Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의�
 ## 2. 진단 및 해결 흐름
 
 ```mermaid
-graph TD
+flowchart TD
     A["도메인 충돌(domain_in_use) 에러 감지"] --> B["사내 DNS TXT 소유권 검증 토큰 확인"]
     B --> C["DNS 공급자 콘솔에 TXT 레코드 배포"]
     C --> D["Google Admin Console 도메인 소유권 인증"]
@@ -139,6 +139,6 @@ Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Ide
 
 ---
 
-## 7. 자원 정리 (Teardown) 가이드
+## 7. 자원 정리 안내 (Teardown)
 
 본 진단 도구는 도메인 충돌 여부 및 DNS 상태를 조회하는 진단기이므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 테스트 완료 후 불필요한 DNS TXT 레코드는 DNS 공급자 관리 화면에서 삭제한다.

@@ -12,7 +12,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기
 
-Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 Cloud Logging 인퍼런스 로그를 기반으로 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고, 일일/주간 쿼터 캡(Cap) 초과자를 식별하여 프로젝트 IAM 마커 역할 기반의 안전한 통제 처방을 제공하는 진단 도구다. (As of 2026-09-28)
+Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클라우드 로깅(Cloud Logging) 인퍼런스 로그를 기반으로 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고, 일일/주간 쿼터 캡(Cap) 초과자를 식별하여 프로젝트 IAM 마커 역할 기반의 안전한 통제 처방을 제공하는 진단 도구다. (As of 2026-09-28)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Compliance`, `#IAM`  
@@ -56,7 +56,7 @@ flowchart TD
    gcloud services enable logging.googleapis.com businessaicode.googleapis.com
    ```
 2. **관리 콘솔 개발자 도구 활동 로깅(Metadata Logging)**:
-   - Google Workspace / Gemini Enterprise 관리 콘솔(`admin.google.com`) > 생성형 AI / 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 Cloud Logging으로 토큰 및 사용자 정보가 적재된다.
+   - 구글 워크스페이스(Google Workspace) 및 제미나이 엔터프라이즈(Gemini Enterprise) 관리 콘솔 ( https://admin.google.com ) > 생성형 AI, 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 클라우드 로깅으로 토큰 및 사용자 정보가 적재된다.
 
 ### (2) 진단 실행 계정 최소 IAM 권한
 본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
@@ -109,7 +109,7 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
 `NOT_ENFORCEABLE`로 분류된 사용자는 프로젝트 레벨의 개별 바인딩을 변경해도 그룹 권한으로 인해 접근이 유지된다. 사내 Google Workspace / Cloud Identity 관리 콘솔에서 해당 개발자를 개발팀 그룹에서 일시 제외 조치한다.
 
 ### 3단계: 엔터프라이즈 운영 자동화(Batch Job) 연계 안내
-본 진단기는 읽기 전용 분석 도구다. 15분 주기 자동 캡 차단 및 매일 자정 복구를 영구 스케줄링하려면 Cloud Scheduler와 클라우드 런(Cloud Run) Job 또는 Cloud Functions를 연동하여 정기 배치 파이프라인으로 구성 및 배포할 수 있다.
+본 진단기는 읽기 전용 분석 도구다. 15분 주기 자동 캡 차단 및 매일 자정 복구를 영구 스케줄링하려면 클라우드 스케줄러(Cloud Scheduler)와 클라우드 런(Cloud Run) 잡 또는 클라우드 펑션(Cloud Functions)을 연동하여 정기 배치 파이프라인으로 구성 및 배포할 수 있다.
 
 ---
 

@@ -190,6 +190,84 @@ def print_table(results: list[dict], threshold_ms: float, gpu_filter: str | None
     print(f"\n* 부적합 리전: {', '.join(e['region'] for e in exceeded)} (왕복 지연 시간이 {threshold_ms}ms를 초과하여 제외됨)")
 
 
+def build_markdown_report(results: list[dict], threshold_ms: float, gpu_filter: str | None, is_dry_run: bool) -> str:
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "운영 환경 진단 (Production)"
+  lines = [
+      "# 진단 및 분석 리포트: gce-region-latency-probe",
+      "",
+      f"- **생성 모드**: {mode_str}",
+      "- **대상 프로젝트**: `sample-project-id`",
+      "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+      "",
+      "---",
+      "",
+      "## 1. 진단 실행 콘솔 출력 결과",
+      "",
+      "```text",
+      f"서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시 진단 시작 (지연 기준: {threshold_ms} ms, 타깃 GPU: {gpu_filter or '전체'})",
+  ]
+  if is_dry_run:
+    lines.append("--> 가상 실행 모드 (--dry-run) 활성화: 사전 벤치마크 데이터를 분석한다.")
+  else:
+    lines.append("--> 각 Google Cloud 리전별 실시간 TCP 3-Way Handshake 왕복 시간(RTT) 측정 완료.")
+
+  lines.extend([
+      "",
+      "=" * 108,
+      f"{'리전':<18} {'위치':<24} {'측정 지연(ms)':<14} {'기준 충족':<18} {'지원 GPU'}",
+      "-" * 108,
+  ])
+
+  for r in results:
+    match_mark = " (타깃 매칭)" if gpu_filter and r["gpu_match"] else ""
+    gpus_str = ", ".join(r["supported_gpus"]) + match_mark
+    rtt_str = f"{r['measured_rtt_ms']} ms" if r['measured_rtt_ms'] > 0 else "N/A"
+    lines.append(f"{r['region']:<18} {r['location_name']:<24} {rtt_str:<14} {r['suitability']:<18} {gpus_str}")
+  lines.append("=" * 108)
+
+  lines.append(f"\n[서울 워크로드 대체 Compute Engine GPU 및 인프라 배포 전략 권고안 (기준: <= {threshold_ms} ms)]")
+  filtered = [r for r in results if r["gpu_match"]]
+  pass_candidates = [r for r in filtered if r["status"] in ("OPTIMAL", "ACCEPTABLE")]
+  pass_candidates.sort(key=lambda x: x["measured_rtt_ms"])
+
+  if not pass_candidates:
+    lines.append("지정된 조건 및 지연 시간 기준을 만족하는 대체 리전이 없다.")
+  else:
+    for rank, c in enumerate(pass_candidates, 1):
+      lines.append(f"\n{rank}. {c['region']} ({c['location_name']}) - 지연 시간: {c['measured_rtt_ms']} ms")
+      lines.append(f"   - 권고 사유: {c['recommendation']}")
+      lines.append(f"   - 보유 GPU: {', '.join(c['supported_gpus'])}")
+
+  exceeded = [r for r in results if r["status"] == "EXCEEDED"]
+  if exceeded:
+    lines.append(f"\n* 부적합 리전: {', '.join(e['region'] for e in exceeded)} (왕복 지연 시간이 {threshold_ms}ms를 초과하여 제외됨)")
+
+  lines.extend([
+      "```",
+      "",
+      "---",
+      "",
+      "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+      "",
+      "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+      "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+      "",
+      "```bash",
+      "python diagnose.py",
+      "```",
+      "",
+  ])
+
+  return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  report_path = os.path.join(current_dir, filename)
+  with open(report_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 네트워크 레이턴시 프로브 및 추천기"
@@ -225,10 +303,14 @@ def main():
       results = [f.result() for f in concurrent.futures.as_completed(future_map)]
       results.sort(key=lambda x: x["measured_rtt_ms"] if x["measured_rtt_ms"] > 0 else 9999)
 
+  md_content = build_markdown_report(results, args.threshold_ms, args.gpu_type, is_dry_run=args.dry_run)
+  save_markdown_report(md_content)
+
   if args.json:
     print(json.dumps(results, indent=2, ensure_ascii=False))
   else:
     print_table(results, args.threshold_ms, args.gpu_type)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

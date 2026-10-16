@@ -10,10 +10,10 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): Gemini Enterprise 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
+# 기술 상세 설계서 (TDD): 제미나이 엔터프라이즈(Gemini Enterprise) 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
 
 ## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 파이썬 표준 CLI(`diagnose.py`)와 원클릭 배시 실행 래퍼(`diagnose.py`)를 결합한 투트랙(Two-track) 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+본 도구는 파이썬 표준 CLI(`diagnose.py`) 기반의 자체 완결적 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
 
 ---
 

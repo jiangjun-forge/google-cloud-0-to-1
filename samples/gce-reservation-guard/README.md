@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Compute Engine 하드웨어 예약(Reservation) 및 CUD 용량 보장 통합 진단기
+# 컴퓨트 엔진(Compute Engine) 하드웨어 예약(Reservation) 및 CUD 용량 보장 통합 진단기
 
 Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 사태를 감사 로그로 역추적하고, 요금 할인만 적용되고 물리적 용량 확보가 없는 무방비 약정(Unreserved CUD) 위험과 GPU/특수 머신의 Future Reservation(FR) 미제출 및 승인 지연 문제를 한 번에 진단하여 하드웨어 가용성을 보장하는 통합 인프라 진단 도구다. (As of 2026-09-30)
 
@@ -37,7 +37,7 @@ Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOU
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (python diagnose.py)"] --> B["Cloud Audit Logs 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 에러 분석"]
+    A["진단 시작 (python diagnose.py)"] --> B["클라우드 감사 로그(Cloud Audit Logs) 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 에러 분석"]
     B --> C["CUD 약정 코어 수 vs 온디맨드 Reservation 확보 코어 수 대조"]
     C --> D{"무방비 약정(Unreserved CUD) 존재하는가?"}
     D -->|위험| E["물리적 온디맨드 Reservation 선점 명령어 처방"]
@@ -63,7 +63,7 @@ gcloud services enable compute.googleapis.com logging.googleapis.com
 | 역할 (Role) | 설명 |
 | :--- | :--- |
 | `roles/compute.viewer` | CUD 약정 및 온디맨드/Future Reservation 목록 조회 권한 |
-| `roles/logging.viewer` | Cloud Logging 스톡아웃 감사 로그 조회 권한 |
+| `roles/logging.viewer` | 클라우드 로깅(Cloud Logging) 스톡아웃 감사 로그 조회 권한 |
 
 ---
 
@@ -82,7 +82,7 @@ python diagnose.py --dry-run
 python diagnose.py
 
 # 특정 프로젝트 및 특정 리전 지정
-python diagnose.py -p my-gce-project -r asia-northeast3 -d 14
+python diagnose.py -p sample-project-id -r asia-northeast3 -d 14
 ```
 
 ---
@@ -108,5 +108,5 @@ gcloud compute future-reservations submit [FR_NAME] --zone=[ZONE]
 
 ---
 
-## 6. 자원 정리 가이드 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

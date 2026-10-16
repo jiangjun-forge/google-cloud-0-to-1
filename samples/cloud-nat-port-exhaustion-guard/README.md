@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기
 
-GKE 클러스터 및 Compute Engine 환경에서 외부 API 호출 시 발생하는 간헐적 타임아웃 장애의 근본 원인을 규명하기 위해, Cloud NAT의 동적 포트 할당(DPA) 확장 지연과 자원 고갈 패킷 드롭(OUT_OF_RESOURCES)을 1분 만에 교차 진단하고 최적의 최소 할당 포트와 커널 재시도 파라미터를 도출하는 도구다. (As of 2026-09-10)
+구글 쿠버네티스 엔진(GKE, Google Kubernetes Engine) 클러스터 및 컴퓨트 엔진(Compute Engine) 환경에서 외부 API 호출 시 발생하는 간헐적 타임아웃 장애의 근본 원인을 규명하기 위해, 클라우드 NAT(Cloud NAT)의 동적 포트 할당(DPA) 확장 지연과 자원 고갈 패킷 드롭(OUT_OF_RESOURCES)을 1분 만에 교차 진단하고 최적의 최소 할당 포트와 커널 재시도 파라미터를 도출하는 도구다. (As of 2026-09-10)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Performance`, `#Resilience`  

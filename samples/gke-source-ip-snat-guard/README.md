@@ -20,7 +20,7 @@ GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Compliance`, `#Performance`, `#Resilience`  
-**Service**: `#CloudLoadBalancing`, `#GoogleKubernetesEngine`
+**Service**: `#CloudLoadBalancing`, `#GKE`
 
 ---
 
@@ -135,7 +135,7 @@ spec:
 
 ---
 
-## 6. 자원 정리 (Teardown) 안내
+## 6. 자원 정리 안내 (Teardown)
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하거나 과금을 유발하지 않는다. 테스트 목적으로 생성한 LoadBalancer 서비스가 있다면 다음 명령어로 삭제한다:
 ```bash
 kubectl delete svc [TEST_SERVICE_NAME] -n [NAMESPACE]

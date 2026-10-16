@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이(Gemini) VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`)
 
-제미나이(Gemini) 및 버텍스 AI(Vertex AI) API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다. (As of 2026-06-23)
+제미나이(Gemini) 및 버텍스 AI(Vertex AI) API 호출 시 발생하는 VPC 서비스 컨트롤(VPC Service Controls, VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다. (As of 2026-06-23)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
@@ -70,7 +70,7 @@ Cloud Logging 감사 로그를 조회하기 위해 필요한 IAM 역할이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
 | :--- | :--- | :--- |
-| **로그 뷰어 (권장)** | `roles/logging.viewer` | Cloud Logging 정책 감사 로그 읽기 |
+| **클라우드 로깅 뷰어 (권장)** | `roles/logging.viewer` | Cloud Logging 정책 감사 로그 읽기 |
 | **보안 뷰어 (선택)** | `roles/iam.securityViewer` | 보안 정책 및 거부 감사 로그 통합 조회 |
 
 > [!NOTE]
@@ -134,6 +134,6 @@ python diagnose.py --project your-project-id --days 7 --limit 10
 
 ---
 
-## 자원 정리 (Teardown Guide)
+## 자원 정리 안내 (Teardown)
 
 본 도구는 순수 감사 로그 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.

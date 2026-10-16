@@ -145,6 +145,113 @@ gcloud functions deploy quota-auto-disable \\
 """)
 
 
+def build_markdown_report(project_id: str, topic: str, budget_name: str, is_dry_run: bool) -> str:
+  """진단 결과를 바탕으로 표준 마크다운 리포트를 구성한다."""
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실환경 진단 (Live)"
+  dry_run_console_line = (
+      "[데모 실행] --dry-run 가상 실행 모드가 활성화되었다.\n"
+      if is_dry_run
+      else f"[1단계] Pub/Sub 주제 '{topic}' 확인 완료\n"
+  )
+
+  return f"""# 진단 및 분석 리포트: gemini-quota-cost-alert
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+========================================================================
+[진단 시작] 제미나이(Gemini) API 실시간 비용 및 할당량 경보 아키텍처 점검
+  - 프로젝트 ID: {project_id}
+  - Pub/Sub 주제: {topic}
+  - 예산 규칙명: {budget_name}
+========================================================================
+
+{dry_run_console_line}========================================================================
+[표준 처방] 비용 초과 시 자동 할당량(Quota) 차단 Cloud Functions 가이드
+========================================================================
+1. 자동 차단 파이썬 핸들러 (main.py):
+------------------------------------------------------------------------
+import base64
+import json
+from google.cloud import service_usage_v1
+
+def block_gemini_api(event, context):
+    pubsub_message = base64.b64decode(event['data']).decode('utf-8')
+    data = json.loads(pubsub_message)
+    
+    # 예산 90% 이상 도달 시 차단
+    if data.get('alertThresholdExceeded', 0.0) >= 0.9:
+        client = service_usage_v1.ServiceUsageClient()
+        request = service_usage_v1.UpdateConsumerQuotaLimitRequest(
+            name='projects/{project_id}/services/aiplatform.googleapis.com/consumerQuotaMetrics/aiplatform.googleapis.com%2Fgenerate_content_requests_per_minute_per_project_per_base_model/limits/%2Fproject%2Fregion/consumerQuotaLimits/projects%2F{project_id}%2Fservices%2Faiplatform.googleapis.com%2FconsumerQuotaMetrics%2Faiplatform.googleapis.com%252Fgenerate_content_requests_per_minute_per_project_per_base_model%252Flimits%252F%252Fproject%252Fregion%252Flimit',
+            quota_limit={{'values': {{'/project/region': 0}}}}
+        )
+        client.update_consumer_quota_limit(request=request)
+        print('[긴급 조치] 예산 임계치 도달로 Gemini API 쿼터 한도가 0으로 조정되었다.')
+
+2. Cloud Functions 2세대 배포 명령어:
+------------------------------------------------------------------------
+gcloud functions deploy quota-auto-disable \\
+    --runtime=python311 \\
+    --trigger-topic={topic} \\
+    --entry-point=block_gemini_api \\
+    --project={project_id} \\
+    --region=asia-northeast3
+========================================================================
+
+========================================================================
+[시뮬레이션] 가상 예산 초과 이벤트 페이로드 생성
+========================================================================
+{{
+  "billingAccountId": "012345-6789AB-CDEF01",
+  "budgetDisplayName": "{budget_name}",
+  "costAmount": 120.0,
+  "costIntervalStart": "2026-06-01T00:00:00Z",
+  "budgetAmount": 100.0,
+  "alertThresholdExceeded": 1.2,
+  "currencyCode": "USD"
+}}
+------------------------------------------------------------------------
+
+[데모 실행] --dry-run 모드에서는 실제 Pub/Sub 메시지를 발행하지 않고 파이프라인 설계를 검증한다.
+  - 상태: 성공 (모의 이벤트 생성 및 스키마 유효성 검증 완료)
+
+========================================================================
+[자원 정리 안내 (Teardown Guide)]
+테스트 완료 후 요금 발생 및 불필요한 자원 잔존을 방지하기 위해 아래 명령어로 삭제한다:
+  1. Pub/Sub 주제 삭제: gcloud pubsub topics delete {topic} --project={project_id}
+  2. Cloud Functions 삭제: gcloud functions delete quota-auto-disable --region=asia-northeast3
+  3. 예산 규칙 삭제: GCP 결제 콘솔 ( https://console.cloud.google.com/billing ) '예산 및 알림' 메뉴에서 '{budget_name}' 삭제
+========================================================================
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+
+
+def save_markdown_report(content: str, filepath: str = "report.md"):
+  """진단 리포트를 마크다운 파일로 저장한다."""
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  target_path = os.path.join(script_dir, filepath)
+  with open(target_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="제미나이(Gemini) API 비용 및 쿼터 임계치 경보 설정 및 시뮬레이션 도구"
@@ -180,7 +287,10 @@ def main():
   )
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
+  if args.dry_run:
+    project_id = "sample-project-id"
+  else:
+    project_id = args.project or get_default_project(is_dry_run=False)
 
   print("=" * 72)
   print("[진단 시작] 제미나이(Gemini) API 실시간 비용 및 할당량 경보 아키텍처 점검")
@@ -219,6 +329,10 @@ def main():
   print("  2. Cloud Functions 삭제: gcloud functions delete quota-auto-disable --region=asia-northeast3")
   print(f"  3. 예산 규칙 삭제: GCP 결제 콘솔 ( https://console.cloud.google.com/billing ) '예산 및 알림' 메뉴에서 '{args.budget_name}' 삭제")
   print("=" * 72 + "\n")
+
+  md_content = build_markdown_report(project_id, args.topic, args.budget_name, args.dry_run)
+  save_markdown_report(md_content)
+  print("[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

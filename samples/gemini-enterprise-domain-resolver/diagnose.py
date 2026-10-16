@@ -58,7 +58,7 @@ def get_mock_domain_status(domain: str) -> dict:
         "dns_txt_record": "google-site-verification=AbCdEf1234567890XyZ_mock_token",
         "dns_verified": False,
         "cloud_identity_free_available": True,
-        "free_license_quota": 50,
+        "free_license_quota": "50+",
     }
 
 
@@ -130,7 +130,7 @@ def main() -> None:
     # 3. 라이선스 최적화 방안 (Cloud Identity Free)
     print("\n[3단계] 라이선스 최적화 및 Gemini Enterprise 배포 전략")
     print("-" * 85)
-    print(f"* Cloud Identity Free 지원 여부: {'지원 가능 (50개 무료 라이선스 즉시 제공)' if data['cloud_identity_free_available'] else '추가 신청 필요'}")
+    print(f"* Cloud Identity Free 지원 여부: {'지원 가능 (50+개 무료 라이선스 즉시 제공)' if data['cloud_identity_free_available'] else '추가 신청 필요'}")
     print("* 비용 최적화 제안: 전사 Google Workspace 유료 라이선스 구매 없이도 Cloud Identity Free 계정에")
     print("  Gemini Enterprise 전용 애드온 라이선스만 할당하여 그룹사 분할 배포 가능")
     print("-" * 85)
@@ -147,6 +147,93 @@ def main() -> None:
     print(f"4. Cloud Identity Free 라이선스를 통한 중앙 ID 거버넌스 수립:")
     print(f"   ( https://admin.google.com/ac/billing/subscriptions )")
     print("=" * 85)
+
+    md_content = build_markdown_report(data, is_dry_run=args.dry_run)
+    save_markdown_report(md_content)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
+
+
+def build_markdown_report(data: dict, is_dry_run: bool) -> str:
+    mode_label = "모의 실행 (Dry-run)" if is_dry_run else "운영 환경 진단 (Production)"
+    domain = data["domain"]
+    dns_status_str = "검증 완료 (VERIFIED)" if data["dns_verified"] else "미검증 (NOT VERIFIED - 조치 필요)"
+    ci_support_str = "지원 가능 (50+개 무료 라이선스 즉시 제공)" if data["cloud_identity_free_available"] else "추가 신청 필요"
+
+    lines = [
+        "# 진단 및 분석 리포트: gemini-enterprise-domain-resolver",
+        "",
+        f"- **생성 모드**: {mode_label}",
+        f"- **점검 대상 도메인**: `{domain}`",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 진단 실행 콘솔 출력 결과",
+        "",
+        "```text",
+        "=" * 85,
+        "Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Identity 진단 리포트",
+        f"진단 모드: {mode_label}",
+        f"점검 대상 도메인: {domain}",
+        "=" * 85,
+        "",
+        "[1단계] 도메인 충돌 상태 및 원인 분석",
+        "-" * 85,
+        f"* 충돌 증상 코드: {data['conflict_type']}",
+        f"* 원인 분석: {data['conflict_reason']}",
+    ]
+    if data["unmanaged_user_count"] > 0:
+        lines.append(f"* 식별된 미관리 사용자 계정 수: {data['unmanaged_user_count']}명")
+        lines.append(f"* 대표 미관리 계정 목록: {', '.join(data['sample_unmanaged_users'])}")
+    lines.extend([
+        "-" * 85,
+        "",
+        "[2단계] DNS TXT 레코드 기반 도메인 소유권 검증 상태",
+        "-" * 85,
+        f"* DNS 검증 상태: {dns_status_str}",
+        f"* 등록 필요 TXT 레코드 값: {data['dns_txt_record']}",
+        "-" * 85,
+        "",
+        "[3단계] 라이선스 최적화 및 Gemini Enterprise 배포 전략",
+        "-" * 85,
+        f"* Cloud Identity Free 지원 여부: {ci_support_str}",
+        "* 비용 최적화 제안: 전사 Google Workspace 유료 라이선스 구매 없이도 Cloud Identity Free 계정에",
+        "  Gemini Enterprise 전용 애드온 라이선스만 할당하여 그룹사 분할 배포 가능",
+        "-" * 85,
+        "",
+        "[4단계] 단계별 소유권 인수(Takeover) 및 계정 통합 처방",
+        "1. DNS 공급자 콘솔 접속 후 도메인 TXT 레코드 추가:",
+        f"   호스트: @ | 유형: TXT | 값: {data['dns_txt_record']}",
+        "2. Google Admin Console에서 도메인 소유권 확인 완료:",
+        "   ( https://admin.google.com/ac/domains/manage )",
+        "3. 도메인 소유권 확인 후 미관리 사용자 통합 및 계정 충돌 해소:",
+        "   - 관리 콘솔 > 디렉터리 > 사용자 > 미관리 사용자 초청 및 소유권 인수",
+        "   - 또는 임시 계정(gtempaccount.com)으로의 자동 분리 승인",
+        "4. Cloud Identity Free 라이선스를 통한 중앙 ID 거버넌스 수립:",
+        "   ( https://admin.google.com/ac/billing/subscriptions )",
+        "=" * 85,
+        "```",
+        "",
+        "---",
+        "",
+        "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+        "",
+        "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+        "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+        "",
+        "```bash",
+        "python diagnose.py",
+        "```",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    report_path = os.path.join(current_dir, filename)
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(content)
 
 
 if __name__ == "__main__":

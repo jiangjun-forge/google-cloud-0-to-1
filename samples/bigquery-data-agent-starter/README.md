@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 (Standalone & Optional GE App)
 
-45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 빅쿼리(BigQuery) 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 대화형 분석 에이전트인 Conversational Analytics Data Agent를 단독(Standalone)으로 생성 및 멀티턴 대화 질의를 실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 전사 대화 포털 시나리오를 즉시 시연할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-09-14)
+45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 빅쿼리(BigQuery) 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 대화형 분석 에이전트인 Conversational Analytics Data Agent를 단독(Standalone)으로 생성 및 멀티턴 대화 질의를 실습하며, 필요 시 선택 사항(Optional)으로 제미나이 엔터프라이즈 앱(Gemini Enterprise App)에 게시하여 전사 대화 포털 시나리오를 즉시 시연할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-09-14)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#GenAI`, `#Governance`, `#Performance`  
@@ -29,7 +29,7 @@ All contents, designs, and code examples are subject to change, modification, or
 다음과 같은 요구 사항이 워크숍이나 사내 PoC에서 발생하고 있다면 즉시 본 스타터 키트를 활용해야 한다:
 
 - [ ] 45분 내외의 짧은 핸즈온 세션 동안 참석자들이 BigQuery 데이터 준비부터 BigQuery Data Agent 생성 및 자연어 질의응답까지 막힘 없이 완주해야 하는 경우
-- [ ] Gemini Enterprise App에 올리지 않고 BigQuery Studio 내에서 단독(Standalone)으로 Data Agent를 쓰는 고객과, Gemini Enterprise App에 게시(Publish)하려는 고객 모두를 하나의 워크숍 키트로 지원해야 하는 경우
+- [ ] 제미나이 엔터프라이즈 앱에 올리지 않고 BigQuery Studio 내에서 단독(Standalone)으로 Data Agent를 쓰는 부서와, 제미나이 엔터프라이즈 앱에 게시(Publish)하려는 전사 배포 조직 모두를 하나의 워크숍 키트로 지원해야 하는 경우
 - [ ] 별도의 GCP 과금이나 권한 부여 전, 가상 실행(`--dry-run`)으로 전체 SQL DDL/DML과 에이전트 시스템 지침을 사전 검토하고자 하는 경우
 
 ---
@@ -38,7 +38,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["실습 시작 (diagnose.py / diagnose.py)"] --> B["Step 1 [CLI 자동화]: cymbal_gold 4개 테이블 및 실데이터 구축 (--setup-demo)"]
+    A["실습 시작 (python diagnose.py)"] --> B["Step 1 [CLI 자동화]: cymbal_gold 4개 테이블 및 실데이터 구축 (--setup-demo)"]
     B --> C["pos_transactions_gold, gold_inventory_reconciliation_ledger 등 4개 테이블 + 실데이터 적재"]
     C --> D["v_cymbal_retail_semantic 시맨틱 뷰 생성 (순매출, 결품 커버 시간 공식 내장)"]
     D --> E["Step 2 [CLI -> UI 재료 출력]: System Instructions 및 Verified Queries 출력 (--agent-config)"]
@@ -112,7 +112,7 @@ python diagnose.py --agent-config
   8. 참조 문서: BigQuery Conversational Analytics 가이드 ( https://cloud.google.com/bigquery/docs/conversational-analytics )
 
 ### 4.5 Step 3 (선택 사항 / Optional): Gemini Enterprise App에 Data Agent 게시 및 A2A 연동
-BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸 수 있다. 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 명령어로 최신 UI 절차를 확인하고 진행하라:
+BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸 수 있다. 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 명령어로 최신 UI 절차를 확인하고 진행한다:
 
 ```bash
 # [선택 사항] Gemini Enterprise App 게시 및 A2A 연동 콘솔 UI 절차 출력

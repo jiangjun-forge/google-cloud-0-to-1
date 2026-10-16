@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# GCP IAM 권한 거부(403) 감사 역추적 및 원클릭 복구 (`iam-permission-resolver`)
+# GCP IAM 권한 거부(403) 감사 역추적 및 원클릭 복구 (iam-permission-resolver)
 
 구글 클라우드 IAM(Cloud IAM) 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-06-16)
 
@@ -64,8 +64,8 @@ flowchart TD
 
 | 역할 (Role) | 권한 ID | 용도 |
 | :--- | :--- | :--- |
-| **로그 뷰어 (권장)** | `roles/logging.viewer` | Cloud Logging 데이터 액세스 감사 로그 읽기 |
-| **프로젝트 IAM 관리자** | `roles/resourcemanager.projectIamAdmin` | 추천된 IAM 역할을 계정에 최종 부여 |
+| **클라우드 로깅 뷰어(roles/logging.viewer)** | `roles/logging.viewer` | Cloud Logging 데이터 액세스 감사 로그 읽기 |
+| **프로젝트 IAM 관리자(roles/resourcemanager.projectIamAdmin)** | `roles/resourcemanager.projectIamAdmin` | 추천된 IAM 역할을 계정에 최종 부여 |
 
 > [!NOTE]
 > `--dry-run` 모드로 실행할 경우 별도의 권한 없이도 가상 권한 거부 시나리오와 처방 명령어 형식을 즉시 확인할 수 있다.
@@ -130,6 +130,6 @@ python diagnose.py --project your-project-id --days 7 --limit 5
 
 ---
 
-## 자원 정리 (Teardown Guide)
+## 자원 정리 안내 (Teardown)
 
 본 도구는 순수 감사 로그 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.

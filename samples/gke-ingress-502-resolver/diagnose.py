@@ -69,6 +69,8 @@ def parse_args() -> argparse.Namespace:
 
 def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     """프로젝트 ID를 탐지하거나 대화형으로 선택한다."""
+    if is_dry_run:
+        return "sample-project-id"
     if cli_project:
         return cli_project
     env_proj = os.getenv("PROJECT_ID")
@@ -87,7 +89,7 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
+    if not sys.stdin.isatty():
         return "example-gke-project"
 
     try:
@@ -388,6 +390,209 @@ def analyze_and_report(data: Dict[str, Any], is_dry_run: bool) -> None:
     print("=" * 80)
 
 
+def build_markdown_report(
+    data: Dict[str, Any], is_dry_run: bool, project_id: str, location: str, namespace: str
+) -> str:
+    """진단 결과를 바탕으로 표준 마크다운 리포트를 구성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실환경 진단 (Live)"
+
+    c_name = data.get("cluster_name", "")
+    loc = data.get("location", "")
+    ing_name = data.get("ingress_name", "")
+    ns = data.get("namespace", "")
+    svc_name = data.get("service_name", "")
+    ing_ip = data.get("ingress_ip", "미할당")
+
+    firewall = data.get("firewall", {})
+    probe = data.get("probe", {})
+    neg = data.get("neg", {})
+    timeout = data.get("timeout", {})
+
+    issues: List[Tuple[str, str, str]] = []
+
+    fw_ok = firewall.get("health_check_firewall_exists", False)
+    if not fw_ok:
+        issues.append(
+            (
+                "CRITICAL",
+                "GCP 헬스 체크 프로브 대역 방화벽 규칙 누락 (FIREWALL_PROBE_BLOCKED)",
+                "구글 클라우드 로드 밸런서 헬스 체크 프로브 대역(35.191.0.0/16, 130.211.0.0/22)에서 "
+                "GKE 노드/파드로 들어오는 인그레스 트래픽이 차단되어 모든 백엔드가 Unhealthy로 판정됨.",
+            )
+        )
+
+    c_readiness = probe.get("container_readiness_probe_path", "/")
+    gcp_hc_path = probe.get("gcp_health_check_path", "/")
+    if c_readiness != gcp_hc_path:
+        issues.append(
+            (
+                "CRITICAL",
+                "헬스 체크 요청 경로 불일치 (HEALTH_CHECK_PATH_MISMATCH)",
+                f"파드 Readiness Probe 경로('{c_readiness}')와 GCP 로드 밸런서 헬스 체크 경로('{gcp_hc_path}')가 "
+                f"일치하지 않음. 기본 루트('/') 경로가 HTTP 200 이외의 응답(404 Not Found 또는 302 Redirect)을 "
+                f"반환하여 파드가 정상 기동 중임에도 로드 밸런서 헬스 체크가 실패함.",
+            )
+        )
+
+    gate_ok = neg.get("pod_readiness_gate_injected", True)
+    if not gate_ok:
+        issues.append(
+            (
+                "WARNING",
+                "Pod Readiness Gate 미주입 (NEG_READINESS_GATE_MISSING)",
+                "파드 배포 시 'cloud.google.com/neg-ready' Readiness Gate가 선언되지 않음. "
+                "신규 파드 롤아웃 시 컨테이너가 뜨자마자 트래픽이 유입되어 NEG 엔드포인트 등록 완료 전 502 에러 발생 위험.",
+            )
+        )
+
+    lb_timeout = timeout.get("load_balancer_timeout_sec", 30)
+    app_keepalive = timeout.get("backend_keepalive_timeout_sec", 65)
+    if app_keepalive <= lb_timeout:
+        issues.append(
+            (
+                "WARNING",
+                "백엔드 Keepalive 타임아웃 역전 장애 (KEEPALIVE_TIMEOUT_INVERSION)",
+                f"백엔드 웹 애플리케이션의 Keepalive 타임아웃({app_keepalive}초)이 "
+                f"로드 밸런서 백엔드 서비스 타임아웃({lb_timeout}초)보다 짧거나 같음. "
+                f"유휴 커넥션을 백엔드가 먼저 TCP FIN/RST로 끊어버려 클라이언트 요청 도중 간헐적 502 발생.",
+            )
+        )
+
+    status = "HEALTHY"
+    if any(sev == "CRITICAL" for sev, _, _ in issues):
+        status = "CRITICAL"
+    elif any(sev == "WARNING" for sev, _, _ in issues):
+        status = "WARNING"
+
+    issue_lines = []
+    if not issues:
+        issue_lines.append("  * 4단계 점검 항목(방화벽, 헬스 체크 경로, NEG 게이트, Keepalive 타임아웃)이 모두 정상이다.")
+    else:
+        for idx, (sev, title, desc) in enumerate(issues, 1):
+            issue_lines.append(f"  [{idx}] [{sev}] {title}\n      - 상세 원인: {desc}")
+
+    issues_text = "\n\n".join(issue_lines)
+
+    guide_lines = []
+    if any("FIREWALL_PROBE_BLOCKED" in title for _, title, _ in issues):
+        guide_lines.append(
+            "  1. GCP 헬스 체크 허용 인그레스 방화벽 규칙 즉시 배포:\n"
+            "     # gcloud 방화벽 생성 명령:\n"
+            "     gcloud compute firewall-rules create allow-gcp-health-checks \\\n"
+            "       --network=default \\\n"
+            "       --action=ALLOW \\\n"
+            "       --direction=INGRESS \\\n"
+            "       --source-ranges=35.191.0.0/16,130.211.0.0/22 \\\n"
+            "       --rules=tcp:80,tcp:443,tcp:8080"
+        )
+
+    if any("HEALTH_CHECK_PATH_MISMATCH" in title or "KEEPALIVE_TIMEOUT_INVERSION" in title for _, title, _ in issues):
+        recommended_hc_path = c_readiness if c_readiness else "/healthz"
+        backend_cfg = data.get("backend_config_name", "web-backend-config")
+        guide_lines.append(
+            f"  2. BackendConfig 생성 및 Service 바인딩 (경로 일치 및 타임아웃 보정):\n"
+            f"     # custom-backend-config.yaml 파일 적용:\n"
+            f"     ---\n"
+            f"     apiVersion: cloud.google.com/v1\n"
+            f"     kind: BackendConfig\n"
+            f"     metadata:\n"
+            f"       name: {backend_cfg}\n"
+            f"       namespace: {ns}\n"
+            f"     spec:\n"
+            f"       timeoutSec: {lb_timeout}  # 백엔드 서버 Keepalive 타임아웃보다 작게 유지\n"
+            f"       healthCheck:\n"
+            f"         type: HTTP\n"
+            f"         requestPath: {recommended_hc_path}  # Pod Readiness Probe와 100% 일치\n"
+            f"         port: {probe.get('gcp_health_check_port', 8080)}\n"
+            f"     ---\n"
+            f"     # Service 애노테이션 추가:\n"
+            f"     kubectl annotate service {svc_name} -n {ns} \\\n"
+            f"       cloud.google.com/backend-config='{{\"default\": \"{backend_cfg}\"}}' --overwrite"
+        )
+
+    if any("KEEPALIVE_TIMEOUT_INVERSION" in title for _, title, _ in issues):
+        guide_lines.append(
+            f"  3. 백엔드 웹 프레임워크 Keepalive 타임아웃 상향 조정:\n"
+            f"     - 로드 밸런서 백엔드 타임아웃({lb_timeout}초)보다 최소 5초 이상 크게 설정한다.\n"
+            f"     * Node.js / Express 예시:\n"
+            f"       server.keepAliveTimeout = ({lb_timeout} + 5) * 1000; // {(lb_timeout + 5) * 1000}ms\n"
+            f"       server.headersTimeout = ({lb_timeout} + 10) * 1000;   // {(lb_timeout + 10) * 1000}ms\n"
+            f"     * Nginx 예시 (`nginx.conf`):\n"
+            f"       keepalive_timeout {lb_timeout + 5}s;"
+        )
+
+    if any("NEG_READINESS_GATE_MISSING" in title for _, title, _ in issues):
+        guide_lines.append(
+            "  4. 파드 스펙에 Readiness Gate 주입 (롤아웃 502 방지):\n"
+            "     Deployment YAML의 `spec.template.spec`에 아래 항목을 추가한다:\n"
+            "     readinessGates:\n"
+            "       - conditionType: None # GKE 클러스터 버전 1.16+에서 Standalone NEG 활성화 시 자동 주입 권장\n"
+            "     Service 애노테이션 확인: cloud.google.com/neg: '{\"ingress\": true}'"
+        )
+
+    guides_text = "\n\n".join(guide_lines)
+
+    return f"""# 진단 및 분석 리포트: gke-ingress-502-resolver
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+[GKE Ingress 502 Resolver] 4단계 체인 역추적 프로세스를 시작한다.
+[*] 대상 프로젝트: {project_id}
+[*] 대상 위치(Location): {location}
+[*] 대상 네임스페이스: {namespace}
+[1/4] 가상 실행 모드 활성화: 502 발생 모의 인프라 데이터를 로드한다...
+[2/4] 모의 방화벽, 헬스 체크 경로, NEG 게이트, 타임아웃 체인을 검증했다.
+[3/4] 종합 원인 역추적 및 맞춤형 YAML/명령어를 도출한다...
+[4/4] 진단 리포트를 생성한다...
+================================================================================
+ GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적 리포트
+================================================================================
+[!] 안내: 본 결과는 실제 쿠버네티스 호출이 아닌 내장 모의 인프라 데이터(Dry-Run) 기준이다.
+
+[1] 점검 대상 리소스 개요:
+  - GKE 클러스터: {c_name} (위치: {loc})
+  - Ingress 리소스: {ing_name} (네임스페이스: {ns})
+  - 로드 밸런서 공인 IP: {ing_ip}
+  - 대상 백엔드 서비스: {svc_name}
+
+[2] 4단계 체인 심층 진단 결과: [{status}]
+
+{issues_text}
+
+[3] 단계별 즉시 복구 가이드 및 맞춤형 YAML:
+
+{guides_text}
+================================================================================
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+
+
+def save_markdown_report(content: str, filepath: str = "report.md") -> None:
+    """진단 리포트를 마크다운 파일로 저장한다."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    target_path = os.path.join(script_dir, filepath)
+    with open(target_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
 def main() -> None:
     """메인 실행 진입점."""
     args = parse_args()
@@ -408,6 +613,11 @@ def main() -> None:
         print("[3/4] 종합 원인 역추적 및 맞춤형 YAML/명령어를 도출한다...", flush=True)
         print("[4/4] 진단 리포트를 생성한다...", flush=True)
         analyze_and_report(mock_data, is_dry_run=True)
+        md_content = build_markdown_report(
+            mock_data, is_dry_run=True, project_id=project_id, location=location, namespace=namespace
+        )
+        save_markdown_report(md_content)
+        print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
         return
 
     print("[1/4] GCP 헬스 체크 방화벽 인그레스 허용 여부를 검증한다...", flush=True)
@@ -442,6 +652,11 @@ def main() -> None:
     print("[3/4] 4단계 체인 교차 검증을 완료했다.", flush=True)
     print("[4/4] 종합 진단 리포트를 출력한다...", flush=True)
     analyze_and_report(combined_data, is_dry_run=False)
+    md_content = build_markdown_report(
+        combined_data, is_dry_run=False, project_id=project_id, location=location, namespace=namespace
+    )
+    save_markdown_report(md_content)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

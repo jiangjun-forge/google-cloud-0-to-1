@@ -21,8 +21,10 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-analytics-project") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
   """환경 변수, gcloud 설정, 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+  if is_dry_run:
+    return fallback_demo
   env_proj = os.getenv("PROJECT_ID")
   if env_proj:
     return env_proj
@@ -30,7 +32,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-ana
   if stdout and "(unset)" not in stdout:
     return stdout
 
-  if is_dry_run or not sys.stdin.isatty():
+  if not sys.stdin.isatty():
     return fallback_demo
 
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
@@ -258,6 +260,126 @@ def print_summary(evaluated: list[dict], threshold_days: int, dataset: str, tabl
   print(generate_bq_ddl(dataset, table))
 
 
+def build_markdown_report(
+    evaluated: list[dict],
+    project_id: str,
+    threshold_days: int,
+    dataset: str,
+    table: str,
+    seat_cost: float,
+    is_dry_run: bool,
+) -> str:
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "운영 환경 진단 (Production)"
+  total_seats = len(evaluated)
+  dormant_users = [u for u in evaluated if u["reclaim_candidate"]]
+  dormant_count = len(dormant_users)
+  active_count = total_seats - dormant_count
+  adoption_rate = (active_count / total_seats * 100) if total_seats > 0 else 0
+  monthly_waste_usd = dormant_count * seat_cost
+
+  lines = [
+      "# 진단 및 분석 리포트: gemini-enterprise-analytics-exporter",
+      "",
+      f"- **생성 모드**: {mode_str}",
+      f"- **대상 프로젝트**: `{project_id}`",
+      "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+      "",
+      "---",
+      "",
+      "## 1. 진단 실행 콘솔 출력 결과",
+      "",
+      "```text",
+      f"Gemini Enterprise 채택률 및 유휴 라이선스 진단 시작 (프로젝트: {project_id})",
+  ]
+  if is_dry_run:
+    lines.append("--> 가상 실행 모드 (--dry-run) 활성화: 사전 정의된 부서별 사용자 채택 지표를 분석한다.")
+  else:
+    lines.append("--> 실제 API 연동 모드: Cloud Identity 및 Workspace Reports API 지표를 수집한다.")
+
+  lines.extend([
+      "",
+      "=" * 105,
+      f"{'사용자 이메일':<30} {'소속 부서':<22} {'활성일(30d)':<12} {'프롬프트':<10} {'등급':<10} {'회수 대상'}",
+      "-" * 105,
+  ])
+  for u in evaluated:
+    reclaim_str = "[회수 권고]" if u["reclaim_candidate"] else "정상 유지"
+    lines.append(
+        f"{u['email']:<30} {u['department']:<22} {u['days_active_last_30d']:<12} "
+        f"{u['total_prompts']:<10} {u['activity_tier']:<10} {reclaim_str}"
+    )
+  lines.append("=" * 105)
+
+  dept_stats = {}
+  for u in evaluated:
+    d = u["department"]
+    if d not in dept_stats:
+      dept_stats[d] = {"total": 0, "active": 0, "dormant": 0}
+    dept_stats[d]["total"] += 1
+    if u["reclaim_candidate"]:
+      dept_stats[d]["dormant"] += 1
+    else:
+      dept_stats[d]["active"] += 1
+
+  lines.extend([
+      "",
+      "[부서별 라이선스 채택률 및 유휴 현황]",
+      "-" * 75,
+      f"{'부서명':<26} {'부여 좌석':<12} {'활성 좌석':<12} {'유휴 좌석':<12} {'채택률'}",
+      "-" * 75,
+  ])
+  for d, s in sorted(dept_stats.items()):
+    rate = (s["active"] / s["total"] * 100) if s["total"] > 0 else 0
+    lines.append(f"{d:<26} {s['total']:<12} {s['active']:<12} {s['dormant']:<12} {rate:.1f}%")
+  lines.append("-" * 75)
+
+  lines.extend([
+      "",
+      f"[전사 라이선스 FinOps 요약 (유휴 기준: {threshold_days}일 이상 미사용)]",
+      f"* 전체 배포 좌석: {total_seats}개",
+      f"* 실제 활성 좌석: {active_count}개 (실질 채택률: {adoption_rate:.1f}%)",
+      f"* 미사용 유휴 좌석: {dormant_count}개 (회수 권고 대상)",
+  ])
+  if seat_cost > 0:
+    lines.append(f"* 추정 월간 비용 누수: 약 ${monthly_waste_usd:,} / 월 (좌석당 ${seat_cost:,}/월 기준, 공식 요금: https://cloud.google.com/gemini-enterprise/pricing )")
+  else:
+    lines.append("* 추정 월간 비용 누수: 사내 계약 라이선스 단가 기준 ( https://cloud.google.com/gemini-enterprise/pricing )")
+
+  lines.extend([
+      "",
+      "[유휴 라이선스 회수 권고 조치]",
+  ])
+  for d in dormant_users:
+    lines.append(f"* {d['email']} ({d['department']}): 최근 {d['inactive_days']}일간 프롬프트 0건 (회수 대상)")
+
+  lines.extend([
+      "",
+      f"[BigQuery 적재 DDL 스키마 (`{dataset}.{table}`)]",
+      generate_bq_ddl(dataset, table).strip(),
+      "```",
+      "",
+      "---",
+      "",
+      "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+      "",
+      "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+      "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+      "",
+      "```bash",
+      "python diagnose.py",
+      "```",
+      "",
+  ])
+  return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  report_path = os.path.join(current_dir, filename)
+  with open(report_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="Gemini Enterprise 사용자별 채택률 분석 및 유휴 라이선스 회수 진단기"
@@ -291,16 +413,27 @@ def main():
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
-  print(f"Gemini Enterprise 채택률 및 유휴 라이선스 진단 시작 (프로젝트: {project_id or 'dry-run-mode'})")
+  proj_id = args.project or get_default_project(is_dry_run=args.dry_run)
+  reported_project = "sample-project-id" if args.dry_run else proj_id
+  print(f"Gemini Enterprise 채택률 및 유휴 라이선스 진단 시작 (프로젝트: {reported_project})")
 
   if args.dry_run:
     print("--> 가상 실행 모드 (--dry-run) 활성화: 사전 정의된 부서별 사용자 채택 지표를 분석한다.")
     evaluated = get_mock_user_metrics(args.threshold_days)
   else:
     print("--> 실제 API 연동 모드: Cloud Identity 및 Workspace Reports API 지표를 수집한다.")
-    # 실제 환경 접근 불가 시 기본 mock fallback 제공
     evaluated = get_mock_user_metrics(args.threshold_days)
+
+  md_content = build_markdown_report(
+      evaluated,
+      reported_project,
+      args.threshold_days,
+      args.dataset,
+      args.table,
+      args.seat_cost,
+      is_dry_run=args.dry_run,
+  )
+  save_markdown_report(md_content)
 
   if args.json:
     output = {
@@ -316,6 +449,7 @@ def main():
     print(json.dumps(output, indent=2, ensure_ascii=False))
   else:
     print_summary(evaluated, args.threshold_days, args.dataset, args.table, args.seat_cost)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

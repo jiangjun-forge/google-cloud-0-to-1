@@ -229,12 +229,98 @@ def print_text_report(report: Dict[str, Any]) -> None:
     print("=" * 76 + "\n")
 
 
+def build_markdown_report(report: Dict[str, Any], is_dry_run: bool) -> str:
+    """진단 결과를 표준 마크다운 리포트로 구성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "사내 실측 진단"
+    m = report["metrics"]
+    r = report["recommendations"]
+    s = report["estimated_monthly_savings"]
+
+    lines = [
+        "# 진단 및 분석 리포트: cloud-run-cud-optimizer",
+        "",
+        f"- **생성 모드**: {mode_str}",
+        f"- **대상 프로젝트**: `{report['project_id']}`",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 진단 실행 콘솔 출력 결과",
+        "",
+        "```text",
+        "=" * 76,
+        " [Cloud Run Compute CUD 약정 최적화 및 과소 약정 트랩 분석 리포트]",
+        "=" * 76,
+        f"대상 프로젝트 ID       : {report['project_id']}",
+        f"Cloud Billing 계정 ID  : {report['billing_account_id']}",
+        f"분석 대상 기간         : 최근 {report['lookback_days']}일",
+        f"적용 안전 마진 계수    : {report['safety_margin'] * 100:.0f}% (최저 사용량 기준)",
+        "-" * 76,
+        "",
+        "[시간당 사용량 지표 분석 (USD)]",
+        f"- 평균 시간당 지출     : ${m['avg_hourly_spend_usd']:.2f} / hour",
+        f"- 피크 시간당 지출     : ${m['peak_hourly_spend_usd']:.2f} / hour",
+        f"- 최저 바닥선(Trough)  : ${m['trough_hourly_spend_usd']:.2f} / hour  (야간/주말 Scale-in 시 최저점)",
+        "",
+        "[CUD 약정 추천 수치 비교]",
+        f"1. GCP 콘솔 기본 추천액 : ${r['console_recommended_hourly_usd']:.2f} / hour (변동성 보수 계산으로 과소 약정 유도)",
+        f"2. 실질 최적 권장 약정액: ${r['optimal_recommended_hourly_usd']:.2f} / hour (바닥선 x {report['safety_margin']*100:.0f}%)",
+        f"   => 약정 갭(추가 약정): ${r['under_commitment_gap_hourly_usd']:.2f} / hour",
+        "",
+        "[월간 예상 순 절감액 비교 (USD, 월 730시간 기준)]",
+        f"- 콘솔 추천 수용 시    : 1년 약정 ${s['console_1yr_usd']:,.2f} | 3년 약정 ${s['console_3yr_usd']:,.2f}",
+        f"- 최적 권장 수용 시    : 1년 약정 ${s['optimal_1yr_usd']:,.2f} | 3년 약정 ${s['optimal_3yr_usd']:,.2f}",
+        f"** 추가 확보 절감 이익  : 1년 약정 +${s['additional_savings_gain_1yr_usd']:,.2f} | 3년 약정 +${s['additional_savings_gain_3yr_usd']:,.2f} / month",
+        "",
+        "[사전 최적화 점검 결과]",
+    ]
+
+    for idx, c in enumerate(report["preflight_checks"], 1):
+        lines.append(f"{idx}. [{c['status']}] {c['item']}")
+        lines.append(f"   내용: {c['description']}")
+
+    lines.extend([
+        "",
+        "[권장 실행 가이드]",
+        "1. min-instances 점검: 개발/스테이징 환경의 불필요한 상시 인스턴스를 0으로 조정하여 실제 프로덕션 바닥선을 재측정한다.",
+        "2. 약정 유형 선택: 서비스별 종속 약정이 아닌 'Compute Flexible CUD'를 구매한다 (Cloud Run, GKE, GCE 공통 적용).",
+        f"3. 구매 커밋 금액: 콘솔 추천(${r['console_recommended_hourly_usd']:.2f})에 안주하지 않고 안전 바닥선인 ${r['optimal_recommended_hourly_usd']:.2f}/hr 수준으로 구매를 검토한다.",
+        "=" * 76,
+        "```",
+        "",
+        "---",
+        "",
+        "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+        "",
+        "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+        "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+        "",
+        "```bash",
+        "python diagnose.py",
+        "```",
+        "",
+    ])
+
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """리포트 내용을 파일에 저장한다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main() -> None:
     args = parse_arguments()
     proj_id = args.project_id or get_default_project(is_dry_run=args.dry_run)
+    reported_project = "sample-project-id" if args.dry_run else proj_id
     report = run_cuds_analysis(
         billing_id=args.billing_account_id,
-        project_id=proj_id,
+        project_id=reported_project,
         lookback_days=args.lookback_days,
         safety_margin=args.safety_margin,
         dry_run=args.dry_run,
@@ -244,6 +330,10 @@ def main() -> None:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         print_text_report(report)
+
+    # 표준 마크다운 리포트 생성 및 덮어쓰기
+    report_md = build_markdown_report(report, is_dry_run=args.dry_run)
+    save_markdown_report(report_md, "report.md")
 
 
 if __name__ == "__main__":

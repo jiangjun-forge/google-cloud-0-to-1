@@ -21,8 +21,10 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-ge-app") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-ge-project") -> str:
   """환경 변수, gcloud 설정, 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+  if is_dry_run:
+    return fallback_demo
   env_proj = os.getenv("GE_PROJECT_ID") or os.getenv("PROJECT_ID")
   if env_proj:
     return env_proj
@@ -30,7 +32,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-ge-
   if stdout and "(unset)" not in stdout:
     return stdout
 
-  if is_dry_run or not sys.stdin.isatty():
+  if not sys.stdin.isatty():
     return fallback_demo
 
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
@@ -194,19 +196,94 @@ def print_table(results: list[dict], ge_prj: str, agent_prj: str):
     print("\n모든 권한 및 조직 정책 검사가 정상이며 에이전트 연동이 가능한 상태다.")
 
 
+def build_markdown_report(results: list[dict], ge_prj: str, agent_prj: str, is_dry_run: bool) -> str:
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "운영 환경 진단 (Production)"
+  lines = [
+      "# 진단 및 분석 리포트: gemini-enterprise-agent-resolver",
+      "",
+      f"- **생성 모드**: {mode_str}",
+      f"- **대상 프로젝트**: `{ge_prj}` <---> `{agent_prj}`",
+      "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+      "",
+      "---",
+      "",
+      "## 1. 진단 실행 콘솔 출력 결과",
+      "",
+      "```text",
+      f"Gemini Enterprise Cross-Project 에이전트 연동 진단 시작 (GE: {ge_prj}, Agent: {agent_prj})",
+  ]
+  if is_dry_run:
+    lines.append("--> 가상 실행 모드 (--dry-run) 활성화: Cross-Org 시뮬레이션 데이터를 분석한다.")
+  else:
+    lines.append("--> 실제 프로젝트 간 IAM 정책 및 조직 제약 조건 조회 완료.")
+
+  lines.extend([
+      "",
+      "=" * 105,
+      f"Gemini Enterprise 앱 프로젝트: {ge_prj} <---> 커스텀 에이전트 프로젝트: {agent_prj}",
+      "=" * 105,
+      f"{'점검 항목':<36} {'상태':<12} {'진단 내용'}",
+      "-" * 105,
+  ])
+  for r in results:
+    lines.append(f"{r['check_item']:<36} {r['status']:<12} {r['description']}")
+  lines.append("=" * 105)
+
+  criticals = [r for r in results if r["status"] == "CRITICAL"]
+  warnings = [r for r in results if r["status"] == "WARNING"]
+
+  if criticals or warnings:
+    lines.append("\n[발견된 Cross-Project/Org 연동 결함 및 즉시 복구 처방]")
+    for item in criticals + warnings:
+      prefix = "[심각]" if item["status"] == "CRITICAL" else "[주의]"
+      lines.append(f"\n* {prefix} {item['check_item']}")
+      lines.append(f"  - 원인: {item['description']}")
+      lines.append(f"  - 처방: {item['remediation']}")
+  else:
+    lines.append("\n모든 권한 및 조직 정책 검사가 정상이며 에이전트 연동이 가능한 상태다.")
+
+  lines.extend([
+      "```",
+      "",
+      "---",
+      "",
+      "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+      "",
+      "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+      "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+      "",
+      "```bash",
+      "python diagnose.py",
+      "```",
+      "",
+  ])
+  return "\n".join(lines)
+
+
+def save_markdown_report(content: str, filename: str = "report.md") -> None:
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  report_path = os.path.join(current_dir, filename)
+  with open(report_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="Gemini Enterprise Cross-Org/Project 커스텀 에이전트 연동 및 조직 정책 진단기"
   )
   parser.add_argument("--ge-project", default=os.getenv("GE_PROJECT_ID") or None, help="Gemini Enterprise 프로젝트 ID")
-  parser.add_argument("--agent-project", default=os.getenv("AGENT_PROJECT_ID") or "demo-agent-engine", help="Agent Engine 프로젝트 ID")
+  parser.add_argument("--agent-project", default=os.getenv("AGENT_PROJECT_ID") or "sample-agent-project", help="Agent Engine 프로젝트 ID")
   parser.add_argument("--engine-id", default=os.getenv("REASONING_ENGINE_ID") or "8492049182740192841", help="Reasoning Engine 고유 ID")
   parser.add_argument("--dry-run", action="store_true", help="실제 GCP 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()
 
   ge_prj = args.ge_project or get_default_project(is_dry_run=args.dry_run)
+  if args.dry_run and not args.ge_project:
+    ge_prj = "sample-ge-project"
   agent_prj = args.agent_project
+  if args.dry_run and args.agent_project in ("demo-agent-engine", "sample-agent-project"):
+    agent_prj = "sample-agent-project"
 
   print(f"Gemini Enterprise Cross-Project 에이전트 연동 진단 시작 (GE: {ge_prj}, Agent: {agent_prj})")
 
@@ -219,10 +296,14 @@ def main():
 
   diagnoses = evaluate_cross_agent(scenario)
 
+  md_content = build_markdown_report(diagnoses, ge_prj, agent_prj, is_dry_run=args.dry_run)
+  save_markdown_report(md_content)
+
   if args.json:
     print(json.dumps(diagnoses, indent=2, ensure_ascii=False))
   else:
     print_table(diagnoses, ge_prj, agent_prj)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":

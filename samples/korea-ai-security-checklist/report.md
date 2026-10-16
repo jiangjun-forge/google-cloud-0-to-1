@@ -1,7 +1,7 @@
 # Gemini & Gemini Enterprise 도입을 위한 AI 보안성 심의 체크리스트 소명서
 
 - **진단 일시**: (실행 결과 자동 생성)
-- **대상 프로젝트**: `sample-ai-project`
+- **대상 프로젝트**: `sample-project-id`
 - **기준 리전**: `asia-northeast3`
 - **진단 모드**: `모의 실행 (Dry-run)`
 - **종합 평가**: 총 20개 항목 중 **적합(PASS) 18건**, **조건부 충족(PARTIAL) 2건**, **주의(WARN) 0건**, **부적합(FAIL) 0건**

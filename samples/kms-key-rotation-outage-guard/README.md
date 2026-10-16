@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기
+# Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 (kms-key-rotation-outage-guard)
 
 클라우드 KMS(Cloud KMS) 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 클라우드 스토리지(Cloud Storage) 객체 및 영구 데이터의 복호화 실패로 인한 대형 서비스 장애(Outage)를 사전 탐지하고 안전한 데이터 재암호화(Rewrite) 워크플로우를 처방하는 도구다. (As of 2026-09-09)
 
@@ -36,7 +36,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 진단 및 해결 흐름
 
 ```mermaid
-graph TD
+flowchart TD
     A["Cloud KMS 키 메타데이터 조회"] --> B["키 버전 라이프사이클 분석"]
     B --> C["버킷 객체별 CMEK 버전 분포 역추적"]
     C --> D{"구버전 키 종속성 탐지"}
@@ -56,8 +56,8 @@ graph TD
 
 | 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
 | :--- | :--- | :--- |
-| `Cloud KMS` | `roles/cloudkms.viewer` | `cloudkms.cryptoKeys.get`, `cloudkms.cryptoKeyVersions.list` |
-| `Cloud Storage` | `roles/storage.objectViewer` | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
+| `Cloud KMS` | `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.cryptoKeys.get`, `cloudkms.cryptoKeyVersions.list` |
+| `Cloud Storage` | `스토리지 객체 뷰어(roles/storage.objectViewer)` | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
 
 ---
 
@@ -153,7 +153,7 @@ v1       NO         DESTROY_SCHEDULED    2025-12-01T09:00:00Z   CRITICAL
 
 ---
 
-## 7. 자원 정리 (Teardown) 가이드
+## 자원 정리 안내 (Teardown)
 
 본 진단 도구는 읽기 전용으로 Cloud KMS 키 메타데이터와 버킷 객체 정보를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 실습용으로 생성한 테스트 KMS 키나 버킷이 있다면 불필요한 비용을 방지하기 위해 버킷을 비우고 삭제한다:
 

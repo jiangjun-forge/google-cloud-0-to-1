@@ -28,8 +28,10 @@ import sys
 from typing import Any, Dict, List, Optional, Tuple
 
 
-def get_gcloud_active_project(is_dry_run: bool = False, fallback_demo: str = "example-fsi-corp") -> Optional[str]:
+def get_gcloud_active_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> Optional[str]:
     """현재 활성화된 gcloud 프로젝트 ID를 조회하거나 대화형으로 선택한다."""
+    if is_dry_run:
+        return fallback_demo
     try:
         res = subprocess.run(
             ["gcloud", "config", "get-value", "project"],
@@ -43,7 +45,7 @@ def get_gcloud_active_project(is_dry_run: bool = False, fallback_demo: str = "ex
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
+    if not sys.stdin.isatty():
         return fallback_demo
 
     try:
@@ -431,45 +433,94 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     return findings
 
 
-def print_report(project_id: str, location: str, is_dry_run: bool, findings: List[Dict[str, Any]]) -> int:
-    """진단 리포트를 단호하고 격조 높은 문어체로 포맷하여 출력한다."""
-    print("=" * 88)
-    print(" 혁신 금융 서비스(FSI) 규제 준수 보안 경계 진단 리포트")
-    print(f" 대상 프로젝트: {project_id} | 점검 리전: {location} | 실행 모드: {'가상 진단 (Dry-Run)' if is_dry_run else '실제 환경 스캔'}")
-    print("=" * 88)
-    print()
+def build_report_text(project_id: str, location: str, is_dry_run: bool, findings: List[Dict[str, Any]]) -> str:
+    """진단 리포트 문자열을 생성한다."""
+    lines = []
+    lines.append("=" * 88)
+    lines.append(" 혁신 금융 서비스(FSI) 규제 준수 보안 경계 진단 도구")
+    lines.append(f" 대상 프로젝트: {project_id} | 점검 리전: {location} | 실행 모드: {'가상 진단 (Dry-Run)' if is_dry_run else '실제 환경 스캔'}")
+    lines.append("=" * 88)
+    lines.append("")
+
+    if is_dry_run:
+        lines.append("[*] 가상 모의 감사 데이터를 로드하고 점검 항목을 시뮬레이션한다...\n")
+
+    lines.append("=" * 88)
+    lines.append(" 혁신 금융 서비스(FSI) 규제 준수 보안 경계 진단 리포트")
+    lines.append(f" 대상 프로젝트: {project_id} | 점검 리전: {location} | 실행 모드: {'가상 진단 (Dry-Run)' if is_dry_run else '실제 환경 스캔'}")
+    lines.append("=" * 88)
+    lines.append("")
 
     pass_count = sum(1 for f in findings if f["status"] == "PASS")
     warn_count = sum(1 for f in findings if f["status"] == "WARN")
     fail_count = sum(1 for f in findings if f["status"] == "FAIL")
     total_count = len(findings)
 
-    print(f"진단 요약: 총 {total_count}개 규제 항목 중 충족 {pass_count}건, 주의 {warn_count}건, 미달 {fail_count}건")
-    print("-" * 88)
-    print(f"{'ID':<12} | {'분류':<14} | {'상태':<6} | {'진단 항목 및 현황'}")
-    print("-" * 88)
+    lines.append(f"진단 요약: 총 {total_count}개 규제 항목 중 충족 {pass_count}건, 주의 {warn_count}건, 미달 {fail_count}건")
+    lines.append("-" * 88)
+    lines.append(f"{'ID':<12} | {'분류':<14} | {'상태':<6} | {'진단 항목 및 현황'}")
+    lines.append("-" * 88)
 
     for f in findings:
         status_text = f"[{f['status']}]"
-        print(f"{f['id']:<12} | {f['category']:<14} | {status_text:<6} | {f['name']}")
-        print(f"  - 현재 상태: {f['current']}")
+        lines.append(f"{f['id']:<12} | {f['category']:<14} | {status_text:<6} | {f['name']}")
+        lines.append(f"  - 현재 상태: {f['current']}")
         if f["status"] != "PASS":
-            print(f"  - 규제 요건: {f['requirement']}")
-            print(f"  - 조치 권고: {f['remediation']}")
-        print()
+            lines.append(f"  - 규제 요건: {f['requirement']}")
+            lines.append(f"  - 조치 권고: {f['remediation']}")
+        lines.append("")
 
-    print("=" * 88)
-    print("종합 평가 및 감사 준비 가이드:")
+    lines.append("=" * 88)
+    lines.append("종합 평가 및 감사 준비 가이드:")
     if fail_count > 0:
-        print("본 진단 결과 규제 필수 요건에 미달하는 항목이 존재한다.")
-        print("금융감독원 현장 실사 및 금융보안원 보안성 심의 전 미달(FAIL) 항목을 우선 조치해야 한다.")
-        print("특히 스토리지 5년 불변 보존(Bucket Lock) 및 Vertex AI 감사 로깅은 필수 소명 대상이다.")
+        lines.append("본 진단 결과 규제 필수 요건에 미달하는 항목이 존재한다.")
+        lines.append("금융감독원 현장 실사 및 금융보안원 보안성 심의 전 미달(FAIL) 항목을 우선 조치해야 한다.")
+        lines.append("특히 스토리지 5년 불변 보존(Bucket Lock) 및 Vertex AI 감사 로깅은 필수 소명 대상이다.")
     else:
-        print("모든 필수 보안 통제가 규제 당국의 가이드라인을 충족하고 있다.")
-        print("사후 감사 대응을 위해 정기적인 로그 무결성 검증 파이프라인을 유지해야 한다.")
-    print("=" * 88)
+        lines.append("모든 필수 보안 통제가 규제 당국의 가이드라인을 충족하고 있다.")
+        lines.append("사후 감사 대응을 위해 정기적인 로그 무결성 검증 파이프라인을 유지해야 한다.")
+    lines.append("=" * 88)
 
-    return 1 if fail_count > 0 else 0
+    return "\n".join(lines)
+
+
+def build_markdown_report(report_text: str, project_id: str, is_dry_run: bool) -> str:
+    """마크다운 리포트(report.md) 내용을 생성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 점검 (Live)"
+    return f"""# 진단 및 분석 리포트: korea-regulatory-perimeter-guard
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+{report_text}
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+
+
+def save_markdown_report(content: str, filepath: str = "report.md"):
+    """마크다운 리포트를 지정된 경로에 저장한다."""
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+    except Exception as e:
+        print(f"[경고] 리포트 파일({filepath}) 저장 실패: {e}")
 
 
 def main() -> None:
@@ -485,30 +536,26 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.dry_run:
-        project_id = args.project or "example-fsi-corp"
-    else:
-        project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_active_project(is_dry_run=args.dry_run)
-        if not project_id:
-            print("오류: 프로젝트 ID가 지정되지 않았다. -p/--project 인자 또는 PROJECT_ID 환경 변수를 설정해야 한다.", file=sys.stderr)
-            sys.exit(2)
-
-    mode_str = "가상 진단 (Dry-Run)" if args.dry_run else "실제 환경 스캔"
-    print("=" * 88, flush=True)
-    print(" 혁신 금융 서비스(FSI) 규제 준수 보안 경계 진단 도구", flush=True)
-    print(f" 대상 프로젝트: {project_id} | 점검 리전: {args.location} | 실행 모드: {mode_str}", flush=True)
-    print("=" * 88, flush=True)
-    print(flush=True)
+    project_id = "sample-project-id" if args.dry_run else (args.project or os.environ.get("PROJECT_ID") or get_gcloud_active_project(is_dry_run=args.dry_run))
+    if not project_id:
+        print("오류: 프로젝트 ID가 지정되지 않았다. -p/--project 인자 또는 PROJECT_ID 환경 변수를 설정해야 한다.", file=sys.stderr)
+        sys.exit(2)
 
     if args.dry_run:
-        print("[*] 가상 모의 감사 데이터를 로드하고 점검 항목을 시뮬레이션한다...\n", flush=True)
         findings = get_mock_findings(project_id)
     else:
         findings = diagnose_live(project_id, args.location, args.audit_bucket, args.kms_key)
 
-    exit_code = print_report(project_id, args.location, args.dry_run, findings)
-    if args.fail_on_violation and exit_code != 0:
-        sys.exit(exit_code)
+    report_text = build_report_text(project_id, args.location, args.dry_run, findings)
+    print(report_text)
+
+    report_md = build_markdown_report(report_text, project_id, args.dry_run)
+    save_markdown_report(report_md)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
+
+    fail_count = sum(1 for f in findings if f["status"] == "FAIL")
+    if args.fail_on_violation and fail_count > 0:
+        sys.exit(1)
     sys.exit(0)
 
 

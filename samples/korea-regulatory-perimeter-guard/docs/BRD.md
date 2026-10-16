@@ -10,8 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD: Business Requirements Document)
-## 프로젝트명: Korea FSI Regulatory Perimeter Guard for Gen AI
+# 비즈니스 요구 사항 명세서 (BRD): 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드 (korea-regulatory-perimeter-guard)
 
 ---
 

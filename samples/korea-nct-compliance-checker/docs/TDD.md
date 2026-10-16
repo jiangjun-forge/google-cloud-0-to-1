@@ -10,8 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD: Technical Design Document)
-## 프로젝트명: Korea National Core Technology (NCT) Gen AI Compliance Checker
+# 기술 상세 설계서 (TDD: Technical Design Document): 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기 (korea-nct-compliance-checker)
 
 ---
 
@@ -21,7 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부, 한국산업기술보호협회 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 명시된 **7대 핵심 기술적 통제(Technical Controls)**를 Google Cloud 환경에서 자동 감사하고 복구 명령어를 처방하는 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **투트랙(Two-track) 실행 모델**: 독립 실행형 파이썬 스크립트(`diagnose.py`)와 Cloud Shell 및 터미널 환경 자동 감지 래퍼(`diagnose.py`)의 결합을 통해 무설치 단일 명령 실행을 지원한다.
+1. **순수 파이썬 단일 실행 모델**: 독립 실행형 파이썬 스크립트(`diagnose.py`) 기반으로 상위 폴더 의존성 없이 단일 명령 실행을 지원한다.
 2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 리소스의 설정 상태만 조회(`describe`, `list`, `get`)하며, 클라우드 인프라 자원을 임의로 생성, 변경, 삭제하지 않아 운영 환경에 영향을 주지 않고 안전하다.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증 정보나 관리자 IAM 권한이 없는 데모 또는 개발 환경에서도 결정론적(Deterministic) 가상 진단 데이터를 제공하여 사전 기능 검증을 보장한다.
 4. **선언적 처방(Prescriptive Remediation)**: 결격 항목(FAIL/WARN) 발생 시 산자부 안내서 기준에 부합하는 정규 `gcloud` 복구 명령어를 즉시 매핑하여 관리자의 즉각적인 조치를 지원한다.
@@ -34,7 +33,6 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
         User["사용자 / 보안 관리자 / 감사관"]
-        RunSh["diagnose.py (실행 환경 감지 및 가상 환경 구성)"]
         DiagnosePy["diagnose.py (진단 메인 컨트롤러)"]
     end
 
@@ -55,8 +53,7 @@ flowchart TD
         Access_Approval["Access Approval (CSP 접근 사전 승인 설정)"]
     end
 
-    User -->|스크립트 구동| RunSh
-    RunSh --> DiagnosePy
+    User -->|스크립트 구동 (python diagnose.py)| DiagnosePy
     DiagnosePy --> ArgParser
     ArgParser -->|dry-run 플래그| MockProvider
     ArgParser -->|실제 프로젝트| LiveScanner
@@ -97,6 +94,7 @@ flowchart TD
 ### 3.5 리포트 엔진 (`main`)
 - 7대 통제 항목의 점검 결과를 표(Table) 형태로 렌더링.
 - 합격(PASS), 주의(WARN), 미달(FAIL) 건수를 집계하고 종합 준수율을 산출.
+- 진단 완료 시 사내 공유 및 복습용 마크다운 리포트(`report.md`)를 자동 생성(덮어쓰기).
 - 미달 항목에 대한 법적 근거 기반 조치 방향 및 즉시 실행 가능한 정규 CLI 처방 스크립트 출력.
 
 ---

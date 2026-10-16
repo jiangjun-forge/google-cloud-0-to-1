@@ -1,7 +1,7 @@
 # Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단 보고서
 
 - **진단 일시**: (실행 결과 자동 생성)
-- **대상 프로젝트**: `example-ai-corp`
+- **대상 프로젝트**: `sample-project-id`
 - **로드 밸런서 URL Map**: `ai-inference-gw-mock`
 - **진단 모드**: `모의 실행 (Dry-run)`
 - **종합 평가**: 총 8개 항목 중 **적합(PASS) 6건**, **주의(WARN) 2건**, **부적합(FAIL) 0건**

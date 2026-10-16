@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): Multi-Cluster GKE Inference Gateway 라우팅 진단기
+# 비즈니스 요구 사항 명세서 (BRD): Multi-Cluster GKE Inference Gateway 라우팅 진단기 (`gke-multi-cluster-inference-gateway`)
 
 ## 1. 비즈니스 배경 및 문제 정의
 대규모 언어 모델(LLM) 서빙 환경에서 전 세계적인 GPU/TPU 공급 부족(Resource Exhaustion)으로 인해, 엔터프라이즈 기업은 단일 데이터센터나 단일 클러스터에서 필요한 가속기 용량을 모두 확보할 수 없다. 이에 따라 여러 리전의 GKE 클러스터 및 타사 클라우드(AWS EKS, Azure AKS 등)에 걸쳐 수십 개의 분산 클러스터를 운영하는 멀티 클러스터 GPU 인프라 도입이 보편화되고 있다.
@@ -27,16 +27,16 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 비즈니스 요구 사항 목록
 
 ### BR-01: 멀티 클러스터 GPU 라우팅 토폴로지 자동 진단
-- 사내 운영 환경의 로드 밸런서(Global External ALB), URL Map, 백엔드 서비스 및 NEG(Network Endpoint Group) 구성을 조회하여 다계층 프록시 중계 병목 유무를 식별해야 한다.
+- 사내 운영 환경의 로드 밸런서(Global External ALB), URL Map, 백엔드 서비스 및 NEG(Network Endpoint Group) 구성을 조회하여 다계층 프록시 중계 병목 유무를 식별하여야 한다.
 
 ### BR-02: GPU 인퍼런스 가중치 및 지능형 부하 분산 점검
-- 분산 클러스터 백엔드 간에 가중치 기반 라우팅(Weight-based Routing), 실시간 KV-cache 점유율(임계치 40% 도달 시 자동 오버플로), 최소 요청 분배(LEAST_REQUEST), 타임아웃 및 이상치 탐지(Outlier Detection / Circuit Breaker)가 적절히 구성되었는지 검증해야 한다.
+- 분산 클러스터 백엔드 간에 가중치 기반 라우팅(Weight-based Routing), 실시간 KV-cache 점유율(임계치 40% 도달 시 자동 오버플로), 최소 요청 분배(LEAST_REQUEST), 타임아웃 및 이상치 탐지(Outlier Detection / Circuit Breaker)가 적절히 구성되었는지 검증하여야 한다.
 
 ### BR-03: 지연 시간 단축 및 라이선스 비용 절감 수치 소명
-- Istio 3홉 중계 대비 Anycast 1홉 플랫 직결 시의 예상 RTT 지연 개선 효과와 GKE Fleet 라이선스 회피 효과를 비교 리포트로 산출해야 한다.
+- Istio 3홉 중계 대비 Anycast 1홉 플랫 직결 시의 예상 RTT 지연 개선 효과와 GKE Fleet 라이선스 회피 효과를 비교 리포트로 산출하여야 한다.
 
 ### BR-04: CISO 및 인프라 아키텍트용 원클릭 완제품 리포트 생성
-- 진단 즉시 사내 인프라 아키텍처 리뷰 및 개선 기안서로 활용할 수 있도록 표준 마크다운 리포트(`report.md`)와 최적화 `gcloud` 처방 스크립트를 자동 생성해야 한다.
+- 진단 즉시 사내 인프라 아키텍처 리뷰 및 개선 기안서로 활용할 수 있도록 표준 마크다운 리포트(`report.md`)와 최적화 `gcloud` 처방 스크립트를 자동 생성하여야 한다.
 
 ### BR-05: 공식 GKE Inference Gateway 3대 제약 준수 및 우회 처방
-- 구글 공식 문서에 명시된 3대 제약(동일 VPC 제약, 백엔드 서비스당 최대 50개 NEG 한계, Model Armor 미지원)을 감사하고, 멀티 클라우드 수용 시 Internet/Hybrid NEG 분리 및 Cloud Armor WAF 결합 아키텍처를 처방해야 한다.
+- 구글 공식 문서에 명시된 3대 제약(동일 VPC 제약, 백엔드 서비스당 최대 50개 NEG 한계, Model Armor 미지원)을 감사하고, 멀티 클라우드 수용 시 Internet/Hybrid NEG 분리 및 Cloud Armor WAF 결합 아키텍처를 처방하여야 한다.

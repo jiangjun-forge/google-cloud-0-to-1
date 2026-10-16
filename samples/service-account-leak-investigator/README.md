@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 서비스 계정 유출 긴급 대응 및 감사 로그 역추적기
+# 서비스 계정 유출 긴급 대응 및 감사 로그 역추적기 (service-account-leak-investigator)
 
 유출된 서비스 계정 키의 악용 이력을 Cloud Audit Logs로 전수 추적하고, 위험 키 비활성화 및 Workload Identity Federation 전환을 지원하는 보안 긴급 대응 진단 도구다. (As of 2026-09-09)
 
@@ -36,7 +36,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 진단 및 해결 흐름
 
 ```mermaid
-graph TD
+flowchart TD
     A["침해 의심 서비스 계정 목록 입력"] --> B["사용자 관리 키 상태 점검"]
     B --> C["Cloud Audit Logs 기간별 전수 조회"]
     C --> D{"고위험 API 호출 탐지"}
@@ -52,10 +52,10 @@ graph TD
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
-| 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
-| :--- | :--- | :--- |
-| `Cloud Audit Logs` | `roles/logging.viewer` | `logging.logEntries.list` |
-| `Cloud IAM` | `roles/iam.securityReviewer` | `iam.serviceAccountKeys.list`, `resourcemanager.projects.getIamPolicy` |
+| 역할 (Role) | 최소 IAM 권한 |
+| :--- | :--- |
+| 로그 뷰어(`roles/logging.viewer`) | `logging.logEntries.list` |
+| 보안 검토자(`roles/iam.securityReviewer`) | `iam.serviceAccountKeys.list`, `resourcemanager.projects.getIamPolicy` |
 
 ---
 
@@ -153,7 +153,7 @@ data-pipeline-sa a1b2c3d4e5f6...    2026-05-15   ACTIVE   침해 의심 시점 �
 
 ---
 
-## 7. 자원 정리 (Teardown) 가이드
+## 7. 자원 정리 안내 (Teardown)
 
 본 진단 도구는 읽기 전용 감사 로그 및 키 상태 점검만 수행하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 테스트용으로 비활성화하거나 생성한 서비스 계정 키가 있다면 아래 명령어로 정리한다:
 

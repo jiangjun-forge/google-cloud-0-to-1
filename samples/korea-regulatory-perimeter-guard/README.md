@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드
+# 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드 (korea-regulatory-perimeter-guard)
 
 대한민국 금융위원회의 「금융 분야 망 분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 인프라가 책임져야 하는 **9대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-09-10)
 
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (diagnose.py / diagnose.py)"] --> B["1. 논리적 망 분리 & 웹 검색 격리 검사 (감독규정 제15조)"]
+    A["진단 시작 (diagnose.py)"] --> B["1. 논리적 망 분리 & 웹 검색 격리 검사 (감독규정 제15조)"]
     B --> C["2. 접근 통제: 서비스 계정 키 발급 차단 검사 (감독규정 제13조)"]
     C --> D["3. 스토리지 5년 불변 보존 & CMEK 검사 (법 제22조, 감독규정 제14조)"]
     D --> E["4. Vertex AI 데이터 접근 감사 로그 검사 (법 제22조, 감독규정 제63조)"]
@@ -65,41 +65,38 @@ flowchart TD
 
 | 권한 역할 | 역할 명칭 | 필요 사유 |
 | :--- | :--- | :--- |
-| `roles/accesscontextmanager.reader` | Access Context Manager 독자 | VPC-SC 서비스 보안 경계 설정 조회 (감독규정 제15조) |
-| `roles/compute.viewer` | Compute 뷰어 | SSL 정책 TLS 최소 버전 조회 (감독규정 제14조) |
-| `roles/dlp.inspectTemplatesReader` | DLP 검사 템플릿 독자 | Sensitive Data Protection 가명 처리 템플릿 조회 (신용정보법 제20조의2) |
-| `roles/logging.viewer` | 로그 뷰어 | 프로젝트 IAM 감사 로그(auditConfigs) 설정 조회 (법 제22조) |
-| `roles/orgpolicy.policyViewer` | 조직 정책 뷰어 | 서비스 계정 키 생성 차단 조직 정책 조회 (감독규정 제13조) |
-| `roles/storage.admin` | 스토리지 관리자 | Cloud Storage 버킷 보존 정책 및 잠금 상태 조회 (5년 보존 규정) |
+| `roles/accesscontextmanager.reader` | `Access Context Manager 독자(roles/accesscontextmanager.reader)` | VPC-SC 서비스 보안 경계 설정 조회 (감독규정 제15조) |
+| `roles/compute.viewer` | `Compute 뷰어(roles/compute.viewer)` | SSL 정책 TLS 최소 버전 조회 (감독규정 제14조) |
+| `roles/dlp.inspectTemplatesReader` | `DLP 검사 템플릿 독자(roles/dlp.inspectTemplatesReader)` | Sensitive Data Protection 가명 처리 템플릿 조회 (신용정보법 제20조의2) |
+| `roles/logging.viewer` | `클라우드 로깅 뷰어(roles/logging.viewer)` | 프로젝트 IAM 감사 로그(auditConfigs) 설정 조회 (법 제22조) |
+| `roles/orgpolicy.policyViewer` | `조직 정책 뷰어(roles/orgpolicy.policyViewer)` | 서비스 계정 키 생성 차단 조직 정책 조회 (감독규정 제13조) |
+| `roles/storage.admin` | `스토리지 관리자(roles/storage.admin)` | Cloud Storage 버킷 보존 정책 및 잠금 상태 조회 (5년 보존 규정) |
 
 ---
 
 ## 4. 퀵스타트
 
-### 옵션 A: Google Cloud Shell에서 바로 실행
+### 가상 실행 (Dry-run)
+
+실제 GCP API 호출이나 권한 없이도 모의 보안 경계 감사 점검을 즉시 시뮬레이션할 수 있다:
 
 ```bash
 # 저장소 클론 및 폴더 이동
 git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/korea-fsi-regulatory-perimeter-guard
+cd google-cloud-0-to-1/samples/korea-regulatory-perimeter-guard
 
 # 모의 가상 데이터 기반 스모크 테스트 (--dry-run)
 python diagnose.py --dry-run
-
-# 실제 사내 프로젝트 대상 보안 경계 전수 진단
-python diagnose.py --project=example-fsi-corp --location=asia-northeast3
 ```
 
-### 옵션 B: 로컬 파이썬 가상 환경에서 실행
+### 실제 환경 진단 실행
 
 ```bash
-# 가상 환경 생성 및 의존성 설치
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+# 기본 활성 프로젝트 대상 서울 리전 기준 진단
+python diagnose.py
 
-# 진단 실행
-python diagnose.py --dry-run
+# 특정 프로젝트 및 특정 리전 지정 실행
+python diagnose.py --project=my-fsi-project --location=asia-northeast3
 ```
 
 ---
@@ -161,7 +158,7 @@ FR-09   | 전송 보안          | [PASS] | 전송 구간 TLS 1.2+ 고강도 암
 
 ---
 
-## 7. 자원 정리 가이드
+## 자원 정리 안내 (Teardown)
 
 본 도구는 순수 진단 및 상태 점검을 수행하므로 자체적으로 영구 리소스를 생성하거나 과금을 유발하지 않는다.
 진단 과정에서 테스트용으로 생성한 모의 버킷이나 키가 있는 경우 아래 명령어로 정리한다.

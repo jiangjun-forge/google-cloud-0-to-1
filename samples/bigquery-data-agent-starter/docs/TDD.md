@@ -21,7 +21,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 45분 핸즈온 워크숍 참석자가 BigQuery 스몰셋 데이터셋(`cymbal_gold`) 구축부터 BigQuery Data Agent 단독(Standalone) 생성, 선택적 Gemini Enterprise App 연동 및 골든 프롬프트 3선 검증까지 수행할 수 있도록 지원하는 **경량 워크숍 프로비저닝 및 연동 가이드 엔진**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **투트랙(Two-track) 실행 모델**: CLI 기반 파이썬 컨트롤러(`diagnose.py`)와 환경 변수 및 가상 환경을 자동 감지하는 배시 래퍼(`diagnose.py`) 결합.
+1. **순수 파이썬 단일 실행 모델**: 쉘 래퍼 스크립트에 의존하지 않고 크로스 플랫폼에서 일관되게 동작하는 `python diagnose.py` 직접 실행 체계 구축.
 2. **계층형 캐스케이드 설정 탐색(Cascade Fallback)**: CLI 인자 > `.env` > `gcloud config` > 대화형 번호 선택기(`interactive_select`) > 사내 권장 기본값(`asia-northeast3`) 순으로 무중단 설정 확정.
 3. **독립 완결성(Zero Dependency)**: 외부 모듈이나 다른 샘플에 대한 코드 의존성 없이 100% 자체 완결적으로 동작.
 4. **Standalone 기본 / GE App 선택형 구조**: BigQuery Studio 내 Agents (Agent Catalog) 단독 실습을 기본으로 하고, Gemini Enterprise App 연동(`--register-ge-app`)은 선택적 확장 단계로 구성.
@@ -34,7 +34,6 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
         User["워크숍 참석자 / 데이터 아키텍트"]
-        RunSh["diagnose.py (환경 감지 및 래퍼)"]
         DiagnosePy["diagnose.py (워크숍 프로비저닝 컨트롤러)"]
     end
 
@@ -51,8 +50,7 @@ flowchart TD
         GEApp["Gemini Enterprise App (--register-ge-app)"]
     end
 
-    User -->|1. --setup-demo| RunSh
-    RunSh --> DiagnosePy
+    User -->|1. --setup-demo| DiagnosePy
     DiagnosePy -->|DDL / DML 실행| RawTables
     RawTables --> SemanticView
     User -->|2. --agent-config| DiagnosePy

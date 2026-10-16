@@ -99,7 +99,7 @@ python diagnose.py
 python diagnose.py --dry-run
 
 # 특정 프로젝트와 기간(예: 최근 30일)을 지정하려면:
-python diagnose.py -p your-project-id -d 30
+python diagnose.py -p sample-project-id -d 30
 ```
 
 ### 방법 2: 로컬 환경 (Local Python)
@@ -112,7 +112,7 @@ pip install -r requirements.txt
 
 # GCP 인증 및 진단 실행
 gcloud auth application-default login
-python diagnose.py --project your-project-id --days 90
+python diagnose.py --project sample-project-id --days 90
 ```
 
 ---
@@ -124,7 +124,7 @@ python diagnose.py --project your-project-id --days 90
 ```text
 ========================================================================
 [진단 결과] 제미나이(Gemini) 사용량 및 비용 급증 원인 분석 리포트
-   - 대상 프로젝트: my-production-ai-project
+   - 대상 프로젝트: sample-project-id
    - 조회 대상 기간: 최근 90일
 ========================================================================
 
@@ -179,6 +179,6 @@ python diagnose.py --project your-project-id --days 90
 
 ---
 
-## 자원 정리 (Teardown Guide)
+## 자원 정리 안내 (Teardown)
 
 본 도구는 순수 Cloud Monitoring 플랫폼 지표 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.

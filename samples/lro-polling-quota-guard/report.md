@@ -1,4 +1,4 @@
-# Google Cloud LRO 비동기 폴링 쿼터 진단 리포트
+# Google Cloud LRO 비동기 폴링 쿼터 진단 리포트 (lro-polling-quota-guard)
 
 - **진단 일시**: (실행 결과 자동 생성)
 - **대상 서비스**: Cloud Speech-to-Text V2 (`speech.googleapis.com`)

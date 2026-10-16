@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Google Cloud LRO 비동기 작업 폴링 쿼터 고갈 및 429 장애 진단 도구
+# Google Cloud LRO 비동기 작업 폴링 쿼터 고갈 및 429 장애 진단 도구 (lro-polling-quota-guard)
 
 Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이프라인에서 대시보드상 요청 RPM이 정상임에도 발생하는 원인 불명의 `429 RESOURCE_EXHAUSTED` 장애를 진단하고, Python SDK(`google-api-core`) 비동기 폴링 지수 백오프 최적화 및 비동기 분리 아키텍처를 처방하는 범용 진단 도구다. (As of 2026-09-18)
 
@@ -68,8 +68,8 @@ flowchart TD
 
 | 역할 (Role) | 설명 |
 | :--- | :--- |
-| `roles/monitoring.viewer` | 클라우드 모니터링(Cloud Monitoring) 지표 및 사용량 조회 권한 |
-| `roles/serviceusage.serviceUsageViewer` | 대상 API 활성화 상태 및 기본 할당량 확인 권한 |
+| 클라우드 모니터링 뷰어(`roles/monitoring.viewer`) | 클라우드 모니터링(Cloud Monitoring) 지표 및 사용량 조회 권한 |
+| 서비스 사용량 뷰어(`roles/serviceusage.serviceUsageViewer`) | 대상 API 활성화 상태 및 기본 할당량 확인 권한 |
 
 ---
 
@@ -124,5 +124,5 @@ python diagnose.py -s document-ai -p <대상_프로젝트_ID> -l us-central1 -c 
 
 ---
 
-## 7. 자원 정리 가이드 (Teardown)
+## 7. 자원 정리 안내 (Teardown)
 본 미니 프로젝트는 순수 진단 및 시뮬레이션 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

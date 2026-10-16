@@ -465,7 +465,7 @@ def print_multi_dimension_report(
     print()
     print("2. 권장 최적 차원 티어링(Tiering):")
     print("   - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (스토리지 비용 대폭 절감)")
-    print("   - [Tier 2: 균형/범용]: 사내 지식 검색 및 대고객 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)")
+    print("   - [Tier 2: 균형/범용]: 사내 지식 검색 및 사내외 사용자 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)")
     print(f"   - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> {base_dim}d 최대 차원 유지")
     print()
     print("3. 사내 실데이터 적용 코드:")
@@ -479,10 +479,158 @@ def print_multi_dimension_report(
     print("=" * 80)
 
 
+def build_markdown_report(
+    project_id: str,
+    model_name: str,
+    data_source_desc: str,
+    sample_count: int,
+    projected_vectors: int,
+    is_dry_run: bool,
+    eval_results: List[Dict[str, Any]],
+) -> str:
+    """진단 결과를 표준 마크다운 리포트로 구성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "사내 실측 진단"
+    baseline = eval_results[0]
+    base_dim = baseline["dimension"]
+    base_storage = calculate_storage_footprint(baseline["bytes_per_vector"], projected_vectors)
+
+    lines = [
+        "# 진단 및 분석 리포트: embedding-dimension-tradeoff-analyzer",
+        "",
+        f"- **생성 모드**: {mode_str}",
+        f"- **대상 프로젝트**: `{project_id}`",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 진단 실행 콘솔 출력 결과",
+        "",
+        "```text",
+        "=" * 80,
+        "임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 다차원 비교 분석 리포트",
+        f"진단 모드: {mode_str}",
+        f"대상 프로젝트: {project_id}",
+        f"임베딩 모델: {model_name}",
+        f"평가 데이터 출처: {data_source_desc} (테스트 표본 {sample_count}건)",
+        f"비용 최적화 테스트 표본: {sample_count:,}건",
+        f"용량 추산 기준 벡터 수: {projected_vectors:,}건",
+        "=" * 80,
+        "",
+        "[1단계] 차원 크기별 개별 성능 및 스토리지 점유 현황 (큰 차원 -> 작은 차원 순)",
+        "-" * 80,
+    ]
+
+    for idx, res in enumerate(eval_results):
+        dim = res["dimension"]
+        storage = calculate_storage_footprint(res["bytes_per_vector"], projected_vectors)
+        label = "기준점 (최대 차원 대(大))" if idx == 0 else f"비교군 ({dim}d 차원 축소)"
+        recall_note = "(기준 100%)" if idx == 0 else ""
+
+        lines.extend([
+            f"[{idx + 1}] {label}, {dim}d",
+            f"  - 벡터당 용량 (Float32): {res['bytes_per_vector']:,} 바이트 ({res['bytes_per_vector'] / 1024:.2f} KB)",
+            f"  - {projected_vectors:,}건 기준 인덱스 메모리(RAM): {storage['index_gb']:.3f} GB",
+            f"  - 검색 정확도 (Top-1 Recall): {res['top1_recall']:.1f}% {recall_note}".rstrip(),
+            f"  - 상위 3위 적중률 (Top-3 Recall): {res['top3_recall']:.1f}%",
+            f"  - 검색 랭킹 품질 (MRR): {res['mrr']:.3f}",
+            f"  - 질의당 평균 검색 레이턴시: {res['avg_latency_ms']:.1f} ms",
+            "",
+        ])
+
+    lines.extend([
+        "-" * 80,
+        "",
+        "[2단계] 전체 차원 종합 비교표 (최대 기준 대비 절감량 및 정확도 손실)",
+        "-" * 80,
+        f"{'차원':<8} {'벡터 용량':<12} {'인덱스 RAM':<14} {'용량 절감율':<13} {'Top-1 정확도':<13} {'정확도 손실':<13} {'검색 속도'}",
+        "-" * 80,
+    ])
+
+    for idx, res in enumerate(eval_results):
+        dim = res["dimension"]
+        dim_str = f"{dim}d"
+        storage = calculate_storage_footprint(res["bytes_per_vector"], projected_vectors)
+        bytes_str = f"{res['bytes_per_vector']} B"
+        ram_str = f"{storage['index_gb']:.3f} GB"
+
+        if idx == 0:
+            savings_pct_str = "기준 (0%)"
+            acc_loss_str = "기준점"
+            speedup_str = "1.0배"
+        else:
+            savings_pct = (1.0 - (res["bytes_per_vector"] / baseline["bytes_per_vector"])) * 100.0
+            savings_pct_str = f"-{savings_pct:.1f}%"
+            acc_loss = baseline["top1_recall"] - res["top1_recall"]
+            acc_loss_str = f"-{acc_loss:.1f}%p"
+            speedup = baseline["avg_latency_ms"] / res["avg_latency_ms"] if res["avg_latency_ms"] > 0 else 1.0
+            speedup_str = f"{speedup:.1f}배"
+
+        lines.append(
+            f"{dim_str:<8} {bytes_str:<12} {ram_str:<14} {savings_pct_str:<13} "
+            f"{res['top1_recall']:.1f}%{'':<6} {acc_loss_str:<13} {speedup_str}"
+        )
+
+    smallest = eval_results[-1]
+    max_savings = round((1.0 - (smallest["bytes_per_vector"] / baseline["bytes_per_vector"])) * 100.0, 1)
+    max_loss = round(baseline["top1_recall"] - smallest["top1_recall"], 1)
+    saved_ram_gb = round(base_storage["index_gb"] - calculate_storage_footprint(smallest["bytes_per_vector"], projected_vectors)["index_gb"], 2)
+
+    lines.extend([
+        "-" * 80,
+        "",
+        "[3단계] 클라우드 아키텍트 및 FinOps 권장 처방",
+        f"1. 최대 차원({base_dim}d) 대비 최소 차원({smallest['dimension']}d) 요약:",
+        f"   - 공간 및 메모리 절감: {projected_vectors:,}건 기준 인덱스 메모리 {saved_ram_gb} GB 절약 (총 {max_savings}% 절감)",
+        f"   - 검색 정확도 보존율: Top-1 정확도 손실은 단 {max_loss}%p에 불과하며 Top-3 적중률은 {smallest['top3_recall']}% 유지",
+        f"   - 지연 시간 단축 효과: 벡터 연산 레이턴시 {baseline['avg_latency_ms']} ms -> {smallest['avg_latency_ms']} ms (약 {round(baseline['avg_latency_ms'] / smallest['avg_latency_ms'], 1)}배 고속화)",
+        "",
+        "2. 권장 최적 차원 티어링(Tiering):",
+        "   - [Tier 1: 초절감/대규모]: 수천만 건 이상의 대용량 코퍼스 및 실시간 모바일 챗봇 -> 128d 또는 256d 채택 (스토리지 비용 대폭 절감)",
+        "   - [Tier 2: 균형/범용]: 사내 지식 검색 및 사내외 사용자 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)",
+        f"   - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> {base_dim}d 최대 차원 유지",
+        "",
+        "3. 사내 실데이터 적용 코드:",
+        "   from google import genai",
+        "   client = genai.Client()",
+        "   response = client.models.embed_content(",
+        f"       model='{model_name}',",
+        "       contents='사내 문의 및 검색 문서 텍스트',",
+        f"       config={{'output_dimensionality': {smallest['dimension']}}}",
+        "   )",
+        "=" * 80,
+        "```",
+        "",
+        "---",
+        "",
+        "## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)",
+        "",
+        "실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.",
+        "실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:",
+        "",
+        "```bash",
+        "python diagnose.py",
+        "```",
+        "",
+    ])
+
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """리포트 내용을 파일에 저장한다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main() -> None:
     """메인 실행 함수."""
     args = parse_args()
     project_id = detect_project_id(args.project, args.dry_run)
+    reported_project = "sample-project-id" if args.dry_run else project_id
 
     # 1. 차원 목록 파싱 및 내림차순 정렬 (2개 이상 필수)
     dimensions = parse_dimension_list(args.dimensions)
@@ -500,7 +648,7 @@ def main() -> None:
             dim=dim,
             base_dim=base_dim,
             is_dry_run=args.dry_run,
-            project_id=project_id,
+            project_id=reported_project,
             location=args.location,
             model_name=args.model,
         )
@@ -508,7 +656,7 @@ def main() -> None:
 
     # 4. 종합 리포트 출력
     print_multi_dimension_report(
-        project_id=project_id,
+        project_id=reported_project,
         model_name=args.model,
         data_source_desc=data_desc,
         sample_count=len(queries),
@@ -516,6 +664,18 @@ def main() -> None:
         is_dry_run=args.dry_run,
         eval_results=eval_results,
     )
+
+    # 5. 마크다운 리포트 자동 생성 및 덮어쓰기
+    report_md = build_markdown_report(
+        project_id=reported_project,
+        model_name=args.model,
+        data_source_desc=data_desc,
+        sample_count=len(queries),
+        projected_vectors=args.projected_vectors,
+        is_dry_run=args.dry_run,
+        eval_results=eval_results,
+    )
+    save_markdown_report(report_md, "report.md")
 
 
 if __name__ == "__main__":

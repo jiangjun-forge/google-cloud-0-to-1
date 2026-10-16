@@ -30,8 +30,10 @@ def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   return res.returncode, res.stdout.strip(), res.stderr.strip()
 
 
-def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-model-armor-project") -> str:
+def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
   """환경 변수, gcloud 설정, 실시간 프로젝트 목록에서 활성 프로젝트를 탐색/선택한다."""
+  if is_dry_run:
+    return fallback_demo
   env_proj = os.getenv("PROJECT_ID")
   if env_proj:
     return env_proj
@@ -39,7 +41,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-mod
   if stdout and "(unset)" not in stdout:
     return stdout
 
-  if is_dry_run or not sys.stdin.isatty():
+  if not sys.stdin.isatty():
     return fallback_demo
 
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
@@ -181,29 +183,75 @@ def evaluate_template(tpl: dict) -> dict:
   }
 
 
-def print_table(diagnoses: list[dict]):
-  """진단 결과를 정돈된 표 형식으로 출력한다."""
-  print("\n" + "=" * 105)
-  print(f"{'템플릿 이름':<32} {'리전':<18} {'인포타입 수':<12} {'프롬프트인젝션':<18} {'심각도':<10}")
-  print("-" * 105)
+def build_report_text(project_id: str, location: str, is_dry_run: bool, diagnoses: list[dict]) -> str:
+  """진단 결과를 텍스트 리포트 형식으로 생성한다."""
+  lines = []
+  lines.append(f"Model Armor 서울 리전 규제 준수 정합성 진단 시작 (프로젝트: {project_id}, 리전: {location})")
+  if is_dry_run:
+    lines.append("--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 Model Armor 템플릿 데이터를 분석한다.")
+  lines.append("")
+  lines.append("=" * 105)
+  lines.append(f"{'템플릿 이름':<32} {'리전':<18} {'인포타입 수':<12} {'프롬프트인젝션':<18} {'심각도':<10}")
+  lines.append("-" * 105)
   for d in diagnoses:
-    print(f"{d['name']:<32} {d['location']:<18} {d['infotypes_count']:<12} {d['prompt_injection']:<18} {d['severity']:<10}")
-  print("=" * 105)
+    lines.append(f"{d['name']:<32} {d['location']:<18} {d['infotypes_count']:<12} {d['prompt_injection']:<18} {d['severity']:<10}")
+  lines.append("=" * 105)
 
   criticals = [d for d in diagnoses if d["severity"] == "CRITICAL"]
   warnings = [d for d in diagnoses if d["severity"] == "WARNING"]
 
   if criticals or warnings:
-    print("\n[발견된 주요 컴플라이언스 결함 및 처방 조치]")
+    lines.append("\n[발견된 주요 컴플라이언스 결함 및 처방 조치]")
     for item in criticals + warnings:
       prefix = "[심각]" if item["severity"] == "CRITICAL" else "[주의]"
-      print(f"\n* {prefix} {item['name']} (리전: {item['location']})")
+      lines.append(f"\n* {prefix} {item['name']} (리전: {item['location']})")
       for iss in item["issues"]:
-        print(f"  - 결함 원인: {iss}")
+        lines.append(f"  - 결함 원인: {iss}")
       for rem in item["remediations"]:
-        print(f"  - 처방 조치: {rem}")
+        lines.append(f"  - 처방 조치: {rem}")
   else:
-    print("\n모든 Model Armor 템플릿이 서울 리전 규제 준수 요건을 충족한다.")
+    lines.append("\n모든 Model Armor 템플릿이 서울 리전 규제 준수 요건을 충족한다.")
+
+  return "\n".join(lines)
+
+
+def build_markdown_report(report_text: str, project_id: str, is_dry_run: bool) -> str:
+  """마크다운 리포트(report.md) 내용을 생성한다."""
+  mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 점검 (Live)"
+  return f"""# 진단 및 분석 리포트: korea-model-armor-guard
+
+- **생성 모드**: {mode_str}
+- **대상 프로젝트**: `{project_id}`
+- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
+
+---
+
+## 1. 진단 실행 콘솔 출력 결과
+
+```text
+{report_text}
+```
+
+---
+
+## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+
+실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
+실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
+
+```bash
+python diagnose.py
+```
+"""
+
+
+def save_markdown_report(content: str, filepath: str = "report.md"):
+  """마크다운 리포트를 지정된 경로에 저장한다."""
+  try:
+    with open(filepath, "w", encoding="utf-8") as f:
+      f.write(content)
+  except Exception as e:
+    print(f"[경고] 리포트 파일({filepath}) 저장 실패: {e}")
 
 
 def main():
@@ -217,15 +265,12 @@ def main():
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()
 
-  project_id = args.project or get_default_project(is_dry_run=args.dry_run)
+  project_id = "sample-project-id" if args.dry_run else (args.project or get_default_project(is_dry_run=args.dry_run))
   if not project_id and not args.dry_run:
     print("GCP 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
     sys.exit(1)
 
-  print(f"Model Armor 서울 리전 규제 준수 정합성 진단 시작 (프로젝트: {project_id or 'dry-run-mode'}, 리전: {args.location})")
-
   if args.dry_run:
-    print("--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 Model Armor 템플릿 데이터를 분석한다.")
     raw_templates = get_mock_templates()
   else:
     print(f"--> Model Armor 템플릿 목록 조회 중 (리전: {args.location})...")
@@ -239,7 +284,11 @@ def main():
   if args.json:
     print(json.dumps(diagnoses, indent=2, ensure_ascii=False))
   else:
-    print_table(diagnoses)
+    report_text = build_report_text(project_id, args.location, args.dry_run, diagnoses)
+    print(report_text)
+    report_md = build_markdown_report(report_text, project_id, args.dry_run)
+    save_markdown_report(report_md)
+    print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 
 
 if __name__ == "__main__":
