@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기
+# Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기 (vertex-search-grounding-validator)
 
 Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Storage) 원본 문서와 Agent Platform Search 데이터 저장소(Data Store) 간의 색인 누락, 청킹(Chunking) 실패, 서비스 에이전트 권한 누락 및 Gemini 그라운딩 검색 품질 저하를 1분 만에 일괄 진단하고 처방하는 도구다. (As of 2026-09-09)
 
@@ -37,7 +37,7 @@ Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Sto
 ## 2. 진단 및 해결 흐름
 
 ```mermaid
-graph TD
+flowchart TD
     A["Agent Platform Search 데이터 저장소 목록 수집"] --> B["Cloud Storage 원본 문서 수 집계"]
     B --> C["데이터 저장소 색인 완료 문서 수 비교"]
     C --> D{"색인 누락율 분석"}
@@ -57,10 +57,10 @@ graph TD
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
-| 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
-| :--- | :--- | :--- |
-| `Discovery Engine` | `roles/discoveryengine.viewer` | `discoveryengine.dataStores.get`, `discoveryengine.documents.list` |
-| `Cloud Storage` | `roles/storage.objectViewer` | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
+| 역할 (Role) | 최소 IAM 권한 |
+| :--- | :--- |
+| 디스커버리 엔진 뷰어(`roles/discoveryengine.viewer`) | `discoveryengine.dataStores.get`, `discoveryengine.documents.list` |
+| 스토리지 객체 뷰어(`roles/storage.objectViewer`) | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
 
 ---
 
@@ -171,7 +171,7 @@ customer-faq-ds            500          500          100.0%     OK
 
 ---
 
-## 7. 자원 정리 (Teardown) 가이드
+## 7. 자원 정리 안내 (Teardown)
 
 본 진단 도구는 읽기 전용으로 데이터 저장소 메타데이터와 스토리지 색인 상태를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 실습용으로 생성한 테스트 데이터 저장소나 앱 엔진이 있다면 콘솔에서 삭제한다:
 

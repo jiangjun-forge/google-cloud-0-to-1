@@ -69,6 +69,8 @@ def parse_args() -> argparse.Namespace:
 
 def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     """프로젝트 ID를 탐지하거나 대화형으로 선택한다."""
+    if is_dry_run:
+        return "sample-project-id"
     if cli_project:
         return cli_project
     env_proj = os.getenv("PROJECT_ID")
@@ -87,8 +89,8 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    if is_dry_run or not sys.stdin.isatty():
-        return "demo-vertex-search-project"
+    if not sys.stdin.isatty():
+        return "sample-project-id"
 
     try:
         res = subprocess.run(
@@ -114,7 +116,7 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     except Exception:
         pass
 
-    return "demo-vertex-search-project"
+    return "sample-project-id"
 
 
 def get_mock_datastores() -> List[Dict[str, Any]]:
@@ -257,7 +259,7 @@ def print_report(project_id: str, location: str, is_dry_run: bool, datastores: L
     print("     --auto-generate-ids")
     print()
     print("2. 복합 표/다단 PDF 문서를 위한 Layout Parser(고급 레이아웃 파서) 활성화:")
-    print("   - Agent Builder 콘솔 > Data Stores > Configurations > Document Processing")
+    print("   - Agent Platform 콘솔 > Data Stores > Configurations > Document Processing")
     print("   - Parser 옵션을 'Digital Parser'에서 'Layout Parser(청킹 지원)'로 변경 후 재색인 수행")
     print()
     print("3. Discovery Engine 서비스 에이전트에 버킷 읽기 권한 보장:")
@@ -267,10 +269,106 @@ def print_report(project_id: str, location: str, is_dry_run: bool, datastores: L
     print("=" * 80)
 
 
+def build_markdown_report(
+    project_id: str,
+    location: str,
+    is_dry_run: bool,
+    datastores: List[Dict[str, Any]],
+) -> str:
+    """터미널 진단 결과와 완벽히 동기화된 마크다운 리포트를 생성한다."""
+    mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 점검"
+    lines = [
+        "# Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단 리포트 (vertex-search-grounding-validator)",
+        "",
+        f"- **진단 모드**: `{mode_str}`",
+        f"- **대상 프로젝트**: `{project_id}`",
+        f"- **위치(Location)**: `{location}`",
+        f"- **점검 데이터 저장소 수**: {len(datastores)}개",
+        "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
+        "",
+        "---",
+        "",
+        "## 1. 데이터 저장소별 원본 스토리지 동기화 및 색인율 점검",
+        "",
+        "| 저장소 ID | 원본 문서 수 | 색인 문서 수 | 동기화율 | 상태 |",
+        "| :--- | :--- | :--- | :--- | :--- |",
+    ]
+    for ds in datastores:
+        status_md = f"**{ds['status']}**" if ds['status'] in ("WARNING", "FAIL") else ds['status']
+        lines.append(f"| `{ds['id']}` | {ds['source_doc_count']} | {ds['indexed_doc_count']} | {ds['sync_rate']}% | {status_md} |")
+
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## 2. 파서 구성, 청킹 전략 및 그라운딩 프로브 정밀 진단",
+        "",
+    ])
+    for ds in datastores:
+        role_status = "정상 (`roles/storage.objectViewer`)" if ds['service_agent_has_role'] else "**누락 (접근 차단)**"
+        lines.extend([
+            f"### 데이터 저장소: `{ds['id']}` ({ds['name']})",
+            f"- **콘텐츠 유형**: `{ds['content_config']}`",
+            f"- **원본 버킷**: `gs://{ds['source_bucket']}`",
+            f"- **누락 문서 수**: {ds['missing_count']}건",
+            f"- **적용 파서**: `{ds['parser_type']}`",
+            f"- **청킹 단위**: `{ds['chunk_size']}`",
+            f"- **서비스 에이전트 IAM 권한**: {role_status}",
+            f"- **프로브 질의**: \"{ds['probe_query']}\"",
+            f"- **검색 청크 수**: {ds['retrieved_chunks']}개",
+            f"- **그라운딩 신뢰도 점수**: **{ds['grounding_score']}** / 1.00",
+            f"- **진단 결과**: **[{ds['status']}]** {ds['detail']}",
+            "",
+        ])
+
+    lines.extend([
+        "---",
+        "",
+        "## 3. RAG 파이프라인 품질 개선 및 즉각 조치 처방",
+        "",
+        "### 1. Cloud Storage 신규 및 누락 문서 수동 델타 재색인 트리거",
+        "```bash",
+        "gcloud discovery-engine documents import \\",
+        f"  --data-store=<DATASTORE_ID> \\",
+        f"  --location={location} \\",
+        '  --gcs-uri="gs://<BUCKET_NAME>/*" \\',
+        "  --auto-generate-ids",
+        "```",
+        "",
+        "### 2. 복합 표/다단 PDF 문서를 위한 Layout Parser(고급 레이아웃 파서) 활성화",
+        "- **Agent Platform 콘솔** > Data Stores > Configurations > Document Processing",
+        "- Parser 옵션을 'Digital Parser'에서 'Layout Parser(청킹 지원)'로 변경 후 재색인 수행",
+        "",
+        "### 3. Discovery Engine 서비스 에이전트에 버킷 읽기 권한 보장",
+        "```bash",
+        'gcloud storage buckets add-iam-policy-binding gs://<BUCKET_NAME> \\',
+        '  --member="serviceAccount:service-<PROJECT_NUMBER>@gcp-sa-discoveryengine.iam.gserviceaccount.com" \\',
+        '  --role="roles/storage.objectViewer"',
+        "```",
+        "",
+        "---",
+        "",
+        "## 4. 자원 정리 안내 (Teardown)",
+        "본 진단 도구는 읽기 전용으로 데이터 저장소 메타데이터와 스토리지 색인 상태를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+    """마크다운 리포트를 파일로 기록/덮어쓴다."""
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report_md)
+        print(f"\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {output_path}")
+    except Exception as e:
+        print(f"\n[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+
+
 def main() -> None:
     """메인 실행 함수."""
     args = parse_args()
-    project_id = detect_project_id(args.project, args.dry_run)
+    project_id = "sample-project-id" if args.dry_run else detect_project_id(args.project, args.dry_run)
 
     if args.dry_run:
         datastores = get_mock_datastores()
@@ -283,6 +381,12 @@ def main() -> None:
             sys.exit(0)
 
     print_report(project_id, args.location, args.dry_run, datastores)
+
+    # 마크다운 리포트 자동 생성 및 덮어쓰기 (스크립트 기준 디렉터리 경로 사용)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_file_path = os.path.join(script_dir, "report.md")
+    report_content = build_markdown_report(project_id, args.location, args.dry_run, datastores)
+    save_markdown_report(report_content, report_file_path)
 
 
 if __name__ == "__main__":
