@@ -22,11 +22,11 @@
 
 | 발생 시각 | 계정 | 서비스 | 메서드 | 호출 IP | 위험도 | 상세 내용 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 2026-10-16 06:34:48 UTC | `app-backend-sa` | iam | `SetIamPolicy` | `198.51.100.45` | **HIGH** | 외부 미인가 계정에 roles/owner 권한 부여 시도 감지 |
-| 2026-10-16 03:34:48 UTC | `data-pipeline-sa` | storage | `get` | `203.0.113.88` | **HIGH** | 비정상 해외 IP 대역에서 sensitive-customer-pii 버킷 대량 다운로드 |
-| 2026-10-15 18:34:48 UTC | `app-backend-sa` | bigquery | `InsertJob` | `198.51.100.45` | **HIGH** | 외부 공개 스토리지 버킷으로 결제 및 사용자 테이블 추출 쿼리 실행 |
-| 2026-10-15 08:34:48 UTC | `data-pipeline-sa` | storage | `list` | `203.0.113.88` | **MEDIUM** | 사내 백업 버킷 내부 객체 목록 전수 정찰(Enumeration) |
-| 2026-10-14 08:34:48 UTC | `app-backend-sa` | storage | `get` | `192.0.2.10` | **LOW** | 정상 빌드 파이프라인 버킷 메타데이터 확인 |
+| 2026-10-17 05:28:07 UTC | `app-backend-sa` | iam | `SetIamPolicy` | `198.51.100.45` | **HIGH** | 외부 미인가 계정에 roles/owner 권한 부여 시도 감지 |
+| 2026-10-17 02:28:07 UTC | `data-pipeline-sa` | storage | `get` | `203.0.113.88` | **HIGH** | 비정상 해외 IP 대역에서 sensitive-customer-pii 버킷 대량 다운로드 |
+| 2026-10-16 17:28:07 UTC | `app-backend-sa` | bigquery | `InsertJob` | `198.51.100.45` | **HIGH** | 외부 공개 스토리지 버킷으로 결제 및 사용자 테이블 추출 쿼리 실행 |
+| 2026-10-16 07:28:07 UTC | `data-pipeline-sa` | storage | `list` | `203.0.113.88` | **MEDIUM** | 사내 백업 버킷 내부 객체 목록 전수 정찰(Enumeration) |
+| 2026-10-15 07:28:07 UTC | `app-backend-sa` | storage | `get` | `192.0.2.10` | **LOW** | 정상 빌드 파이프라인 버킷 메타데이터 확인 |
 
 **진단 요약**: 총 5건의 활동 중 고위험(HIGH) 이벤트 3건 탐지
 
@@ -50,5 +50,25 @@ gcloud projects remove-iam-policy-binding <PROJECT_ID> --member=<USER> --role=<R
 
 ---
 
-## 4. 자원 정리 안내 (Teardown)
+## 4. 사내 거버넌스 4대 필수 표준 라벨링
+
+서비스 계정 대체 인프라 및 Workload Identity Federation 연동 리소스 생성 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `service-account-leak-investigator`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드 및 공식 레퍼런스
+
+- **IAM 서비스 계정 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/serviceaccounts?project=sample-project-id )
+- **Cloud Logging 탐색기**: ( https://console.cloud.google.com/logs/query?project=sample-project-id )
+- **공식 문서 - Cloud Audit Logs 개요**: ( https://cloud.google.com/logging/docs/audit )
+- **공식 문서 - Workload Identity Federation 구성**: ( https://cloud.google.com/iam/docs/workload-identity-federation )
+- **공식 문서 - 서비스 계정 키 관리 권장사항**: ( https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys )
+
+---
+
+## 6. 자원 정리 안내 (Teardown)
 본 진단 도구는 읽기 전용 감사 로그 및 키 상태 점검만 수행하므로 별도의 클라우드 인프라 자원을 생성하지 않는다.

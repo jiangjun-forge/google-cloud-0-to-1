@@ -343,15 +343,38 @@ def build_markdown_report(
         "",
         "---",
         "",
-        "## 4. 자원 정리 안내 (Teardown)",
+        "## 4. 사내 거버넌스 4대 필수 표준 라벨링",
+        "",
+        "서비스 계정 대체 인프라 및 Workload Identity Federation 연동 리소스 생성 시 다음 4대 표준 라벨을 반드시 적용한다:",
+        "- `managed-by`: `google-cloud-0-to-1`",
+        "- `scenario`: `service-account-leak-investigator`",
+        "- `env`: `sample` (또는 `poc`)",
+        "- `created-by`: `customer-engineer`",
+        "",
+        "---",
+        "",
+        "## 5. 콘솔 링크 조치 가이드 및 공식 레퍼런스",
+        "",
+        f"- **IAM 서비스 계정 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/serviceaccounts?project={project_id} )",
+        f"- **Cloud Logging 탐색기**: ( https://console.cloud.google.com/logs/query?project={project_id} )",
+        "- **공식 문서 - Cloud Audit Logs 개요**: ( https://cloud.google.com/logging/docs/audit )",
+        "- **공식 문서 - Workload Identity Federation 구성**: ( https://cloud.google.com/iam/docs/workload-identity-federation )",
+        "- **공식 문서 - 서비스 계정 키 관리 권장사항**: ( https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys )",
+        "",
+        "---",
+        "",
+        "## 6. 자원 정리 안내 (Teardown)",
         "본 진단 도구는 읽기 전용 감사 로그 및 키 상태 점검만 수행하므로 별도의 클라우드 인프라 자원을 생성하지 않는다.",
         "",
     ])
     return "\n".join(lines)
 
 
-def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+def save_markdown_report(report_md: str, output_path: str | None = None) -> None:
     """마크다운 리포트를 파일로 기록/덮어쓴다."""
+    if output_path is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, "report.md")
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
