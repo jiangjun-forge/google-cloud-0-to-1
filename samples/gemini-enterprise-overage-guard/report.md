@@ -46,3 +46,30 @@ gcloud services disable generativelanguage.googleapis.com --project=sample-proje
 ### 4단계: 계열사 IT 관리자 결제 권한(Billing RBAC) 회수 및 최소 권한 적용
 - 최고 관리자(Super Admin) 권한 부여를 금지하고, 계열사 조직 단위(OU)에 한정된 맞춤 역할을 생성하여 사용자/그룹 관리 권한만 위임한다.
 - Google Cloud 콘솔에서 `roles/billing.admin` 및 `roles/billing.user` 권한을 계열사 관리자에게 부여하지 않는다.
+
+---
+
+## 4. 사내 거버넌스 4대 필수 표준 라벨링
+
+Cloud Billing 예산 알림, 조직 정책 태그 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-overage-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드
+
+- **Gemini Enterprise 오버리지 빌링 공식 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/overages )
+- **Cloud Billing 예산 및 지출 한도 알림 생성**: ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
+- **리소스 서비스 사용 제한 조직 정책 가이드**: ( https://docs.cloud.google.com/organization-policy/restrict-services )
+- **Cloud Billing 콘솔**: ( https://console.cloud.google.com/billing )
+- **조직 정책 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/orgpolicies )
+
+---
+
+## 6. 자원 정리 안내 (Teardown)
+
+본 도구는 순수 진단 및 모니터링 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다.
+테스트 목적으로 생성한 Cloud Billing 임시 예산(Budgets)을 삭제하려면 결제 콘솔의 예산 목록에서 해당 항목을 삭제한다.

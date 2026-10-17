@@ -25,6 +25,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **FR-02** | **BR-02** | **Google AI Studio API 키 발급 차단 점검** | 프로젝트 및 조직 단위 조직 정책(`constraints/gcp.restrictServiceUsage`)에서 `apikeys.googleapis.com` 차단 여부를 검증한다. |
 | **FR-03** | **BR-03** | **Generative Language API 비활성화 점검** | 계열사 프로젝트 내 `generativelanguage.googleapis.com` 활성화 상태를 점검하여 즉시 비활성화 명령어를 처방한다. |
 | **FR-04** | **BR-04** | **계열사 IT 관리자 결제 권한(Billing RBAC) 검증** | IAM 정책에서 `roles/billing.admin` 및 `roles/billing.user` 과다 부여 여부를 탐지하고 Cloud Identity OU 맞춤 역할을 처방한다. |
+| **FR-05** | **BR-05** | **사내 거버넌스 4대 필수 표준 라벨링 주입** | Cloud Billing 예산 알림, 조직 정책 태그 및 클라우드 리소스 생성 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입한다. |
 
 ---
 
@@ -35,3 +36,4 @@ All contents, designs, and code examples are subject to change, modification, or
 | **NFR-01** | **최소 IAM 권한 준수** | 진단에 필요한 최소 권한(`roles/billing.viewer, roles/orgpolicy.policyViewer, roles/serviceusage.serviceUsageViewer, roles/monitoring.viewer`)만을 요구한다. |
 | **NFR-02** | **크로스 플랫폼 순수 파이썬 단일 실행** | 쉘 래퍼 종속성 없이 `python diagnose.py` 직접 실행 체계로 동작하며 `report.md`를 자동 갱신한다. |
 | **NFR-03** | **민감 정보 비식별화 및 가명화** | 가상 실행(`--dry-run`) 모드에서 사내 실환경 프로젝트 노출을 방지하기 위해 `sample-project-id` 가명을 강제 적용한다. |
+| **NFR-04** | **사내 거버넌스 4대 필수 표준 라벨링 준수** | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 모든 생성 매니페스트 및 리소스에 4대 표준 라벨을 필수로 주입한다. |

@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이 엔터프라이즈(Gemini Enterprise) 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
 
-제미나이 엔터프라이즈 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(클라우드 빌링(Cloud Billing))으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방하는 종합 비용 가드레일 도구다. (As of 2026-09-22)
+제미나이 엔터프라이즈 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(클라우드 빌링(Cloud Billing))으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방하는 종합 비용 가드레일 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`, `#Resilience`  
@@ -109,14 +109,29 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 - **Antigravity (Google OAuth 로그인)**: 영향 없음 (사용자 라이선스 기반 인증)
 - **Antigravity (구글 클라우드 프로젝트 종량제 모드)**: 차단됨 (의도된 통제 목적에 정확히 부합)
 
-### 공식 가이드 및 콘솔 링크
-- Gemini Enterprise 오버리지 빌링 공식 가이드 ( https://docs.cloud.google.com/gemini/enterprise/docs/overages )
-- Cloud Billing 예산 및 지출 한도 알림 생성 ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
-- 리소스 사용 제한 조직 정책 가이드 ( https://docs.cloud.google.com/organization-policy/restrict-locations )
+---
+
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+Cloud Billing 예산 알림, 조직 정책 태그 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-overage-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 7. 콘솔 링크 조치 가이드
+
+- **Gemini Enterprise 오버리지 빌링 공식 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/overages )
+- **Cloud Billing 예산 및 지출 한도 알림 생성**: ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
+- **리소스 서비스 사용 제한 조직 정책 가이드**: ( https://docs.cloud.google.com/organization-policy/restrict-services )
+- **Cloud Billing 콘솔**: ( https://console.cloud.google.com/billing )
+- **조직 정책 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/orgpolicies )
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 
 본 도구는 순수 진단 및 모니터링 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다.
 테스트 목적으로 생성한 Cloud Billing 임시 예산(Budgets)을 삭제하려면 결제 콘솔의 예산 목록에서 해당 항목을 삭제한다.
