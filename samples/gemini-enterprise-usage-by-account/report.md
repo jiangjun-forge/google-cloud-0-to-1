@@ -1,6 +1,6 @@
 # Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석 보고서
 
-- **생성 일시**: 2026-10-17 01:17:09 UTC
+- **생성 일시**: 2026-10-17 06:51:00 UTC
 - **실행 모드**: 가상 실행 (Dry-run)
 - **대상 프로젝트**: `sample-project-id`
 - **BigQuery 데이터세트**: `gemini_enterprise_logs`
@@ -66,3 +66,31 @@ python diagnose.py --dry-run
 # 실제 사내 BigQuery 로그 집계 실행
 python diagnose.py --project="sample-project-id" --dataset="gemini_enterprise_logs" --days=7
 ```
+
+---
+
+## 4. 사내 거버넌스 4대 필수 표준 라벨링
+
+BigQuery 로그 데이터세트 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-usage-by-account`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드
+
+- **Gemini Enterprise 관리 콘솔**: ( https://gemini.google.com )
+- **BigQuery 콘솔**: ( https://console.cloud.google.com/bigquery )
+- **IAM 및 관리자 콘솔**: ( https://console.cloud.google.com/iam-admin/iam )
+
+---
+
+## 6. 자원 정리 안내 (Teardown)
+
+본 솔루션은 구글 공식 관리형 로깅 기능을 활용하므로 별도의 상주 가상머신(VM)이나 서버리스 인스턴스가 존재하지 않는다.
+더 이상 로깅이 필요하지 않을 경우 아래 절차를 수행한다:
+
+1. **Gemini Enterprise app 로깅 비활성화**: Gemini Enterprise app 관리 콘솔 > [Settings] > [Audit & Compliance]에서 'Prompt & Response Logging' 토글 OFF
+2. **BigQuery 로그 데이터세트 정리 (선택 사항)**: `bq rm -r -f -d ${PROJECT_ID}:gemini_enterprise_logs`

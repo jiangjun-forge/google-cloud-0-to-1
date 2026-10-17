@@ -105,7 +105,17 @@ python diagnose.py --project="your-project-id" --dataset="gemini_enterprise_logs
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+BigQuery 로그 데이터세트 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-usage-by-account`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 자원 정리 안내 (Teardown)
 
 본 솔루션은 구글 공식 관리형 로깅 기능을 활용하므로 별도의 상주 가상머신(VM)이나 서버리스 인스턴스가 존재하지 않는다.
 더 이상 로깅이 필요하지 않을 경우 아래 절차를 수행한다:

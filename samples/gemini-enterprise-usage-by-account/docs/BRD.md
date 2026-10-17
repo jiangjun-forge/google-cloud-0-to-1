@@ -35,6 +35,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-02** | 계정별 토큰 소모량 집계 | BigQuery에 수집된 원천 로그를 기반으로 사용자 계정별 호출 횟수, 입력/출력/총 토큰량, 평균 지연시간을 1분 내에 산출해야 한다. |
 | **BR-03** | 가상 실행 스모크 테스트 | 실제 BigQuery 권한이나 데이터가 없는 환경에서도 `--dry-run`을 통해 표준 집계 쿼리와 모의 분석 리포트를 즉시 검증할 수 있어야 한다. |
 | **BR-04** | 최소 권한 및 무중단 운영 | 로그 수집은 구글 관리형 파이프라인으로 무중단 구동되며, 분석가는 단순 BigQuery 뷰어 권한(`roles/bigquery.dataViewer`)만으로 조회 가능해야 한다. |
+| **BR-05** | 표준 리소스 라벨링 적용 의무화 | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 BigQuery 로그 데이터세트 및 클라우드 리소스 생성 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여야 한다. |
 
 ---
 

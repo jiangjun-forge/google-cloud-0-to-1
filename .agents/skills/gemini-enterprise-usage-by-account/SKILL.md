@@ -45,9 +45,12 @@ flowchart TD
 
 ## 2. Stage 1: 예습 (YOLO Autopilot 모드)
 
-고객 개발자나 실무자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
+사내 개발자나 실무자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
+1. 현재 활성화된 gcloud 프로젝트 및 BigQuery 기본 데이터세트를 확인한다.
+2. 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨링(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-usage-by-account`, `env=sample`, `created-by=customer-engineer`) 규약을 고지한다.
+3. 가상 실행 스모크 테스트를 실행한다:
 ```bash
 cd samples/gemini-enterprise-usage-by-account
 python diagnose.py --dry-run
