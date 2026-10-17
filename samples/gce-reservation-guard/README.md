@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 컴퓨트 엔진(Compute Engine) 하드웨어 예약(Reservation) 및 CUD 용량 보장 통합 진단기
 
-Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 사태를 감사 로그로 역추적하고, 요금 할인만 적용되고 물리적 용량 확보가 없는 무방비 약정(Unreserved CUD) 위험과 GPU/특수 머신의 Future Reservation(FR) 미제출 및 승인 지연 문제를 한 번에 진단하여 하드웨어 가용성을 보장하는 통합 인프라 진단 도구다. (As of 2026-09-30)
+Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 사태를 감사 로그로 역추적하고, 요금 할인만 적용되고 물리적 용량 확보가 없는 무방비 약정(Unreserved CUD) 위험과 GPU/특수 머신의 Future Reservation(FR) 미제출 및 승인 지연 문제를 한 번에 진단하여 하드웨어 가용성을 보장하는 통합 인프라 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`, `#Resilience`  
@@ -87,26 +87,38 @@ python diagnose.py -p sample-project-id -r asia-northeast3 -d 14
 
 ---
 
-## 5. 결과 확인 후 즉각 조치 가이드
+## 5. 결과 확인 후 즉각 조치 가이드 및 리소스 라벨링
 
-### 1단계: 무방비 CUD에 대한 온디맨드 Reservation 선점
-물리적 용량이 없는 CUD에 대해 동일 존의 온디맨드 예약을 생성하여 하드웨어를 물리적으로 찜(선점)한다:
+### 1단계: 무방비 CUD에 대한 온디맨드 Reservation 선점 (4대 표준 라벨 필수)
+물리적 용량이 없는 CUD에 대해 동일 존의 온디맨드 예약을 생성하여 하드웨어를 물리적으로 선점한다. 사내 거버넌스 및 자원 추적성을 위해 다음 4대 표준 라벨을 반드시 결합한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gce-reservation-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
 ```bash
 gcloud compute reservations create res-guaranteed-capacity \
     --zone=[ZONE] \
     --vm-count=[COUNT] \
-    --machine-type=[MACHINE_TYPE]
+    --machine-type=[MACHINE_TYPE] \
+    --labels=managed-by=google-cloud-0-to-1,scenario=gce-reservation-guard,env=sample,created-by=customer-engineer
 ```
-- Compute Engine Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/reservations-overview )
 
 ### 2단계: DRAFTING 상태 Future Reservation 즉시 제출
 콘솔에서 생성만 해두고 승인 요청을 보내지 않은 Future Reservation에 대해 submit 명령을 실행한다:
 ```bash
 gcloud compute future-reservations submit [FR_NAME] --zone=[ZONE]
 ```
+
+### 3단계: 공식 문서 및 콘솔 경로
+- Google Cloud Console Compute Engine Reservations ( https://console.cloud.google.com/compute/reservations )
+- Compute Engine Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/reservations-overview )
 - Future Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/future-reservations-overview )
 
 ---
 
 ## 6. 자원 정리 안내 (Teardown)
-본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.
+본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 단, 진단 후 테스트로 생성한 온디맨드 Reservation은 검증 완료 후 즉시 삭제한다:
+```bash
+gcloud compute reservations delete res-guaranteed-capacity --zone=[ZONE] --quiet
+```

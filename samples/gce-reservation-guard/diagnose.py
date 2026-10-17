@@ -320,13 +320,19 @@ def print_text_report(
     print("-" * 96)
 
     print("\n[4. 실무자 통합 처방전 및 즉각 조치 가이드]")
-    print("  1) 무방비 CUD에 대한 온디맨드 Reservation 선점:")
-    print(f"     gcloud compute reservations create res-n4-guaranteed --zone={region}-a --vm-count=8 --machine-type=n4-standard-8")
+    print("  1) 무방비 CUD에 대한 온디맨드 Reservation 선점 (4대 표준 라벨 필수):")
+    print(f"     gcloud compute reservations create res-n4-guaranteed --zone={region}-a --vm-count=8 --machine-type=n4-standard-8 \\")
+    print("       --labels=managed-by=google-cloud-0-to-1,scenario=gce-reservation-guard,env=sample,created-by=customer-engineer")
     print("  2) GPU 및 대규모 프로젝트용 Future Reservation 제출 완결:")
     print("     초안(DRAFTING) 상태의 신청서는 반드시 120시간(5일) 전까지 submit을 실행하여 승인을 획득해야 한다.")
     print("  3) 다중 머신 패밀리 폴백 아키텍처 결합:")
     print("     단일 머신 예약에만 의존하지 않고 `samples/gce-instance-flexibility-planner`를 결합하여")
     print("     GKE ComputeClass(CCC) 및 MIG instanceSelections 다중 머신 유연성을 동시 적용할 것을 권장한다.")
+    print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
+    print("  - managed-by: google-cloud-0-to-1")
+    print("  - scenario: gce-reservation-guard")
+    print("  - env: sample")
+    print("  - created-by: customer-engineer")
     print("=" * 96 + "\n")
 
 
@@ -397,9 +403,10 @@ def build_markdown_report(
         "",
         "## 4. 실무자 통합 처방전 및 즉각 조치 가이드",
         "",
-        "### 1단계: 무방비 CUD에 대한 온디맨드 Reservation 선점",
+        "### 1단계: 무방비 CUD에 대한 온디맨드 Reservation 선점 (4대 표준 라벨 필수)",
+        "사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:",
         "```bash",
-        f"gcloud compute reservations create res-guaranteed-capacity \\\n    --zone={region}-a \\\n    --vm-count=8 \\\n    --machine-type=n4-standard-8",
+        f"gcloud compute reservations create res-guaranteed-capacity \\\n    --zone={region}-a \\\n    --vm-count=8 \\\n    --machine-type=n4-standard-8 \\\n    --labels=managed-by=google-cloud-0-to-1,scenario=gce-reservation-guard,env=sample,created-by=customer-engineer",
         "```",
         "",
         "### 2단계: DRAFTING 상태 Future Reservation 제출 완결",
@@ -407,12 +414,20 @@ def build_markdown_report(
         "# 미제출된 Future Reservation 제출 승인 요청",
         f"gcloud compute future-reservations submit [FR_NAME] --zone=[ZONE]",
         "```",
+        "",
+        "### 3단계: 공식 문서 및 콘솔 경로",
+        "- Google Cloud Console Compute Engine Reservations ( https://console.cloud.google.com/compute/reservations )",
+        "- Compute Engine Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/reservations-overview )",
+        "- Future Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/future-reservations-overview )",
     ])
 
     return "\n".join(lines).strip() + "\n"
 
 
-def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+def save_markdown_report(report_md: str, output_path: Optional[str] = None) -> None:
+    if not output_path:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(current_dir, "report.md")
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
@@ -453,7 +468,7 @@ def main() -> None:
         data=data,
         dry_run=args.dry_run,
     )
-    save_markdown_report(report_content, "report.md")
+    save_markdown_report(report_content)
 
 
 if __name__ == "__main__":

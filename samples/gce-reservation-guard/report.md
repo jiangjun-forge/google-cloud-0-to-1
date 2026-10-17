@@ -10,8 +10,8 @@
 ## 1. 최근 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 장애 이력
 
 - **식별된 용량 고갈 실패 이벤트 수**: 2건
-- **[장애 감지]** 2026-10-14T05:27:47.697432+00:00 | 존: `asia-northeast3-a` | 머신: `n4-standard-8` | 호출자: `gke-nodepool-autoscaler@example.com`
-- **[장애 감지]** 2026-10-11T05:27:47.697432+00:00 | 존: `asia-northeast3-b` | 머신: `g2-standard-8` | 호출자: `admin-deployer@example.com`
+- **[장애 감지]** 2026-10-15T06:20:45.517851+00:00 | 존: `asia-northeast3-a` | 머신: `n4-standard-8` | 호출자: `gke-nodepool-autoscaler@example.com`
+- **[장애 감지]** 2026-10-12T06:20:45.517851+00:00 | 존: `asia-northeast3-b` | 머신: `g2-standard-8` | 호출자: `admin-deployer@example.com`
 
 ---
 
@@ -35,12 +35,14 @@
 
 ## 4. 실무자 통합 처방전 및 즉각 조치 가이드
 
-### 1단계: 무방비 CUD에 대한 온디맨드 Reservation 선점
+### 1단계: 무방비 CUD에 대한 온디맨드 Reservation 선점 (4대 표준 라벨 필수)
+사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
 ```bash
 gcloud compute reservations create res-guaranteed-capacity \
     --zone=asia-northeast3-a \
     --vm-count=8 \
-    --machine-type=n4-standard-8
+    --machine-type=n4-standard-8 \
+    --labels=managed-by=google-cloud-0-to-1,scenario=gce-reservation-guard,env=sample,created-by=customer-engineer
 ```
 
 ### 2단계: DRAFTING 상태 Future Reservation 제출 완결
@@ -48,3 +50,8 @@ gcloud compute reservations create res-guaranteed-capacity \
 # 미제출된 Future Reservation 제출 승인 요청
 gcloud compute future-reservations submit [FR_NAME] --zone=[ZONE]
 ```
+
+### 3단계: 공식 문서 및 콘솔 경로
+- Google Cloud Console Compute Engine Reservations ( https://console.cloud.google.com/compute/reservations )
+- Compute Engine Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/reservations-overview )
+- Future Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/future-reservations-overview )

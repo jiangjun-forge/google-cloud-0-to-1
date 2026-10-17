@@ -1,3 +1,19 @@
+<!--
+Copyright 2026 Google LLC. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+
+NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+[고지 사항] 본 저장소 및 문서는 구글 (Google LLC) 소유이며 Apache 2.0 라이선스 하에 예시 (Sample) 용도로 제공된다.
+프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
+-->
+
+> [!IMPORTANT]
+> **구글 (Google LLC) 참조용 샘플 고지 사항**:
+> 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
+
 ---
 name: gce-reservation-guard
 description: "Autopilot, hands-on diagnostics, and self-healing for gce-reservation-guard: Compute Engine 리전 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 장애를 감사 로그로 역추적하고, CUD 약정 대비 물리적 Reservation 확보율 및 Future Reservation(FR) 신청/제출 상태를 통합 진단하는 도구다."
@@ -8,7 +24,11 @@ description: "Autopilot, hands-on diagnostics, and self-healing for gce-reservat
 
 # GCE Reservation Guard Skill
 
-본 스킬은 고객 및 파트너사 엔지니어가 Compute Engine 환경에서 CUD 약정에 대한 물리적 하드웨어 확보율(Coverage)을 점검하고, GPU 및 고사양 머신의 Future Reservation 미제출 문제를 원클릭으로 통합 진단할 수 있도록 돕는 실습 가이드다.
+본 스킬은 고객 및 파트너사 엔지니어가 Compute Engine 환경에서 CUD 약정에 대한 물리적 하드웨어 확보율(Coverage)을 점검하고, GPU 및 고사양 머신의 Future Reservation 미제출 문제를 원클릭으로 통합 진단할 수 있도록 돕는 실습 가이드다. (As of 2026-10-17)
+
+**Audience**: `#Architect`, `#Developer`, `#FinOps`  
+**Concern**: `#Billing`, `#Performance`, `#Resilience`  
+**Service**: `#ComputeEngine`, `#GoogleKubernetesEngine`  
 
 ```
                    [고객 실습 워크플로우 (3단계)]
@@ -40,6 +60,12 @@ description: "Autopilot, hands-on diagnostics, and self-healing for gce-reservat
    - `roles/compute.viewer`
    - `roles/logging.viewer`
 
+4. **사내 거버넌스 4대 필수 표준 라벨링 고지**:
+   - `managed-by`: `google-cloud-0-to-1`
+   - `scenario`: `gce-reservation-guard`
+   - `env`: `sample`
+   - `created-by`: `customer-engineer`
+
 ---
 
 ## 2. 3단계 실습 실행 절차
@@ -56,4 +82,4 @@ python diagnose.py -p <대상_프로젝트_ID> -r asia-northeast3
 
 ### 3단계: 복습 (산출물 검토 및 조치)
 - `report.md`를 열어 무방비 CUD 비율과 Future Reservation DRAFTING 항목 확인
-- 온디맨드 Reservation 생성 및 Future Reservation 제출 명령어 실행
+- 온디맨드 Reservation 생성(4대 라벨 포함) 및 Future Reservation 제출 명령어 실행

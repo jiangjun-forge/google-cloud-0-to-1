@@ -34,3 +34,6 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### BR-04: 자동 리포트 생성 및 실무자 조치 처방 제공
 - 표준 마크다운 리포트(`report.md`)를 자동 덮어쓰기하여 온디맨드 예약 생성 명령어 및 승인 완결 가이드를 제공해야 한다.
+
+### BR-05: 표준 리소스 라벨링 적용 의무화
+- 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 리소스 생성 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여야 한다.

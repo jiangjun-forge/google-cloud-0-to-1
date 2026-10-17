@@ -40,3 +40,9 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### NFR-02: 순수 파이썬 단일 실행 및 가상 모드 지원
 - 외부 의존성 없이 `python diagnose.py --dry-run` 가상 실행을 완벽히 지원한다.
+
+### NFR-03: 민감 정보 비식별화 및 보안 규약
+- 소스 코드 및 문서 내에 실제 프로젝트 ID나 개인 식별 정보(PII)를 하드코딩하지 않으며, 모든 외부 참조 링크는 Bare URL 괄호 병기 원칙을 준수한다.
+
+### NFR-04: 표준 리소스 라벨링 규약 준수
+- 리소스 생성 가이드 및 CLI 명령어에 4대 필수 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gce-reservation-guard`, `env=sample`, `created-by=customer-engineer`)을 100% 온전히 포함한다.
