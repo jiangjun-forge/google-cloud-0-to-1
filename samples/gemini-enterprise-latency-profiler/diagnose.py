@@ -551,7 +551,7 @@ def main() -> None:
   )
   parser.add_argument("-p", "--project", help="대상 구글 클라우드(Google Cloud) 프로젝트 ID")
   parser.add_argument("-l", "--location", default=os.getenv("LOCATION") or "asia-northeast3", help="엔드포인트 리전 (기본값: asia-northeast3)")
-  parser.add_argument("-m", "--model", default=os.getenv("MODEL_ID") or "gemini-2.5-flash", help="테스트 대상 모델 ID (기본값: gemini-2.5-flash)")
+  parser.add_argument("-m", "--model", default=os.getenv("MODEL_ID") or "gemini-3.8-flash", help="테스트 대상 모델 ID (기본값: gemini-3.8-flash)")
   parser.add_argument("--prompt", default=os.getenv("PROMPT") or "사내 보안 정책 가이드라인", help="벤치마크 테스트 프롬프트")
   parser.add_argument("--template", default=os.getenv("MODEL_ARMOR_TEMPLATE") or None, help="Model Armor 검사용 템플릿 리소스 경로")
   parser.add_argument("--dry-run", action="store_true", help="실제 구글 클라우드 API 호출 없이 모의 가상 데이터를 이용해 스모크 테스트 수행")

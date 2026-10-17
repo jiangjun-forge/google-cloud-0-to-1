@@ -49,11 +49,11 @@ from google.genai import types
 client = genai.Client(api_key="YOUR_API_KEY")
 
 # 또는 구글 클라우드(Google Cloud) 프로젝트 기반 (Vertex AI)
-# client = genai.Client(vertexai=True, project="YOUR_PROJECT_ID", location="us-central1")
+# client = genai.Client(vertexai=True, project="YOUR_PROJECT_ID", location="global")
 
 # 2. 콘텐츠 생성 호출
 response = client.models.generate_content(
-    model="gemini-2.5-flash",
+    model="gemini-3.8-flash",
     contents="최신 SDK 적용 테스트용 프롬프트다."
 )
 print(response.text)

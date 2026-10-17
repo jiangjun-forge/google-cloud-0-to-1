@@ -46,13 +46,13 @@ def generate_with_retry(client, model_id, prompt):
       contents=prompt
   )
 
-# 2. 주 모델(Gemini 2.5 Pro) 실패 시 경량 모델(Gemini 2.5 Flash)로 자동 우회
+# 2. 주 모델(Gemini 3.8 Pro) 실패 시 경량 모델(Gemini 3.8 Flash)로 자동 우회
 def generate_with_fallback(client, prompt):
   try:
-    return generate_with_retry(client, 'gemini-2.5-pro', prompt)
+    return generate_with_retry(client, 'gemini-3.8-pro', prompt)
   except Exception as e:
     print(f'[안내] 주 모델 호출 실패로 폴백 모델로 즉시 우회한다: {e}')
-    return generate_with_retry(client, 'gemini-2.5-flash', prompt)
+    return generate_with_retry(client, 'gemini-3.8-flash', prompt)
 
 ========================================================================
 ```

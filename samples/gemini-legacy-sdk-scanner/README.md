@@ -136,7 +136,7 @@ pip install google-genai
 | :--- | :--- | :--- |
 | **임포트** | `import google.generativeai as genai` | `from google import genai` |
 | **클라이언트 생성** | `genai.configure(api_key="...")` | `client = genai.Client(api_key="...")` |
-| **콘텐츠 생성** | `model = genai.GenerativeModel("...")`<br>`model.generate_content(...)` | `client.models.generate_content(`<br>`    model="gemini-2.5-flash", contents="..."`<br>`)` |
+| **콘텐츠 생성** | `model = genai.GenerativeModel("...")`<br>`model.generate_content(...)` | `client.models.generate_content(`<br>`    model="gemini-3.8-flash", contents="..."`<br>`)` |
 
 ---
 

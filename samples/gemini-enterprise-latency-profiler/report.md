@@ -11,7 +11,7 @@
 ```text
 ============================================================================================
  Vertex AI Gemini API vs Gemini Enterprise App (Gemini Enterprise app) 완결형 파이프라인 지연 시간 비교 리포트
- 프로젝트: sample-project-id | 리전: asia-northeast3 | 모델: gemini-2.5-flash
+ 프로젝트: sample-project-id | 리전: asia-northeast3 | 모델: gemini-3.8-flash
  테스트 프롬프트: "사내 보안 정책 가이드라인"
  ※ 참고: Gemini Enterprise app은 웹 UI 접근이 아닌 Discovery Engine 엔드포인트 직접 호출과
          Model Armor 가드레일 체인을 완결 결합하여 사내 엔터프라이즈 RAG 파이프라인을 모사함.
@@ -55,7 +55,7 @@ HOP-05   | 토큰 생성        |   482.3 ms (27.5%)   | [=========             
   - 최적화안: 반복되는 외부 데이터는 VPC-SC 외부 DMZ 프로젝트에서 사전 크롤링 후 사내 벡터 DB로 비동기 배치 적재 권장
 
 * HOP-04 [순수 LLM 첫 토큰 도달 (TTFT)] - 245.8 ms (14.0%)
-  - 원인 분석: Vertex AI gemini-2.5-flash 모델의 프롬프트 처리 및 첫 번째 토큰 생성 시간
+  - 원인 분석: Vertex AI gemini-3.8-flash 모델의 프롬프트 처리 및 첫 번째 토큰 생성 시간
   - 최적화안: 프롬프트 캐싱(Context Caching) 활성화 또는 Provisioned Throughput (PT) 도입으로 큐잉 지연 제거
 
 * HOP-05 [응답 토큰 스트리밍 생성] - 482.3 ms (27.5%)

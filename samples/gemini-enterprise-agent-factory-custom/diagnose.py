@@ -207,9 +207,9 @@ class AgentQueryResponse(BaseModel):
     tools_called: list[str]
     session_id: str
 
-# Google GenAI 최신 SDK 클라이언트 초기화
+# Google GenAI 최신 SDK 클라이언트 초기화 (글로벌 리전 권장)
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "{project_id}")
-LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "{region}")
+LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "global")
 client = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
 
 SYSTEM_INSTRUCTION = \"\"\"너는 사내 엔터프라이즈 환경에서 구동하는 백엔드 커스텀 에이전트인 '{title}'이다.
@@ -225,9 +225,9 @@ def healthz():
 async def chat_endpoint(request: AgentQueryRequest):
     try:
         tools = get_custom_tools()
-        # 다단계 추론 및 함수 호출 실행
+        # 다단계 추론 및 함수 호출 실행 (2026년 10월 기준 최신 플래시 모델 사용)
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.8-flash",
             contents=request.prompt,
             config={{"system_instruction": SYSTEM_INSTRUCTION, "tools": tools}},
         )

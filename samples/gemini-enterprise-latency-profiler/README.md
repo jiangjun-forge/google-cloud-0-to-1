@@ -74,7 +74,7 @@ python diagnose.py --dry-run
 ### 실제 환경 진단
 사내 활성 프로젝트 및 대상 엔드포인트에 대해 실측 프로파일링을 수행한다:
 ```bash
-python diagnose.py --project="your-project-id" --location="asia-northeast3" --model="gemini-2.5-flash"
+python diagnose.py --project="your-project-id" --location="asia-northeast3" --model="gemini-3.8-flash"
 ```
 
 ---
@@ -84,7 +84,7 @@ python diagnose.py --project="your-project-id" --location="asia-northeast3" --mo
 ```text
 ============================================================================================
  Vertex AI Gemini API vs Gemini Enterprise App (Gemini Enterprise app) 완결형 파이프라인 지연 시간 비교 리포트
- 프로젝트: example-corp | 리전: asia-northeast3 | 모델: gemini-2.5-flash
+ 프로젝트: example-corp | 리전: asia-northeast3 | 모델: gemini-3.8-flash
  테스트 프롬프트: "사내 정보보안 가이드라인의 핵심 원칙을 알려줘."
  ※ 참고: Gemini Enterprise app은 웹 UI 접근이 아닌 Discovery Engine 엔드포인트 직접 호출과
          Model Armor 가드레일 체인을 완결 결합하여 사내 엔터프라이즈 RAG 파이프라인을 모사함.

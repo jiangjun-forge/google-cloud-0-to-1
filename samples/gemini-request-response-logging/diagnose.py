@@ -236,8 +236,8 @@ def main():
   parser.add_argument(
       "-m",
       "--model",
-      default=os.getenv("MODEL_ID") or "gemini-2.5-flash",
-      help="대상 모델 식별자 (기본값: gemini-2.5-flash)",
+      default=os.getenv("MODEL_ID") or "gemini-3.8-flash",
+      help="대상 모델 식별자 (기본값: gemini-3.8-flash)",
   )
   parser.add_argument(
       "--skip-inference",
