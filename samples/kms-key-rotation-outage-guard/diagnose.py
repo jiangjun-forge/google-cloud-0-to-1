@@ -331,7 +331,25 @@ def build_markdown_report(report_text: str, project_id: str, is_dry_run: bool) -
 
 ---
 
-## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+## 2. 사내 거버넌스 4대 필수 표준 라벨링
+
+신규 KMS 키 링/암호화 키 및 Cloud Storage 버킷 리소스 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `kms-key-rotation-outage-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 3. 콘솔 링크 조치 가이드
+
+- **Cloud KMS 콘솔**: ( https://console.cloud.google.com/security/kms )
+- **Cloud KMS 키 순환 및 버전 관리 가이드**: ( https://cloud.google.com/kms/docs/key-rotation )
+- **Cloud Storage CMEK 암호화 관리 가이드**: ( https://cloud.google.com/storage/docs/encryption/customer-managed-keys )
+
+---
+
+## 4. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
 
 실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
 실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
@@ -342,8 +360,11 @@ python diagnose.py
 """
 
 
-def save_markdown_report(content: str, filepath: str = "report.md") -> None:
+def save_markdown_report(content: str, filepath: Optional[str] = None) -> None:
     """마크다운 리포트를 지정된 경로에 저장한다."""
+    if filepath is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(script_dir, "report.md")
     try:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)

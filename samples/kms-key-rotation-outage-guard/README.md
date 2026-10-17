@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 (kms-key-rotation-outage-guard)
 
-클라우드 KMS(Cloud KMS) 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 클라우드 스토리지(Cloud Storage) 객체 및 영구 데이터의 복호화 실패로 인한 대형 서비스 장애(Outage)를 사전 탐지하고 안전한 데이터 재암호화(Rewrite) 워크플로우를 처방하는 도구다. (As of 2026-09-09)
+클라우드 KMS(Cloud KMS) 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 클라우드 스토리지(Cloud Storage) 객체 및 영구 데이터의 복호화 실패로 인한 대형 서비스 장애(Outage)를 사전 탐지하고 안전한 데이터 재암호화(Rewrite) 워크플로우를 처방하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Resilience`, `#Security`  
@@ -150,6 +150,16 @@ v1       NO         DESTROY_SCHEDULED    2025-12-01T09:00:00Z   CRITICAL
    - Cloud Storage 고객 관리 암호화 키(CMEK) 관리 ( https://cloud.google.com/storage/docs/encryption/customer-managed-keys )
 3. **구버전 키 비활성화 및 안전 폐기**:
    - 버킷 내 모든 객체의 암호화 버전이 최신 주 버전으로 일원화된 것을 확인한 후 구버전을 `DISABLED` 처리하여 보안 정책을 완결한다.
+
+---
+
+## 7. 사내 거버넌스 4대 필수 표준 라벨링
+
+신규 KMS 키 링/암호화 키 및 Cloud Storage 버킷 리소스 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `kms-key-rotation-outage-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
 
 ---
 
