@@ -13,7 +13,7 @@ All contents, designs, and code examples are subject to change, modification, or
 # 비즈니스 요구 사항 명세서 (BRD): 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 (As of 2026-10-17)
 
 ## 1. 배경 및 목적
-버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다.
+버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(다국어 및 한국어 최적화: `text-multilingual-embedding-002`, 영어/코드 특화: `text-embedding-005`)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다.
 
 사내 클라우드 운영 환경에서 인프라 담당자와 보안 및 아키텍처 실무자가 수동 콘솔 점검에 의존할 경우 설정 누락, 장애 인지 지연, 불필요한 비용 누수가 발생할 수 있다. 본 미니 프로젝트(`embedding-dimension-tradeoff-analyzer`)는 현장 실무에서 즉시 실행 가능한 자동화 진단 및 조치 가이드를 제공하여 운영 안정성을 체계적으로 확보한다.
 

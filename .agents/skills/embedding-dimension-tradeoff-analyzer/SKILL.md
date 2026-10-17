@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: embedding-dimension-tradeoff-analyzer
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for embedding-dimension-tradeoff-analyzer: Vertex AI 및 Gemini API 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터 또는 표본을 대상으로 차원 축소 시 인덱스 용량 절감량과 검색 정확도 손실률 트레이드오프를 1분 만에 비교 분석하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for embedding-dimension-tradeoff-analyzer: Vertex AI 임베딩 모델(한국어/다국어: text-multilingual-embedding-002, 영어/코드: text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터 또는 표본을 대상으로 차원 축소 시 인덱스 용량 절감량과 검색 정확도 손실률 트레이드오프를 1분 만에 비교 분석하는 도구다.
 ---
 
 # 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 (Autopilot & Hands-on Guide) (As of 2026-10-17)
@@ -85,12 +85,15 @@ cat requirements.txt
 
 ### Step 2.2 진단 도구 실행
 ```bash
+# 기본 한국어/다국어 특화 모델(text-multilingual-embedding-002) 기반 차원 축소 분석
 python diagnose.py
+
+# 영어 및 코드 특화 모델(text-embedding-005) 지정 분석
+python diagnose.py -m text-embedding-005
+
+# 특정 프로젝트 및 사내 실데이터 지정 검사
+python diagnose.py -p <대상_프로젝트_ID> --data-path <실데이터경로>
 ```
-- 특정 프로젝트나 리소스를 지정하여 검사할 경우:
-  ```bash
-  python diagnose.py -p <대상_프로젝트_ID>
-  ```
 
 ### Step 2.3 진단 리포트 확인 및 조치 가이드 적용
 - 터미널에 출력된 진단 표(`PASS`, `WARN`, `FAIL`)를 확인한다.

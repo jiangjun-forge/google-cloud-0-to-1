@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기
 
-버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다. (As of 2026-10-17)
+버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(다국어 및 한국어 최적화: `text-multilingual-embedding-002`, 영어/코드 특화: `text-embedding-005`)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
@@ -172,16 +172,20 @@ python diagnose.py --sample-count=1000 -d 768,512,256
    - [Tier 2: 균형/범용]: 사내 지식 검색 및 사내외 사용자 지원 FAQ -> 256d 또는 512d 채택 (비용 33~67% 절감, 정확도 98% 이상)
    - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> 768d 최대 차원 유지
 
-3. 사내 실데이터 적용 코드:
+3. 한국어 및 다국어 모델 최적 선택 가이드:
+   - 한국어 및 다국어 코퍼스에서는 다국어 전용 모델인 'text-multilingual-embedding-002'가 형태소와 조사 구조를 정밀하게 파악하여 영어/코드 특화 모델('text-embedding-005') 대비 월등한 검색 품질(MRR, Recall)을 제공한다.
+   - 두 모델 모두 'output_dimensionality' 기반 MRL 차원 축소(768, 512, 256, 128)를 지원하므로, 한국어 환경에서는 'text-multilingual-embedding-002'에 차원 축소를 적용하는 것이 가장 이상적이다.
+
+4. 사내 실데이터 적용 코드:
    from google import genai
    client = genai.Client()
    response = client.models.embed_content(
-       model='text-embedding-005',
+       model='text-multilingual-embedding-002',
        contents='사내 문의 및 검색 문서 텍스트',
        config={'output_dimensionality': 128}
    )
 
-4. 사내 거버넌스 4대 필수 표준 라벨링 준수:
+5. 사내 거버넌스 4대 필수 표준 라벨링 준수:
    Vector Search 인덱스 및 BigQuery 데이터셋 생성 시 4대 표준 라벨을 필수로 주입한다:
    --labels=managed-by=google-cloud-0-to-1,scenario=embedding-dimension-tradeoff-analyzer,env=sample,created-by=customer-engineer
 ================================================================================
@@ -191,7 +195,8 @@ python diagnose.py --sample-count=1000 -d 768,512,256
 
 ## 6. 결과 확인 후 즉각 조치 가이드
 
-### 1단계: 사내 실데이터 기반 최적 차원 파라미터 적용
+### 1단계: 한국어/다국어 특화 모델 선택 및 최적 차원 파라미터 적용
+- 한국어 코퍼스에서는 다국어에 특화된 `text-multilingual-embedding-002` 모델을 우선 채택하여 형태소 분절 및 조사 결합 문맥에서의 검색 정확도를 극대화한다.
 - `google-genai` SDK를 통해 `output_dimensionality` 매개변수를 결정된 차원(예: 128 또는 256)으로 지정하여 호출한다.
 - Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )
 

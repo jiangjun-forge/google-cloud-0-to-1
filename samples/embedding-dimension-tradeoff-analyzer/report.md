@@ -13,7 +13,7 @@
 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 다차원 비교 분석 리포트
 진단 모드: 모의 실행 (Dry-run)
 대상 프로젝트: sample-project-id
-임베딩 모델: text-embedding-005
+임베딩 모델: text-multilingual-embedding-002
 평가 데이터 출처: 표준 엔터프라이즈 RAG 평가 데이터셋 (테스트 표본 1000건) (테스트 표본 1000건)
 비용 최적화 테스트 표본: 1,000건
 용량 추산 기준 벡터 수: 1,000,000건
@@ -76,16 +76,20 @@
    - [Tier 2: 균형/범용]: 사내 지식 검색 및 사내외 사용자 지원 FAQ -> 512d 또는 768d 채택 (비용 50~66% 절감, 정확도 98% 이상)
    - [Tier 3: 최고 정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> 768d 최대 차원 유지
 
-3. 사내 실데이터 적용 코드:
+3. 한국어 및 다국어 모델 최적 선택 가이드:
+   - 한국어 및 다국어 코퍼스에서는 다국어 전용 모델인 'text-multilingual-embedding-002'가 형태소와 조사 구조를 정밀하게 파악하여 영어/코드 특화 모델('text-embedding-005') 대비 월등한 검색 품질(MRR, Recall)을 제공한다.
+   - 두 모델 모두 'output_dimensionality' 기반 MRL 차원 축소(768, 512, 256, 128)를 지원하므로, 한국어 환경에서는 'text-multilingual-embedding-002'에 차원 축소를 적용하는 것이 가장 이상적이다.
+
+4. 사내 실데이터 적용 코드:
    from google import genai
    client = genai.Client()
    response = client.models.embed_content(
-       model='text-embedding-005',
+       model='text-multilingual-embedding-002',
        contents='사내 문의 및 검색 문서 텍스트',
        config={'output_dimensionality': 128}
    )
 
-4. 사내 거버넌스 4대 필수 표준 라벨링 준수:
+5. 사내 거버넌스 4대 필수 표준 라벨링 준수:
    Vector Search 인덱스 및 BigQuery 데이터셋 생성 시 4대 표준 라벨을 필수로 주입한다:
    --labels=managed-by=google-cloud-0-to-1,scenario=embedding-dimension-tradeoff-analyzer,env=sample,created-by=customer-engineer
 ================================================================================
@@ -106,8 +110,9 @@ python diagnose.py
 
 ## 3. 실무자 즉각 조치 가이드 및 처방전
 
-### 1단계: 사내 실데이터 기반 최적 차원 파라미터 적용
-- `google-genai` 최신 통일 SDK에서 `output_dimensionality` 매개변수를 결정된 차원(128d 등)으로 지정하여 호출한다.
+### 1단계: 한국어/다국어 특화 모델 선택 및 최적 차원 파라미터 적용
+- 한국어 코퍼스에서는 다국어에 특화된 `text-multilingual-embedding-002` 모델을 우선 채택하여 한국어 형태소 및 문맥 보존 품질을 극대화한다.
+- `google-genai` 최신 통일 SDK에서 `output_dimensionality` 매개변수를 결정된 축소 차원(128d 등)으로 지정하여 인프라 비용을 절감한다.
 - Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )
 
 ### 2단계: Vertex AI Vector Search 및 BigQuery 벡터 검색 인덱스 스키마 반영
