@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기
+# 비즈니스 요구 사항 명세서 (BRD): Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기 (As of 2026-10-17)
 
 ## 1. 배경 및 목적
 클라우드 런(Cloud Run) 환경에서 Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 Cloud NAT 라우팅 정합성을 1분 만에 일괄 진단하는 도구다.
@@ -27,6 +27,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-02** | **표준화된 자동 진단 체계 구축** | 수동 콘솔 점검에 따른 인적 오류를 배제하고 장애 복구 지연 시간을 단축하여야 한다. | 필수 (P0) |
 | **BR-03** | **가상 실행(Dry-run) 기반 무중단 사전 검증** | 실제 GCP 과금이나 변경 발생 전 가상 실행(--dry-run)으로 안전하게 정책을 검증할 수 있어야 한다. | 필수 (P0) |
 | **BR-04** | **실무자 조치 가이드 및 자원 정리(Teardown) 안내** | 비개발 직군과 운영 실무자가 즉시 참조할 수 있는 콘솔 조치 경로와 테스트 리소스 정리 절차를 제공하여야 한다. | 권장 (P1) |
+| **BR-05** | **자원 거버넌스 라벨링 표준 준수** | Cloud Run 서비스 및 네트워크 인프라 리소스 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=cloud-run-direct-vpc-egress-checker`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여 FinOps 비용 추적성을 보장하여야 한다. | 필수 (P0) |
 
 ---
 

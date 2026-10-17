@@ -17,12 +17,12 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: cloud-run-direct-vpc-egress-checker
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for cloud-run-direct-vpc-egress-checker: Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google A...
+  Autopilot, hands-on diagnostics, and self-healing for cloud-run-direct-vpc-egress-checker: Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 Cloud NAT 라우팅 정합성을 1분 만에 일괄 진단하는 도구다.
 ---
 
-# Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기 (Autopilot & Hands-on Guide)
+# Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기 (Autopilot & Hands-on Guide) (As of 2026-10-17)
 
-본 스킬은 고객사 엔지니어와 실무자가 `cloud-run-direct-vpc-egress-checker` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 클라우드 엔지니어와 실무자가 `cloud-run-direct-vpc-egress-checker` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -55,6 +55,7 @@ flowchart TD
    ```
 2. `samples/cloud-run-direct-vpc-egress-checker/.env.example`을 참조하여 `samples/cloud-run-direct-vpc-egress-checker/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/compute.networkViewer, roles/run.viewer`) 충족 여부를 안내한다.
+4. 신규 리소스 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer`)을 누락 없이 적용하도록 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:

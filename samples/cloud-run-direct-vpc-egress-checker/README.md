@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기
 
-클라우드 런(Cloud Run) 환경에서 Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 클라우드 NAT(Cloud NAT) 라우팅 정합성을 1분 만에 일괄 진단하는 도구다. (As of 2026-09-09)
+클라우드 런(Cloud Run) 환경에서 Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 클라우드 NAT(Cloud NAT) 라우팅 정합성을 1분 만에 일괄 진단하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -147,7 +147,8 @@ user-auth-service-prod   DIRECT_VPC     private-ranges-only OK
      --network=<VPC_NETWORK> \
      --subnetwork=<SUBNET_NAME> \
      --vpc-egress=private-ranges-only \
-     --clear-vpc-connector
+     --clear-vpc-connector \
+     --labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer
 
 2. 서브넷 Private Google Access 활성화 (구글 API 직결 보장):
    gcloud compute networks subnets update <SUBNET_NAME> \
@@ -157,6 +158,9 @@ user-auth-service-prod   DIRECT_VPC     private-ranges-only OK
 3. all-traffic 라우팅 시 외부 통신용 Cloud NAT 생성:
    gcloud compute routers create nat-router --network=<VPC_NETWORK> --region=asia-northeast3
    gcloud compute routers nats create nat-gw --router=nat-router --auto-allocate-nat-external-ips --region=asia-northeast3
+
+4. 사내 거버넌스 4대 필수 표준 라벨링 준수:
+   Cloud Run 서비스 및 네트워크 자원 생성 시 FinOps 추적을 위해 4대 표준 라벨을 필수 결합한다.
 ================================================================================
 ```
 
@@ -164,16 +168,24 @@ user-auth-service-prod   DIRECT_VPC     private-ranges-only OK
 
 ## 6. 결과 확인 후 즉각 조치 가이드
 
-1. **Direct VPC Egress 마이그레이션 적용**:
-   - Cloud Run 콘솔 ( https://console.cloud.google.com/run ) > 대상 서비스 선택 > 수정 및 새 버전 배포 > 네트워킹 탭
-   - Cloud Run Direct VPC Egress 설정 가이드 ( https://cloud.google.com/run/docs/configuring/vpc-direct-vpc )
-   - VPC 네트워크 연결 옵션 비교 ( https://cloud.google.com/run/docs/configuring/connecting-vpc )
-2. **서브넷 Private Google Access 활성화**:
-   - VPC 네트워크 ( https://console.cloud.google.com/networking/networks/list ) > 서브넷 선택 > 수정 > 비공개 Google 액세스 사용 설정
-   - Private Google Access 개요 ( https://cloud.google.com/vpc/docs/private-google-access )
-3. **Cloud NAT 게이트웨이 구성**:
-   - Cloud NAT ( https://console.cloud.google.com/net-services/nat/list )
-   - 외부 아웃바운드 트래픽(`all-traffic`)을 안전하게 처리하기 위한 Cloud NAT 게이트웨이를 배치한다.
+### 1단계: Direct VPC Egress 마이그레이션 적용
+- Cloud Run 콘솔 ( https://console.cloud.google.com/run ) > 대상 서비스 선택 > 수정 및 새 버전 배포 > 네트워킹 탭
+- Cloud Run Direct VPC Egress 설정 가이드 ( https://cloud.google.com/run/docs/configuring/vpc-direct-vpc )
+- VPC 네트워크 연결 옵션 비교 ( https://cloud.google.com/run/docs/configuring/connecting-vpc )
+
+### 2단계: 서브넷 Private Google Access 및 Cloud NAT 라우팅 정합성 확보
+- VPC 네트워크 ( https://console.cloud.google.com/networking/networks/list ) > 서브넷 선택 > 수정 > 비공개 Google 액세스 사용 설정
+- Private Google Access 개요 ( https://cloud.google.com/vpc/docs/private-google-access )
+- Cloud NAT 콘솔 ( https://console.cloud.google.com/net-services/nat/list )
+- 외부 아웃바운드 트래픽(`all-traffic`)을 안전하게 처리하기 위한 Cloud NAT 게이트웨이를 배치한다.
+
+### 3단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+- Cloud Run 서비스 및 관련 클라우드 인프라 생성/배포 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨을 필수로 주입한다:
+  - `managed-by`: `google-cloud-0-to-1`
+  - `scenario`: `cloud-run-direct-vpc-egress-checker`
+  - `env`: `sample`
+  - `created-by`: `customer-engineer`
+- gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer`
 
 ---
 

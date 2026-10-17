@@ -324,7 +324,8 @@ def print_report(project_id: str, region: str, is_dry_run: bool, services: List[
     print("     --network=<VPC_NETWORK> \\")
     print("     --subnetwork=<SUBNET_NAME> \\")
     print("     --vpc-egress=private-ranges-only \\")
-    print("     --clear-vpc-connector")
+    print("     --clear-vpc-connector \\")
+    print("     --labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer")
     print()
     print("2. 서브넷 Private Google Access 활성화 (구글 API 직결 보장):")
     print("   gcloud compute networks subnets update <SUBNET_NAME> \\")
@@ -334,6 +335,9 @@ def print_report(project_id: str, region: str, is_dry_run: bool, services: List[
     print("3. all-traffic 라우팅 시 외부 통신용 Cloud NAT 생성:")
     print(f"   gcloud compute routers create nat-router --network=<VPC_NETWORK> --region={region}")
     print(f"   gcloud compute routers nats create nat-gw --router=nat-router --auto-allocate-nat-external-ips --region={region}")
+    print()
+    print("4. 사내 거버넌스 4대 필수 표준 라벨링 준수:")
+    print("   Cloud Run 서비스 및 네트워크 자원 생성 시 FinOps 추적을 위해 4대 표준 라벨을 필수 결합한다.")
     print("=" * 80)
 
 
@@ -404,7 +408,8 @@ def build_markdown_report(
         "     --network=<VPC_NETWORK> \\",
         "     --subnetwork=<SUBNET_NAME> \\",
         "     --vpc-egress=private-ranges-only \\",
-        "     --clear-vpc-connector",
+        "     --clear-vpc-connector \\",
+        "     --labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer",
         "",
         "2. 서브넷 Private Google Access 활성화 (구글 API 직결 보장):",
         "   gcloud compute networks subnets update <SUBNET_NAME> \\",
@@ -414,6 +419,9 @@ def build_markdown_report(
         "3. all-traffic 라우팅 시 외부 통신용 Cloud NAT 생성:",
         f"   gcloud compute routers create nat-router --network=<VPC_NETWORK> --region={region}",
         f"   gcloud compute routers nats create nat-gw --router=nat-router --auto-allocate-nat-external-ips --region={region}",
+        "",
+        "4. 사내 거버넌스 4대 필수 표준 라벨링 준수:",
+        "   Cloud Run 서비스 및 네트워크 자원 생성 시 FinOps 추적을 위해 4대 표준 라벨을 필수 결합한다.",
         "=" * 80,
         "```",
         "",
@@ -427,6 +435,26 @@ def build_markdown_report(
         "```bash",
         "python diagnose.py",
         "```",
+        "",
+        "---",
+        "",
+        "## 3. 실무자 즉각 조치 가이드 및 처방전",
+        "",
+        "### 1단계: Direct VPC Egress 마이그레이션 적용",
+        "Serverless VPC Access 커넥터의 대역폭 한계와 유휴 인스턴스 비용을 제거하기 위해 Direct VPC Egress로 전환한다:",
+        "- 구글 클라우드 콘솔 Cloud Run 서비스 목록 ( https://console.cloud.google.com/run )",
+        "- Cloud Run Direct VPC Egress 설정 가이드 ( https://cloud.google.com/run/docs/configuring/vpc-direct-vpc )",
+        "- VPC 네트워크 연결 옵션 비교 ( https://cloud.google.com/run/docs/configuring/connecting-vpc )",
+        "",
+        "### 2단계: 서브넷 Private Google Access 및 Cloud NAT 라우팅 정합성 확보",
+        "1. 서브넷 Private Google Access 활성화: 비공개 구글 API 호출 실패를 방지한다.",
+        "   - VPC 네트워크 목록 ( https://console.cloud.google.com/networking/networks/list )",
+        "   - Private Google Access 개요 ( https://cloud.google.com/vpc/docs/private-google-access )",
+        "2. 외부 통신(all-traffic) 경로용 Cloud NAT 게이트웨이 배치:",
+        "   - Cloud NAT 콘솔 ( https://console.cloud.google.com/net-services/nat/list )",
+        "",
+        "### 3단계: 사내 거버넌스 4대 필수 표준 라벨링 준수",
+        "Cloud Run 서비스 생성 및 수정 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer`)을 누락 없이 주입한다.",
         "",
     ])
 
@@ -461,7 +489,10 @@ def main() -> None:
 
     print_report(reported_project, args.region, args.dry_run, services)
     report_md = build_markdown_report(reported_project, args.region, args.dry_run, services)
-    save_markdown_report(report_md, "report.md")
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_path = os.path.join(script_dir, "report.md")
+    save_markdown_report(report_md, report_path)
 
 
 if __name__ == "__main__":
