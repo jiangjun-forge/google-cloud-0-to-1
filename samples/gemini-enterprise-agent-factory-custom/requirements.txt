@@ -1,0 +1,8 @@
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+google-genai>=1.0.0
+google-cloud-discoveryengine>=0.13.0
+google-cloud-bigquery>=3.25.0
+fastapi>=0.110.0
+pydantic>=2.0.0

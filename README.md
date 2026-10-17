@@ -24,10 +24,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ```text
 .
 ├── .agents/                                    # Antigravity(agy) 및 Jetski AI 에이전트 실습 스킬
-│   └── skills/                                 # 41개 시나리오별 Autopilot 및 핸즈온 가이드
+│   └── skills/                                 # 42개 시나리오별 Autopilot 및 핸즈온 가이드
 ├── LICENSE                                     # Apache-2.0 오픈소스 라이선스
 ├── README.md                                   # 프로젝트 전체 개요 및 아키텍처 안내서
-└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (42개)
+└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (43개)
     ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
     ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
     ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
@@ -41,6 +41,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gce-reservation-guard/                  # CUD 약정 대비 물리적 Reservation 확보율 및 Future Reservation 진단
     ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
     ├── gemini-enterprise-agent-factory/        # 자율형 사내 노코드 에이전트 팩토리 및 GE App 대행 등록
+    ├── gemini-enterprise-agent-factory-custom/ # 하이코드 커스텀 에이전트 스캐폴더 및 GE App 외부 연동
     ├── gemini-enterprise-agent-resolver/       # 커스텀 에이전트 연동 권한 및 조직 정책 진단
     ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
     ├── gemini-enterprise-domain-resolver/      # 사내 도메인 선점 충돌 진단 및 Cloud Identity 배포
@@ -99,7 +100,7 @@ agy --version
 ```
 
 ### 2.3 에이전트 가동 및 미니 프로젝트 자율 실행 예시
-저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 41개 실습 스킬을 에이전트가 자동으로 로드한다:
+저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 42개 실습 스킬을 에이전트가 자동으로 로드한다:
 ```bash
 # 저장소 루트에서 Antigravity CLI 가동 (스킬 자동 인식)
 agy
