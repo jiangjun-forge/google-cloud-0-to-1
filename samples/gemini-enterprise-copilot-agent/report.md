@@ -1,6 +1,6 @@
 # Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 진단 및 배포 보고서
 
-- **실행 일시**: 2026-10-17 05:34:46 UTC
+- **실행 일시**: 2026-10-17 06:33:03 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **대행 서비스 계정**: `ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`
@@ -23,7 +23,7 @@
 
 - **에이전트 명칭**: `Gemini Enterprise Agent Factory (사내 노코드 에이전트 팩토리)`
 - **역할 정의**: 사내 비개발자 임직원을 위한 대화형 자율 노코드 에이전트 생성 및 Gemini Enterprise app 직결 배포 비서
-- **등록 대상 Gemini Enterprise app**: `https://gemini.google.com/app/sample-ge-app-id`
+- **등록 대상 Gemini Enterprise app**: ( https://gemini.google.com/app/sample-ge-app-id )
 - **내장 도구(Tools)**:
   - `create_ge_nocode_agent`: 전용 서비스 계정을 통한 No-code 에이전트 Gemini Enterprise app 대행 등록 도구
 
@@ -83,7 +83,38 @@
 ## 4. 권장 후속 조치 및 운영 가이드
 
 1. **사내 Gemini Enterprise app 웹 포털 공지**:
-   - 임직원 사내 포털(`https://gemini.google.com/app/sample-ge-app-id`)에서 `@에이전트 팩토리`를 호출하여 자율 에이전트 제작을 시작하도록 사내 가이드를 배포한다.
+   - 임직원 사내 포털 ( https://gemini.google.com/app/sample-ge-app-id )에서 `@에이전트 팩토리`를 호출하여 자율 에이전트 제작을 시작하도록 사내 가이드를 배포한다.
 2. **사내 거버넌스 승인 파이프라인**:
    - 임직원이 생성한 에이전트는 작성자 본인 및 팀 전용(`PRIVATE`)으로 즉시 활성화된다.
    - 전사 공개(`ORGANIZATION`)로 전환이 필요한 경우, 사내 클라우드 거버넌스 승인 절차를 거치도록 안내한다.
+
+---
+
+## 5. 사내 거버넌스 4대 필수 표준 라벨링
+
+에이전트 인프라 및 관리 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-agent`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 6. 콘솔 링크 조치 가이드
+
+- **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 확인 ( https://gemini.google.com )
+- **Agent Platform (GEAP) 콘솔**: 사내 등록된 에이전트 및 데이터스토어 현황 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **IAM 및 관리자 콘솔**: 대행 서비스 계정(`ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
+
+---
+
+## 7. 자원 정리 안내 (Teardown)
+
+본 솔루션 검증 후 테스트용으로 등록된 메타 에이전트나 대행 서비스 계정을 정리하고자 할 경우 아래 절차를 수행한다:
+
+1. **대행 서비스 계정 삭제**:
+   ```bash
+   gcloud iam service-accounts delete ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com --quiet
+   ```
+2. **Gemini Enterprise app 카탈로그 에이전트 삭제**:
+   - Agent Platform 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 테스트용으로 생성된 에이전트를 선택 후 삭제한다.

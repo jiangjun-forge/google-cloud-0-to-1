@@ -63,6 +63,7 @@ flowchart TD
 | **BR-03** (실시간 검색 보강) | **FR-03** (실시간 검색 기반 지침 합성) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 합성 엔진 |
 | **BR-04** (무권한 대행 등록) | **FR-04** (서비스 계정 대행 등록 도구) | **NFR-01**, **NFR-02** | `diagnose.py` 배포 모듈 |
 | **BR-05** (설계 거버넌스 강제) | **FR-05** (엔터프라이즈 가드레일 강제 주입) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
+| **BR-06** (표준 리소스 라벨링) | **FR-05** (표준 라벨링 주입 및 리포트) | **NFR-04** (4대 표준 라벨링 준수) | `diagnose.py` |
 
 ---
 
@@ -110,3 +111,6 @@ flowchart TD
 ### NFR-03: 결정론적 가상 실행(--dry-run) 및 사내 식별 정보 마스킹
 - `--dry-run` 모드 실행 시 실제 GCP API 호출 및 인터넷 검색 없이도 내장된 결정론적 모의 엔진을 통해 0.5초 이내에 정상 동작을 스모크 테스트할 수 있어야 한다.
 - 가상 실행 시 사내 프로젝트 ID나 실제 환경 정보의 유출을 방지하기 위해 가명(`sample-project-id`, `sample-ge-app-id`)을 철저히 적용한다.
+
+### NFR-04: 사내 거버넌스 4대 필수 표준 라벨링 준수
+- 사내 거버넌스, FinOps 비용 배분 및 미정리 자원 자동 추적을 위해, 생성되는 모든 에이전트 매니페스트 및 관련 클라우드 리소스에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-copilot-agent`, `env=sample`, `created-by=customer-engineer`)을 필수로 주입한다.
