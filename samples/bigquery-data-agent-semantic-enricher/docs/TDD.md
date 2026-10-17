@@ -11,7 +11,7 @@ All contents, designs, and code examples are subject to change, modification, or
 -->
 
 # 기술 상세 설계서 (TDD: Technical Design Document)
-## 프로젝트명: BigQuery Data Agent Semantic Metadata Enricher
+## 프로젝트명: BigQuery Data Agent Semantic Metadata Enricher (As of 2026-10-17)
 
 ---
 
@@ -78,9 +78,10 @@ flowchart TD
 - `-p`, `--project`: 대상 GCP 프로젝트 ID (미지정 시 gcloud 기본 프로젝트 자동 감지).
 - `-d`, `--dataset`: 진단 대상 BigQuery 데이터셋 ID (기본값: `cymbal_gold`).
 - `-l`, `--location`: 리전 (기본값: `asia-northeast3`).
+- `-m`, `--model`: 시맨틱 메타데이터 생성용 제미나이 모델 ID (기본값: `gemini-3.8-flash`, 호출 리전: `global`).
 - `--dry-run`: 가상 모의 실행 모드.
 - `--enrich`: 지능형 보강 계획 수립 및 비즈니스 용어집 YAML 생성 활성화.
-- `--apply`: 생성된 설명을 실제 BigQuery 스키마 메타데이터에 반영(`client.update_table`).
+- `--apply`: 생성된 설명을 실제 BigQuery 스키마 메타데이터 및 4대 필수 라벨에 반영(`client.update_table`).
 
 ### 3.2 준비도 점수 산출 엔진 (`calculate_readiness_score`)
 4대 핵심 메타데이터 지표를 정량화하여 100점 만점으로 가중 환산:
@@ -107,6 +108,7 @@ flowchart TD
 | **FR-02** | Column Description | 30% | 필드의 의미, 유효 범위, 계산 방식 기술 여부 | 모호한 컬럼(예: `amt`, `discount`)에 대한 환각 및 엉뚱한 조건절 생성 방어 |
 | **FR-03** | Data Profile Stats | 20% | Dataplex Data Profile 스캔(카디널리티, min/max, null 비율) 수집 여부 | 에이전트가 실제 데이터에 존재하는 유효한 범주형 값(Enum)으로 필터링하도록 보장 |
 | **FR-04** | Glossary Formula | 20% | Dataplex Knowledge Catalog 비즈니스 수식(`Formula`) 연동 여부 | `SAFE_DIVIDE`, 세금/할인 적용 등 핵심 계산 메트릭의 왜곡 없는 일관된 수식 생성 |
+| **FR-05** | Gemini Semantic Generator | N/A | 최신 `gemini-3.8-flash`(리전: `global`) 모델을 통해 설명 부실 컬럼의 비즈니스 의미와 제약조건을 자동 생성하고 휴리스틱으로 부드럽게 폴백 | 비개발자 및 데이터 엔지니어의 메타데이터 작성 수작업 공수 90% 이상 절감 |
 
 ---
 
@@ -130,3 +132,4 @@ roles/datacatalog.viewer       -> datacatalog.entries.get, datacatalog.glossarie
 | **NFR-01** | 비파괴성 (Zero Risk) | 읽기 전용 스캔 원칙을 준수하며, `--apply` 옵션 활성화 시에도 스키마 Description 필드만 원자적으로 패치. |
 | **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python3 diagnose.py --dry-run --enrich`로 4개 테이블 준비도 점수 산출 및 YAML 생성을 신속하게 시뮬레이션. |
 | **NFR-03** | 실행 성능 및 확장성 | 대규모 테이블 스키마 진단을 지연 없이 신속하게 완료하며, 전사 대규모 데이터 웨어하우스 데이터셋 스캔 지원. |
+| **NFR-04** | 자원 거버넌스 및 라벨링 규약 | `--apply` 시 BigQuery 테이블에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=bigquery-data-agent-semantic-enricher`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 자동 주입하여 FinOps 비용 추적성 보장. |

@@ -58,6 +58,12 @@ def parse_args() -> argparse.Namespace:
         help="누락된 테이블/컬럼 설명 자동 생성 및 비즈니스 공식 템플릿 도출 모드 활성화",
     )
     parser.add_argument(
+        "-m",
+        "--model",
+        default=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
+        help="시맨틱 메타데이터 지능형 생성용 제미나이 모델 (기본값: gemini-3.8-flash, 리전: global)",
+    )
+    parser.add_argument(
         "--apply",
         action="store_true",
         help="생성된 시맨틱 메타데이터를 실제 BigQuery 테이블 및 스키마에 영구 반영",
@@ -243,6 +249,37 @@ def get_mock_audit_data() -> dict[str, Any]:
     }
 
 
+def generate_semantic_description_with_gemini(
+    table_id: str,
+    field_name: str,
+    field_type: str,
+    model_name: str = "gemini-3.8-flash",
+) -> str:
+    """Gemini API(gemini-3.8-flash)를 활용하여 컬럼의 표준 시맨틱 비즈니스 설명을 생성한다."""
+    try:
+        from google import genai
+        client = genai.Client(location="global")
+        prompt = (
+            f"Generate a concise, professional semantic description for a BigQuery column in enterprise analytics.\n"
+            f"Table: {table_id}\n"
+            f"Column: {field_name}\n"
+            f"Data Type: {field_type}\n"
+            f"Requirements:\n"
+            f"1. Explain business meaning, expected value range or enum values, and any formula if applicable.\n"
+            f"2. Keep it under 2 sentences in English for LLM/NL2SQL data agent grounding.\n"
+            f"Return only the description text without any markdown or quotation marks."
+        )
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+        )
+        if response and response.text:
+            return response.text.strip().replace('"', "")
+    except Exception:
+        pass
+    return f"Standard business field for {field_name} ({field_type}) in {table_id}."
+
+
 def calculate_readiness_score(tables: list[dict[str, Any]]) -> dict[str, Any]:
     """메타데이터 충실도 및 Data Agent NL2SQL 준비도 점수를 산출한다."""
     total_tables = len(tables)
@@ -380,7 +417,15 @@ def generate_glossary_yaml(audit_data: dict[str, Any], output_path: str = "datap
         print(f"용어집 파일 생성 중 오류 발생: {e}", file=sys.stderr)
 
 
-def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location: str, enrich: bool, apply: bool) -> None:
+def inspect_live_dataset(
+    client: Any,
+    project_id: str,
+    dataset_id: str,
+    location: str,
+    enrich: bool,
+    apply: bool,
+    model_name: str = "gemini-3.8-flash",
+) -> None:
     """실제 BigQuery 환경의 데이터셋 스키마를 점검하고 보강한다."""
     try:
         from google.cloud import bigquery
@@ -433,11 +478,18 @@ def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location
         matched_mock = mock_lookup.get(t.table_id, {})
         sug_t_desc = matched_mock.get("suggested_table_desc") or f"Standard analytics table for {t.table_id} under {dataset_id}."
         mock_col_map = matched_mock.get("suggested_col_descs", {})
-        sug_c_descs = {
-            f.name: mock_col_map.get(f.name, f"Standard business field for {f.name} (Type: {f.field_type})")
-            for f in t.schema
-            if not f.description
-        }
+        sug_c_descs = {}
+        for f in t.schema:
+            if not f.description:
+                if f.name in mock_col_map:
+                    sug_c_descs[f.name] = mock_col_map[f.name]
+                else:
+                    sug_c_descs[f.name] = generate_semantic_description_with_gemini(
+                        table_id=t.table_id,
+                        field_name=f.name,
+                        field_type=f.field_type,
+                        model_name=model_name,
+                    )
         sug_formula = matched_mock.get("glossary_formula") or f"Standard metrics for {t.table_id}"
 
         table_records.append({
@@ -491,16 +543,28 @@ def inspect_live_dataset(client: Any, project_id: str, dataset_id: str, location
                         new_schema.append(field)
 
                 labels = dict(t.labels or {})
+                # 사내 거버넌스 준수를 위한 4대 필수 표준 라벨 주입
+                mandatory_labels = {
+                    "managed-by": "google-cloud-0-to-1",
+                    "scenario": "bigquery-data-agent-semantic-enricher",
+                    "env": "sample",
+                    "created-by": "customer-engineer",
+                }
+                for l_key, l_val in mandatory_labels.items():
+                    if labels.get(l_key) != l_val:
+                        labels[l_key] = l_val
+                        updated = True
+
                 if labels.get("dataplex_profile") != "scanned" or labels.get("glossary_bound") != "true":
                     labels["dataplex_profile"] = "scanned"
                     labels["glossary_bound"] = "true"
-                    t.labels = labels
                     updated = True
+                t.labels = labels
 
                 if updated:
                     t.schema = new_schema
                     client.update_table(t, ["description", "schema", "labels"])
-                    print(f"  - 테이블 '{t.table_id}' 스키마, 컬럼 설명 및 용어집/프로파일 레이블 패치 완료.")
+                    print(f"  - 테이블 '{t.table_id}' 스키마, 컬럼 설명 및 4대 표준/거버넌스 라벨 패치 완료.")
 
                 after_records.append({
                     "table_id": t.table_id,
@@ -588,15 +652,16 @@ def build_markdown_report(
         ])
         for idx, t in enumerate(audit_data["tables"], 1):
             lines.extend([
-                f"\n[{idx}. 테이블: {t['table_id']}]",
-                f"  * 추천 테이블 표준 설명 (AI 라우팅 최적화):",
-                f"    \"{t.get('enrichment_desc', 'Operational dataset')}\"",
-                f"  * 누락 컬럼 표준 설명 및 제약조건 자동 보강 내역:",
+                "",
+                f"[{idx}. 테이블: {t['table_id']}]",
+                "  * 추천 테이블 표준 설명 (AI 라우팅 최적화):",
+                f"    \"{t.get('suggested_table_desc', 'Operational dataset')}\"",
+                "  * 누락 컬럼 표준 설명 및 제약조건 자동 보강 내역:",
             ])
-            for col, desc in t.get("enriched_columns", {}).items():
+            for col, desc in t.get("suggested_col_descs", {}).items():
                 lines.append(f"    - {col:<20}: {desc}")
             lines.extend([
-                f"  * Dataplex 비즈니스 용어집(Glossary) 계산 공식 매핑:",
+                "  * Dataplex 비즈니스 용어집(Glossary) 계산 공식 매핑:",
                 f"    - 공식: {t.get('glossary_formula', 'N/A')}",
             ])
     else:
@@ -620,6 +685,31 @@ def build_markdown_report(
         "python diagnose.py",
         "```",
         "",
+        "---",
+        "",
+        "## 3. 실무자 즉각 조치 가이드 및 처방전",
+        "",
+        "### 1단계: BigQuery 테이블 및 컬럼 설명 반영 (`--apply`)",
+        "보강 계획에서 도출된 표준 비즈니스 설명과 유효 범위 제약조건을 대상 BigQuery 테이블 스키마에 원자적으로 패치한다:",
+        "```bash",
+        "python diagnose.py --project=[PROJECT_ID] --dataset=[DATASET_ID] --enrich --apply",
+        "```",
+        "",
+        "### 2단계: Dataplex Data Profile 스캔 등록 및 카탈로그 통계 게시",
+        "통계 메타데이터가 미수집된 테이블은 Dataplex Data Profile 스캔 작업을 생성하여 최솟값, 최댓값, 고유값 비율을 게시한다:",
+        "```bash",
+        "gcloud dataplex datascans create data-profile scan-[TABLE_ID] \\",
+        "    --location=asia-northeast3 \\",
+        "    --data-source-entity=projects/[PROJECT_ID]/locations/asia-northeast3/lakes/[LAKE]/zones/[ZONE]/entities/[TABLE_ID] \\",
+        "    --labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-semantic-enricher,env=sample",
+        "```",
+        "",
+        "### 3단계: Knowledge Catalog 비즈니스 용어집(Glossary) 배포",
+        "자동 생성된 `dataplex_glossary_terms.yaml` 매니페스트를 기반으로 Dataplex Knowledge Catalog에 비즈니스 공식(Formula)을 등록하고 테이블과 바인딩한다.",
+        "",
+        "### 4단계: 4대 표준 라벨 기반 거버넌스 준수",
+        "사내 FinOps 비용 추적 및 자원 식별을 위해 데이터셋 및 연관 인프라 생성 시 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-semantic-enricher,env=sample`)을 누락 없이 주입한다.",
+        "",
     ])
 
     return "\n".join(lines)
@@ -627,6 +717,9 @@ def build_markdown_report(
 
 def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
     """리포트 내용을 파일에 저장한다."""
+    if not os.path.isabs(output_path):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, output_path)
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
@@ -715,7 +808,15 @@ def main() -> None:
         save_markdown_report(report_md, "report.md")
         return
 
-    inspect_live_dataset(client, project_id, dataset_id, location, args.enrich, args.apply)
+    inspect_live_dataset(
+        client=client,
+        project_id=project_id,
+        dataset_id=dataset_id,
+        location=location,
+        enrich=args.enrich,
+        apply=args.apply,
+        model_name=args.model,
+    )
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드
 
-빅쿼리(BigQuery) Data Agent(제미나이 인 빅쿼리(Gemini in BigQuery), 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, 데이터플렉스(Dataplex) 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다. (As of 2026-09-10)
+빅쿼리(BigQuery) Data Agent(제미나이 인 빅쿼리(Gemini in BigQuery), 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, 데이터플렉스(Dataplex) 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#Accuracy`, `#GenAI`, `#Governance`, `#Performance`  
@@ -95,13 +95,13 @@ python diagnose.py --dry-run --enrich
 cp .env.example .env
 # vi .env (PROJECT_ID, DATASET_ID 입력)
 
-# 2. 데이터셋 준비도 진단 실행
+# 2. 데이터셋 준비도 진단 실행 (기본 리전: asia-northeast3)
 python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID
 
-# 3. 시맨틱 메타데이터 지능형 보강 계획 수립 및 템플릿 생성
-python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich
+# 3. 시맨틱 메타데이터 지능형 보강 계획 수립 및 템플릿 생성 (Gemini 3.8 Flash 활용)
+python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich --model=gemini-3.8-flash
 
-# 4. 생성된 메타데이터를 실제 BigQuery 테이블 스키마에 영구 반영
+# 4. 생성된 메타데이터를 실제 BigQuery 테이블 스키마에 영구 반영 (4대 표준 라벨 자동 주입)
 python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich --apply
 ```
 
@@ -164,6 +164,13 @@ Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (En
 4. **(선택 사항) 타 클라우드 스토리지 연동 시 Cross-Cloud Caching 활성화**:
    - BigQuery Omni 및 보더리스 레이크하우스(Borderless Lakehouse) 환경에서 타 클라우드(AWS S3, Azure Blob)의 객체를 쿼리하는 경우, Cross-Cloud Caching을 활성화하여 전송(Egress) 비용을 줄이고 반복 NL2SQL 쿼리 지연 시간을 최대 50% 단축한다.
    - Cross-Cloud Caching 안내 ( https://cloud.google.com/blog/products/data-analytics/borderless-lakehouse-cross-cloud-caching-and-connections )
+5. **GCP 리소스 생성 시 4대 필수 표준 라벨링 준수**:
+   - 사내 거버넌스 및 FinOps 비용 추적을 위해 데이터셋, 테이블, Dataplex 데이터 스캔 생성 시 4대 표준 라벨을 필수로 주입한다:
+     - `managed-by`: `google-cloud-0-to-1`
+     - `scenario`: `bigquery-data-agent-semantic-enricher`
+     - `env`: `sample`
+     - `created-by`: `customer-engineer`
+   - gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-semantic-enricher,env=sample`
 
 ---
 

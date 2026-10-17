@@ -17,12 +17,12 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: bigquery-data-agent-semantic-enricher
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-semantic-enricher: BigQuery Data Agent(Gemini in BigQuery, 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오...
+  Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-semantic-enricher: BigQuery Data Agent(Gemini in BigQuery, 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, Dataplex 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다.
 ---
 
 # BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드 (Autopilot & Hands-on Guide)
 
-본 스킬은 고객사 엔지니어와 실무자가 `bigquery-data-agent-semantic-enricher` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 엔지니어와 실무자가 `bigquery-data-agent-semantic-enricher` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#Accuracy`, `#GenAI`, `#Governance`, `#Performance`  
@@ -55,6 +55,7 @@ flowchart TD
    ```
 2. `samples/bigquery-data-agent-semantic-enricher/.env.example`을 참조하여 `samples/bigquery-data-agent-semantic-enricher/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/bigquery.dataEditor, roles/bigquery.metadataViewer, roles/datacatalog.viewer, roles/dataplex.viewer`) 충족 여부를 안내한다.
+4. 사내 FinOps 거버넌스 및 자원 추적을 위해 리소스 생성/패치 시 4대 필수 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-semantic-enricher,env=sample`)이 자동 주입됨을 설명한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:

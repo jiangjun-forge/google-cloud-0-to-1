@@ -11,7 +11,7 @@ All contents, designs, and code examples are subject to change, modification, or
 -->
 
 # 비즈니스 요구 사항 명세서 (BRD: Business Requirements Document)
-## 프로젝트명: BigQuery Data Agent Semantic Metadata Enricher
+## 프로젝트명: BigQuery Data Agent Semantic Metadata Enricher (As of 2026-10-17)
 
 ---
 
@@ -72,6 +72,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-07** | 용어집 템플릿화 | 핵심 계산 수식(예: `SAFE_DIVIDE`, `subtotal - discount + tax`)을 포함한 Knowledge Catalog 배포용 YAML 파일을 자동 생성하여야 한다. |
 | **BR-08** | 스키마 패치 반영 | `--apply` 플래그 지정 시, 기존 데이터를 손상시키지 않고 BigQuery 테이블/컬럼 메타데이터만을 안전하게 패치(`client.update_table`)하여야 한다. |
 | **BR-09** | 가상 모의 실행 | 실제 GCP 자격 증명이나 BigQuery 데이터셋이 없는 환경에서도 결정론적 샘플 데이터로 진단 및 보강 효과를 시연할 수 있어야 한다. |
+| **BR-10** | 자원 거버넌스 라벨링 | 메타데이터 패치 및 인프라 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=bigquery-data-agent-semantic-enricher`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여 FinOps 비용 추적성을 보장하여야 한다. |
 
 ---
 
