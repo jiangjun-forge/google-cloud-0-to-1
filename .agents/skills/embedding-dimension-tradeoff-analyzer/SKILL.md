@@ -17,12 +17,12 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: embedding-dimension-tradeoff-analyzer
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for embedding-dimension-tradeoff-analyzer: Vertex AI 및 Gemini API 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 ...
+  Autopilot, hands-on diagnostics, and self-healing for embedding-dimension-tradeoff-analyzer: Vertex AI 및 Gemini API 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터 또는 표본을 대상으로 차원 축소 시 인덱스 용량 절감량과 검색 정확도 손실률 트레이드오프를 1분 만에 비교 분석하는 도구다.
 ---
 
-# 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 (Autopilot & Hands-on Guide)
+# 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 (Autopilot & Hands-on Guide) (As of 2026-10-17)
 
-본 스킬은 고객사 엔지니어와 실무자가 `embedding-dimension-tradeoff-analyzer` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 클라우드 엔지니어와 실무자가 `embedding-dimension-tradeoff-analyzer` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
@@ -55,6 +55,7 @@ flowchart TD
    ```
 2. `samples/embedding-dimension-tradeoff-analyzer/.env.example`을 참조하여 `samples/embedding-dimension-tradeoff-analyzer/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/aiplatform.user, roles/bigquery.jobUser`) 충족 여부를 안내한다.
+4. 신규 리소스 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1,scenario=embedding-dimension-tradeoff-analyzer,env=sample,created-by=customer-engineer`)을 누락 없이 적용하도록 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:

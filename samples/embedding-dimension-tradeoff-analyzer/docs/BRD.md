@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기
+# 비즈니스 요구 사항 명세서 (BRD): 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 (As of 2026-10-17)
 
 ## 1. 배경 및 목적
 버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다.
@@ -27,6 +27,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-02** | **표준화된 자동 진단 체계 구축** | 수동 콘솔 점검에 따른 인적 오류를 배제하고 분석 시간을 단축하여야 한다. | 필수 (P0) |
 | **BR-03** | **가상 실행(Dry-run) 기반 무중단 사전 검증** | 실제 GCP 과금이나 변경 발생 전 가상 실행(--dry-run)으로 안전하게 정책을 검증할 수 있어야 한다. | 필수 (P0) |
 | **BR-04** | **실무자 조치 가이드 및 자원 정리(Teardown) 안내** | 비개발 직군과 운영 실무자가 즉시 참조할 수 있는 콘솔 조치 경로와 테스트 리소스 정리 절차를 제공하여야 한다. | 권장 (P1) |
+| **BR-05** | **자원 거버넌스 라벨링 표준 준수** | Vertex AI Vector Search 인덱스 및 관련 BigQuery 데이터셋 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=embedding-dimension-tradeoff-analyzer`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여 FinOps 비용 추적성을 보장하여야 한다. | 필수 (P0) |
 
 ---
 

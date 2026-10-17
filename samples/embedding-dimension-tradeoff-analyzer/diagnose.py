@@ -476,6 +476,10 @@ def print_multi_dimension_report(
     print("       contents='사내 문의 및 검색 문서 텍스트',")
     print(f"       config={{'output_dimensionality': {smallest['dimension']}}}")
     print("   )")
+    print()
+    print("4. 사내 거버넌스 4대 필수 표준 라벨링 준수:")
+    print("   Vector Search 인덱스 및 BigQuery 데이터셋 생성 시 4대 표준 라벨을 필수로 주입한다:")
+    print("   --labels=managed-by=google-cloud-0-to-1,scenario=embedding-dimension-tradeoff-analyzer,env=sample,created-by=customer-engineer")
     print("=" * 80)
 
 
@@ -597,6 +601,10 @@ def build_markdown_report(
         "       contents='사내 문의 및 검색 문서 텍스트',",
         f"       config={{'output_dimensionality': {smallest['dimension']}}}",
         "   )",
+        "",
+        "4. 사내 거버넌스 4대 필수 표준 라벨링 준수:",
+        "   Vector Search 인덱스 및 BigQuery 데이터셋 생성 시 4대 표준 라벨을 필수로 주입한다:",
+        "   --labels=managed-by=google-cloud-0-to-1,scenario=embedding-dimension-tradeoff-analyzer,env=sample,created-by=customer-engineer",
         "=" * 80,
         "```",
         "",
@@ -610,6 +618,22 @@ def build_markdown_report(
         "```bash",
         "python diagnose.py",
         "```",
+        "",
+        "---",
+        "",
+        "## 3. 실무자 즉각 조치 가이드 및 처방전",
+        "",
+        "### 1단계: 사내 실데이터 기반 최적 차원 파라미터 적용",
+        f"- `google-genai` 최신 통일 SDK에서 `output_dimensionality` 매개변수를 결정된 차원({smallest['dimension']}d 등)으로 지정하여 호출한다.",
+        "- Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )",
+        "",
+        "### 2단계: Vertex AI Vector Search 및 BigQuery 벡터 검색 인덱스 스키마 반영",
+        "- 인덱스 배포 시 결정된 축소 차원으로 노드를 다운사이징하여 RAM 및 인프라 비용을 최대 83% 이상 절감한다.",
+        "- Vertex AI Vector Search 콘솔 ( https://console.cloud.google.com/vertex-ai/matching-engine/indexes )",
+        "- Vertex AI Vector Search 개요 ( https://cloud.google.com/vertex-ai/docs/vector-search/overview )",
+        "",
+        "### 3단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수",
+        "Vector Search 인덱스 및 관련 BigQuery 데이터셋 생성 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=embedding-dimension-tradeoff-analyzer,env=sample,created-by=customer-engineer`)을 누락 없이 주입한다.",
         "",
     ])
 
@@ -675,7 +699,9 @@ def main() -> None:
         is_dry_run=args.dry_run,
         eval_results=eval_results,
     )
-    save_markdown_report(report_md, "report.md")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_path = os.path.join(script_dir, "report.md")
+    save_markdown_report(report_md, report_path)
 
 
 if __name__ == "__main__":

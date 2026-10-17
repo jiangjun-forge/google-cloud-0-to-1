@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기
 
-버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다. (As of 2026-09-09)
+버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(text-embedding-005)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
@@ -180,6 +180,10 @@ python diagnose.py --sample-count=1000 -d 768,512,256
        contents='사내 문의 및 검색 문서 텍스트',
        config={'output_dimensionality': 128}
    )
+
+4. 사내 거버넌스 4대 필수 표준 라벨링 준수:
+   Vector Search 인덱스 및 BigQuery 데이터셋 생성 시 4대 표준 라벨을 필수로 주입한다:
+   --labels=managed-by=google-cloud-0-to-1,scenario=embedding-dimension-tradeoff-analyzer,env=sample,created-by=customer-engineer
 ================================================================================
 ```
 
@@ -187,16 +191,24 @@ python diagnose.py --sample-count=1000 -d 768,512,256
 
 ## 6. 결과 확인 후 즉각 조치 가이드
 
-1. **사내 실데이터 기반 최적 차원 파라미터 적용**:
-   - `google-genai` SDK를 통해 `output_dimensionality` 매개변수를 결정된 차원(예: 128 또는 256)으로 지정하여 호출한다.
-   - Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )
-2. **BigQuery 벡터 검색 및 Vector Search 인덱스 스키마 반영**:
-   - 축소된 차원의 벡터를 저장할 경우 테이블 용량 및 쿼리당 스캔 바이트가 대폭 절감된다.
-   - Vector Search 인덱스 생성 시 대상 차원(`dimension`)을 결정된 축소 차원으로 지정한다.
-3. **Vertex AI Vector Search 인덱스 배포**:
-   - Vertex AI Vector Search 콘솔 ( https://console.cloud.google.com/vertex-ai/matching-engine/indexes )
-   - Vertex AI Vector Search 개요 ( https://cloud.google.com/vertex-ai/docs/vector-search/overview )
-   - 차원 축소에 따라 인덱스 노드 머신 유형을 다운사이징하여 인프라 비용을 절감한다.
+### 1단계: 사내 실데이터 기반 최적 차원 파라미터 적용
+- `google-genai` SDK를 통해 `output_dimensionality` 매개변수를 결정된 차원(예: 128 또는 256)으로 지정하여 호출한다.
+- Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )
+
+### 2단계: BigQuery 벡터 검색 및 Vector Search 인덱스 스키마 반영
+- 축소된 차원의 벡터를 저장할 경우 테이블 용량 및 쿼리당 스캔 바이트가 대폭 절감된다.
+- Vector Search 인덱스 생성 시 대상 차원(`dimension`)을 결정된 축소 차원으로 지정한다.
+- Vertex AI Vector Search 콘솔 ( https://console.cloud.google.com/vertex-ai/matching-engine/indexes )
+- Vertex AI Vector Search 개요 ( https://cloud.google.com/vertex-ai/docs/vector-search/overview )
+- 차원 축소에 따라 인덱스 노드 머신 유형을 다운사이징하여 인프라 비용을 절감한다.
+
+### 3단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+- Vector Search 인덱스 및 관련 BigQuery 데이터셋 생성/배포 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨을 필수로 주입한다:
+  - `managed-by`: `google-cloud-0-to-1`
+  - `scenario`: `embedding-dimension-tradeoff-analyzer`
+  - `env`: `sample`
+  - `created-by`: `customer-engineer`
+- gcloud CLI 예시: `gcloud ai indexes create ... --labels=managed-by=google-cloud-0-to-1,scenario=embedding-dimension-tradeoff-analyzer,env=sample,created-by=customer-engineer`
 
 ---
 
