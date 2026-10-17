@@ -1,0 +1,8 @@
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+google-genai>=1.0.0
+google-cloud-discoveryengine>=0.13.0
+google-cloud-secret-manager>=2.16.0
+pyyaml>=6.0.0
+pydantic>=2.0.0

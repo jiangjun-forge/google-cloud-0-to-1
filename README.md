@@ -24,10 +24,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ```text
 .
 ├── .agents/                                    # Antigravity(agy) 및 Jetski AI 에이전트 실습 스킬
-│   └── skills/                                 # 42개 시나리오별 Autopilot 및 핸즈온 가이드
+│   └── skills/                                 # 43개 시나리오별 Autopilot 및 핸즈온 가이드
 ├── LICENSE                                     # Apache-2.0 오픈소스 라이선스
 ├── README.md                                   # 프로젝트 전체 개요 및 아키텍처 안내서
-└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (43개)
+└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (44개)
     ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
     ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
     ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
@@ -49,6 +49,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gemini-enterprise-governance-guard/     # 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단
     ├── gemini-enterprise-latency-profiler/     # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
     ├── gemini-enterprise-overage-guard/        # Overage 과금 방어, AI Studio API 키 차단 및 Billing RBAC 가드
+    ├── gemini-enterprise-skill-factory/        # 자율형 사내 스킬 팩토리 및 OpenAPI 도구 레지스트리 배포
     ├── gemini-enterprise-usage-by-account/     # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
     ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
     ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
@@ -100,7 +101,7 @@ agy --version
 ```
 
 ### 2.3 에이전트 가동 및 미니 프로젝트 자율 실행 예시
-저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 42개 실습 스킬을 에이전트가 자동으로 로드한다:
+저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 43개 실습 스킬을 에이전트가 자동으로 로드한다:
 ```bash
 # 저장소 루트에서 Antigravity CLI 가동 (스킬 자동 인식)
 agy
