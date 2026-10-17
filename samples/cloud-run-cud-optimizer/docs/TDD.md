@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석
+# 기술 상세 설계서 (TDD): Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석 (As of 2026-10-17)
 
 ## 1. 시스템 아키텍처 및 동작 원리
 본 도구는 별도의 쉘 래퍼 스크립트에 의존하지 않고 크로스 플랫폼에서 호환되는 파이썬 표준 CLI(`diagnose.py`) 단일 실행 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
@@ -35,3 +35,4 @@ All contents, designs, and code examples are subject to change, modification, or
 | **NFR-01** | **최소 IAM 권한 준수** | 진단에 필요한 최소 권한(`roles/billing.viewer, roles/monitoring.viewer, roles/run.viewer`)만을 요구하며, 불필요한 쓰기 권한을 강제하지 않는다. |
 | **NFR-02** | **비대화형 환경 호환성 (CI/CD Ready)** | `sys.stdin.isatty()` 검증을 통해 백그라운드 태스크나 CI/CD 파이프라인 실행 시 입력 대기(Hang) 없이 안전하게 기본 후보를 채택한다. |
 | **NFR-03** | **민감 정보 비식별화 및 보안 규약** | 소스 코드 및 문서 내에 실제 프로젝트 ID나 개인 식별 정보(PII)를 하드코딩하지 않으며, 모든 외부 참조 링크는 Bare URL 괄호 병기 원칙을 준수한다. |
+| **NFR-04** | **자원 거버넌스 및 표준 라벨링 준수** | 생성되는 모든 GCP 자원에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=cloud-run-cud-optimizer`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 적용하여 자원 추적성과 비용 배분을 보장한다. |

@@ -17,12 +17,12 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: cloud-run-cud-optimizer
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for cloud-run-cud-optimizer: 서버리스 Cloud Run 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough) 기반의 최적...
+  Autopilot, hands-on diagnostics, and self-healing for cloud-run-cud-optimizer: 서버리스 Cloud Run 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough) 기반의 최적 Compute Flexible CUD 약정액과 사전 리소스 최적화 가이드를 처방하는 진단 도구다.
 ---
 
-# Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석 (Autopilot & Hands-on Guide)
+# Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석 (Autopilot & Hands-on Guide) (As of 2026-10-17)
 
-본 스킬은 고객사 엔지니어와 실무자가 `cloud-run-cud-optimizer` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 클라우드 엔지니어와 실무자가 `cloud-run-cud-optimizer` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
@@ -55,6 +55,7 @@ flowchart TD
    ```
 2. `samples/cloud-run-cud-optimizer/.env.example`을 참조하여 `samples/cloud-run-cud-optimizer/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/billing.viewer, roles/monitoring.viewer, roles/run.viewer`) 충족 여부를 안내한다.
+4. 신규 리소스 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1,scenario=cloud-run-cud-optimizer,env=sample,created-by=customer-engineer`)을 누락 없이 적용하도록 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:

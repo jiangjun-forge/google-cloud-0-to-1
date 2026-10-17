@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석
 
-서버리스 클라우드 런(Cloud Run) 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough) 기반의 최적 Compute Flexible CUD 약정액과 사전 리소스 최적화 가이드를 처방한다. (As of 2026-09-09)
+서버리스 클라우드 런(Cloud Run) 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough) 기반의 최적 Compute Flexible CUD 약정액과 사전 리소스 최적화 가이드를 처방한다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`  
@@ -93,6 +93,16 @@ python diagnose.py --billing-account-id 012345-6789AB-CDEF01 --project-id demo-p
 ### 공식 가이드 및 콘솔 링크
 - 약정 사용 할인(CUD) 개요 및 플렉시블 약정 ( https://cloud.google.com/docs/cuds )
 - Cloud Run 비용 최적화 권장사항 ( https://docs.cloud.google.com/run/docs/tips/services-cost-optimization )
+- Google Cloud 콘솔 약정 구매 ( https://console.cloud.google.com/billing/commitments )
+- Google Cloud 콘솔 Cloud Run 서비스 목록 ( https://console.cloud.google.com/run )
+
+### 3단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+- Cloud Run 서비스 및 관련 클라우드 인프라 생성/배포 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨을 필수로 주입한다:
+  - `managed-by`: `google-cloud-0-to-1`
+  - `scenario`: `cloud-run-cud-optimizer`
+  - `env`: `sample`
+  - `created-by`: `customer-engineer`
+- gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-cud-optimizer,env=sample,created-by=customer-engineer`
 
 ---
 

@@ -299,6 +299,24 @@ def build_markdown_report(report: Dict[str, Any], is_dry_run: bool) -> str:
         "python diagnose.py",
         "```",
         "",
+        "---",
+        "",
+        "## 3. 실무자 즉각 조치 가이드 및 처방전",
+        "",
+        "### 1단계: Cloud Run 서비스 사전 최적화 선행",
+        "약정 전 불필요한 상시 인스턴스 지출을 제거하여 정밀한 바닥선(Trough)을 도출한다:",
+        "1. **min-instances 0 조정**: 개발/스테이징 및 비핵심 경로 서비스는 유휴 인스턴스를 0으로 축소한다.",
+        "2. **요청 기반 CPU 할당**: 상시 CPU 할당(Always allocated) 대신 요청 처리 중에만 할당(Request-only)을 적용한다.",
+        "3. **동시성(Concurrency) 튜닝**: 인스턴스당 동시 요청 수를 애플리케이션 특성에 맞게 상향하여 컨테이너 남발을 방지한다.",
+        "",
+        "### 2단계: Compute Flexible CUD 구매",
+        "1. 콘솔의 과소 약정 추천액 대신 본 진단 리포트에서 도출된 최적 권장 약정액을 적용한다.",
+        "2. 특정 서비스에 묶이지 않고 Cloud Run, GKE, Compute Engine에 공통 적용되는 **Compute Flexible CUD**를 선택한다.",
+        "3. 구글 클라우드 콘솔 약정 구매 경로 ( https://console.cloud.google.com/billing/commitments )",
+        "",
+        "### 3단계: 사내 거버넌스 4대 필수 표준 라벨링 준수",
+        "Cloud Run 서비스 생성 및 수정 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-cud-optimizer,env=sample,created-by=customer-engineer`)을 누락 없이 주입한다.",
+        "",
     ])
 
     return "\n".join(lines)
@@ -306,6 +324,9 @@ def build_markdown_report(report: Dict[str, Any], is_dry_run: bool) -> str:
 
 def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
     """리포트 내용을 파일에 저장한다."""
+    if not os.path.isabs(output_path):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, output_path)
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
