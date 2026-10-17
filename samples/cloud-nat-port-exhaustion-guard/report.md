@@ -76,3 +76,40 @@
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 실무자 즉각 조치 가이드 및 처방전
+
+### 1단계: Cloud NAT 최소 할당 포트(min-ports-per-vm) 즉시 상향
+트래픽 급증(Burst) 시 DPA 확장 지연(최대 240초) 동안 발생하는 `OUT_OF_RESOURCES` 패킷 유실을 방어하기 위해 최소 포트를 상향 조정한다:
+```bash
+gcloud compute routers nats update nat-gw-prod-main \
+  --router=cr-prod-asia-northeast3 \
+  --region=asia-northeast3 \
+  --enable-dynamic-port-allocation \
+  --min-ports-per-vm=256 \
+  --max-ports-per-vm=2048
+```
+
+### 2단계: 클라이언트 OS 커널 TCP SYN 재시도 횟수 조정 (GKE 노드 / VM)
+DPA가 새 포트 블록을 바인딩하는 동안 클라이언트가 성급하게 연결을 포기하지 않도록 재시도 횟수를 상향한다:
+```bash
+# 임시 반영
+sudo sysctl -w net.ipv4.tcp_syn_retries=6
+
+# 영구 반영 (/etc/sysctl.d/99-gcp-nat.conf)
+echo 'net.ipv4.tcp_syn_retries = 6' | sudo tee -a /etc/sysctl.d/99-gcp-nat.conf && sudo sysctl -p
+```
+
+### 3단계: TCP 트랜지토리 유휴 타임아웃 단축
+비정상 종료되거나 초기화된 TCP 연결이 포트를 불필요하게 오래 점유하지 않도록 타임아웃을 단축한다:
+```bash
+gcloud compute routers nats update nat-gw-prod-main \
+  --router=cr-prod-asia-northeast3 \
+  --region=asia-northeast3 \
+  --tcp-transitory-idle-timeout-sec=15
+```
+
+### 4단계: 사내 거버넌스 4대 필수 표준 라벨링 준수
+Cloud Router 및 NAT 인프라 생성 시 FinOps 비용 추적 및 자원 식별을 위해 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=cloud-nat-port-exhaustion-guard,env=sample`)을 누락 없이 주입한다.

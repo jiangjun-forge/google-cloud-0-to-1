@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기
 
-구글 쿠버네티스 엔진(GKE, Google Kubernetes Engine) 클러스터 및 컴퓨트 엔진(Compute Engine) 환경에서 외부 API 호출 시 발생하는 간헐적 타임아웃 장애의 근본 원인을 규명하기 위해, 클라우드 NAT(Cloud NAT)의 동적 포트 할당(DPA) 확장 지연과 자원 고갈 패킷 드롭(OUT_OF_RESOURCES)을 1분 만에 교차 진단하고 최적의 최소 할당 포트와 커널 재시도 파라미터를 도출하는 도구다. (As of 2026-09-10)
+구글 쿠버네티스 엔진(GKE, Google Kubernetes Engine) 클러스터 및 컴퓨트 엔진(Compute Engine) 환경에서 외부 API 호출 시 발생하는 간헐적 타임아웃 장애의 근본 원인을 규명하기 위해, 클라우드 NAT(Cloud NAT)의 동적 포트 할당(DPA) 확장 지연과 자원 고갈 패킷 드롭(OUT_OF_RESOURCES)을 1분 만에 교차 진단하고 최적의 최소 할당 포트와 커널 재시도 파라미터를 도출하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -130,10 +130,19 @@ Cloud NAT는 외부 공인 IP가 없는 사설 서브넷의 가상 머신이나 
    sudo sysctl -p /etc/sysctl.d/99-gcp-nat.conf
    ```
 
-3. **관련 공식 기술 문서**:
+3. **관련 공식 기술 문서 및 콘솔 경로**:
    - Cloud NAT 포트 할당 개요 ( https://cloud.google.com/nat/docs/ports-and-addresses )
    - Cloud NAT 구성 최적화 가이드 ( https://cloud.google.com/nat/docs/tune-nat-configuration )
    - Cloud NAT 모니터링 지표 참조 ( https://cloud.google.com/nat/docs/monitoring )
+   - Cloud NAT 콘솔 게이트웨이 목록 ( https://console.cloud.google.com/net-services/nat/list )
+
+4. **GCP 리소스 생성 시 4대 필수 표준 라벨링 준수**:
+   - 사내 거버넌스 및 FinOps 비용 추적을 위해 Cloud Router, Cloud NAT 게이트웨이 등 신규 네트워크 리소스 생성 시 4대 표준 라벨을 필수로 주입한다:
+     - `managed-by`: `google-cloud-0-to-1`
+     - `scenario`: `cloud-nat-port-exhaustion-guard`
+     - `env`: `sample`
+     - `created-by`: `customer-engineer`
+   - gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=cloud-nat-port-exhaustion-guard,env=sample`
 
 ---
 

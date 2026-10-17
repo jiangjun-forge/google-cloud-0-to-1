@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기
+# 비즈니스 요구 사항 명세서 (BRD): Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기 (As of 2026-10-17)
 
 ## 1. 배경 및 목적
 GKE 클러스터 및 Compute Engine 환경에서 외부 API 호출 시 발생하는 간헐적 타임아웃 장애의 근본 원인을 규명하기 위해, Cloud NAT의 동적 포트 할당(DPA) 확장 지연과 자원 고갈 패킷 드롭(OUT_OF_RESOURCES)을 1분 만에 교차 진단하고 최적의 최소 할당 포트와 커널 재시도 파라미터를 도출하는 도구다.
@@ -27,6 +27,7 @@ GKE 클러스터 및 Compute Engine 환경에서 외부 API 호출 시 발생하
 | **BR-02** | **표준화된 자동 진단 체계 구축** | 수동 콘솔 점검에 따른 인적 오류를 배제하고 장애 복구 지연 시간을 단축하여야 한다. | 필수 (P0) |
 | **BR-03** | **가상 실행(Dry-run) 기반 무중단 사전 검증** | 실제 GCP 과금이나 변경 발생 전 가상 실행(--dry-run)으로 안전하게 정책을 검증할 수 있어야 한다. | 필수 (P0) |
 | **BR-04** | **실무자 조치 가이드 및 자원 정리(Teardown) 안내** | 비개발 직군과 운영 실무자가 즉시 참조할 수 있는 콘솔 조치 경로와 테스트 리소스 정리 절차를 제공하여야 한다. | 권장 (P1) |
+| **BR-05** | **자원 거버넌스 라벨링 표준 준수** | 네트워크 인프라 리소스 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=cloud-nat-port-exhaustion-guard`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여 FinOps 비용 추적성을 보장하여야 한다. | 필수 (P0) |
 
 ---
 
