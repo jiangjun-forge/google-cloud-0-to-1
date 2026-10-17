@@ -47,3 +47,30 @@ Workforce Identity SSO 인증        CRITICAL     WIF 풀 속성 매핑에 필�
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 사내 거버넌스 4대 필수 표준 라벨링
+
+Workforce Identity 풀 공급업체 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-governance-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 4. 콘솔 링크 조치 가이드
+
+- **제미나이 엔터프라이즈 스킬 및 에이전트 관리 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/manage-skills )
+- **구글 클라우드(Google Cloud) Workforce Identity Federation 구성 가이드**: ( https://cloud.google.com/iam/docs/workforce-identity-federation )
+- **구글 클라우드 콘솔 Workforce Identity 풀**: ( https://console.cloud.google.com/iam-admin/workforce-pools )
+
+---
+
+## 5. 자원 정리 안내 (Teardown)
+
+본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하지 않는다. 테스트 목적으로 생성한 Workforce Identity 풀이나 공급업체 설정은 다음 명령어로 삭제한다:
+```bash
+gcloud iam workforce-pools delete [WORKFORCE_POOL_ID] --location=global --quiet
+```

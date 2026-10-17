@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이 엔터프라이즈(Gemini Enterprise) 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기 (`gemini-enterprise-governance-guard`)
 
-제미나이 엔터프라이즈 환경에서 외부 공개 에이전트 마켓플레이스 접근 차단, 사내 승인 커스텀 에이전트 강제 정책, 미승인 스킬 체이닝 위험 및 Microsoft Entra ID(Workforce Identity Federation) SSO 400 인증 오류를 1분 만에 자동 진단하고 복구 처방을 제공하는 도구다. (As of 2026-09-09)
+제미나이 엔터프라이즈 환경에서 외부 공개 에이전트 마켓플레이스 접근 차단, 사내 승인 커스텀 에이전트 강제 정책, 미승인 스킬 체이닝 위험 및 Microsoft Entra ID(Workforce Identity Federation) SSO 400 인증 오류를 1분 만에 자동 진단하고 복구 처방을 제공하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Security`  
@@ -86,9 +86,6 @@ python diagnose.py --dry-run --json
 ---
 
 ## 5. 결과 확인 후 즉각 조치 가이드
-- 제미나이 엔터프라이즈 스킬 및 에이전트 관리 가이드 ( https://docs.cloud.google.com/gemini/enterprise/docs/manage-skills )
-- 구글 클라우드(Google Cloud) Workforce Identity Federation 구성 가이드 ( https://cloud.google.com/iam/docs/workforce-identity-federation )
-- 구글 클라우드 콘솔 Workforce Identity 풀 ( https://console.cloud.google.com/iam-admin/workforce-pools )
 
 ### 1. 마켓플레이스 조달 요청 비활성화 및 승인 절차 유지
 Gemini Enterprise 콘솔 -> [에이전트] -> [조달 및 통합 요청] 화면에서 구매팀 담당자 이메일을 비워두거나, 사내 승인된 Agent Registry만 노출되도록 앱 정책을 고정한다.
@@ -108,7 +105,25 @@ gcloud iam workforce-pools providers update-oidc [PROVIDER_ID] \
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+Workforce Identity 풀 공급업체 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-governance-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
+
+- **제미나이 엔터프라이즈 스킬 및 에이전트 관리 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/manage-skills )
+- **구글 클라우드(Google Cloud) Workforce Identity Federation 구성 가이드**: ( https://cloud.google.com/iam/docs/workforce-identity-federation )
+- **구글 클라우드 콘솔 Workforce Identity 풀**: ( https://console.cloud.google.com/iam-admin/workforce-pools )
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하지 않는다. 테스트 목적으로 생성한 Workforce Identity 풀이나 공급업체 설정은 다음 명령어로 삭제한다:
 ```bash
 gcloud iam workforce-pools delete [WORKFORCE_POOL_ID] --location=global --quiet
