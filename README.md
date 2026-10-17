@@ -50,7 +50,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gemini-enterprise-latency-profiler/     # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
     ├── gemini-enterprise-overage-guard/        # Overage 과금 방어, AI Studio API 키 차단 및 Billing RBAC 가드
     ├── gemini-enterprise-skill-factory/        # 자율형 사내 스킬 팩토리 및 OpenAPI 도구 레지스트리 배포
-    ├── gemini-enterprise-usage-by-account/     # Model Armor 살균 감사 로그 기반 엔터프라이즈 토큰 추정
+    ├── gemini-enterprise-usage-by-account/     # GE App 공식 로깅 안내 및 Model Armor 살균 감사 로그 기반 토큰 추정
     ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
     ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
     ├── gemini-request-response-logging/        # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재 및 토큰 분석
