@@ -111,7 +111,7 @@ python diagnose.py --publish
 ```
 
 ### 4.4. 최신 Agents CLI 기반 배포 및 게시 (대안)
-구글 공식 최신 **Agents CLI (`google-agents-cli`)** 도구를 활용하여 원격 Agent Runtime에 배포하고 사내 Gemini Enterprise app 갤러리에 원클릭 게시할 수 있다:
+구글 공식 최신 **Agents CLI (`google-agents-cli`)** 도구를 활용하여 원격 Agent Runtime에 직결 배포하고 사내 Gemini Enterprise app 갤러리에 원클릭 게시할 수 있다:
 ```bash
 # Agent Runtime 배포
 agents-cli deploy --project=${PROJECT_ID} --region=us-central1
@@ -119,7 +119,7 @@ agents-cli deploy --project=${PROJECT_ID} --region=us-central1
 # Gemini Enterprise app 사내 갤러리 등록
 agents-cli publish gemini-enterprise \
   --gemini-enterprise-app-id "projects/${PROJECT_NUMBER}/locations/global/collections/default_collection/engines/${GE_APP_ID}" \
-  --display-name "Agent Factory" \
+  --display-name "Gemini Enterprise Agent Factory (사내 노코드 에이전트 팩토리)" \
   --description "비개발자 임직원용 대화형 노코드 AI 에이전트 팩토리"
 ```
 

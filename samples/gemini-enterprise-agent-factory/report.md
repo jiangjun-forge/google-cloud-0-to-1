@@ -1,6 +1,6 @@
 # Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 진단 및 배포 보고서
 
-- **실행 일시**: 2026-10-17 01:17:09 UTC
+- **실행 일시**: 2026-10-17 04:51:28 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **대행 서비스 계정**: `ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`
@@ -21,7 +21,7 @@
 
 ## 2. 배포된 메타 에이전트 명세 (@에이전트 팩토리)
 
-- **에이전트 명칭**: `에이전트 팩토리 (Agent Factory)`
+- **에이전트 명칭**: `Gemini Enterprise Agent Factory (사내 노코드 에이전트 팩토리)`
 - **역할 정의**: 사내 비개발자 임직원을 위한 대화형 자율 노코드 에이전트 생성 및 Gemini Enterprise app 직결 배포 비서
 - **등록 대상 Gemini Enterprise app**: `https://gemini.google.com/app/sample-ge-app-id`
 - **내장 도구(Tools)**:
