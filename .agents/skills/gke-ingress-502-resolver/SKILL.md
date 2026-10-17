@@ -17,12 +17,12 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gke-ingress-502-resolver
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gke-ingress-502-resolver: GKE 클러스터의 파드가 정상 기동 중임에도 외부 또는 내부 HTTP(S) 로드 밸런서에서 간헐적 또는 전면적으로 반환되는 502 Bad Gateway 오류의 4대 원인(헬스 체크 방화벽 차단, 프로브 경로 불...
+  Autopilot, hands-on diagnostics, and self-healing for gke-ingress-502-resolver: GKE 클러스터의 파드가 정상 기동 중임에도 외부 또는 내부 HTTP(S) 로드 밸런서에서 간헐적 또는 전면적으로 반환되는 502 Bad Gateway 오류의 4대 원인(헬스 체크 방화벽 차단, 프로브 경로 불일치, NEG Pod Readiness Gate 미충족, Keepalive 타임아웃 역전)을 1분 만에 교차 진단하고 복구 YAML 및 방화벽 명령을 도출하는 도구다.
 ---
 
 # GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기 (Autopilot & Hands-on Guide)
 
-본 스킬은 고객사 엔지니어와 실무자가 `gke-ingress-502-resolver` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 엔지니어와 실무자가 `gke-ingress-502-resolver` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Performance`, `#Resilience`, `#Security`  
@@ -45,7 +45,7 @@ flowchart TD
 
 ## 2. Stage 1: 예습 (YOLO Autopilot 모드)
 
-고객 개발자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
+사내 개발자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
 1. 현재 활성화된 gcloud 프로젝트 및 기본 리전을 확인한다:
@@ -54,7 +54,8 @@ flowchart TD
    gcloud config get-value compute/region
    ```
 2. `samples/gke-ingress-502-resolver/.env.example`을 참조하여 `samples/gke-ingress-502-resolver/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
-3. 실행에 필요한 최소 IAM 권한(`roles/compute.networkViewer, roles/container.viewer`) 충족 여부를 안내한다.
+3. 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨링(`managed-by=google-cloud-0-to-1`, `scenario=gke-ingress-502-resolver`, `env=sample`, `created-by=customer-engineer`) 규약을 고지한다.
+4. 실행에 필요한 최소 IAM 권한(`roles/compute.networkViewer, roles/container.viewer`) 충족 여부를 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:
@@ -74,7 +75,7 @@ python diagnose.py --dry-run
 
 ## 3. Stage 2: 실습 (Developer Hands-on 단계)
 
-예습을 통해 전체 흐름을 파악한 고객 개발자가 콘솔과 터미널에서 직접 명령어를 수행하는 본 실습 단계다.
+예습을 통해 전체 흐름을 파악한 사내 개발자가 콘솔과 터미널에서 직접 명령어를 수행하는 본 실습 단계다.
 
 ### Step 2.1 저장소 이동 및 의존성 확인
 ```bash

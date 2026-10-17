@@ -582,6 +582,34 @@ def build_markdown_report(
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 사내 거버넌스 4대 필수 표준 라벨링
+
+GKE 클러스터, 방화벽 규칙 및 관련 인프라 자원 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gke-ingress-502-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 4. 콘솔 링크 조치 가이드
+
+- **GKE 클러스터 콘솔**: ( https://console.cloud.google.com/kubernetes )
+- **Cloud Load Balancing 콘솔**: ( https://console.cloud.google.com/net-services/loadbalancing )
+- **VPC 방화벽 정책 콘솔**: ( https://console.cloud.google.com/net-security/firewall-manager )
+- **GKE Ingress 문제 해결 공식 가이드**: ( https://cloud.google.com/kubernetes-engine/docs/troubleshooting#502_bad_gateway )
+
+---
+
+## 5. 자원 정리 안내 (Teardown)
+
+본 진단 도구는 읽기 전용(Read-Only) 명령어로 작동하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 로컬 임시 설정 파일만 정리하면 된다:
+```bash
+rm -f .env
+```
 """
 
 

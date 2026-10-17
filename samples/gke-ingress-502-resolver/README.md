@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기 (`gke-ingress-502-resolver`)
 
-GKE 클러스터의 파드가 정상 기동 중임에도 외부 또는 내부 HTTP(S) 로드 밸런서에서 간헐적 또는 전면적으로 반환되는 502 Bad Gateway 오류의 4대 원인(헬스 체크 방화벽 차단, 프로브 경로 불일치, NEG Pod Readiness Gate 미충족, Keepalive 타임아웃 역전)을 1분 만에 교차 진단하고 복구 YAML 및 방화벽 명령을 도출하는 도구다. (As of 2026-09-10)
+GKE 클러스터의 파드가 정상 기동 중임에도 외부 또는 내부 HTTP(S) 로드 밸런서에서 간헐적 또는 전면적으로 반환되는 502 Bad Gateway 오류의 4대 원인(헬스 체크 방화벽 차단, 프로브 경로 불일치, NEG Pod Readiness Gate 미충족, Keepalive 타임아웃 역전)을 1분 만에 교차 진단하고 복구 YAML 및 방화벽 명령을 도출하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Performance`, `#Resilience`, `#Security`  
@@ -165,7 +165,26 @@ kubectl annotate service [SERVICE_NAME] \
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 7. 사내 거버넌스 4대 필수 표준 라벨링
+
+GKE 클러스터, 방화벽 규칙, 로드 밸런서 및 연관 쿠버네티스 리소스 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gke-ingress-502-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 8. 콘솔 링크 조치 가이드
+
+- **GKE 클러스터 콘솔**: ( https://console.cloud.google.com/kubernetes )
+- **Cloud Load Balancing 콘솔**: ( https://console.cloud.google.com/net-services/loadbalancing )
+- **VPC 방화벽 정책 콘솔**: ( https://console.cloud.google.com/net-security/firewall-manager )
+- **GKE Ingress 문제 해결 공식 가이드**: ( https://cloud.google.com/kubernetes-engine/docs/troubleshooting#502_bad_gateway )
+
+---
+
+## 9. 자원 정리 안내 (Teardown)
 
 본 진단 도구는 읽기 전용(Read-Only) 명령어로 작동하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 로컬 임시 설정 파일만 정리하면 된다:
 ```bash
