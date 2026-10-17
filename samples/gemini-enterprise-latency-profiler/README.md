@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이 엔터프라이즈(Gemini Enterprise) 파이프라인 구간별 지연 시간 분석기 (`gemini-enterprise-latency-profiler`)
 
-엔터프라이즈 생성형 AI 파이프라인에서 발생하는 체감 지연 시간(Latency)의 원인을 전송 네트워크(DNS, TCP, TLS), 보안 가드레일(Model Armor, Sensitive Data Protection), 컨텍스트 증강(Search Grounding), 순수 LLM 추론(TTFT, 토큰 생성 속도) 구간별로 분해 계측하여 워터폴(Waterfall) 차트 및 병목 최적화 권고안을 제공하는 실측 진단 도구다. (As of 2026-09-10)
+엔터프라이즈 생성형 AI 파이프라인에서 발생하는 체감 지연 시간(Latency)의 원인을 전송 네트워크(DNS, TCP, TLS), 보안 가드레일(Model Armor, Sensitive Data Protection), 컨텍스트 증강(Search Grounding), 순수 LLM 추론(TTFT, 토큰 생성 속도) 구간별로 분해 계측하여 워터폴(Waterfall) 차트 및 병목 최적화 권고안을 제공하는 실측 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`
 **Concern**: `#Performance`, `#Resilience`, `#Security`
@@ -131,20 +131,35 @@ HOP-05   | 보안 통제        |   621.9 ms (13.0%)   | [====                  
 
 1. **Model Armor 가드레일 지연 완화**:
    - 실시간 인스펙션 오버헤드가 과도할 경우, 불필요하게 높은 민감도 설정을 튜닝하거나 응답 검사(Egress Filtering)를 스트리밍 후처리 미들웨어에서 비동기 감사로 전환한다.
-   - Model Armor 콘솔 ( https://console.cloud.google.com/security/model-armor )
 
 2. **순수 추론 시간 단축 (Prompt Caching 및 PT 도입)**:
    - 반복되는 시스템 지침이나 사내 가이드라인 문서가 긴 경우, Vertex AI 프롬프트 캐싱(Context Caching)을 적용하여 첫 토큰 지연(TTFT)을 최대 80% 절감한다.
    - 프로덕션 환경의 예측 가능한 베이스로드 확보를 위해 Provisioned Throughput(PT)을 도입하여 멀티 테넌트 큐잉 지연을 제거한다.
-   - Vertex AI 콘솔 ( https://console.cloud.google.com/vertex-ai )
 
 3. **엔드투엔드 네트워크 RTT 최적화**:
    - 사내 클라이언트와 구글 백본망 간의 통신 구간을 최적화하기 위해 Private Service Connect(PSC) 엔드포인트를 구축하여 퍼블릭 인터넷 경유에 따른 패킷 지연을 방어한다.
-   - Private Service Connect 콘솔 ( https://console.cloud.google.com/net-services/psc )
 
 ---
 
-## 8. 자원 정리 안내 (Teardown)
+## 8. 사내 거버넌스 4대 필수 표준 라벨링
+
+지연 시간 프로파일링 및 엔드포인트 테스트 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-latency-profiler`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 9. 콘솔 링크 조치 가이드
+
+- **Model Armor 콘솔**: ( https://console.cloud.google.com/security/model-armor )
+- **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
+- **Private Service Connect 콘솔**: ( https://console.cloud.google.com/net-services/psc )
+
+---
+
+## 10. 자원 정리 안내 (Teardown)
 
 본 도구는 지연 시간 측정용 단발성 API 호출만 수행하므로 영구 인프라 자원을 생성하지 않는다.
 테스트 과정에서 발급된 임시 인증 토큰은 세션 종료 시 자동으로 만료된다.
