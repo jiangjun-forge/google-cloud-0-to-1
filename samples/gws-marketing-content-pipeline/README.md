@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 구글 워크스페이스(Google Workspace) 마케팅 콘텐츠 파이프라인 (`gws-marketing-content-pipeline`)
 
-서버 인프라 구축이나 로컬 개발 환경 설정 없이, Google AI Studio API Key 1회 등록만으로 구글 드라이브(Google Drive)와 구글 시트(Google Sheets) 환경에서 마케팅 캠페인 기획, 멀티 채널 콘텐츠 생성 및 AI 페르소나 다면 평가를 실행하는 워크스페이스 자동화 파이프라인이다. (As of 2026-10-15)
+서버 인프라 구축이나 로컬 개발 환경 설정 없이, Google AI Studio API Key 1회 등록만으로 구글 드라이브(Google Drive)와 구글 시트(Google Sheets) 환경에서 마케팅 캠페인 기획, 멀티 채널 콘텐츠 생성 및 AI 페르소나 다면 평가를 실행하는 워크스페이스 자동화 파이프라인이다. (As of 2026-10-17)
 
 **Audience**: `#Marketer`, `#Developer`  
 **Concern**: `#Productivity`, `#Resilience`  
@@ -180,7 +180,25 @@ My Drive/
 
 ---
 
-## 자원 정리 안내 (Teardown)
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+본 솔루션은 Google Workspace 상에서 실행되나, 연관된 GCP 프로젝트 리소스(Cloud Storage 버킷, Vertex AI 엔드포인트 등) 연동 또는 확장 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gws-marketing-content-pipeline`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
+
+- **Google Drive 콘솔**: ( https://drive.google.com )
+- **Google AI Studio API Key 발급 콘솔**: ( https://aistudio.google.com/app/apikey )
+- **Google Cloud 콘솔**: ( https://console.cloud.google.com )
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 
 - **숏폼 영상 권장 규격**: 브라우저 런타임 제약(6분 타임아웃, 30MB 페이로드)에 따라 15초~30초 이내의 숏폼 동영상을 권장한다. 1분 이상의 장문 인터뷰나 대용량 고화질 영상 처리가 필요한 엔터프라이즈 환경에서는 Google Cloud 환경(Vertex AI, Cloud Run)으로의 이관 컨설팅을 권장한다.
 - **자원 정리 안내**: 본 솔루션은 상시 가상 머신(VM)이나 전용 데이터베이스 등 상시 인프라 리소스를 생성하지 않는다. 실습 종료 후 구글 드라이브에서 해당 캠페인 폴더 1개만 휴지통으로 이동하여 비우면 모든 데이터가 정리된다.
