@@ -54,7 +54,25 @@ Provider Isolation 클라우드 제공자 임의 접근 통제 (Access Approval 
 
 ---
 
-## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+## 2. 사내 거버넌스 4대 필수 표준 라벨링
+
+국가 핵심 기술(NCT) 보호 대상 클라우드 리소스(Cloud Storage 버킷, Cloud KMS 키링, IAM 정책 등) 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `korea-nct-compliance-checker`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 3. 콘솔 링크 조치 가이드
+
+- **Cloud KMS 콘솔**: ( https://console.cloud.google.com/security/kms )
+- **조직 정책 리소스 위치 정의 가이드**: ( https://cloud.google.com/resource-manager/docs/organization-policy/defining-locations )
+- **대한민국 Data Boundary 패키지 가이드**: ( https://cloud.google.com/assured-workloads/docs/control-packages/south-korea-data-boundary )
+
+---
+
+## 4. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
 
 실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
 실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:

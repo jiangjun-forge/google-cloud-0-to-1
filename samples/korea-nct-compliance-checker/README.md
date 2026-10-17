@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 국가 핵심 기술(NCT) 생성형 AI 보안 통제 및 데이터 주권 진단기 (korea-nct-compliance-checker)
 
-대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 AI 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 효과적으로 예방하는 진단 도구다. (As of 2026-09-10)
+대한민국 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 따라, 국가 핵심 기술(NCT) 취급 기업이 생성형 AI 워크로드를 도입할 때 요구되는 **7대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 불법 기술 수출 및 데이터 유출 리스크를 효과적으로 예방하는 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`  
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`  
@@ -149,7 +149,17 @@ FR-07 | 제공자 임의 접근 사전 승인  | PASS | Access Approval 정상 �
 
 ---
 
-## 자원 정리 안내 (Teardown)
+## 7. 사내 거버넌스 4대 필수 표준 라벨링
+
+국가 핵심 기술(NCT) 보호 대상 클라우드 리소스(Cloud Storage 버킷, Cloud KMS 키링, IAM 정책 등) 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `korea-nct-compliance-checker`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 
 본 진단 도구는 환경 설정을 조회하는 읽기 전용 스크립트이므로 별도의 클라우드 리소스를 생성하지 않는다. 테스트용으로 생성한 Cloud KMS 키링이나 IAM Deny 정책은 아래 명령어로 삭제하거나 폐기한다:
 
@@ -163,7 +173,7 @@ gcloud kms keys versions destroy 1 --key=nct-cmek-key --keyring=nct-keyring --lo
 
 ---
 
-## 8. 관련 규격 문서
+## 9. 관련 규격 문서
 
 - [비즈니스 요구 사항 명세서 (BRD.md)](docs/BRD.md)
 - [기술 상세 설계서 (TDD.md)](docs/TDD.md)

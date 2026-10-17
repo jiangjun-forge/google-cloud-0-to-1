@@ -45,7 +45,7 @@ flowchart TD
 
 ## 2. Stage 1: 예습 (YOLO Autopilot 모드)
 
-고객 개발자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
+사내 개발자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
 1. 현재 활성화된 gcloud 프로젝트 및 기본 리전을 확인한다:
@@ -53,13 +53,13 @@ flowchart TD
    gcloud config get-value project
    gcloud config get-value compute/region
    ```
-2. `samples/korea-nct-gen-ai-compliance-checker/.env.example`을 참조하여 `samples/korea-nct-gen-ai-compliance-checker/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
+2. `samples/korea-nct-compliance-checker/.env.example`을 참조하여 `samples/korea-nct-compliance-checker/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/accessapproval.viewer, roles/cloudkms.viewer, roles/iam.securityReviewer, roles/logging.viewer, roles/orgpolicy.policyViewer`) 충족 여부를 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:
 ```bash
-cd samples/korea-nct-gen-ai-compliance-checker
+cd samples/korea-nct-compliance-checker
 python diagnose.py --dry-run
 ```
 - 화면에 출력된 진단 결과와 계산 공식, 정상/주의/위험 판단 기준을 사용자에게 간결하게 브리핑한다.
@@ -74,11 +74,11 @@ python diagnose.py --dry-run
 
 ## 3. Stage 2: 실습 (Developer Hands-on 단계)
 
-예습을 통해 전체 흐름을 파악한 고객 개발자가 콘솔과 터미널에서 직접 명령어를 수행하는 본 실습 단계다.
+예습을 통해 전체 흐름을 파악한 사내 개발자가 콘솔과 터미널에서 직접 명령어를 수행하는 본 실습 단계다.
 
 ### Step 2.1 저장소 이동 및 의존성 확인
 ```bash
-cd samples/korea-nct-gen-ai-compliance-checker
+cd samples/korea-nct-compliance-checker
 cat requirements.txt
 ```
 

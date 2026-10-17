@@ -110,6 +110,7 @@ flowchart TD
 | **FR-05** | 데이터 접근 감사 로그 | `gcloud logging sinks list --project=<PROJECT> --format=json` | 구성된 Cloud Logging 싱크가 1개 이상 존재하여 감사 로그 외부 안전 격리 보관이 설정되어 있으면 PASS, 없으면 FAIL. |
 | **FR-06** | 사외/외국 계정 배제 | `gcloud resource-manager org-policies describe constraints/iam.allowedPolicyMemberDomains --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 사내 승인된 Google Workspace 고객 ID 목록 제약이 설정되어 있으면 PASS, 미설정 시 FAIL. |
 | **FR-07** | CSP 임의 접근 차단 | `gcloud access-approval settings get --project=<PROJECT> --format=json` | `enrolledServices`에 서비스가 등록되어 Google 엔지니어 접근 시 사전 고객 승인을 강제하면 PASS, 미등록 또는 비활성화 시 WARN. |
+| **FR-08** | 사내 거버넌스 4대 필수 라벨링 | 리소스 생성 및 점검 시 4대 표준 라벨 주입 검증 | 국가 핵심 기술 통제 리소스 구성 시 `managed-by=google-cloud-0-to-1`, `scenario=korea-nct-compliance-checker`, `env=sample`, `created-by=customer-engineer` 라벨을 필수로 주입한다. |
 
 ---
 
@@ -135,3 +136,4 @@ roles/accessapproval.viewer         -> accessapproval.settings.get
 | **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 및 GCP 인증 없이 `python3 diagnose.py --dry-run`으로 7개 항목을 신속하게 시뮬레이션. |
 | **NFR-03** | 실행 성능 | 7개 핵심 항목의 실사 점검을 지연 없이 신속하게 완료할 수 있도록 경량 CLI 호출 최적화. |
 | **NFR-04** | 민감 정보 비식별화 | 특정 기업의 기밀 및 도메인 정보 하드코딩 배제 및 가명 템플릿 표준화. |
+| **NFR-05** | 리포트 절대 경로 저장 보장 | 로컬 진단 스크립트 실행 시 산출물 저장 경로는 스크립트 파일이 위치한 디렉터리의 절대 경로를 기준으로 저장하여 작업 디렉터리와 무관하게 안정적인 저장을 보장한다. |

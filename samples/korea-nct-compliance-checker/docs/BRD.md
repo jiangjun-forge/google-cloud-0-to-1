@@ -90,6 +90,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-05** | 감사 추적 | 법 제10조 | Cloud Audit Logs 데이터 접근 로그(`DATA_READ`, `DATA_WRITE`)를 실시간 수집하고 안전하게 보관하여 산자부 감사 증빙을 확보하여야 한다. |
 | **BR-06** | 외국 기업 배제 | 안내서 제3장 | 조직 정책 `constraints/iam.allowedPolicyMemberDomains`를 적용하여 사전 승인된 사내 Google Workspace 도메인 외 외부 개인 계정 바인딩을 차단하여야 한다. |
 | **BR-07** | 제공자 임의 접근 차단 | 안내서 제2장 | 구글 클라우드 엔지니어가 장애 지원 등을 위해 데이터에 접근하려 할 때 고객 사전 승인을 강제하는 `Access Approval`을 활성화하여야 한다. |
+| **BR-08** | 사내 거버넌스 4대 필수 라벨링 준수 | 사내 클라우드 거버넌스 규정 | 국가 핵심 기술 워크로드 리소스 프로비저닝 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여 FinOps 비용 추적성을 보장하여야 한다. |
 
 ---
 
