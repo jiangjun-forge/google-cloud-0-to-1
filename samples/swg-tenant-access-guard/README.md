@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단 (swg-tenant-access-guard)
 
-금융권 및 엔터프라이즈 환경에서 사내 관문 프록시(SWG)의 테넌트 제한 HTTP 헤더 주입 상태와 Context-Aware Access(CAA) 인가 단말기 접근 통제 정책을 종합 진단하여, 금융보안원 생성형 AI 보안대책 이행서 준수 및 외부 비인가 조직으로의 데이터 유출을 효과적으로 방어한다. (As of 2026-09-09)
+금융권 및 엔터프라이즈 환경에서 사내 관문 프록시(SWG)의 테넌트 제한 HTTP 헤더 주입 상태와 Context-Aware Access(CAA) 인가 단말기 접근 통제 정책을 종합 진단하여, 금융보안원 생성형 AI 보안대책 이행서 준수 및 외부 비인가 조직으로의 데이터 유출을 효과적으로 방어한다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
@@ -98,13 +98,24 @@ python diagnose.py --org-id 123456789012 --domain example-corp.com --group-email
 3. 대상 사용자 그룹(`gcp-authorized-users@example-corp.com`)에 해당 레벨을 적용하고 적용 앱으로 Google Cloud 콘솔 및 관련 서비스를 바인딩한다.
 
 ### 공식 가이드 및 콘솔 링크
-- Organization Restrictions 개요 및 헤더 규격 ( https://docs.cloud.google.com/resource-manager/docs/organization-restrictions/overview )
-- Google Workspace 개인 계정 로그인 차단 설정 ( https://support.google.com/a/answer/1668854 )
-- Context-Aware Access 개요 및 장치 정책 ( https://docs.cloud.google.com/chrome-enterprise-premium/docs/overview )
+- **Access Context Manager 콘솔**: ( https://console.cloud.google.com/security/access-levels )
+- **공식 문서 - Organization Restrictions 개요 및 헤더 규격**: ( https://docs.cloud.google.com/resource-manager/docs/organization-restrictions/overview )
+- **공식 문서 - Google Workspace 개인 계정 로그인 차단 설정**: ( https://support.google.com/a/answer/1668854 )
+- **공식 문서 - Context-Aware Access 개요 및 장치 정책**: ( https://docs.cloud.google.com/chrome-enterprise-premium/docs/overview )
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+Access Context Manager 정책 및 인가 연계 인프라 자원 구성 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `swg-tenant-access-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 자원 정리 안내 (Teardown)
 
 테스트 목적으로 생성한 Access Context Manager 임시 정책이나 모의 레벨을 삭제하려면 다음 명령을 수행한다:
 ```bash

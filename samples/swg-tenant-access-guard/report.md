@@ -52,7 +52,26 @@ gcloud access-context-manager levels create CorpDeviceOnly \
 
 ---
 
-## 4. 자원 정리 안내 (Teardown)
+## 4. 사내 거버넌스 4대 필수 표준 라벨링
+
+Access Context Manager 정책 및 인가 연계 인프라 자원 구성 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `swg-tenant-access-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드 및 공식 레퍼런스
+
+- **Access Context Manager 콘솔**: ( https://console.cloud.google.com/security/access-levels )
+- **공식 문서 - Organization Restrictions 개요 및 헤더 규격**: ( https://docs.cloud.google.com/resource-manager/docs/organization-restrictions/overview )
+- **공식 문서 - Google Workspace 개인 계정 로그인 차단 설정**: ( https://support.google.com/a/answer/1668854 )
+- **공식 문서 - Context-Aware Access 개요 및 장치 정책**: ( https://docs.cloud.google.com/chrome-enterprise-premium/docs/overview )
+
+---
+
+## 6. 자원 정리 안내 (Teardown)
 테스트 목적으로 생성한 Access Context Manager 임시 정책이나 모의 레벨을 삭제하려면 다음 명령을 수행한다:
 ```bash
 gcloud access-context-manager levels delete CorpDeviceOnly --policy=<POLICY_ID> --quiet
