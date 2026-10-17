@@ -151,6 +151,11 @@ def main() -> None:
     md_content = build_markdown_report(data, is_dry_run=args.dry_run)
     save_markdown_report(md_content)
     print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
+    print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
+    print("  - managed-by: google-cloud-0-to-1")
+    print("  - scenario: gemini-enterprise-domain-resolver")
+    print("  - env: sample")
+    print("  - created-by: customer-engineer\n")
 
 
 def build_markdown_report(data: dict, is_dry_run: bool) -> str:
@@ -224,6 +229,37 @@ def build_markdown_report(data: dict, is_dry_run: bool) -> str:
         "```bash",
         "python diagnose.py",
         "```",
+        "",
+        "---",
+        "",
+        "## 3. 사내 거버넌스 4대 필수 표준 라벨링",
+        "",
+        "클라우드 리소스 및 도메인 바인딩 설정 시 4대 표준 라벨을 반드시 적용한다:",
+        "- `managed-by`: `google-cloud-0-to-1`",
+        "- `scenario`: `gemini-enterprise-domain-resolver`",
+        "- `env`: `sample` (또는 `poc`)",
+        "- `created-by`: `customer-engineer`",
+        "",
+        "---",
+        "",
+        "## 4. 결과 확인 후 즉각 조치 가이드",
+        "",
+        "1. **도메인 소유권 확인 및 인수(Takeover)**:",
+        "   - Google Admin Console > 계정 > 도메인 > 도메인 관리 ( https://admin.google.com/ac/domains/manage )",
+        "   - 도메인 소유권 확인 ( https://support.google.com/a/answer/7126229 )",
+        "   - 도메인 충돌(domain_in_use) 해결 가이드 ( https://support.google.com/a/answer/11112794 )",
+        "2. **미관리 사용자 계정 통합 및 관리**:",
+        "   - 디렉터리 > 사용자 ( https://admin.google.com/ac/users )",
+        "3. **Cloud Identity Free 라이선스 발급**:",
+        "   - 결제 > 구독 ( https://admin.google.com/ac/billing/subscriptions )",
+        "   - Cloud Identity 개요 ( https://cloud.google.com/identity/docs/overview )",
+        "   - Cloud Identity 에디션 비교 ( https://cloud.google.com/identity/docs/editions )",
+        "",
+        "---",
+        "",
+        "## 5. 자원 정리 안내 (Teardown)",
+        "",
+        "본 진단 도구는 도메인 충돌 여부 및 DNS 상태를 조회하는 진단기이므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 테스트 완료 후 불필요한 DNS TXT 레코드는 DNS 공급자 관리 화면에서 삭제한다.",
         "",
     ])
     return "\n".join(lines)
