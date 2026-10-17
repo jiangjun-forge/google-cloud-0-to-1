@@ -40,3 +40,6 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### BR-05: 공식 GKE Inference Gateway 3대 제약 준수 및 우회 처방
 - 구글 공식 문서에 명시된 3대 제약(동일 VPC 제약, 백엔드 서비스당 최대 50개 NEG 한계, Model Armor 미지원)을 감사하고, 멀티 클라우드 수용 시 Internet/Hybrid NEG 분리 및 Cloud Armor WAF 결합 아키텍처를 처방하여야 한다.
+
+### BR-06: 사내 거버넌스 4대 필수 라벨링 준수
+- GKE 클러스터, Global ALB 백엔드 서비스, NEG 등 인프라 자원 생성 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여 FinOps 비용 추적성을 보장하여야 한다.

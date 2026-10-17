@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기 (`gke-multi-cluster-inference-gateway`)
 
-대규모 AI/LLM 서빙 환경에서 GPU/TPU 공급 부족으로 여러 리전과 멀티 클라우드에 분산된 수십 개 쿠버네티스 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연 시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검 및 처방하는 아키텍처 진단 도구다. (As of 2026-10-01)
+대규모 AI/LLM 서빙 환경에서 GPU/TPU 공급 부족으로 여러 리전과 멀티 클라우드에 분산된 수십 개 쿠버네티스 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연 시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검 및 처방하는 아키텍처 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`, `#Resilience`  
@@ -99,5 +99,25 @@ python3 diagnose.py -p <PROJECT_ID>
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 7. 사내 거버넌스 4대 필수 표준 라벨링
+
+GKE 클러스터, Global ALB 백엔드 서비스, NEG 및 관련 인프라 자원 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gke-multi-cluster-inference-gateway`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 8. 콘솔 링크 조치 가이드
+
+- **Cloud Load Balancing 콘솔**: ( https://console.cloud.google.com/net-services/loadbalancing )
+- **GKE 클러스터 콘솔**: ( https://console.cloud.google.com/kubernetes )
+- **GKE Multi-Cluster Inference Gateway 공식 가이드**: ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway )
+- **Google Cloud Anthos / GKE Enterprise 요금 안내**: ( https://cloud.google.com/anthos/pricing )
+
+---
+
+## 9. 자원 정리 안내 (Teardown)
+
 본 도구는 읽기 전용 진단 스크립트로 클라우드 리소스를 생성하거나 변경하지 않으므로 별도의 자원 정리가 필요하지 않다.

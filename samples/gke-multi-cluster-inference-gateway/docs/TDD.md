@@ -40,6 +40,9 @@ All contents, designs, and code examples are subject to change, modification, or
 ### FR-06: 공식 3대 제약 조건 감사 (Same VPC, 50 NEG Limit, Model Armor)
 - 동일 VPC 요건(`CHK-06`), 백엔드 서비스당 최대 50개 NEG 제한(`CHK-07`), Model Armor 미지원에 따른 Cloud Armor WAF 보완책(`CHK-08`)을 정밀 감사한다.
 
+### FR-07: 사내 거버넌스 4대 필수 라벨링 적용
+- GKE 클러스터 및 Global ALB 백엔드 서비스 생성 시 `managed-by=google-cloud-0-to-1`, `scenario=gke-multi-cluster-inference-gateway`, `env=sample`, `created-by=customer-engineer` 라벨을 필수로 주입한다.
+
 ---
 
 ## 3. 비기능 요구 사항 (Non-Functional Requirements)
@@ -52,3 +55,6 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### NFR-03: 크로스 플랫폼 단일 실행
 - 쉘 래퍼 없이 `python diagnose.py` 명령만으로 Linux, macOS, Cloud Shell 환경에서 완결 동작한다.
+
+### NFR-04: 리포트 절대 경로 저장 보장
+- `report.md` 저장 시 스크립트 실행 작업 디렉터리(`cwd`)와 무관하게 스크립트 파일이 위치한 디렉터리의 절대 경로를 기준으로 저장하여 파일 유실을 방지한다.

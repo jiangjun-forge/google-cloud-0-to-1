@@ -73,3 +73,28 @@ gcloud compute network-endpoint-groups create neg-external-gpu-cluster-01 \
     --network-endpoint-type=INTERNET_FQDN_PORT \
     --default-port=443
 ```
+
+---
+
+## 5. 사내 거버넌스 4대 필수 표준 라벨링
+
+GKE 클러스터, Global ALB 백엔드 서비스, NEG 및 관련 인프라 자원 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gke-multi-cluster-inference-gateway`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 6. 콘솔 링크 조치 가이드
+
+- **Cloud Load Balancing 콘솔**: ( https://console.cloud.google.com/net-services/loadbalancing )
+- **GKE 클러스터 콘솔**: ( https://console.cloud.google.com/kubernetes )
+- **GKE Multi-Cluster Inference Gateway 공식 가이드**: ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway )
+- **Google Cloud Anthos / GKE Enterprise 요금 안내**: ( https://cloud.google.com/anthos/pricing )
+
+---
+
+## 7. 자원 정리 안내 (Teardown)
+
+본 도구는 읽기 전용 진단 스크립트로 클라우드 리소스를 생성하거나 변경하지 않으므로 별도의 자원 정리가 필요하지 않다.
