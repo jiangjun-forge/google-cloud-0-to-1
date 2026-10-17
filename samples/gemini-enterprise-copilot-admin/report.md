@@ -1,6 +1,6 @@
 # Gemini Enterprise 어드민 코파일럿 보고서 (gemini-enterprise-copilot-admin)
 
-- **실행 일시**: 2026-10-17 05:34:00 UTC
+- **실행 일시**: 2026-10-17 06:30:55 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **배포 리전**: `global`
 - **Gemini Enterprise App 인스턴스**: `sample-ge-app-id`
@@ -76,7 +76,17 @@ echo "테넌트 활성화 상태: READY"
 
 ---
 
-## 5. 콘솔 링크 조치 가이드
+## 5. 사내 거버넌스 4대 필수 표준 라벨링
+
+에이전트 인프라 및 어드민 관리 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-admin`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 6. 콘솔 링크 조치 가이드
 
 - **Google Admin 관리 콘솔**: ( https://admin.google.com/ )
 - **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
@@ -85,7 +95,7 @@ echo "테넌트 활성화 상태: READY"
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 7. 자원 정리 안내 (Teardown)
 
 본 진단 및 모의 실행 완료 후 테스트용 정책이나 임시 리소스를 정리하려면 아래 가이드를 준수한다:
 

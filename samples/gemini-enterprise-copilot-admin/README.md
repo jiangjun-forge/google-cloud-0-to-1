@@ -108,7 +108,17 @@ python diagnose.py --interactive
 
 ---
 
-## 5. 콘솔 링크 조치 가이드
+## 5. 사내 거버넌스 4대 필수 표준 라벨링
+
+에이전트 인프라 및 어드민 관리 리소스(BigQuery 데이터세트, 서비스 계정, Cloud Functions 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-admin`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 6. 콘솔 링크 조치 가이드
 
 - **Gemini Enterprise 에이전트 목록 직결 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
 - **Cloud Logging 로그 라우터 콘솔**: ( https://console.cloud.google.com/logs/router )
@@ -119,7 +129,7 @@ python diagnose.py --interactive
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 7. 자원 정리 안내 (Teardown)
 
 본 진단 및 모의 실행 완료 후 테스트용 정책이나 임시 리소스를 정리하려면 아래 가이드를 준수한다:
 

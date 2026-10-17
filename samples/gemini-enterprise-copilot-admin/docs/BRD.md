@@ -43,6 +43,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-06** | 에이전트 스프롤 및 관리 헬 감사 | 수백 개 에이전트 난립 시 60일 미사용 좀비 에이전트, 토큰 과소비 톱 10, 장애 에이전트를 식별하는 BigQuery 쿼리 팩을 제공해야 한다. |
 | **BR-07** | 원클릭 로그 싱크 및 콘솔 딥링크 | Cloud Logging의 감사 로그를 BigQuery로 라우팅하는 로그 싱크를 명령어 한 줄로 구축하고 GCP 콘솔 GE Admin 3단계 딥링크를 안내해야 한다. |
 | **BR-08** | 대화형 추천 칩 및 원클릭 리포트 | Dolphin UI 네이티브 `suggested_questions` 추천 칩을 출력하고 `report.md` 표준 진단 보고서를 덮어써야 한다. |
+| **BR-09** | 표준 리소스 라벨링 적용 의무화 | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 리소스 생성 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여야 한다. |
 
 ---
 
