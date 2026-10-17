@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # GCP IAM 권한 거부(403) 감사 역추적 및 원클릭 복구 (iam-permission-resolver)
 
-구글 클라우드 IAM(Cloud IAM) 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-06-16)
+구글 클라우드 IAM(Cloud IAM) 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Security`  
@@ -127,6 +127,23 @@ python diagnose.py --project your-project-id --days 7 --limit 5
       --role="roles/aiplatform.user"
 ------------------------------------------------------------------------
 ```
+
+---
+
+## 사내 거버넌스 4대 필수 표준 라벨링
+
+신규 서비스 계정 및 연계 리소스 배포 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `iam-permission-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 콘솔 링크 조치 가이드
+
+- **Cloud IAM 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/iam )
+- **Cloud Logging 감사 로그 탐색기**: ( https://console.cloud.google.com/logs/query )
 
 ---
 

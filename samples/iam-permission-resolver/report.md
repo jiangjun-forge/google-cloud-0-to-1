@@ -62,7 +62,24 @@
 
 ---
 
-## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+## 2. 사내 거버넌스 4대 필수 표준 라벨링
+
+신규 서비스 계정 생성 및 연계 리소스 배포 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `iam-permission-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 3. 콘솔 링크 조치 가이드
+
+- **Cloud IAM 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/iam )
+- **Cloud Logging 감사 로그 탐색기**: ( https://console.cloud.google.com/logs/query )
+
+---
+
+## 4. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
 
 실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
 실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:
