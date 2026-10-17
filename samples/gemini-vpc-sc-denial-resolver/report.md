@@ -53,3 +53,28 @@
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 사내 거버넌스 4대 필수 표준 라벨링
+
+본 도구는 Cloud Logging 정책 감사 로그 조회 도구이나, 연관된 클라우드 인프라 자원 및 브리지 프로젝트 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-vpc-sc-denial-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 4. 콘솔 링크 조치 가이드
+
+- **VPC-SC 문제 해결사 콘솔**: ( https://console.cloud.google.com/security/vpc-service-controls/troubleshooter )
+- **서비스 경계 관리 콘솔**: ( https://console.cloud.google.com/security/vpc-service-controls )
+- **VPC Service Controls 문제 해결 공식 가이드**: ( https://cloud.google.com/vpc-service-controls/docs/troubleshooting )
+- **VPC Service Controls 수신 및 송신 규칙 공식 가이드**: ( https://cloud.google.com/vpc-service-controls/docs/ingress-egress-rules )
+
+---
+
+## 5. 자원 정리 안내 (Teardown)
+
+본 도구는 순수 감사 로그 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.
