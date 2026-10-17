@@ -27,3 +27,4 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-02** | **구글 공식 보안 약관 및 국제 인증 소명 결합** | 고객 데이터의 모델 재학습 원천 배제(CDPA), 인적 검토 배제(No Human Review), ISO/IEC 42001 및 ISO 27001/17/18 인증에 관한 공식 URL과 법적 소명 문구를 자동으로 매핑하여야 한다. | 필수 (P0) |
 | **BR-03** | **사내 GCP 인프라의 기술적 보안 통제 실시간 감사** | 서울 리전(asia-northeast3) 엔드포인트 격리, 조직 정책, CMEK 암호화, VPC-SC, Audit Logs 활성화 상태를 실측 감사하여 증적으로 기재하여야 한다. | 필수 (P0) |
 | **BR-04** | **CISO 및 보안팀 제출용 완제품 소명서 자동 생성** | 진단 실행 즉시 사내 보안팀이나 금융당국에 직접 제출할 수 있는 정형화된 마크다운 리포트(report.md)를 자동 생성(덮어쓰기)하여야 한다. | 권장 (P1) |
+| **BR-05** | **사내 거버넌스 4대 필수 라벨링 준수** | 보안 심의 통제 대상 리소스 프로비저닝 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여 FinOps 비용 추적성을 보장하여야 한다. | 필수 (P0) |

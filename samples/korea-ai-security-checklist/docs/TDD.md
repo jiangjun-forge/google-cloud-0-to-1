@@ -25,6 +25,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **FR-02** | **BR-02** | **공식 정책/인증 소명 자동 결합** | ISO/IEC 42001, No-Training, No-Human-Review 등 기술적으로 직접 쿼리하기 어려운 정책적 항목에 대해 구글 공식 보안 약관(CDPA) URL과 공인 소명 문구를 완벽히 자동 매핑한다. |
 | **FR-03** | **BR-03** | **실시간 GCP 리소스 보안 감사** | gcloud resource-manager org-policies list 명령 등을 통해 핵심 보안 조직 정책, 리전 엔드포인트 격리 및 Audit Logs 활성화 상태를 실시간 대조하여 PASS/WARN 판정을 내린다. |
 | **FR-04** | **BR-04** | **CISO 제출용 완제품 소명서 (report.md) 생성** | 터미널 출력과 함께 표 서식의 마크다운 소명서(report.md)를 자동 생성(덮어쓰기)하여 즉시 사내 결재 및 제출 증적으로 활용할 수 있도록 지원한다. |
+| **FR-05** | **BR-05** | **사내 거버넌스 4대 필수 라벨링 적용** | 보안 심의 통제 대상 리소스 구성 시 `managed-by=google-cloud-0-to-1`, `scenario=korea-ai-security-checklist`, `env=sample`, `created-by=customer-engineer` 라벨을 필수로 주입한다. |
 
 ---
 
@@ -35,3 +36,4 @@ All contents, designs, and code examples are subject to change, modification, or
 | **NFR-01** | **최소 IAM 권한 준수** | 본 도구는 읽기 전용 진단 스크립트로서 자원을 변경하지 않으며, 최소 조회 권한(`roles/resourcemanager.organizationViewer, roles/logging.viewer, roles/cloudkms.viewer`)만을 요구한다. |
 | **NFR-02** | **가상 실행 모드 (--dry-run)** | 실제 GCP 프로젝트 연결 없이도 1초 만에 20대 전 항목 완제품 소명서가 즉시 생성되어 오프라인 환경에서도 활용할 수 있도록 한다. |
 | **NFR-03** | **민감 정보 비식별화 및 보안 규약** | 소스 코드 및 문서 내에 실제 프로젝트 ID나 개인 식별 정보(PII)를 하드코딩하지 않으며, 모든 외부 참조 링크는 Bare URL 괄호 병기 원칙을 준수한다. |
+| **NFR-04** | **리포트 절대 경로 저장 보장** | 로컬 진단 스크립트 실행 시 산출물 저장 경로는 스크립트 파일이 위치한 디렉터리의 절대 경로를 기준으로 저장하여 작업 디렉터리와 무관하게 안정적인 저장을 보장한다. |

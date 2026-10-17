@@ -8,7 +8,7 @@ import json
 import os
 import subprocess
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from dotenv import load_dotenv
@@ -446,7 +446,26 @@ def build_markdown_report(project_id: str, region: str, dry_run: bool, items: Li
         "",
         "---",
         "",
-        "## 3. 사내 정보보호팀 및 CISO 제출 절차",
+        "## 3. 사내 거버넌스 4대 필수 표준 라벨링",
+        "",
+        "보안 심의 통제 대상 GCP 리소스(Cloud Storage 버킷, BigQuery 데이터셋, Cloud KMS 키링, Cloud Run 등) 배포 시 4대 표준 라벨을 반드시 적용한다:",
+        "- `managed-by`: `google-cloud-0-to-1`",
+        "- `scenario`: `korea-ai-security-checklist`",
+        "- `env`: `sample` (또는 `poc`)",
+        "- `created-by`: `customer-engineer`",
+        "",
+        "---",
+        "",
+        "## 4. 콘솔 링크 조치 가이드",
+        "",
+        "- **구글 클라우드 보안 및 컴플라이언스 포털**: ( https://cloud.google.com/security/compliance/iso-42001 )",
+        "- **구글 클라우드 데이터 처리 추가 계약(CDPA)**: ( https://cloud.google.com/terms/data-processing-addendum )",
+        "- **Cloud KMS 관리 콘솔**: ( https://console.cloud.google.com/security/kms )",
+        "- **VPC Service Controls 콘솔**: ( https://console.cloud.google.com/security/service-perimeter )",
+        "",
+        "---",
+        "",
+        "## 5. 사내 정보보호팀 및 CISO 제출 절차",
         "1. 본 `report.md` 문서를 PDF 또는 사내 기안서 서식으로 변환한다.",
         "2. 사내 정보보호팀 또는 금융감독원/금융보안원 보안성 심의 신청 시 첨부 증적으로 제출한다.",
         "3. 추가 소명이 요구되는 기술 항목은 `google-cloud-0-to-1` 저장소의 세부 진단 스크립트 실행 결과를 보충 증적으로 활용한다.",
@@ -455,7 +474,10 @@ def build_markdown_report(project_id: str, region: str, dry_run: bool, items: Li
     return "\n".join(lines).strip() + "\n"
 
 
-def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+def save_markdown_report(report_md: str, output_path: Optional[str] = None) -> None:
+    if output_path is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, "report.md")
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
@@ -485,7 +507,7 @@ def main() -> None:
     else:
         print_text_report(reported_project, args.region, args.dry_run, items)
         report_content = build_markdown_report(reported_project, args.region, args.dry_run, items)
-        save_markdown_report(report_content, "report.md")
+        save_markdown_report(report_content)
 
 
 if __name__ == "__main__":
