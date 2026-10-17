@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-copilot-custom)
 
-클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(GEAP / Cloud Run)를 원클릭으로 스캐폴딩하고, GitHub 레포 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 엔지니어링 개발 도구다. (As of 2026-10-17)
+클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(Agent Runtime / Cloud Run)를 원클릭으로 스캐폴딩하고, GitHub 레포 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 엔지니어링 개발 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Architecture`, `#Performance`, `#Security`  
@@ -57,7 +57,7 @@ flowchart TD
 
     subgraph Deployment ["3. 인프라 배포 및 Gemini Enterprise app 바인딩"]
         D1["클라우드 런 서버리스 배포<br/>(Cloud Run Service)"]
-        D2["GEAP 에이전트 엔진 등록<br/>(Agent Engine Runtime)"]
+        D2["Agent Runtime 등록"]
         D3["Gemini Enterprise app 카탈로그 외부 연동<br/>(External Agent Binding)"]
         S4 --> D1 --> D2 --> D3
     end
@@ -114,7 +114,7 @@ python diagnose.py --write-files
 - `scaffold/deploy.sh`: Cloud Run 배포 쉘 스크립트
 - `scaffold/ge_agent_manifest.json`: Gemini Enterprise app 외부 연동 등록 JSON
 
-### 4.4. 최신 Agent Runtime (GEAP / Vertex AI Agent Engine) 직접 배포 (권장)
+### 4.4. 최신 Agent Runtime 직접 배포 (권장)
 Cloud Run 컨테이너 인프라 관리 없이 구글 완전 관리형 네이티브 런타임에 직결 배포하려면 최신 **Agents CLI (`google-agents-cli`)** 또는 Agent Engine SDK를 활용한다:
 ```bash
 # Agents CLI로 Agent Runtime 배포
@@ -148,7 +148,7 @@ agents-cli publish gemini-enterprise \
 ## 6. 콘솔 링크 조치 가이드
 
 - **Cloud Run 콘솔**: 배포된 백엔드 컨테이너 서비스 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/run )
-- **Agent Platform (GEAP) 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **Agent 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`custom-agent-sa`) 권한 및 인보커 바인딩 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---

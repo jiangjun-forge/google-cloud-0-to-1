@@ -596,7 +596,7 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
 ## 6. 콘솔 링크 조치 가이드
 
 - **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 확인 ( https://gemini.google.com )
-- **Agent Platform (GEAP) 콘솔**: 사내 등록된 에이전트 및 데이터스토어 현황 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **Agent 콘솔**: 사내 등록된 에이전트 및 데이터스토어 현황 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **IAM 및 관리자 콘솔**: 대행 서비스 계정(`{sa_email}`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---

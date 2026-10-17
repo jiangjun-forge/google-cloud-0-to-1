@@ -12,7 +12,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 자율형 사내 스킬 팩토리 기술 상세 설계서 (TDD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트 확장 도구(Tools / Extensions / Action Skills)를 자율 생성하고 제미나이 엔터프라이즈 에이전트 플랫폼(Gemini Enterprise Agent Platform, 이하 GEAP)에 등록하기 위한 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
+본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트 확장 도구(Tools / Extensions / Action Skills)를 자율 생성하고 에이전트 런타임(Agent Runtime)에 등록하기 위한 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
 ---
 
@@ -40,7 +40,7 @@ flowchart TD
     end
 
     subgraph RegistryPhase ["3. Gemini Enterprise app 도구 레지스트리 배포 및 바인딩"]
-        ToolRegistry["Gemini Enterprise app / GEAP 도구 레지스트리<br/>(Tool Registry)"]
+        ToolRegistry["Gemini Enterprise app 도구 레지스트리<br/>(Tool Registry)"]
         TargetAgent["기존 사내 에이전트<br/>(HR, IT, CS 에이전트 등)"]
         ActiveSkill["실행 가능한 액션 스킬 활성화<br/>(Active Action Skill)"]
         PermissionCheck --> ToolRegistry
@@ -92,7 +92,7 @@ flowchart TD
 - 데이터 변경/결재(Write/Mutation) 스킬은 `PENDING_ADMIN_APPROVAL` 플래그를 기본 부착하여 사내 관리자의 최종 승인 후 활성화되도록 보호한다.
 
 ### FR-05: Gemini Enterprise app 도구 레지스트리 배포 및 마크다운 리포트 생성
-- 완성된 도구 매니페스트를 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 및 GEAP 도구 레지스트리에 배포하기 위한 REST API 페이로드를 생성한다.
+- 완성된 도구 매니페스트를 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 및 Agent Runtime 도구 레지스트리에 배포하기 위한 REST API 페이로드를 생성한다.
 - 진단 완료 시 등록된 도구의 명세, OpenAPI 스키마, 파라미터 구조, 보안 볼트 연동 상태, 에이전트 바인딩 가이드를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
 ---

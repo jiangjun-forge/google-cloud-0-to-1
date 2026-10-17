@@ -12,7 +12,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동기 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스, 레거시 시스템 및 외부 API를 결합한 고성능 커스텀(High-code) 에이전트를 신속하게 스캐폴딩하고, 제미나이 엔터프라이즈 에이전트 플랫폼(Gemini Enterprise Agent Platform, 이하 GEAP)에 배포한 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 외부 에이전트로 원클릭 연동할 수 있도록 지원하는 엔지니어링 도구의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스, 레거시 시스템 및 외부 API를 결합한 고성능 커스텀(High-code) 에이전트를 신속하게 스캐폴딩하고, 에이전트 런타임(Agent Runtime)에 배포한 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 외부 에이전트로 원클릭 연동할 수 있도록 지원하는 엔지니어링 도구의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 
@@ -41,7 +41,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **BR-01** | 하이코드 에이전트 자동 스캐폴딩 | 개발자의 요구사항(도메인, 데이터 소스, 목적)을 입력받아 즉시 실행 및 커스터마이징 가능한 표준 파이썬 에이전트 코드(`agent.py`)를 자동 생성해야 한다. |
 | **BR-02** | 엔터프라이즈 데이터 및 도구 템플릿 | 빅쿼리 SQL 쿼리, 사내 REST API 호출, MCP 도구 연동을 위한 함수 및 OpenAPI 3.0 스키마(`tools.py`)를 표준 규격으로 자동 도출해야 한다. |
-| **BR-03** | 컨테이너 및 서버리스 배포 자동화 | 생성된 에이전트를 클라우드 런(Cloud Run) 및 GEAP 에이전트 엔진에 배포하기 위한 `Dockerfile`과 배포 스크립트를 완비해야 한다. |
+| **BR-03** | 컨테이너 및 서버리스 배포 자동화 | 생성된 에이전트를 클라우드 런(Cloud Run) 및 Agent Runtime에 배포하기 위한 `Dockerfile`과 배포 스크립트를 완비해야 한다. |
 | **BR-04** | GitHub 레포 직결 무인 배포 (GitOps) | 개발자가 대화창에 GitHub 레포 URL을 제공하면 저장소 구조 검증, 런타임 빌드, 사내 갤러리 자동 등록을 원클릭으로 완결해야 한다. |
 | **BR-05** | Gemini Enterprise app 외부 에이전트 원클릭 연동 | 배포된 커스텀 에이전트 엔드포인트를 사내 Gemini Enterprise app 포털의 카탈로그에 '외부 에이전트'로 등록하고 연결성을 사전 검증해야 한다. |
 | **BR-06** | 엔터프라이즈 보안 및 격리 준수 | 서비스 계정 최소 권한 원칙(`roles/aiplatform.user`, `roles/run.invoker`), VPC 서비스 제어(VPC-SC) 보안 경계 고려사항을 설계에 강제해야 한다. |

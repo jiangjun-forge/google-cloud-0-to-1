@@ -4,7 +4,7 @@
 """Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-copilot-custom).
 
 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery), ERP, 모니터링 시스템을
-결합한 High-code 백엔드 에이전트(GEAP / Cloud Run)를 원클릭 스캐폴딩하고,
+결합한 High-code 백엔드 에이전트(Agent Runtime / Cloud Run)를 원클릭 스캐폴딩하고,
 GitHub 레포 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원한다.
 """
 
@@ -484,7 +484,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
    bash deploy.sh
    ```
 3. **Gemini Enterprise app 카탈로그 외부 에이전트 등록**:
-   - Agent Platform (GEAP) 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에서 'External Agent' 추가 후 상기 매니페스트 입력.
+   - Agent 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에서 'External Agent' 추가 후 상기 매니페스트 입력.
 
 ---
 
@@ -501,7 +501,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 ## 7. 콘솔 링크 조치 가이드
 
 - **Cloud Run 콘솔**: 배포된 백엔드 컨테이너 서비스 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/run )
-- **Agent Platform (GEAP) 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **Agent 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`{env_info['service_account']}`) 권한 및 인보커 바인딩 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---

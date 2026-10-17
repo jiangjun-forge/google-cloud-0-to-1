@@ -102,7 +102,7 @@ SYSTEM_INSTRUCTION = """너는 사내 엔터프라이즈 환경에서 구동하�
    bash deploy.sh
    ```
 3. **Gemini Enterprise app 카탈로그 외부 에이전트 등록**:
-   - Agent Platform (GEAP) 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에서 'External Agent' 추가 후 상기 매니페스트 입력.
+   - Agent 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에서 'External Agent' 추가 후 상기 매니페스트 입력.
 
 ---
 
@@ -119,7 +119,7 @@ SYSTEM_INSTRUCTION = """너는 사내 엔터프라이즈 환경에서 구동하�
 ## 7. 콘솔 링크 조치 가이드
 
 - **Cloud Run 콘솔**: 배포된 백엔드 컨테이너 서비스 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/run )
-- **Agent Platform (GEAP) 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **Agent 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`custom-agent-sa@sample-project-id.iam.gserviceaccount.com`) 권한 및 인보커 바인딩 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---

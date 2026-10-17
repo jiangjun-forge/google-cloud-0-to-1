@@ -40,7 +40,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-02** | 사내 8대 핵심 시스템 도구 프리셋 | 구글 시트, 슬랙, 지라, 빅쿼리, ERP, 클라우드 모니터링 등 사내에서 가장 빈번히 사용되는 8대 시스템 연동 템플릿을 기본 내장해야 한다. |
 | **BR-03** | 자격 증명 보안 볼트 연동 | API 토큰이나 인증키의 평문 노출을 원천 차단하고, 시크릿 매니저(Secret Manager) 참조 및 대행 서비스 계정 기반 인증을 강제해야 한다. |
 | **BR-04** | 조회(Read) vs 변경(Write) 승인 통제 | 데이터 조회 스킬은 자율 생성 즉시 활성화를 허용하고, 데이터 수정/삭제/결재 스킬은 사내 관리자 승인(Admin Approval)을 필수로 거치도록 격리해야 한다. |
-| **BR-05** | Gemini Enterprise app 도구 레지스트리 원클릭 등록 | 완성된 도구 매니페스트를 사내 Gemini Enterprise app 및 GEAP 도구 레지스트리에 배포하고, 기존 에이전트에 클릭 한 번으로 바인딩할 수 있어야 한다. |
+| **BR-05** | Gemini Enterprise app 도구 레지스트리 원클릭 등록 | 완성된 도구 매니페스트를 사내 Gemini Enterprise app 도구 레지스트리에 배포하고, 기존 에이전트에 클릭 한 번으로 바인딩할 수 있어야 한다. |
 | **BR-06** | 표준 리소스 라벨링 적용 의무화 | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 생성되는 도구 매니페스트, 보안 볼트 시크릿 및 관련 리소스에 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여야 한다. |
 
 ---

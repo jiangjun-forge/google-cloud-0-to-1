@@ -18,7 +18,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 시스템 아키텍처 및 처리 흐름
 
-본 도구는 크게 **커스텀 에이전트 스캐폴딩(코드 생성)** 단계, **백엔드 인프라 배포(GEAP / Cloud Run)** 단계, **Gemini Enterprise app 외부 에이전트 바인딩** 단계의 3단계 파이프라인으로 구성된다.
+본 도구는 크게 **커스텀 에이전트 스캐폴딩(코드 생성)** 단계, **백엔드 인프라 배포(Agent Runtime / Cloud Run)** 단계, **Gemini Enterprise app 외부 에이전트 바인딩** 단계의 3단계 파이프라인으로 구성된다.
 
 ```mermaid
 flowchart TD
@@ -39,9 +39,9 @@ flowchart TD
         PresetEngine --> DeploySpec
     end
 
-    subgraph DeploymentPhase ["3. GEAP 배포 및 Gemini Enterprise app 연동"]
+    subgraph DeploymentPhase ["3. Agent Runtime 배포 및 Gemini Enterprise app 연동"]
         CloudRun["클라우드 런 서빙 엔드포인트<br/>(Cloud Run Service)"]
-        AgentEngine["GEAP 에이전트 엔진 등록<br/>(Agent Engine Runtime)"]
+        AgentEngine["Agent Runtime 등록"]
         GEAppBinding["Gemini Enterprise app 외부 에이전트 연동<br/>(External Agent Registration)"]
         AgentCode --> CloudRun
         ToolsCode --> CloudRun
@@ -84,7 +84,7 @@ flowchart TD
 
 ### FR-03: 서버리스 및 컨테이너 배포 스펙(`Dockerfile`, `deploy.sh`) 도출
 - 생성된 파이썬 코드를 즉시 패키징하여 배포할 수 있는 최적화된 경량 `Dockerfile`을 생성한다 (Python 3.11-slim 기반, 비루트 사용자 실행).
-- 클라우드 런(Cloud Run) 배포 명령어(`gcloud run deploy`)와 GEAP 에이전트 엔진(Agent Engine) 등록 명령어를 완비한 쉘 스크립트를 도출한다.
+- 클라우드 런(Cloud Run) 배포 명령어(`gcloud run deploy`)와 Agent Runtime 등록 명령어를 완비한 쉘 스크립트를 도출한다.
 
 ### FR-04: Gemini Enterprise app 외부 에이전트 바인딩 매니페스트 생성 및 연동 진단
 - 배포된 백엔드 서비스의 엔드포인트 URL을 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 '외부 에이전트(External Agent)'로 등록하기 위한 JSON 페이로드를 생성한다.

@@ -22,7 +22,7 @@
 
 ## 2. 생성된 OpenAPI 3.0 스키마 매니페스트 (Tool Manifest)
 
-제미나이 엔터프라이즈 에이전트 플랫폼(GEAP) 및 Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 전문이다:
+Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 전문이다:
 
 ```json
 {
@@ -133,7 +133,7 @@
 ## 4. 권장 후속 조치 및 에이전트 바인딩 가이드
 
 1. **Gemini Enterprise app 도구 레지스트리 확인**:
-   - Agent Platform (GEAP) 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 'Tools' 메뉴에서 등록된 `sheets_data_lookup`를 확인한다.
+   - Agent 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 'Tools' 메뉴에서 등록된 `sheets_data_lookup`를 확인한다.
 2. **사내 에이전트에 스킬 장착**:
    - `gemini-enterprise-copilot-agent`로 제작된 기존 노코드 에이전트 또는 커스텀 에이전트의 설정 화면에서 본 스킬을 활성화(Toggle ON)하여 즉시 실무에 투입한다.
 
@@ -151,7 +151,7 @@
 
 ## 6. 콘솔 링크 조치 가이드
 
-- **Agent Platform (GEAP) 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **Agent 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
 - **IAM 및 관리자 콘솔**: 스킬 대행 서비스 계정(`ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
