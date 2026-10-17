@@ -420,13 +420,13 @@ def measure_live(
 
 
 def format_waterfall_text(profile: Dict[str, Any]) -> str:
-  """지연 시간 워터폴 차트 및 Vertex AI API vs GE App 정밀 비교 분석 텍스트를 생성한다."""
+  """지연 시간 워터폴 차트 및 Vertex AI API vs Gemini Enterprise app 정밀 비교 분석 텍스트를 생성한다."""
   lines = []
   lines.append("=" * 92)
-  lines.append(" Vertex AI Gemini API vs Gemini Enterprise App (GE App) 완결형 파이프라인 지연 시간 비교 리포트")
+  lines.append(" Vertex AI Gemini API vs Gemini Enterprise App (Gemini Enterprise app) 완결형 파이프라인 지연 시간 비교 리포트")
   lines.append(f" 프로젝트: {profile['project_id']} | 리전: {profile['location']} | 모델: {profile['model_id']}")
   lines.append(f" 테스트 프롬프트: \"{profile.get('prompt', '기본 쿼리')}\"")
-  lines.append(" ※ 참고: GE App은 웹 UI 접근이 아닌 Discovery Engine 엔드포인트 직접 호출과")
+  lines.append(" ※ 참고: Gemini Enterprise app은 웹 UI 접근이 아닌 Discovery Engine 엔드포인트 직접 호출과")
   lines.append("         Model Armor 가드레일 체인을 완결 결합하여 사내 엔터프라이즈 RAG 파이프라인을 모사함.")
   lines.append("=" * 92)
   lines.append("")
@@ -434,7 +434,7 @@ def format_waterfall_text(profile: Dict[str, Any]) -> str:
   hops = profile["hops"]
   total_latency = sum(h["latency_ms"] for h in hops)
 
-  lines.append(f"[1] Gemini Enterprise App (GE App) 완결형 파이프라인 구간별 지연 시간 (총 소요: {total_latency:,.1f} ms)")
+  lines.append(f"[1] Gemini Enterprise App (Gemini Enterprise app) 완결형 파이프라인 구간별 지연 시간 (총 소요: {total_latency:,.1f} ms)")
   lines.append("-" * 92)
   lines.append(f"{'구간 ID':<8} | {'계층':<12} | {'소요 시간 (비중)':<20} | {'워터폴 차트'}")
   lines.append("-" * 92)
@@ -466,9 +466,9 @@ def format_waterfall_text(profile: Dict[str, Any]) -> str:
     lines.append(f"  * Vertex AI Gemini API 전체 응답 완료 시간  : {api_total:>8.1f} ms")
     lines.append(f"  * Gemini Enterprise App 완결 E2E 소요 시간  : {ge_ms:>8.1f} ms (보안 가드레일 + 사내 RAG)")
     lines.append("-" * 92)
-    lines.append(f"  * 1) 첫 토큰 수신 시점 차이 : GE App 파이프라인에서 약 {perceived_ratio:.1f}배 추가 시간 소요")
+    lines.append(f"  * 1) 첫 토큰 수신 시점 차이 : Gemini Enterprise app 파이프라인에서 약 {perceived_ratio:.1f}배 추가 시간 소요")
     lines.append(f"       (선행 조건: Model Armor 인스펙션 및 사내 인덱스 검색 완료 후 토큰 생성 착수)")
-    lines.append(f"  * 2) 전체 E2E 완료 시간 차이 : GE App 파이프라인에서 약 {e2e_ratio:.1f}배 소요 (+{ge_ms - api_total:.1f} ms)")
+    lines.append(f"  * 2) 전체 E2E 완료 시간 차이 : Gemini Enterprise app 파이프라인에서 약 {e2e_ratio:.1f}배 소요 (+{ge_ms - api_total:.1f} ms)")
     if comp.get("api_sample"):
       lines.append(f"  * Vertex AI API 생성 샘플: \"{comp['api_sample'][:70]}...\"")
     lines.append("=" * 92)
@@ -487,7 +487,7 @@ def format_waterfall_text(profile: Dict[str, Any]) -> str:
   lines.append("종합 분석 및 아키텍처 해석:")
   lines.append("1. [초기 토큰 수신 지연(TTFT) 차이 분석]:")
   lines.append("   - Vertex AI 순수 API는 사전 필터 없이 스트리밍이 즉시 시작되어 초기 토큰 도달이 빠르다.")
-  lines.append("   - GE App은 Model Armor 사전 검증(약 0.7초)과 사내 데이터스토어 인덱스 검색(약 1.5~2초)이")
+  lines.append("   - Gemini Enterprise app은 Model Armor 사전 검증(약 0.7초)과 사내 데이터스토어 인덱스 검색(약 1.5~2초)이")
   lines.append("     동기식으로 선행 완료된 이후에 생성을 개시하므로 초기 토큰 수신까지 대기 시간이 발생한다.")
   lines.append("2. [사내 RAG 및 사후 보안 검증 파이프라인]:")
   lines.append("   - 검색된 문서를 프롬프트 문맥에 주입하여 답변을 요약하고, 생성된 답변에 대한 사후 민감정보")
@@ -500,7 +500,7 @@ def format_waterfall_text(profile: Dict[str, Any]) -> str:
 
 
 def print_waterfall(profile: Dict[str, Any]) -> None:
-  """지연 시간 워터폴 차트 및 Vertex AI API vs GE App 정밀 비교 분석 리포트를 출력한다."""
+  """지연 시간 워터폴 차트 및 Vertex AI API vs Gemini Enterprise app 정밀 비교 분석 리포트를 출력한다."""
   print(format_waterfall_text(profile))
 
 

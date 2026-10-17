@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-enterprise-skill-factory
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-skill-factory: GE App 환경에서 에이전트가 호출할 사내 시스템(Google Sheets, Slack, Jira, ERP 등) 연동 도구(Tools / Extensions)를 대화형으로 자율 생성하고 Secret Manager 보안 볼트 및 거버넌스 승인을 거쳐 등록하는 사내 스킬 팩토리 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-skill-factory: Gemini Enterprise app 환경에서 에이전트가 호출할 사내 시스템(Google Sheets, Slack, Jira, ERP 등) 연동 도구(Tools / Extensions)를 대화형으로 자율 생성하고 Secret Manager 보안 볼트 및 거버넌스 승인을 거쳐 등록하는 사내 스킬 팩토리 도구다.
 ---
 
 # Gemini Enterprise 자율형 사내 스킬 팩토리 (`gemini-enterprise-skill-factory`) (Autopilot & Hands-on Guide)
@@ -38,7 +38,7 @@ flowchart TD
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
     C -->|원하는 도구 칩 선택 및 거버넌스 확인| D["조회(Read) vs 변경(Write) 승인 플래그 및 Secret Manager 검증"]
     D --> E["Stage 3: 복습 (Deep-dive & Cleanup)"]
-    E -->|GE App 도구 레지스트리 배포 및 에이전트 장착| F["사내 에이전트 실무 워크플로우 투입 및 선택적 자원 정리"]
+    E -->|Gemini Enterprise app 도구 레지스트리 배포 및 에이전트 장착| F["사내 에이전트 실무 워크플로우 투입 및 선택적 자원 정리"]
 ```
 
 ---
@@ -84,8 +84,8 @@ python diagnose.py --dry-run --prompt "사내 사원증 발급 승인 시스템 
 
 ## 4. Stage 3: 복습 (Deep-dive & Cleanup 모드)
 
-### Step 4.1 실제 GE App 도구 레지스트리 등록 (선택 사항)
-실제 사내 GE App 도구 카탈로그에 해당 스킬을 공식 배포하고자 할 경우 수행한다:
+### Step 4.1 실제 Gemini Enterprise app 도구 레지스트리 등록 (선택 사항)
+실제 사내 Gemini Enterprise app 도구 카탈로그에 해당 스킬을 공식 배포하고자 할 경우 수행한다:
 ```bash
 python diagnose.py --publish --chip 1
 ```
@@ -109,5 +109,5 @@ gcloud iam service-accounts delete ge-skill-invoker-sa@${PROJECT_ID}.iam.gservic
          --role="roles/secretmanager.secretAccessor"
      ```
 2. **OpenAPI 스키마 유효성 검증 실패**:
-   - 증상: GE App 콘솔에서 도구 등록 시 Invalid Schema 에러 발생.
+   - 증상: Gemini Enterprise app 콘솔에서 도구 등록 시 Invalid Schema 에러 발생.
    - 자가 치유: `diagnose.py`가 생성한 스키마가 OpenAPI 3.0.3 표준(`paths`, `operationId`, `responses`)을 100% 만족하므로, 본 도구의 산출물 JSON을 그대로 사용하여 재등록한다.

@@ -3,10 +3,10 @@
 
 """Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 도구.
 
-사내 제미나이 엔터프라이즈 앱(GE app) 환경에서 에이전트가 호출할 수 있는
+사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 호출할 수 있는
 사내 시스템 연동 도구(Tools / Extensions / Action Skills)를 비개발자가
 대화형으로 자율 생성하고, Secret Manager 보안 볼트 및 거버넌스 승인을 거쳐
-GE App 도구 레지스트리에 안전하게 등록할 수 있도록 지원한다.
+Gemini Enterprise app 도구 레지스트리에 안전하게 등록할 수 있도록 지원한다.
 """
 
 import argparse
@@ -193,7 +193,7 @@ def resolve_environment(args):
     # 2. Location
     location = args.location or os.environ.get("LOCATION") or "global"
 
-    # 3. GE App ID
+    # 3. Gemini Enterprise App ID
     if args.dry_run and not args.ge_app_id:
         ge_app_id = "sample-ge-app-id"
     else:
@@ -387,7 +387,7 @@ def build_markdown_report(env_info: dict, tool_data: dict, tool_manifest: dict, 
 
 - **실행 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 - **대상 프로젝트**: `{project_id}`
-- **GE App 인스턴스**: `{ge_app_id}`
+- **Gemini Enterprise app 인스턴스**: `{ge_app_id}`
 - **스킬 실행 서비스 계정**: `{sa_email}`
 - **생성된 도구**: `{tool_data['id']}` ({tool_data['title']})
 
@@ -407,7 +407,7 @@ def build_markdown_report(env_info: dict, tool_data: dict, tool_manifest: dict, 
 
 ## 2. 생성된 OpenAPI 3.0 스키마 매니페스트 (Tool Manifest)
 
-제미나이 엔터프라이즈 에이전트 플랫폼(GEAP) 및 GE App 도구 레지스트리에 배포되는 정량 스키마 전문이다:
+제미나이 엔터프라이즈 에이전트 플랫폼(GEAP) 및 Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 전문이다:
 
 ```json
 {json.dumps(tool_manifest['openapi_spec'], indent=2, ensure_ascii=False)}
@@ -426,7 +426,7 @@ def build_markdown_report(env_info: dict, tool_data: dict, tool_manifest: dict, 
 
 ## 4. 권장 후속 조치 및 에이전트 바인딩 가이드
 
-1. **GE App 도구 레지스트리 확인**:
+1. **Gemini Enterprise app 도구 레지스트리 확인**:
    - Vertex AI Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에 접속하여 'Tools' 메뉴에서 등록된 `{tool_data['id']}`를 확인한다.
 2. **사내 에이전트에 스킬 장착**:
    - `gemini-enterprise-agent-factory`로 제작된 기존 노코드 에이전트 또는 커스텀 에이전트의 설정 화면에서 본 스킬을 활성화(Toggle ON)하여 즉시 실무에 투입한다.
@@ -447,11 +447,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
-    parser.add_argument("--location", help="Discovery Engine / GE App 리전 (기본: global)")
+    parser.add_argument("--location", help="Discovery Engine / Gemini Enterprise app 리전 (기본: global)")
     parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
     parser.add_argument("--skill-sa", help="스킬 실행 대행 서비스 계정 이메일")
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 등록 없이 가상 실행 검증")
-    parser.add_argument("--publish", action="store_true", default=False, help="GE App 도구 레지스트리 실제 등록")
+    parser.add_argument("--publish", action="store_true", default=False, help="Gemini Enterprise app 도구 레지스트리 실제 등록")
     parser.add_argument("--chip", type=int, help="도구 칩 번호 직접 지정 (1~8)")
     parser.add_argument("--prompt", help="사용자 직접 정의 연동 시스템 요구사항")
     parser.add_argument("--interactive", action="store_true", default=False, help="대화형 선택기 가동")
@@ -470,7 +470,7 @@ def main():
     env_info = resolve_environment(args)
     print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
     print(f"[*] 대상 리전        : {env_info['location']}")
-    print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
+    print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
     print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
     print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 배포 모드'}")
 
@@ -507,12 +507,12 @@ def main():
     print(f"  - 보안 볼트 URI : {tool_manifest['secret_vault_ref']}")
 
     # 4. IAM 권한 진단
-    print("\n[단계 3/3] 서비스 계정 IAM 권한 및 GE App 도구 레지스트리 연동 진단 중...")
+    print("\n[단계 3/3] 서비스 계정 IAM 권한 및 Gemini Enterprise app 도구 레지스트리 연동 진단 중...")
     iam_diag = diagnose_secret_manager_iam(env_info, args.dry_run)
     print(f"  - 상태: {iam_diag['status']} | {iam_diag['detail']}")
 
     if args.publish and not args.dry_run:
-        print("  - 실제 GE App 도구 레지스트리에 등록 요청 전송 중...")
+        print("  - 실제 Gemini Enterprise app 도구 레지스트리에 등록 요청 전송 중...")
         print(f"  - [등록 완료] '{tool_data['title']}' 스킬이 사내 도구 카탈로그에 배포되었습니다.")
     else:
         print("  - [가상 실행] 실제 API 호출 없이 도구 스키마 및 보안 매니페스트 무결성 검증 완료.")

@@ -1,8 +1,8 @@
 # Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 보고서
 
-- **실행 일시**: 2026-10-17 01:15:13 UTC
+- **실행 일시**: 2026-10-17 01:17:09 UTC
 - **대상 프로젝트**: `sample-project-id`
-- **GE App 인스턴스**: `sample-ge-app-id`
+- **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **스킬 실행 서비스 계정**: `ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com`
 - **생성된 도구**: `sheets_data_lookup` (Google Sheets 사내 실적 및 명단 행 조회 스킬)
 
@@ -22,7 +22,7 @@
 
 ## 2. 생성된 OpenAPI 3.0 스키마 매니페스트 (Tool Manifest)
 
-제미나이 엔터프라이즈 에이전트 플랫폼(GEAP) 및 GE App 도구 레지스트리에 배포되는 정량 스키마 전문이다:
+제미나이 엔터프라이즈 에이전트 플랫폼(GEAP) 및 Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 전문이다:
 
 ```json
 {
@@ -132,7 +132,7 @@
 
 ## 4. 권장 후속 조치 및 에이전트 바인딩 가이드
 
-1. **GE App 도구 레지스트리 확인**:
+1. **Gemini Enterprise app 도구 레지스트리 확인**:
    - Vertex AI Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에 접속하여 'Tools' 메뉴에서 등록된 `sheets_data_lookup`를 확인한다.
 2. **사내 에이전트에 스킬 장착**:
    - `gemini-enterprise-agent-factory`로 제작된 기존 노코드 에이전트 또는 커스텀 에이전트의 설정 화면에서 본 스킬을 활성화(Toggle ON)하여 즉시 실무에 투입한다.

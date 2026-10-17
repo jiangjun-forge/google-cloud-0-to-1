@@ -10,15 +10,15 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 GE App 연동기 기술 상세 설계서 (TDD)
+# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동기 기술 상세 설계서 (TDD)
 
-본 문서는 사내 엔지니어링 환경에서 구동하는 하이코드(High-code) 커스텀 에이전트 스캐폴더 및 제미나이 엔터프라이즈 앱(Gemini Enterprise app, 이하 GE app) 외부 에이전트 연동 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
+본 문서는 사내 엔지니어링 환경에서 구동하는 하이코드(High-code) 커스텀 에이전트 스캐폴더 및 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 외부 에이전트 연동 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 처리 흐름
 
-본 도구는 크게 **커스텀 에이전트 스캐폴딩(코드 생성)** 단계, **백엔드 인프라 배포(GEAP / Cloud Run)** 단계, **GE App 외부 에이전트 바인딩** 단계의 3단계 파이프라인으로 구성된다.
+본 도구는 크게 **커스텀 에이전트 스캐폴딩(코드 생성)** 단계, **백엔드 인프라 배포(GEAP / Cloud Run)** 단계, **Gemini Enterprise app 외부 에이전트 바인딩** 단계의 3단계 파이프라인으로 구성된다.
 
 ```mermaid
 flowchart TD
@@ -39,10 +39,10 @@ flowchart TD
         PresetEngine --> DeploySpec
     end
 
-    subgraph DeploymentPhase ["3. GEAP 배포 및 GE App 연동"]
+    subgraph DeploymentPhase ["3. GEAP 배포 및 Gemini Enterprise app 연동"]
         CloudRun["클라우드 런 서빙 엔드포인트<br/>(Cloud Run Service)"]
         AgentEngine["GEAP 에이전트 엔진 등록<br/>(Agent Engine Runtime)"]
-        GEAppBinding["GE App 외부 에이전트 연동<br/>(External Agent Registration)"]
+        GEAppBinding["Gemini Enterprise app 외부 에이전트 연동<br/>(External Agent Registration)"]
         AgentCode --> CloudRun
         ToolsCode --> CloudRun
         DeploySpec --> CloudRun
@@ -51,7 +51,7 @@ flowchart TD
     end
 
     subgraph EndUser ["4. 전사 임직원 활용"]
-        User["GE App 웹 인터페이스 사용자"]
+        User["Gemini Enterprise app 웹 인터페이스 사용자"]
         GEAppBinding -.->|"사내 카탈로그 노출"| User
     end
 ```
@@ -65,7 +65,7 @@ flowchart TD
 | **BR-01** (하이코드 에이전트 스캐폴딩) | **FR-01** (에이전트 코어 코드 생성기) | **NFR-01** (무의존성 및 단일 파이썬 실행) | `diagnose.py` |
 | **BR-02** (엔터프라이즈 데이터 및 도구 템플릿) | **FR-02** (BigQuery 및 OpenAPI 도구 조립) | **NFR-02** (표준 소프트웨어 스택 준수) | `diagnose.py` 템플릿 모듈 |
 | **BR-03** (컨테이너 및 서버리스 배포 자동화) | **FR-03** (Dockerfile 및 배포 스크립트 도출) | **NFR-01**, **NFR-02** | `diagnose.py` 배포 빌더 |
-| **BR-04** (GE App 외부 에이전트 원클릭 연동) | **FR-04** (외부 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 연동 모듈 |
+| **BR-04** (Gemini Enterprise app 외부 에이전트 원클릭 연동) | **FR-04** (외부 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 연동 모듈 |
 | **BR-05** (엔터프라이즈 보안 및 격리 준수) | **FR-05** (IAM 권한 진단 및 마크다운 리포트) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
 
 ---
@@ -84,13 +84,13 @@ flowchart TD
 - 생성된 파이썬 코드를 즉시 패키징하여 배포할 수 있는 최적화된 경량 `Dockerfile`을 생성한다 (Python 3.11-slim 기반, 비루트 사용자 실행).
 - 클라우드 런(Cloud Run) 배포 명령어(`gcloud run deploy`)와 GEAP 에이전트 엔진(Agent Engine) 등록 명령어를 완비한 쉘 스크립트를 도출한다.
 
-### FR-04: GE App 외부 에이전트 바인딩 매니페스트 생성 및 연동 진단
-- 배포된 백엔드 서비스의 엔드포인트 URL을 제미나이 엔터프라이즈 앱(GE app)에 '외부 에이전트(External Agent)'로 등록하기 위한 JSON 페이로드를 생성한다.
-- GE App과 백엔드 프로젝트 간의 서비스 계정 호출 권한(`roles/run.invoker`) 및 도메인 제한 공유(Domain Restricted Sharing) 조직 정책 준수 여부를 사전 진단한다.
+### FR-04: Gemini Enterprise app 외부 에이전트 바인딩 매니페스트 생성 및 연동 진단
+- 배포된 백엔드 서비스의 엔드포인트 URL을 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 '외부 에이전트(External Agent)'로 등록하기 위한 JSON 페이로드를 생성한다.
+- Gemini Enterprise app과 백엔드 프로젝트 간의 서비스 계정 호출 권한(`roles/run.invoker`) 및 도메인 제한 공유(Domain Restricted Sharing) 조직 정책 준수 여부를 사전 진단한다.
 
 ### FR-05: IAM 권한 진단 및 표준 마크다운 리포트 자동 생성
 - 개발자 계정 및 실행 서비스 계정의 필수 IAM 권한(`roles/aiplatform.user`, `roles/run.admin`, `roles/discoveryengine.editor`)을 사전 점검한다.
-- 진단 및 스캐폴딩 실행 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, GE App 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
+- 진단 및 스캐폴딩 실행 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, Gemini Enterprise app 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
 ---
 

@@ -37,7 +37,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 2. 처리 아키텍처 (Activity Diagram)
 
-본 솔루션은 관리자가 사내 GE app 포털에 `@에이전트 팩토리` 메타 에이전트를 단 1회 배포하고, 전사 임직원은 IAM 권한 없이도 웹 채팅창에서 대화와 추천 칩으로 자율 에이전트를 생성 및 등록하는 2단계 파이프라인으로 동작한다.
+본 솔루션은 관리자가 사내 Gemini Enterprise app 포털에 `@에이전트 팩토리` 메타 에이전트를 단 1회 배포하고, 전사 임직원은 IAM 권한 없이도 웹 채팅창에서 대화와 추천 칩으로 자율 에이전트를 생성 및 등록하는 2단계 파이프라인으로 동작한다.
 
 ```mermaid
 flowchart TD
@@ -48,7 +48,7 @@ flowchart TD
         A1 --> A2 --> A3
     end
 
-    subgraph UserInteraction ["2. 임직원 자율 생성 (GE App 웹 포털)"]
+    subgraph UserInteraction ["2. 임직원 자율 생성 (Gemini Enterprise app 웹 포털)"]
         U1["현업 임직원<br/>(GCP IAM 권한 0개)"]
         U2["@에이전트 팩토리 대화 호출"]
         U3["10대 도메인 25종 추천 칩 제시"]
@@ -64,7 +64,7 @@ flowchart TD
         U4 --> S1 --> S2 --> S3 --> S4
     end
 
-    A3 -.->|"사내 GE App 카탈로그 상주"| U2
+    A3 -.->|"사내 Gemini Enterprise app 카탈로그 상주"| U2
 ```
 
 ---
@@ -75,9 +75,9 @@ flowchart TD
 
 | 역할 (Role) | 부여 대상 | 용도 및 최소 권한 세부 사항 |
 | :--- | :--- | :--- |
-| `roles/discoveryengine.editor` | 대행 서비스 계정 (`ge-agent-factory-sa`) | GE App 내 노코드 에이전트 생성, 수정 및 카탈로그 등록 대행 |
+| `roles/discoveryengine.editor` | 대행 서비스 계정 (`ge-agent-factory-sa`) | Gemini Enterprise app 내 노코드 에이전트 생성, 수정 및 카탈로그 등록 대행 |
 | `roles/viewer` | 관리자 실행 계정 | 사내 프로젝트 리소스 및 IAM 정책 조회 |
-| 권한 불필요 (Zero IAM) | 일반 현업 임직원 | GE App 웹 포털 로그인 계정 외에 GCP 콘솔 권한 일절 불필요 |
+| 권한 불필요 (Zero IAM) | 일반 현업 임직원 | Gemini Enterprise app 웹 포털 로그인 계정 외에 GCP 콘솔 권한 일절 불필요 |
 
 ---
 
@@ -104,8 +104,8 @@ python diagnose.py --dry-run --chip 2:1
 python diagnose.py --dry-run --prompt "사내 특허 출원 절차 및 선행 기술 검토 에이전트"
 ```
 
-### 4.3. 실제 사내 GE App 배포 집행 (--publish)
-사내 GE App 카탈로그에 `@에이전트 팩토리`를 정식으로 등록하여 전사 임직원이 사용할 수 있도록 배포한다:
+### 4.3. 실제 사내 Gemini Enterprise app 배포 집행 (--publish)
+사내 Gemini Enterprise app 카탈로그에 `@에이전트 팩토리`를 정식으로 등록하여 전사 임직원이 사용할 수 있도록 배포한다:
 ```bash
 python diagnose.py --publish
 ```
@@ -128,5 +128,5 @@ python diagnose.py --publish
    ```bash
    gcloud iam service-accounts delete ge-agent-factory-sa@${PROJECT_ID}.iam.gserviceaccount.com --quiet
    ```
-2. **GE App 카탈로그 에이전트 삭제**:
+2. **Gemini Enterprise app 카탈로그 에이전트 삭제**:
    - Vertex AI Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에 접속하여 테스트용으로 생성된 에이전트를 선택 후 삭제한다.

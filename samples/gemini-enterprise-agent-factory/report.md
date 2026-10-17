@@ -1,8 +1,8 @@
 # Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 진단 및 배포 보고서
 
-- **실행 일시**: 2026-10-17 00:57:28 UTC
+- **실행 일시**: 2026-10-17 01:17:09 UTC
 - **대상 프로젝트**: `sample-project-id`
-- **GE App 인스턴스**: `sample-ge-app-id`
+- **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **대행 서비스 계정**: `ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`
 
 ---
@@ -22,10 +22,10 @@
 ## 2. 배포된 메타 에이전트 명세 (@에이전트 팩토리)
 
 - **에이전트 명칭**: `에이전트 팩토리 (Agent Factory)`
-- **역할 정의**: 사내 비개발자 임직원을 위한 대화형 자율 노코드 에이전트 생성 및 GE App 직결 배포 비서
-- **등록 대상 GE App**: `https://gemini.google.com/app/sample-ge-app-id`
+- **역할 정의**: 사내 비개발자 임직원을 위한 대화형 자율 노코드 에이전트 생성 및 Gemini Enterprise app 직결 배포 비서
+- **등록 대상 Gemini Enterprise app**: `https://gemini.google.com/app/sample-ge-app-id`
 - **내장 도구(Tools)**:
-  - `create_ge_nocode_agent`: 전용 서비스 계정을 통한 No-code 에이전트 GE App 대행 등록 도구
+  - `create_ge_nocode_agent`: 전용 서비스 계정을 통한 No-code 에이전트 Gemini Enterprise app 대행 등록 도구
 
 ---
 
@@ -82,7 +82,7 @@
 
 ## 4. 권장 후속 조치 및 운영 가이드
 
-1. **사내 GE App 웹 포털 공지**:
+1. **사내 Gemini Enterprise app 웹 포털 공지**:
    - 임직원 사내 포털(`https://gemini.google.com/app/sample-ge-app-id`)에서 `@에이전트 팩토리`를 호출하여 자율 에이전트 제작을 시작하도록 사내 가이드를 배포한다.
 2. **사내 거버넌스 승인 파이프라인**:
    - 임직원이 생성한 에이전트는 작성자 본인 및 팀 전용(`PRIVATE`)으로 즉시 활성화된다.

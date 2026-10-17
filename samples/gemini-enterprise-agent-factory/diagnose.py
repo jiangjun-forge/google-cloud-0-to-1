@@ -3,7 +3,7 @@
 
 """Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 진단 및 배포 도구.
 
-사내 비개발자 임직원이 GE app(Gemini Enterprise app) 내에서 대화형 인터뷰와
+사내 비개발자 임직원이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 내에서 대화형 인터뷰와
 추천 칩 선택을 통해 실시간 검색 보강된 노코드 에이전트를 자율 생성하고
 전용 대행 서비스 계정으로 안전하게 등록할 수 있도록 메타 에이전트를 배포한다.
 """
@@ -248,7 +248,7 @@ def get_gcloud_config(key: str) -> str:
 
 
 def resolve_environment(args):
-    """실행 환경(프로젝트 ID, 리전, GE App ID, 대행 서비스 계정)을 계층형으로 확정한다."""
+    """실행 환경(프로젝트 ID, 리전, Gemini Enterprise App ID, 대행 서비스 계정)을 계층형으로 확정한다."""
     load_env_file()
 
     # 1. Project ID (가상 실행 시 사내 식별 정보 유출 방지를 위해 가명 강제)
@@ -260,7 +260,7 @@ def resolve_environment(args):
     # 2. Location
     location = args.location or os.environ.get("LOCATION") or "global"
 
-    # 3. GE App ID
+    # 3. Gemini Enterprise App ID
     if args.dry_run and not args.ge_app_id:
         ge_app_id = "sample-ge-app-id"
     else:
@@ -401,10 +401,10 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
 
 
 def build_meta_agent_manifest(env_info: dict):
-    """GE App에 배포될 '@에이전트 팩토리' 메타 에이전트의 전체 매니페스트 및 도구 정의를 생성한다."""
+    """Gemini Enterprise app에 배포될 '@에이전트 팩토리' 메타 에이전트의 전체 매니페스트 및 도구 정의를 생성한다."""
     tool_definition = {
         "name": "create_ge_nocode_agent",
-        "description": "임직원과의 대화 및 추천 칩 선택을 통해 완성된 노코드 에이전트를 GE App에 자율 등록한다.",
+        "description": "임직원과의 대화 및 추천 칩 선택을 통해 완성된 노코드 에이전트를 Gemini Enterprise app에 자율 등록한다.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -436,12 +436,12 @@ def build_meta_agent_manifest(env_info: dict):
 2. 선택된 주제에 대해 구글 검색을 활용하여 2026년 최신 규정 및 표준 작업 절차를 실시간으로 조사한다.
 3. 5대 골든 프롬프트(Role, Workflow, Guardrails, Fallback, Starter Prompts) 규격으로 시스템 지침을 완성한다.
 4. 임직원에게 기획된 에이전트 명세를 보여주고 최종 확인을 구한다.
-5. 임직원이 동의하면 'create_ge_nocode_agent' 도구를 호출하여 전용 서비스 계정({env_info['delegated_sa']}) 권한으로 GE App에 즉시 등록한다.
+5. 임직원이 동의하면 'create_ge_nocode_agent' 도구를 호출하여 전용 서비스 계정({env_info['delegated_sa']}) 권한으로 Gemini Enterprise app에 즉시 등록한다.
 """
 
     return {
         "display_name": "에이전트 팩토리 (Agent Factory)",
-        "description": "사내 비개발자 임직원을 위한 대화형 자율 노코드 에이전트 생성 및 GE App 직결 배포 비서",
+        "description": "사내 비개발자 임직원을 위한 대화형 자율 노코드 에이전트 생성 및 Gemini Enterprise app 직결 배포 비서",
         "instructions": meta_instructions,
         "tools": [tool_definition],
         "delegated_service_account": env_info["delegated_sa"],
@@ -507,7 +507,7 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
 
 - **실행 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 - **대상 프로젝트**: `{project_id}`
-- **GE App 인스턴스**: `{ge_app_id}`
+- **Gemini Enterprise app 인스턴스**: `{ge_app_id}`
 - **대행 서비스 계정**: `{sa_email}`
 
 ---
@@ -528,9 +528,9 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
 
 - **에이전트 명칭**: `{meta_manifest['display_name']}`
 - **역할 정의**: {meta_manifest['description']}
-- **등록 대상 GE App**: `https://gemini.google.com/app/{ge_app_id}`
+- **등록 대상 Gemini Enterprise app**: `https://gemini.google.com/app/{ge_app_id}`
 - **내장 도구(Tools)**:
-  - `create_ge_nocode_agent`: 전용 서비스 계정을 통한 No-code 에이전트 GE App 대행 등록 도구
+  - `create_ge_nocode_agent`: 전용 서비스 계정을 통한 No-code 에이전트 Gemini Enterprise app 대행 등록 도구
 
 ---
 
@@ -558,7 +558,7 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
 
 ## 4. 권장 후속 조치 및 운영 가이드
 
-1. **사내 GE App 웹 포털 공지**:
+1. **사내 Gemini Enterprise app 웹 포털 공지**:
    - 임직원 사내 포털(`https://gemini.google.com/app/{ge_app_id}`)에서 `@에이전트 팩토리`를 호출하여 자율 에이전트 제작을 시작하도록 사내 가이드를 배포한다.
 2. **사내 거버넌스 승인 파이프라인**:
    - 임직원이 생성한 에이전트는 작성자 본인 및 팀 전용(`PRIVATE`)으로 즉시 활성화된다.
@@ -580,11 +580,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
-    parser.add_argument("--location", help="Discovery Engine / GE App 리전 (기본: global)")
+    parser.add_argument("--location", help="Discovery Engine / Gemini Enterprise app 리전 (기본: global)")
     parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
     parser.add_argument("--delegated-sa", help="에이전트 등록 대행 서비스 계정 이메일")
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 API 호출 없이 가상 실행 검증")
-    parser.add_argument("--publish", action="store_true", default=False, help="실제 GE App에 메타 에이전트 등록 실행")
+    parser.add_argument("--publish", action="store_true", default=False, help="실제 Gemini Enterprise app에 메타 에이전트 등록 실행")
     parser.add_argument("--interactive", action="store_true", default=False, help="대화형 번호 선택기 강제 가동")
     parser.add_argument("--chip", help="부서/칩 식별자 지정 (예: 1:1 또는 vdi_unlock)")
     parser.add_argument("--prompt", help="사용자 직접 정의 에이전트 프롬프트 지정")
@@ -603,7 +603,7 @@ def main():
     env_info = resolve_environment(args)
     print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
     print(f"[*] 대상 리전        : {env_info['location']}")
-    print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
+    print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
     print(f"[*] 대행 서비스 계정 : {env_info['delegated_sa']}")
     print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 배포 모드'}")
 
@@ -659,12 +659,12 @@ def main():
     sample_spec = synthesize_agent_specification(category, selected_chip, args.dry_run, env_info["project_id"])
     print("  - 5대 골든 지침 및 스타터 프롬프트 합성 완료 (No-Training & PII 보호 가드레일 강제)")
 
-    # 5. GE App 배포 집행 (실제 모드 또는 모의)
-    print("\n[단계 4/4] GE App 메타 에이전트 배포 및 등록 상태 점검 중...")
+    # 5. Gemini Enterprise app 배포 집행 (실제 모드 또는 모의)
+    print("\n[단계 4/4] Gemini Enterprise app 메타 에이전트 배포 및 등록 상태 점검 중...")
     if args.publish and not args.dry_run:
-        print("  - 실제 GE App 카탈로그에 메타 에이전트 등록 요청 전송 중...")
+        print("  - 실제 Gemini Enterprise app 카탈로그에 메타 에이전트 등록 요청 전송 중...")
         # 실제 API 호출부 (Discovery Engine Collection API)
-        print("  - [배포 완료] @에이전트 팩토리가 사내 GE App 카탈로그에 등록되었습니다.")
+        print("  - [배포 완료] @에이전트 팩토리가 사내 Gemini Enterprise app 카탈로그에 등록되었습니다.")
     else:
         print("  - [가상 실행] 실제 API 호출 없이 배포 매니페스트 및 도구 정의 정합성 검증 완료.")
 

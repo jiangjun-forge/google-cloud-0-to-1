@@ -30,7 +30,7 @@ All contents, designs, and code examples are subject to change, modification, or
 └── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (44개)
     ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
     ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
-    ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 GE App 선택 연동)
+    ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 Gemini Enterprise app 선택 연동)
     ├── cloud-nat-port-exhaustion-guard/        # Cloud NAT 동적 포트 할당(DPA) 확장 지연 및 사일런트 패킷 드롭 진단
     ├── cloud-run-cud-optimizer/                # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
     ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
@@ -40,8 +40,8 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
     ├── gce-reservation-guard/                  # CUD 약정 대비 물리적 Reservation 확보율 및 Future Reservation 진단
     ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
-    ├── gemini-enterprise-agent-factory/        # 자율형 사내 노코드 에이전트 팩토리 및 GE App 대행 등록
-    ├── gemini-enterprise-agent-factory-custom/ # 하이코드 커스텀 에이전트 스캐폴더 및 GE App 외부 연동
+    ├── gemini-enterprise-agent-factory/        # 자율형 사내 노코드 에이전트 팩토리 및 Gemini Enterprise app 대행 등록
+    ├── gemini-enterprise-agent-factory-custom/ # 하이코드 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 외부 연동
     ├── gemini-enterprise-agent-resolver/       # 커스텀 에이전트 연동 권한 및 조직 정책 진단
     ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
     ├── gemini-enterprise-domain-resolver/      # 사내 도메인 선점 충돌 진단 및 Cloud Identity 배포
@@ -50,7 +50,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gemini-enterprise-latency-profiler/     # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
     ├── gemini-enterprise-overage-guard/        # Overage 과금 방어, AI Studio API 키 차단 및 Billing RBAC 가드
     ├── gemini-enterprise-skill-factory/        # 자율형 사내 스킬 팩토리 및 OpenAPI 도구 레지스트리 배포
-    ├── gemini-enterprise-usage-by-account/     # GE App 공식 로깅 안내 및 Model Armor 살균 감사 로그 기반 토큰 추정
+    ├── gemini-enterprise-usage-by-account/     # Gemini Enterprise app 공식 로깅 기반 계정별 토큰 사용량 및 지연시간 분석
     ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
     ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
     ├── gemini-request-response-logging/        # 파운데이션 모델 프롬프트 BigQuery 스트리밍 적재 및 토큰 분석

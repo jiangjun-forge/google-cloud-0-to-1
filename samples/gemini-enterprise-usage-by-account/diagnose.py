@@ -3,7 +3,7 @@
 
 """Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 토큰 사용량 분석 도구.
 
-제미나이 엔터프라이즈 앱(GE app) 관리 콘솔의 공식 내장 '프롬프트 및 응답 로깅
+제미나이 엔터프라이즈 앱(Gemini Enterprise app) 관리 콘솔의 공식 내장 '프롬프트 및 응답 로깅
 (Prompt & Response Logging)' 기능을 활성화하고, 빅쿼리(BigQuery)로 자동 적재되는
 데이터를 분석하여 사용자 및 계정별 프롬프트 호출량과 토큰 소모량을 분석한다.
 """
@@ -56,7 +56,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-p
 
 
 def get_official_logging_sql(project_id: str, dataset: str, days: int) -> str:
-    """GE App 공식 프롬프트/응답 로깅 BigQuery 테이블 집계 표준 SQL을 반환한다."""
+    """Gemini Enterprise app 공식 프롬프트/응답 로깅 BigQuery 테이블 집계 표준 SQL을 반환한다."""
     return f"""SELECT 
     COALESCE(user_email, principal_id, 'unknown_user') AS user_identity,
     COUNT(1) AS request_count,
@@ -71,10 +71,10 @@ ORDER BY grand_total_tokens DESC;"""
 
 
 def format_results_text(project_id: str, dataset: str, days: int, is_dry_run: bool = False) -> str:
-    """공식 GE App 로깅 기반 사용자별 토큰 분석 결과 텍스트를 반환한다."""
+    """공식 Gemini Enterprise app 로깅 기반 사용자별 토큰 분석 결과 텍스트를 반환한다."""
     lines = []
     if is_dry_run:
-        lines.append("[가상 실행] --dry-run 모드가 활성화되어 GE App 공식 로깅 집계를 시뮬레이션한다.")
+        lines.append("[가상 실행] --dry-run 모드가 활성화되어 Gemini Enterprise app 공식 로깅 집계를 시뮬레이션한다.")
     lines.append("=" * 72)
     lines.append("  Gemini Enterprise 공식 프롬프트 로깅 기반 계정별 토큰 사용량 진단")
     lines.append(f"  - 대상 프로젝트      : {project_id}")
@@ -82,7 +82,7 @@ def format_results_text(project_id: str, dataset: str, days: int, is_dry_run: bo
     lines.append(f"  - 분석 대상 기간    : 최근 {days}일")
     lines.append("=" * 72)
     lines.append("""
-[GE App 공식 로깅 수집 기반 사용자별 프롬프트 호출 및 토큰 사용량 순위]
+[Gemini Enterprise app 공식 로깅 수집 기반 사용자별 프롬프트 호출 및 토큰 사용량 순위]
 ┌───────────────────────────────────────────┬────────────┬──────────────────┬─────────────────┬──────────────────┬──────────────┐
 │ 사용자 계정 (User Identity)               │ 호출 횟수  │ 입력 토큰 합계   │ 출력 토큰 합계  │ 총 토큰 사용량   │ 평균 지연시간│
 ├───────────────────────────────────────────┼────────────┼──────────────────┼─────────────────┼──────────────────┼──────────────┤
@@ -113,7 +113,7 @@ def build_markdown_report(project_id: str, dataset: str, days: int, is_dry_run: 
         "",
         "---",
         "",
-        "## 1. GE App 공식 로깅 기반 진단 결과",
+        "## 1. Gemini Enterprise app 공식 로깅 기반 진단 결과",
         "",
         "```text",
         console_output,
@@ -121,7 +121,7 @@ def build_markdown_report(project_id: str, dataset: str, days: int, is_dry_run: 
         "",
         "---",
         "",
-        "## 2. GE App 공식 내장 프롬프트/응답 로깅 활성화 가이드",
+        "## 2. Gemini Enterprise app 공식 내장 프롬프트/응답 로깅 활성화 가이드",
         "",
         "구글 클라우드 공식 관리형 기능을 통해 프롬프트와 LLM 출력을 BigQuery로 영구 보관하려면 아래 절차를 수행한다:",
         "",

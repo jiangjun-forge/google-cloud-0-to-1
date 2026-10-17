@@ -17,10 +17,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-enterprise-agent-factory-custom
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-agent-factory-custom: 사내 BigQuery, ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(GEAP / Cloud Run)를 원클릭 스캐폴딩하고 GE App에 외부 에이전트로 연동하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-agent-factory-custom: 사내 BigQuery, ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(GEAP / Cloud Run)를 원클릭 스캐폴딩하고 Gemini Enterprise app에 외부 에이전트로 연동하는 도구다.
 ---
 
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 GE App 연동기 (`gemini-enterprise-agent-factory-custom`) (Autopilot & Hands-on Guide)
+# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동기 (`gemini-enterprise-agent-factory-custom`) (Autopilot & Hands-on Guide)
 
 본 스킬은 사내 클라우드 아키텍트와 백엔드 엔지니어가 `gemini-enterprise-agent-factory-custom` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
@@ -38,7 +38,7 @@ flowchart TD
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
     C -->|원하는 아키텍처 칩 선택 및 소스 파일 추출| D["scaffold/ 디렉터리에 agent.py, tools.py, Dockerfile 도출"]
     D --> E["Stage 3: 복습 (Deep-dive & Cleanup)"]
-    E -->|Cloud Run 배포 및 GE App 외부 바인딩| F["OIDC 토큰 인가 검증 및 선택적 자원 정리"]
+    E -->|Cloud Run 배포 및 Gemini Enterprise app 외부 바인딩| F["OIDC 토큰 인가 검증 및 선택적 자원 정리"]
 ```
 
 ---
@@ -57,7 +57,7 @@ python diagnose.py --dry-run
 실행 완료 후 생성된 `report.md`를 바탕으로 다음 3가지를 명확히 보고한다:
 1. **아키텍처 스택**: FastAPI + Vertex AI SDK + BigQuery/MCP 연동 구성
 2. **생성된 하이코드 산출물**: `agent.py`, `tools.py`, `Dockerfile`, `deploy.sh` 4대 파일
-3. **GE App 외부 에이전트 연동 매니페스트**: OIDC 토큰 기반 엔드포인트 바인딩 스키마
+3. **Gemini Enterprise app 외부 에이전트 연동 매니페스트**: OIDC 토큰 기반 엔드포인트 바인딩 스키마
 
 ---
 
@@ -104,8 +104,8 @@ gcloud iam service-accounts delete custom-agent-sa@${PROJECT_ID}.iam.gserviceacc
 ## 5. 트러블슈팅 및 자가 치유 (Troubleshooting & Self-Healing)
 
 1. **Cloud Run 인보커 권한 거부 (403 Forbidden)**:
-   - 증상: GE App에서 외부 에이전트 호출 시 403 인증 실패 발생.
-   - 자가 치유: GE App 호출 서비스 계정에 `roles/run.invoker` 역할을 부여한다:
+   - 증상: Gemini Enterprise app에서 외부 에이전트 호출 시 403 인증 실패 발생.
+   - 자가 치유: Gemini Enterprise app 호출 서비스 계정에 `roles/run.invoker` 역할을 부여한다:
      ```bash
      gcloud run services add-iam-policy-binding ${SERVICE_NAME} \
          --region=asia-northeast3 \

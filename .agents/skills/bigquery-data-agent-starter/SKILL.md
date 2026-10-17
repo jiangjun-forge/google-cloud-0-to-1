@@ -20,7 +20,7 @@ description: >-
   Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-starter: 45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 BigQuery 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Stud...
 ---
 
-# BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 (Standalone & Optional GE App) (Autopilot & Hands-on Guide)
+# BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 (Standalone & Optional Gemini Enterprise app) (Autopilot & Hands-on Guide)
 
 본 스킬은 고객사 엔지니어와 실무자가 `bigquery-data-agent-starter` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 

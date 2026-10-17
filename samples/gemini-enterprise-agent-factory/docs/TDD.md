@@ -12,13 +12,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 기술 상세 설계서 (TDD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app, 이하 GE app) 환경에서 비개발자 임직원의 자율 에이전트 제작을 지원하는 메타 에이전트 팩토리의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
+본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 비개발자 임직원의 자율 에이전트 제작을 지원하는 메타 에이전트 팩토리의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 처리 흐름
 
-본 시스템은 크게 **관리자 배포 파이프라인(CLI)**과 **엔드유저 자율 생성 파이프라인(GE App Web)**의 2단계 라이프사이클로 구성된다.
+본 시스템은 크게 **관리자 배포 파이프라인(CLI)**과 **엔드유저 자율 생성 파이프라인(Gemini Enterprise app Web)**의 2단계 라이프사이클로 구성된다.
 
 ```mermaid
 flowchart TD
@@ -29,14 +29,14 @@ flowchart TD
         AdminCLI --> CheckIAM --> DeployMeta
     end
 
-    subgraph UserPhase ["2. 임직원 자율 생성 단계 (GE App 웹 포털)"]
+    subgraph UserPhase ["2. 임직원 자율 생성 단계 (Gemini Enterprise app 웹 포털)"]
         User["현업 임직원<br/>(Zero IAM 권한)"]
         MetaAgent["@에이전트 팩토리<br/>(Meta Agent)"]
         ChipEngine["추천 칩 카탈로그<br/>(10대 산업 / 25개 시드)"]
         SearchGrounding["구글 검색 그라운딩<br/>(Google Search Grounding)"]
         SpecSynth["골든 지침 및 가드레일 합성<br/>(System Instructions & Prompts)"]
         DelegatedSA["대행 서비스 계정 도구<br/>(Agent Publisher Tool)"]
-        TargetGEApp["GE App 내 신규 등록<br/>(Private 에이전트)"]
+        TargetGEApp["Gemini Enterprise app 내 신규 등록<br/>(Private 에이전트)"]
 
         User -->|"1. 대화 시작"| MetaAgent
         MetaAgent -->|"2. 추천 칩 제시"| ChipEngine
@@ -46,10 +46,10 @@ flowchart TD
         SpecSynth -->|"6. 에이전트 생성 확인"| User
         User -->|"7. 등록 승인"| MetaAgent
         MetaAgent -->|"8. 대행 등록 실행"| DelegatedSA
-        DelegatedSA -->|"9. GE App에 즉시 배포"| TargetGEApp
+        DelegatedSA -->|"9. Gemini Enterprise app에 즉시 배포"| TargetGEApp
     end
 
-    DeployMeta -.->|"GE App 카탈로그에 상주"| MetaAgent
+    DeployMeta -.->|"Gemini Enterprise app 카탈로그에 상주"| MetaAgent
 ```
 
 ---
@@ -69,9 +69,9 @@ flowchart TD
 ## 3. 기능 기술 요구 사항 명세 (Functional Requirements)
 
 ### FR-01: 메타 에이전트 배포 및 사전 환경 진단
-- 관리자 실행 시 사내 GCP 프로젝트 ID, 리전(Location), 대상 GE App 인스턴스 ID, 대행 서비스 계정의 IAM 권한을 계층형 캐스케이드(CLI > `.env` > `gcloud config`)로 자동 탐지한다.
+- 관리자 실행 시 사내 GCP 프로젝트 ID, 리전(Location), 대상 Gemini Enterprise app 인스턴스 ID, 대행 서비스 계정의 IAM 권한을 계층형 캐스케이드(CLI > `.env` > `gcloud config`)로 자동 탐지한다.
 - 대행 서비스 계정에 `roles/discoveryengine.editor` 권한이 정상 부여되어 있는지 사전 점검하고 이상 유무를 진단한다.
-- `--publish` 플래그 인가 시 실제 GE App 메타데이터 등록 API를 호출하여 `@에이전트 팩토리`를 등록한다.
+- `--publish` 플래그 인가 시 실제 Gemini Enterprise app 메타데이터 등록 API를 호출하여 `@에이전트 팩토리`를 등록한다.
 
 ### FR-02: 경량 추천 칩 카탈로그 및 인터뷰 엔진
 - 10대 주요 비즈니스 부서(IT 인프라, 인사/총무, 재무/회계, 고객 지원, 법무/준법, 마케팅/영업, 스마트팩토리, 연구개발, 구매/조달, 정보 보안)별 대표적인 추천 칩 25종 이상을 내장한다.
@@ -85,16 +85,16 @@ flowchart TD
   2. `Standard Workflow`: 실시간 검색으로 보강된 단계별 표준 작업 절차
   3. `Enterprise Guardrails`: 개인 식별 정보 보호 및 사실 기반 검증 수칙
   4. `Fallback Rules`: 정보 부족 또는 권한 외 요청 시 담당 부서 안내 절차
-  5. `Starter Prompts`: GE App 진입 시 표시될 4가지 대표 추천 질문
+  5. `Starter Prompts`: Gemini Enterprise app 진입 시 표시될 4가지 대표 추천 질문
 
 ### FR-04: 대행 서비스 계정(Delegated Service Account) 등록 도구 정의
-- 메타 에이전트가 GE App 내부에서 호출할 에이전트 등록 도구(Tool Definition)의 JSON 스키마를 생성한다.
+- 메타 에이전트가 Gemini Enterprise app 내부에서 호출할 에이전트 등록 도구(Tool Definition)의 JSON 스키마를 생성한다.
 - 도구 실행 시 일반 임직원의 계정이 아닌 전용 서비스 계정(`ge-agent-factory-sa`)의 자격 증명으로 Discovery Engine / Agent API를 호출하여 대상 에이전트를 등록한다.
 - 등록된 에이전트의 공개 범위를 기본적으로 `Private`(작성자 개인 및 소속 팀 전용)으로 지정하여 무분별한 전사 노출을 차단한다.
 
 ### FR-05: 엔터프라이즈 가드레일 강제 주입 및 마크다운 리포트 자동 생성
 - 생성되는 모든 에이전트의 지침서에 구글 무학습(No-Training), 인적 검토 배제, 사내 기밀 정보 보호 가드레일을 시스템 수준에서 강제 삽입한다.
-- 진단 및 생성 완료 시 생성된 에이전트의 전체 명세, 지침서 본문, 권장 스타터 질문, GE App 접속 딥링크를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
+- 진단 및 생성 완료 시 생성된 에이전트의 전체 명세, 지침서 본문, 권장 스타터 질문, Gemini Enterprise app 접속 딥링크를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
 ---
 

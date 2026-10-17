@@ -1,11 +1,11 @@
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Gemini Enterprise 커스텀 에이전트 스캐폴더 및 GE App 연동 진단 도구.
+"""Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동 진단 도구.
 
 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery), ERP, 모니터링 시스템을
 결합한 High-code 백엔드 에이전트(GEAP / Cloud Run)를 원클릭 스캐폴딩하고,
-GE app(Gemini Enterprise app)에 외부 에이전트로 등록 및 바인딩할 수 있도록 지원한다.
+제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 외부 에이전트로 등록 및 바인딩할 수 있도록 지원한다.
 """
 
 import argparse
@@ -120,7 +120,7 @@ def resolve_environment(args):
     # 2. Region
     region = args.region or os.environ.get("REGION") or "asia-northeast3"
 
-    # 3. GE App ID
+    # 3. Gemini Enterprise App ID
     if args.dry_run and not args.ge_app_id:
         ge_app_id = "sample-ge-app-id"
     else:
@@ -363,11 +363,11 @@ SERVICE_URL=$(gcloud run services describe "${{SERVICE_NAME}}" \\
 
 echo "=================================================="
 echo "2. 배포 완료 엔드포인트 URL: ${{SERVICE_URL}}"
-echo "3. GE App 외부 에이전트 바인딩 등록을 진행하십시오."
+echo "3. Gemini Enterprise app 외부 에이전트 바인딩 등록을 진행하십시오."
 echo "=================================================="
 """
 
-    # 5. GE App 외부 에이전트 연동 매니페스트 (JSON)
+    # 5. Gemini Enterprise app 외부 에이전트 연동 매니페스트 (JSON)
     ge_manifest = {
         "displayName": title,
         "description": chip_data["description"],
@@ -389,7 +389,7 @@ echo "=================================================="
 
 
 def diagnose_iam_and_connectivity(chip_data: dict, env_info: dict, dry_run: bool):
-    """커스텀 에이전트 구동 및 GE App 연동에 필요한 IAM 권한을 사전 진단한다."""
+    """커스텀 에이전트 구동 및 Gemini Enterprise app 연동에 필요한 IAM 권한을 사전 진단한다."""
     sa_email = env_info["service_account"]
     required_roles = chip_data.get("required_roles", ["roles/run.invoker"])
 
@@ -415,11 +415,11 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
     ge_app_id = env_info["ge_app_id"]
     service_name = chip_data["id"].replace("_", "-")
 
-    return f"""# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 GE App 연동 보고서
+    return f"""# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동 보고서
 
 - **실행 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 - **대상 프로젝트**: `{project_id}`
-- **GE App 인스턴스**: `{ge_app_id}`
+- **Gemini Enterprise app 인스턴스**: `{ge_app_id}`
 - **선택 아키텍처**: `{chip_data['id']}` ({chip_data['title']})
 
 ---
@@ -432,7 +432,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 | **백엔드 기술 스택** | `READY` | `{chip_data['backend_tech']}` |
 | **내장 도구 셋** | `3종 완비` | `{', '.join(chip_data['tools_included'])}` |
 | **IAM 권한 진단** | `{iam_diag['status']}` | `{iam_diag['detail']}` |
-| **GE App 외부 연동** | `READY` | OIDC 토큰 기반 Cloud Run 엔드포인트 바인딩 매니페스트 도출 |
+| **Gemini Enterprise app 외부 연동** | `READY` | OIDC 토큰 기반 Cloud Run 엔드포인트 바인딩 매니페스트 도출 |
 
 ---
 
@@ -447,9 +447,9 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ---
 
-## 3. GE App 외부 에이전트 바인딩 매니페스트 (External Agent Manifest)
+## 3. Gemini Enterprise app 외부 에이전트 바인딩 매니페스트 (External Agent Manifest)
 
-배포 완료 후 제미나이 엔터프라이즈 앱(GE app) 카탈로그에 본 백엔드를 '외부 에이전트'로 등록하기 위한 JSON 페이로드다:
+배포 완료 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 카탈로그에 본 백엔드를 '외부 에이전트'로 등록하기 위한 JSON 페이로드다:
 
 ```json
 {json.dumps(artifacts['ge_manifest'], indent=2, ensure_ascii=False)}
@@ -476,7 +476,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
    ```bash
    bash deploy.sh
    ```
-3. **GE App 카탈로그 외부 에이전트 등록**:
+3. **Gemini Enterprise app 카탈로그 외부 에이전트 등록**:
    - Vertex AI Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에서 'External Agent' 추가 후 상기 매니페스트 입력.
 """
 
@@ -512,7 +512,7 @@ def write_scaffold_files(artifacts: dict, base_dir: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 커스텀 에이전트 스캐폴더 및 GE App 연동 도구",
+        description="Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동 도구",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
@@ -539,7 +539,7 @@ def main():
     env_info = resolve_environment(args)
     print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
     print(f"[*] 대상 리전        : {env_info['region']}")
-    print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
+    print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
     print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
     print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 스캐폴딩 모드'}")
 
@@ -567,13 +567,13 @@ def main():
     # 3. 소스 코드 및 매니페스트 합성
     print("\n[단계 2/3] 하이코드 산출물(agent.py, tools.py, Dockerfile, deploy.sh) 합성 중...")
     artifacts = generate_scaffold_artifacts(chip_data, env_info)
-    print("  - 소스 코드 및 GE App 외부 연동 매니페스트 합성 완료")
+    print("  - 소스 코드 및 Gemini Enterprise app 외부 연동 매니페스트 합성 완료")
 
     if args.write_files:
         write_scaffold_files(artifacts, os.path.dirname(__file__))
 
     # 4. IAM 권한 및 연결성 진단
-    print("\n[단계 3/3] 서비스 계정 IAM 권한 및 GE App 외부 연동 진단 중...")
+    print("\n[단계 3/3] 서비스 계정 IAM 권한 및 Gemini Enterprise app 외부 연동 진단 중...")
     iam_diag = diagnose_iam_and_connectivity(chip_data, env_info, args.dry_run)
     print(f"  - 상태: {iam_diag['status']} | {iam_diag['detail']}")
 

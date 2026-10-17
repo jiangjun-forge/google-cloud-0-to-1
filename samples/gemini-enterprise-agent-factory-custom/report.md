@@ -1,8 +1,8 @@
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 GE App 연동 보고서
+# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동 보고서
 
-- **실행 일시**: 2026-10-17 01:04:40 UTC
+- **실행 일시**: 2026-10-17 01:17:09 UTC
 - **대상 프로젝트**: `sample-project-id`
-- **GE App 인스턴스**: `sample-ge-app-id`
+- **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **선택 아키텍처**: `bq_analytics_agent` (사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트)
 
 ---
@@ -15,7 +15,7 @@
 | **백엔드 기술 스택** | `READY` | `FastAPI + google-genai + google-cloud-bigquery` |
 | **내장 도구 셋** | `3종 완비` | `query_bigquery_sql, get_dataset_schema, detect_metric_anomalies` |
 | **IAM 권한 진단** | `PASS (Simulated)` | `가상 실행 검증: custom-agent-sa@sample-project-id.iam.gserviceaccount.com에 roles/bigquery.dataViewer, roles/bigquery.jobUser, roles/run.invoker 역할 바인딩 시뮬레이션 완료` |
-| **GE App 외부 연동** | `READY` | OIDC 토큰 기반 Cloud Run 엔드포인트 바인딩 매니페스트 도출 |
+| **Gemini Enterprise app 외부 연동** | `READY` | OIDC 토큰 기반 Cloud Run 엔드포인트 바인딩 매니페스트 도출 |
 
 ---
 
@@ -30,9 +30,9 @@
 
 ---
 
-## 3. GE App 외부 에이전트 바인딩 매니페스트 (External Agent Manifest)
+## 3. Gemini Enterprise app 외부 에이전트 바인딩 매니페스트 (External Agent Manifest)
 
-배포 완료 후 제미나이 엔터프라이즈 앱(GE app) 카탈로그에 본 백엔드를 '외부 에이전트'로 등록하기 위한 JSON 페이로드다:
+배포 완료 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 카탈로그에 본 백엔드를 '외부 에이전트'로 등록하기 위한 JSON 페이로드다:
 
 ```json
 {
@@ -95,5 +95,5 @@ SYSTEM_INSTRUCTION = """너는 사내 엔터프라이즈 환경에서 구동하�
    ```bash
    bash deploy.sh
    ```
-3. **GE App 카탈로그 외부 에이전트 등록**:
+3. **Gemini Enterprise app 카탈로그 외부 에이전트 등록**:
    - Vertex AI Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에서 'External Agent' 추가 후 상기 매니페스트 입력.

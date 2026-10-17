@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-enterprise-agent-factory
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-agent-factory: Gemini Enterprise(GE App) 환경에서 비개발자 임직원이 대화형 인터뷰와 추천 칩으로 노코드 에이전트를 자율 생성하고 대행 서비스 계정으로 안전하게 등록하는 자율형 사내 에이전트 팩토리 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-agent-factory: Gemini Enterprise app 환경에서 비개발자 임직원이 대화형 인터뷰와 추천 칩으로 노코드 에이전트를 자율 생성하고 대행 서비스 계정으로 안전하게 등록하는 자율형 사내 에이전트 팩토리 도구다.
 ---
 
 # Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 (`gemini-enterprise-agent-factory`) (Autopilot & Hands-on Guide)
@@ -38,7 +38,7 @@ flowchart TD
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
     C -->|추천 칩 선택 또는 커스텀 프롬프트 입력| D["실시간 검색 그라운딩 및 에이전트 지침 합성"]
     D --> E["Stage 3: 복습 (Deep-dive & Cleanup)"]
-    E -->|결과 비교 및 권한 통제 검증| F["선택적 실제 GE App 배포 및 자원 정리 안내"]
+    E -->|결과 비교 및 권한 통제 검증| F["선택적 실제 Gemini Enterprise app 배포 및 자원 정리 안내"]
 ```
 
 ---
@@ -85,8 +85,8 @@ python diagnose.py --dry-run --prompt "사내 특허 출원 절차 및 선행 �
 
 ## 4. Stage 3: 복습 (Deep-dive & Cleanup 모드)
 
-### Step 3.1 실제 GE App 배포 (선택 사항)
-실제 사내 GE App 웹 포털에 메타 에이전트를 등록하고자 할 경우 수행한다:
+### Step 3.1 실제 Gemini Enterprise app 배포 (선택 사항)
+실제 사내 Gemini Enterprise app 웹 포털에 메타 에이전트를 등록하고자 할 경우 수행한다:
 ```bash
 python diagnose.py --publish
 ```

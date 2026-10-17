@@ -12,17 +12,17 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석기 기술 상세 설계서 (TDD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app, 이하 GE app) 공식 내장 로깅 데이터를 빅쿼리(BigQuery)에서 집계 분석하기 위한 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
+본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 공식 내장 로깅 데이터를 빅쿼리(BigQuery)에서 집계 분석하기 위한 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 처리 흐름
 
-본 도구는 GE App 관리형 엔진이 BigQuery로 스트리밍 적재한 테이블을 순수 파이썬 단일 스크립트(`diagnose.py`)로 분석 및 리포팅하는 아키텍처다.
+본 도구는 Gemini Enterprise app 관리형 엔진이 BigQuery로 스트리밍 적재한 테이블을 순수 파이썬 단일 스크립트(`diagnose.py`)로 분석 및 리포팅하는 아키텍처다.
 
 ```mermaid
 flowchart TD
-    GE["GE App 웹 포털 대화"] --> Engine["GE App 관리형 로깅 엔진"]
+    GE["Gemini Enterprise app 웹 포털 대화"] --> Engine["Gemini Enterprise app 관리형 로깅 엔진"]
     Engine --> BQ[("BigQuery 파티션 테이블<br/>(gemini_enterprise_prompt_logs_*)")]
     CLI["진단 스크립트<br/>(python diagnose.py)"] --> BQ
     CLI --> Report["마크다운 분석 보고서<br/>(report.md)"]
@@ -43,8 +43,8 @@ flowchart TD
 
 ## 3. 기능 기술 요구 사항 명세 (Functional Requirements)
 
-### FR-01: GE App 공식 내장 로깅 설정 안내
-- GE App 관리 콘솔(`Settings > Audit & Compliance`)에서 BigQuery 직접 내보내기를 활성화하는 4단계 절차를 문서 및 리포트에 안내한다.
+### FR-01: Gemini Enterprise app 공식 내장 로깅 설정 안내
+- Gemini Enterprise app 관리 콘솔(`Settings > Audit & Compliance`)에서 BigQuery 직접 내보내기를 활성화하는 4단계 절차를 문서 및 리포트에 안내한다.
 
 ### FR-02: BigQuery 공식 집계 SQL 생성 및 실행
 - 사용자 계정(`user_email`), 요청 수, 입력 토큰, 출력 토큰, 총 토큰, 평균 지연시간을 일자별 파티션 필터(`_TABLE_SUFFIX`)를 적용하여 1분 내에 산출하는 최적화된 SQL을 제공한다.

@@ -10,11 +10,11 @@
 
 ```text
 ========================================================================================
- [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional GE App)]
+ [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]
 ========================================================================================
  - 대상 프로젝트 : sample-project-id (리전: asia-northeast3)
  - 호환 데이터셋 : cymbal_gold (테이블 4개 + 시맨틱 뷰 1개 + 실데이터 적재 완료)
- - 데이터 에이전트: cymbal-retail-data-agent (단독 실행 가능 / 선택 시 GE App 연동: omni-retail-ge-app)
+ - 데이터 에이전트: cymbal-retail-data-agent (단독 실행 가능 / 선택 시 Gemini Enterprise app 연동: omni-retail-ge-app)
  - 실행 모드     : 가상 모의 실행 (--dry-run)
 ----------------------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@
   * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 추가 연동 (python diagnose.py --register-ge-app)
 ----------------------------------------------------------------------------------------
 
- [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 GE App 공용)]
+ [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 Gemini Enterprise app 공용)]
 
   [PROMPT-01] 지점 및 결제 수단별 순매출(Net Revenue) 및 할인 금액 집계
     - 자연어 질문(Prompt) : "지점(store_branch) 및 결제 수단(tender_type)별 총상품 금액(subtotal_amount), 할인 금액(discount), 세금(tax_amount)을 반영한 순매출(Net Revenue)을 비교해 줘."

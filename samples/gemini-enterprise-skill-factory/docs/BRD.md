@@ -12,7 +12,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 자율형 사내 스킬 팩토리 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app, 이하 GE app) 환경에서 에이전트가 손발처럼 호출하여 사내 시스템(구글 시트, 슬랙, 지라, ERP 등)을 직접 제어할 수 있는 도구 및 확장 기능(Tools / Extensions / Action Skills)을 비개발자 및 부서 관리자가 대화형으로 자율 생성하고 안전하게 등록할 수 있도록 지원하는 사내 스킬 팩토리 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 사내 시스템(구글 시트, 슬랙, 지라, ERP 등)을 직접 제어할 수 있는 도구 및 확장 기능(Tools / Extensions / Action Skills)을 비개발자 및 부서 관리자가 대화형으로 자율 생성하고 안전하게 등록할 수 있도록 지원하는 사내 스킬 팩토리 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 
@@ -36,11 +36,11 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 구분 | 핵심 비즈니스 목표 및 요구 명세 |
 | :--- | :--- | :--- |
-| **BR-01** | 대화형 노코드 스킬 생성 | 비개발자가 복잡한 OpenAPI 문법 없이도 대화형 칩 선택이나 자연어 설명만으로 GE App용 도구 매니페스트(JSON/YAML)를 자동 도출해야 한다. |
+| **BR-01** | 대화형 노코드 스킬 생성 | 비개발자가 복잡한 OpenAPI 문법 없이도 대화형 칩 선택이나 자연어 설명만으로 Gemini Enterprise app용 도구 매니페스트(JSON/YAML)를 자동 도출해야 한다. |
 | **BR-02** | 사내 8대 핵심 시스템 도구 프리셋 | 구글 시트, 슬랙, 지라, 빅쿼리, ERP, 클라우드 모니터링 등 사내에서 가장 빈번히 사용되는 8대 시스템 연동 템플릿을 기본 내장해야 한다. |
 | **BR-03** | 자격 증명 보안 볼트 연동 | API 토큰이나 인증키의 평문 노출을 원천 차단하고, 시크릿 매니저(Secret Manager) 참조 및 대행 서비스 계정 기반 인증을 강제해야 한다. |
 | **BR-04** | 조회(Read) vs 변경(Write) 승인 통제 | 데이터 조회 스킬은 자율 생성 즉시 활성화를 허용하고, 데이터 수정/삭제/결재 스킬은 사내 관리자 승인(Admin Approval)을 필수로 거치도록 격리해야 한다. |
-| **BR-05** | GE App 도구 레지스트리 원클릭 등록 | 완성된 도구 매니페스트를 사내 GE App 및 GEAP 도구 레지스트리에 배포하고, 기존 에이전트에 클릭 한 번으로 바인딩할 수 있어야 한다. |
+| **BR-05** | Gemini Enterprise app 도구 레지스트리 원클릭 등록 | 완성된 도구 매니페스트를 사내 Gemini Enterprise app 및 GEAP 도구 레지스트리에 배포하고, 기존 에이전트에 클릭 한 번으로 바인딩할 수 있어야 한다. |
 
 ---
 

@@ -15,7 +15,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional GE App).
+BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app).
 
 45분 핸즈온 워크숍 내에 참석자(실무자)가 CLI 명령어 한 줄로 BigQuery 스몰셋 데이터셋(cymbal_gold)과
 실데이터를 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 단독(Standalone)으로 Data Agent를 생성 및
@@ -338,7 +338,7 @@ VALUES
             f"""
 CREATE OR REPLACE VIEW `{project_id}.{dataset_id}.v_cymbal_retail_semantic`
 OPTIONS(
-    description="BigQuery Data Agent 단독 및 GE App 연동 실습용 시맨틱 골드 뷰. 순매출(net_revenue), 결품 커버 시간(est_cover_hours), 이상 거래 경보(alert_type) 내장.",
+    description="BigQuery Data Agent 단독 및 Gemini Enterprise app 연동 실습용 시맨틱 골드 뷰. 순매출(net_revenue), 결품 커버 시간(est_cover_hours), 이상 거래 경보(alert_type) 내장.",
     labels=[("managed-by", "google-cloud-0-to-1"), ("purpose", "bigquery-data-agent-starter"), ("temporary", "true")]
 ) AS
 SELECT
@@ -408,7 +408,7 @@ LEFT JOIN `{project_id}.{dataset_id}.pos_anomaly_alerts` a
 
 
 # ==============================================================================
-# 4. [UI 전용 조작 가이드] BigQuery Studio Agents 단독 생성 및 GE App 선택 연동
+# 4. [UI 전용 조작 가이드] BigQuery Studio Agents 단독 생성 및 Gemini Enterprise app 선택 연동
 # ==============================================================================
 def export_data_agent_config(cfg: Dict[str, Any]) -> None:
     """BigQuery Studio > Agents (콘솔 UI 전용)에서 복사/붙여넣기할 System Instructions와 Verified Queries를 출력한다."""
@@ -477,11 +477,11 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     dataset_id = cfg["dataset_id"]
 
     print("=" * 88)
-    print(" [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional GE App)]")
+    print(" [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]")
     print("=" * 88)
     print(f" - 대상 프로젝트 : {project_id} (리전: {cfg['location']})")
     print(f" - 호환 데이터셋 : {dataset_id} (테이블 4개 + 시맨틱 뷰 1개 + 실데이터 적재 완료)")
-    print(f" - 데이터 에이전트: {cfg['data_agent_name']} (단독 실행 가능 / 선택 시 GE App 연동: {cfg['ge_app_id']})")
+    print(f" - 데이터 에이전트: {cfg['data_agent_name']} (단독 실행 가능 / 선택 시 Gemini Enterprise app 연동: {cfg['ge_app_id']})")
     print(f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}")
     print("-" * 88)
 
@@ -492,7 +492,7 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     print("  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 추가 연동 (python diagnose.py --register-ge-app)")
     print("-" * 88)
 
-    print("\n [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 GE App 공용)]")
+    print("\n [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 Gemini Enterprise app 공용)]")
     for p in GOLDEN_PROMPTS:
         sql_formatted = p["expected_sql"].format(project_id=project_id, dataset_id=dataset_id)
         print(f"\n  [{p['id']}] {p['title']}")
@@ -536,11 +536,11 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         "",
         "```text",
         "=" * 88,
-        " [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional GE App)]",
+        " [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]",
         "=" * 88,
         f" - 대상 프로젝트 : {project_id} (리전: {cfg['location']})",
         f" - 호환 데이터셋 : {dataset_id} (테이블 4개 + 시맨틱 뷰 1개 + 실데이터 적재 완료)",
-        f" - 데이터 에이전트: {cfg['data_agent_name']} (단독 실행 가능 / 선택 시 GE App 연동: {cfg['ge_app_id']})",
+        f" - 데이터 에이전트: {cfg['data_agent_name']} (단독 실행 가능 / 선택 시 Gemini Enterprise app 연동: {cfg['ge_app_id']})",
         f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}",
         "-" * 88,
         "",
@@ -551,7 +551,7 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         "  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 추가 연동 (python diagnose.py --register-ge-app)",
         "-" * 88,
         "",
-        " [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 GE App 공용)]",
+        " [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 Gemini Enterprise app 공용)]",
     ]
 
     for p in GOLDEN_PROMPTS:
@@ -625,7 +625,7 @@ def teardown_demo_environment(cfg: Dict[str, Any]) -> None:
 # ==============================================================================
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional GE App)"
+        description="BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app)"
     )
     parser.add_argument("-p", "--project", type=str, help="대상 Google Cloud 프로젝트 ID")
     parser.add_argument("-d", "--dataset", type=str, help="스몰셋 BigQuery 데이터셋 ID (기본값: cymbal_gold)")

@@ -11,7 +11,7 @@ All contents, designs, and code examples are subject to change, modification, or
 -->
 
 # 비즈니스 요구 사항 명세서 (BRD: Business Requirements Document)
-## 프로젝트명: BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional GE App)
+## 프로젝트명: BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app)
 
 ---
 
@@ -22,7 +22,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### 1.2 비즈니스 난제 (Pain Points)
 1. **초기 데이터 구성 시간 과다**: 45분이라는 제한된 워크숍 시간 내에 참석자가 일일이 테이블을 설계하고 샘플 데이터를 적재하느라 정작 중요한 에이전트 생성 및 질의 실습 시간이 부족해진다.
-2. **사내 환경 다양성 (Standalone vs GE App)**: BigQuery Studio 내에서 단독으로 에이전트를 사용하는 부서와 제미나이 엔터프라이즈 앱(Gemini Enterprise App)에 게시하여 전사 포털로 통합하려는 조직이 혼재되어 있어, 두 시나리오를 모두 지원하는 유연한 구성이 요구된다.
+2. **사내 환경 다양성 (Standalone vs Gemini Enterprise app)**: BigQuery Studio 내에서 단독으로 에이전트를 사용하는 부서와 제미나이 엔터프라이즈 앱(Gemini Enterprise App)에 게시하여 전사 포털로 통합하려는 조직이 혼재되어 있어, 두 시나리오를 모두 지원하는 유연한 구성이 요구된다.
 3. **신속한 검증 환경 제공**: 순매출 및 결품 커버 시간 공식이 포함된 시맨틱 골드 뷰와 원천 테이블을 즉각 프로비저닝하여 검증 시간을 최소화해야 한다.
 
 ### 1.3 프로젝트 목표
@@ -34,7 +34,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 페르소나 | 주요 관심사 및 목표 | 본 솔루션을 통한 비즈니스 혜택 |
 | :--- | :--- | :--- |
-| **사내 워크숍 참석자 (아키텍트 / 분석가)** | 45분 내에 BigQuery Data Agent 구축 및 질의응답 완주 | 원클릭 데이터 구성 및 Standalone / GE App 선택형 실습 가이드 확보 |
+| **사내 워크숍 참석자 (아키텍트 / 분석가)** | 45분 내에 BigQuery Data Agent 구축 및 질의응답 완주 | 원클릭 데이터 구성 및 Standalone / Gemini Enterprise app 선택형 실습 가이드 확보 |
 | **데이터 플랫폼 엔지니어** | 시맨틱 레이어 기반 NL2SQL 정확도 검증 | 시맨틱 뷰 및 골든 프롬프트를 통한 NL2SQL 응답 검증 환경 확보 |
 | **워크숍 진행 엔지니어 (인프라 / 데이터 플랫폼 담당자)** | 참석자 실습 오류 최소화 및 시간 내 전원 완주 | 복잡한 설정 없이 원클릭으로 구동되는 독립 핸즈온 실습 키트 확보 |
 
@@ -47,7 +47,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-01** | 스몰셋 데이터셋 자동 구성 | `--setup-demo` 실행 시 `cymbal_gold` 데이터셋 내에 `pos_transactions_gold`, `gold_inventory_reconciliation_ledger`, `pos_anomaly_alerts`, `historical_transactional_data` 4개 테이블과 실데이터를 자동 생성하여야 한다. |
 | **BR-02** | 시맨틱 골드 뷰 생성 | 순매출(`subtotal_amount - discount + tax_amount`)과 결품 커버 시간(`SAFE_DIVIDE((shelf_qty + backroom_qty), (total_units_sold_intraday / 12.0))`)이 내장된 시맨틱 뷰(`v_cymbal_retail_semantic`)를 자동 생성하여야 한다. |
 | **BR-03** | 단독 에이전트 지침 도출 | `--agent-config` 실행 시 BigQuery Studio > Agents (Agent Catalog)에 바로 붙여넣을 수 있는 System Instructions와 Verified Queries를 출력하여야 한다. |
-| **BR-04** | 선택적 GE App 연동 | `--register-ge-app` 실행 시 Agents에서 Gemini Enterprise App으로 게시하는 콘솔 UI 절차를 선택 사항(Optional)으로 명확히 안내하여야 한다. |
+| **BR-04** | 선택적 Gemini Enterprise app 연동 | `--register-ge-app` 실행 시 Agents에서 Gemini Enterprise App으로 게시하는 콘솔 UI 절차를 선택 사항(Optional)으로 명확히 안내하여야 한다. |
 | **BR-05** | 골든 프롬프트 3선 검증 | 지점별 순매출, 결품 위험 품목, 이상 거래 탐지 등 비즈니스 시나리오를 검증할 수 있는 대표 프롬프트를 제공하여야 한다. |
 | **BR-06** | 원클릭 리소스 정리 | `--teardown` 실행 시 실습에 사용된 `cymbal_gold` 데이터셋과 하위 테이블/뷰를 일괄 삭제하여 과금을 방지하여야 한다. |
 
