@@ -133,7 +133,7 @@ def generate_with_retry(client, model_id, prompt):
       contents=prompt
   )
 
-# 2. 주 모델(Gemini 2.5 Pro) 실패 시 경량 모델(Gemini 2.5 Flash)로 자동 우회
+# 2. 주 모델(Gemini 3.8 Pro) 실패 시 경량 모델(Gemini 3.8 Flash)로 자동 우회
 def generate_with_fallback(client, prompt):
   try:
     return generate_with_retry(client, 'gemini-3.8-pro', prompt)
@@ -203,7 +203,7 @@ def generate_with_retry(client, model_id, prompt):
       contents=prompt
   )
 
-# 2. 주 모델(Gemini 2.5 Pro) 실패 시 경량 모델(Gemini 2.5 Flash)로 자동 우회
+# 2. 주 모델(Gemini 3.8 Pro) 실패 시 경량 모델(Gemini 3.8 Flash)로 자동 우회
 def generate_with_fallback(client, prompt):
   try:
     return generate_with_retry(client, 'gemini-3.8-pro', prompt)
@@ -224,6 +224,31 @@ def generate_with_fallback(client, prompt):
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 사내 거버넌스 4대 필수 표준 라벨링
+
+본 도구는 소스 코드 정적 분석기이나, 연관된 클라우드 인프라 자원 및 워커 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-resilience-checker`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 4. 콘솔 링크 조치 가이드
+
+- **Service Health 콘솔**: ( https://console.cloud.google.com/servicehealth )
+- **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
+- **클라우드 인시던트 핸들링 모범 사례 가이드**: ( https://cloud.google.com/blog/topics/developers-practitioners/cloud-reliability-incident-handling-best-practices )
+- **구글 클라우드 Service Health 공식 개요**: ( https://cloud.google.com/service-health/docs/overview )
+
+---
+
+## 5. 자원 정리 안내 (Teardown)
+
+이 도구는 소스 코드 정적 분석기이므로 클라우드 상에 생성된 리소스가 없으며, 별도의 자원 정리 작업이 필요하지 않다.
 """
 
 

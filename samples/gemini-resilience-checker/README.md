@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이(Gemini) API 복원력 패턴 자가 진단 (`gemini-resilience-checker`)
 
-제미나이(Gemini) API 호출 소스 코드에서 429 과부하 에러와 일시적 네트워크 장애를 방어하기 위한 **지수 백오프, 지터(무작위 대기), 최대 재시도 제약, 폴백 모델 체인 구비 여부를 1분 만에 정적 진단**하고 표준 처방 코드를 제시하는 도구다. (As of 2026-06-16)
+제미나이(Gemini) API 호출 소스 코드에서 429 과부하 에러와 일시적 네트워크 장애를 방어하기 위한 **지수 백오프, 지터(무작위 대기), 최대 재시도 제약, 폴백 모델 체인 구비 여부를 1분 만에 정적 진단**하고 표준 처방 코드를 제시하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -29,7 +29,7 @@ All contents, designs, and code examples are subject to change, modification, or
 - **간헐적 429 (Resource Exhausted) 장애**: 트래픽이 몰릴 때 재시도 로직이 없거나 단순 재시도로 인해 서비스 중단이 발생하는 경우
 - **폭풍 재시도(Thundering Herd) 현상**: 대기 시간 무작위화(Jitter) 없이 고정 간격으로 재시도하여 백엔드 모델 서버에 추가 부하를 주는 경우
 - **무한 루프로 인한 지연 및 비용 누수**: 재시도 횟수 제한(Max Retries)이 없어 일시 장애가 영구 행(Hang) 또는 과다 호출로 이어지는 경우
-- **주 모델 장애 시 서비스 중단**: Gemini 2.5 Pro 등 주력 모델 지연 또는 쿼터 소진 시 Gemini 2.5 Flash 등으로 자동 우회하는 폴백 로직이 누락된 경우
+- **주 모델 장애 시 서비스 중단**: Gemini 3.8 Pro 등 주력 모델 지연 또는 쿼터 소진 시 Gemini 3.8 Flash 등으로 자동 우회하는 폴백 로직이 누락된 경우
 
 ---
 
@@ -167,6 +167,25 @@ def generate_with_fallback(client, prompt):
 
 ---
 
-## 자원 정리 안내 (Teardown)
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+본 도구는 소스 코드 정적 분석기이나, 연관된 클라우드 인프라 자원(Cloud Run, GKE, Compute Engine 등) 및 배치 워커 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-resilience-checker`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
+
+- **Service Health 콘솔**: ( https://console.cloud.google.com/servicehealth )
+- **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
+- **클라우드 인시던트 핸들링 모범 사례 가이드**: ( https://cloud.google.com/blog/topics/developers-practitioners/cloud-reliability-incident-handling-best-practices )
+- **구글 클라우드 Service Health 공식 개요**: ( https://cloud.google.com/service-health/docs/overview )
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 
 이 도구는 소스 코드 정적 분석기이므로 클라우드 상에 생성된 리소스가 없으며, 별도의 자원 정리 작업이 필요하지 않다.
