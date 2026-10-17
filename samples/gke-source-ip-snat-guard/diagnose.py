@@ -329,6 +329,35 @@ def build_markdown_report(diagnoses: list[dict], project_id: str, cluster: str, 
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 사내 거버넌스 4대 필수 표준 라벨링
+
+GKE 클러스터, LoadBalancer 서비스 및 연관 인프라 자원 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gke-source-ip-snat-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 4. 콘솔 링크 조치 가이드
+
+- **GKE 클러스터 콘솔**: ( https://console.cloud.google.com/kubernetes )
+- **Cloud Load Balancing 콘솔**: ( https://console.cloud.google.com/net-services/loadbalancing )
+- **GKE 내부 부하 분산기 소스 IP 보존 가이드**: ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing )
+- **GKE 가중치 로드 밸런싱 구성 안내**: ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress )
+- **Kubernetes Service 소스 IP 보존 개념**: ( https://kubernetes.io/docs/tutorials/services/source-ip/ )
+
+---
+
+## 5. 자원 정리 안내 (Teardown)
+
+본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하거나 과금을 유발하지 않는다. 테스트 목적으로 생성한 LoadBalancer 서비스가 있다면 다음 명령어로 삭제한다:
+```bash
+kubectl delete svc [TEST_SERVICE_NAME] -n [NAMESPACE]
+```
 """
 
 
