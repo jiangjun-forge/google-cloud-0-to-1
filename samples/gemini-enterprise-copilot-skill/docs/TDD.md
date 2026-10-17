@@ -60,6 +60,7 @@ flowchart TD
 | **BR-03** (자격 증명 보안 볼트 연동) | **FR-03** (Secret Manager 참조 가드레일) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py` 인증 모듈 |
 | **BR-04** (조회 vs 변경 승인 통제) | **FR-04** (Mutation 쓰기 작업 승인 플래그) | **NFR-02**, **NFR-03** | `diagnose.py` 거버넌스 엔진 |
 | **BR-05** (Gemini Enterprise app 도구 레지스트리 등록) | **FR-05** (Gemini Enterprise app Tool 레지스트리 등록 및 리포트) | **NFR-01**, **NFR-03** | `diagnose.py`, `report.md` |
+| **BR-06** (표준 리소스 라벨링) | **FR-05** (표준 라벨링 주입 및 리포트) | **NFR-04** (4대 표준 라벨링 준수) | `diagnose.py` |
 
 ---
 
@@ -108,3 +109,6 @@ flowchart TD
 ### NFR-03: 결정론적 가상 실행(--dry-run) 및 사내 식별 정보 마스킹
 - `--dry-run` 모드 실행 시 실제 GCP API 호출이나 Secret Manager 조회 없이도 결정론적 스키마 합성과 무결성 검증을 0.5초 이내에 수행한다.
 - 가상 실행 시 사내 프로젝트 ID나 실제 환경 정보의 유출을 방지하기 위해 가명(`sample-project-id`, `sample-ge-app-id`)을 철저히 적용한다.
+
+### NFR-04: 사내 거버넌스 4대 필수 표준 라벨링 준수
+- 사내 거버넌스, FinOps 비용 배분 및 미정리 자원 자동 추적을 위해, 생성되는 도구 매니페스트, Secret Manager 보안 볼트 시크릿 및 서비스 계정에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-copilot-skill`, `env=sample`, `created-by=customer-engineer`)을 필수로 주입한다.

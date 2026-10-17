@@ -125,7 +125,17 @@ agents-cli deploy --project=${PROJECT_ID} --region=us-central1
 
 ---
 
-## 5. 콘솔 링크 조치 가이드
+## 5. 사내 거버넌스 4대 필수 표준 라벨링
+
+사내 스킬 인프라 및 보안 볼트 리소스(Secret Manager 시크릿, 대행 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-skill`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 6. 콘솔 링크 조치 가이드
 
 - **Agent Platform (GEAP) 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
@@ -133,7 +143,7 @@ agents-cli deploy --project=${PROJECT_ID} --region=us-central1
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 7. 자원 정리 안내 (Teardown)
 
 본 솔루션 검증 후 테스트용으로 등록된 도구 매니페스트나 서비스 계정을 정리하고자 할 경우 아래 절차를 수행한다:
 

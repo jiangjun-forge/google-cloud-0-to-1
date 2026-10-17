@@ -1,6 +1,6 @@
 # Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 보고서
 
-- **실행 일시**: 2026-10-17 05:38:47 UTC
+- **실행 일시**: 2026-10-17 06:38:53 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **스킬 실행 서비스 계정**: `ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com`
@@ -136,3 +136,36 @@
    - Agent Platform (GEAP) 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 'Tools' 메뉴에서 등록된 `sheets_data_lookup`를 확인한다.
 2. **사내 에이전트에 스킬 장착**:
    - `gemini-enterprise-copilot-agent`로 제작된 기존 노코드 에이전트 또는 커스텀 에이전트의 설정 화면에서 본 스킬을 활성화(Toggle ON)하여 즉시 실무에 투입한다.
+
+---
+
+## 5. 사내 거버넌스 4대 필수 표준 라벨링
+
+사내 스킬 인프라 및 보안 볼트 리소스(Secret Manager 시크릿, 대행 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-skill`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 6. 콘솔 링크 조치 가이드
+
+- **Agent Platform (GEAP) 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
+- **IAM 및 관리자 콘솔**: 스킬 대행 서비스 계정(`ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
+
+---
+
+## 7. 자원 정리 안내 (Teardown)
+
+본 솔루션 검증 후 테스트용으로 등록된 도구 매니페스트나 서비스 계정을 정리하고자 할 경우 아래 절차를 수행한다:
+
+1. **대행 서비스 계정 삭제**:
+   ```bash
+   gcloud iam service-accounts delete ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com --quiet
+   ```
+2. **Secret Manager 테스트 시크릿 정리**:
+   ```bash
+   gcloud secrets delete workspace-service-account-key --quiet
+   ```
