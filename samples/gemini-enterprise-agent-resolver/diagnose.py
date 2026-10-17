@@ -195,6 +195,12 @@ def print_table(results: list[dict], ge_prj: str, agent_prj: str):
   else:
     print("\n모든 권한 및 조직 정책 검사가 정상이며 에이전트 연동이 가능한 상태다.")
 
+  print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
+  print("  - managed-by: google-cloud-0-to-1")
+  print("  - scenario: gemini-enterprise-agent-resolver")
+  print("  - env: sample")
+  print("  - created-by: customer-engineer")
+
 
 def build_markdown_report(results: list[dict], ge_prj: str, agent_prj: str, is_dry_run: bool) -> str:
   mode_str = "모의 실행 (Dry-run)" if is_dry_run else "운영 환경 진단 (Production)"
@@ -255,6 +261,37 @@ def build_markdown_report(results: list[dict], ge_prj: str, agent_prj: str, is_d
       "```bash",
       "python diagnose.py",
       "```",
+      "",
+      "---",
+      "",
+      "## 3. 실무자 즉각 조치 가이드 및 처방전",
+      "",
+      "### 가. 사내 거버넌스 4대 필수 표준 라벨링",
+      "에이전트 인프라 및 연동 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:",
+      "- `managed-by`: `google-cloud-0-to-1`",
+      "- `scenario`: `gemini-enterprise-agent-resolver`",
+      "- `env`: `sample` (또는 `poc`)",
+      "- `created-by`: `customer-engineer`",
+      "",
+      "### 나. 에이전트 연동 복구 및 예외 처리 명령어",
+      "```bash",
+      f"# 1. Agent Engine 프로젝트에 GE 서비스 에이전트 권한 부여\n"
+      f"gcloud projects add-iam-policy-binding {agent_prj} \\\n"
+      f"    --member=\"serviceAccount:service-[GE_PROJECT_NUM]@gcp-sa-discoveryengine.iam.gserviceaccount.com\" \\\n"
+      f"    --role=\"roles/aiplatform.user\"\n"
+      f"\n"
+      f"# 2. 도메인 제한 공유 조직 정책 예외 적용 (Cross-Org 시)\n"
+      f"gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDomains [CUSTOMER_ID] \\\n"
+      f"    --project={agent_prj}",
+      "```",
+      "",
+      "### 다. 공식 문서 및 콘솔 경로",
+      f"- Google Cloud Console Vertex AI Reasoning Engines ( https://console.cloud.google.com/gen-app-builder/engines?project={agent_prj} )",
+      f"- Google Cloud Console IAM & Admin ( https://console.cloud.google.com/iam-admin/iam?project={agent_prj} )",
+      f"- Google Cloud Console Organization Policies ( https://console.cloud.google.com/iam-admin/orgpolicies?project={agent_prj} )",
+      "- Agent Platform Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )",
+      "- 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )",
+      "- Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )",
       "",
   ])
   return "\n".join(lines)

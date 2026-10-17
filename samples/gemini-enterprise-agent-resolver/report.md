@@ -44,3 +44,34 @@ VPC Service Controls 보안 경계           PASS         VPC-SC 경계 간 통�
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 실무자 즉각 조치 가이드 및 처방전
+
+### 가. 사내 거버넌스 4대 필수 표준 라벨링
+에이전트 인프라 및 연동 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-agent-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+### 나. 에이전트 연동 복구 및 예외 처리 명령어
+```bash
+# 1. Agent Engine 프로젝트에 GE 서비스 에이전트 권한 부여
+gcloud projects add-iam-policy-binding sample-agent-project \
+    --member="serviceAccount:service-[GE_PROJECT_NUM]@gcp-sa-discoveryengine.iam.gserviceaccount.com" \
+    --role="roles/aiplatform.user"
+
+# 2. 도메인 제한 공유 조직 정책 예외 적용 (Cross-Org 시)
+gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDomains [CUSTOMER_ID] \
+    --project=sample-agent-project
+```
+
+### 다. 공식 문서 및 콘솔 경로
+- Google Cloud Console Vertex AI Reasoning Engines ( https://console.cloud.google.com/gen-app-builder/engines?project=sample-agent-project )
+- Google Cloud Console IAM & Admin ( https://console.cloud.google.com/iam-admin/iam?project=sample-agent-project )
+- Google Cloud Console Organization Policies ( https://console.cloud.google.com/iam-admin/orgpolicies?project=sample-agent-project )
+- Agent Platform Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
+- 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )
+- Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )

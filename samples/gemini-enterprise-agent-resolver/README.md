@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이 엔터프라이즈(Gemini Enterprise) 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-agent-resolver`)
 
-Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책(Domain Restricted Sharing) 차단, 서비스 에이전트 IAM 권한 부재, VPC-SC 경계 위반을 1분 만에 자동 진단하고 복구 명령어를 처방하는 도구다. (As of 2026-09-09)
+Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책(Domain Restricted Sharing) 차단, 서비스 에이전트 IAM 권한 부재, VPC-SC 경계 위반을 1분 만에 자동 진단하고 복구 명령어를 처방하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#IAM`, `#Resilience`, `#Security`  
@@ -88,23 +88,37 @@ python diagnose.py --dry-run --json
 
 ---
 
-## 5. 결과 확인 후 즉각 조치 가이드
-- Agent Platform Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
-- 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )
-- Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )
+## 5. 결과 확인 후 즉각 조치 가이드 및 리소스 라벨링
 
-### 1. Agent Engine 프로젝트에 GE 서비스 에이전트 권한 부여
+### 가. 사내 거버넌스 4대 필수 표준 라벨링
+에이전트 인프라 및 연동 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-agent-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+### 나. 에이전트 연동 복구 및 예외 처리 명령어
+
+#### 1. Agent Engine 프로젝트에 GE 서비스 에이전트 권한 부여
 ```bash
 gcloud projects add-iam-policy-binding [AGENT_PROJECT_ID] \
     --member="serviceAccount:service-[GE_PROJECT_NUM]@gcp-sa-discoveryengine.iam.gserviceaccount.com" \
     --role="roles/aiplatform.user"
 ```
 
-### 2. 도메인 제한 공유 조직 정책 예외 적용 (Cross-Org 시)
+#### 2. 도메인 제한 공유 조직 정책 예외 적용 (Cross-Org 시)
 ```bash
 gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDomains [CUSTOMER_ID] \
     --project=[AGENT_PROJECT_ID]
 ```
+
+### 다. 공식 문서 및 콘솔 경로
+- Google Cloud Console Vertex AI Reasoning Engines ( https://console.cloud.google.com/gen-app-builder/engines )
+- Google Cloud Console IAM & Admin ( https://console.cloud.google.com/iam-admin/iam )
+- Google Cloud Console Organization Policies ( https://console.cloud.google.com/iam-admin/orgpolicies )
+- Agent Platform Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
+- 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )
+- Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )
 
 ---
 
