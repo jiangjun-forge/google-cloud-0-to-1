@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-enterprise-analytics-exporter
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-analytics-exporter: 전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 BigQuery 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분...
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-analytics-exporter: 전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 BigQuery 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다.
 ---
 
 # Gemini Enterprise 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`) (Autopilot & Hands-on Guide)
@@ -55,6 +55,7 @@ flowchart TD
    ```
 2. `samples/gemini-enterprise-analytics-exporter/.env.example`을 참조하여 `samples/gemini-enterprise-analytics-exporter/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/bigquery.dataEditor, roles/bigquery.jobUser`) 충족 여부를 안내한다.
+4. 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨링(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-analytics-exporter`, `env=sample`, `created-by=customer-engineer`) 규약을 고지한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:

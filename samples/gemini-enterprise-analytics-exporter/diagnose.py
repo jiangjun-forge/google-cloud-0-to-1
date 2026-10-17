@@ -259,6 +259,12 @@ def print_summary(evaluated: list[dict], threshold_days: int, dataset: str, tabl
   print(f"\n[BigQuery 적재 DDL 스키마 (`{dataset}.{table}`)]")
   print(generate_bq_ddl(dataset, table))
 
+  print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
+  print("  - managed-by: google-cloud-0-to-1")
+  print("  - scenario: gemini-enterprise-analytics-exporter")
+  print("  - env: sample")
+  print("  - created-by: customer-engineer")
+
 
 def build_markdown_report(
     evaluated: list[dict],
@@ -368,6 +374,26 @@ def build_markdown_report(
       "```bash",
       "python diagnose.py",
       "```",
+      "",
+      "---",
+      "",
+      "## 3. 실무자 즉각 조치 가이드 및 처방전",
+      "",
+      "### 가. BigQuery 데이터세트 생성 시 4대 필수 표준 라벨링",
+      "사내 거버넌스 및 자원 추적성을 위해 BigQuery 데이터세트 생성 시 4대 표준 라벨을 반드시 적용한다:",
+      "```bash",
+      f"bq mk --dataset --location=asia-northeast3 \\\n"
+      f"    --label=managed-by:google-cloud-0-to-1 \\\n"
+      f"    --label=scenario:gemini-enterprise-analytics-exporter \\\n"
+      f"    --label=env:sample \\\n"
+      f"    --label=created-by:customer-engineer \\\n"
+      f"    {project_id}:{dataset}",
+      "```",
+      "",
+      "### 나. 공식 콘솔 조치 경로",
+      f"- Google Cloud Console BigQuery ( https://console.cloud.google.com/bigquery?project={project_id} )",
+      "- Google Workspace 관리 콘솔 라이선스 관리 ( https://admin.google.com/ac/billing/subscriptions )",
+      "- Gemini Enterprise 공식 요금 안내 ( https://cloud.google.com/gemini-enterprise/pricing )",
       "",
   ])
   return "\n".join(lines)

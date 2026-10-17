@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이 엔터프라이즈(Gemini Enterprise) 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
 
-전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 빅쿼리(BigQuery) 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다. (As of 2026-09-09)
+전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 빅쿼리(BigQuery) 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`  
@@ -89,7 +89,18 @@ python diagnose.py --dry-run --json
 
 ## 5. BigQuery DDL 스키마 및 회수 조치 가이드
 
-### 1) BigQuery 적재 최적화 테이블 DDL
+### 1) BigQuery 적재 최적화 테이블 DDL 및 4대 필수 라벨링
+사내 거버넌스 및 자원 추적성을 위해 BigQuery 데이터세트 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-analytics-exporter`, `env=sample`, `created-by=customer-engineer`)을 반드시 적용한다:
+
+```bash
+bq mk --dataset --location=asia-northeast3 \
+    --label=managed-by:google-cloud-0-to-1 \
+    --label=scenario:gemini-enterprise-analytics-exporter \
+    --label=env:sample \
+    --label=created-by:customer-engineer \
+    [PROJECT_ID]:gemini_analytics
+```
+
 ```sql
 CREATE TABLE IF NOT EXISTS `gemini_analytics.user_adoption_metrics` (
   user_email STRING NOT NULL,
@@ -109,7 +120,9 @@ CLUSTER BY department, activity_tier;
 ```
 
 ### 2) 관리 콘솔 조치 링크 및 라이선스 회수
+- Google Cloud Console BigQuery ( https://console.cloud.google.com/bigquery )
 - Google Workspace 관리 콘솔 라이선스 관리 ( https://admin.google.com/ac/billing/subscriptions )
+- Gemini Enterprise 공식 요금 안내 ( https://cloud.google.com/gemini-enterprise/pricing )
 - **회수 권고 대상 계정**:
   - 진단 결과 도출된 `[회수 권고]` 계정의 Gemini Enterprise 라이선스를 해제하고 대기 중인 신규 부서 임직원에게 재할당한다.
 
