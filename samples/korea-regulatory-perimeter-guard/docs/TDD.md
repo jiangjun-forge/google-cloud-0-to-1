@@ -109,6 +109,7 @@ flowchart TD
 | **FR-07** | SDP 가명 처리 템플릿 | `gcloud dlp inspect-templates list --location=<LOC> --format=json` | 대상 리전에 DLP 검사 템플릿이 존재하면 PASS, 없으면 WARN. |
 | **FR-08** | 서비스 계정 키 발급 차단 | `gcloud resource-manager org-policies describe constraints/iam.disableServiceAccountKeyCreation --project=<PROJECT> --format=json` | 정책 규칙의 `spec.rules`에 `enforce: true`가 설정되어 있으면 PASS, 아니면 FAIL. |
 | **FR-09** | 전송 구간 TLS 1.2+ 암호화 | `gcloud compute ssl-policies list --project=<PROJECT> --format=json` | `minTlsVersion`이 `TLS_1_2` 또는 `TLS_1_3`으로 설정된 커스텀 SSL 정책이 식별되면 PASS, 없으면 WARN. |
+| **FR-10** | 사내 거버넌스 4대 필수 라벨링 | 리소스 생성 및 점검 시 4대 표준 라벨 주입 검증 | 혁신 금융 서비스 통제 리소스 구성 시 `managed-by=google-cloud-0-to-1`, `scenario=korea-regulatory-perimeter-guard`, `env=sample`, `created-by=customer-engineer` 라벨을 필수로 주입한다. |
 
 ---
 
@@ -135,3 +136,4 @@ roles/storage.admin                -> storage.buckets.get, storage.buckets.getIa
 | **NFR-02** | 모의 실행 (Dry-run) | 외부 네트워크 의존성 없이 `python3 diagnose.py --dry-run`으로 9개 항목 상태를 신속하게 시뮬레이션. |
 | **NFR-03** | 실행 성능 | 전체 9개 항목의 실측 검사를 지연 없이 신속하게 완료할 수 있도록 경량 gcloud CLI 호출 최적화. |
 | **NFR-04** | 민감 정보 비식별화 | 실제 고객 사명, 프로젝트 ID, 내부 도메인 등의 하드코딩 배제 및 가명 템플릿 변수 표준화. |
+| **NFR-05** | 리포트 절대 경로 저장 보장 | 로컬 진단 스크립트 실행 시 산출물 저장 경로는 스크립트 파일이 위치한 디렉터리의 절대 경로를 기준으로 저장하여 작업 디렉터리와 무관하게 안정적인 저장을 보장한다. |

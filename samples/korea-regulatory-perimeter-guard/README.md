@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드 (korea-regulatory-perimeter-guard)
 
-대한민국 금융위원회의 「금융 분야 망 분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 인프라가 책임져야 하는 **9대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-09-10)
+대한민국 금융위원회의 「금융 분야 망 분리 개선 로드맵」(1단계 생성형 AI 활용 특례) 및 전자금융감독규정에 따라, 퍼블릭 클라우드 인프라가 책임져야 하는 **9대 핵심 기술적 통제(Technical Controls) 전수(Full-Set)**를 체계적으로 종합 점검하고 금융감독원 및 금융보안원(FSI) 보안성 심의 결격 사유를 사전에 예방하는 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Compliance`, `#SecOps`
 **Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`
@@ -158,7 +158,26 @@ FR-09   | 전송 보안          | [PASS] | 전송 구간 TLS 1.2+ 고강도 암
 
 ---
 
-## 자원 정리 안내 (Teardown)
+## 7. 사내 거버넌스 4대 필수 표준 라벨링
+
+혁신 금융 서비스(FSI) 보안 경계 대상 리소스(Cloud Storage 버킷, Cloud KMS 키링, VPC-SC 등) 배포 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `korea-regulatory-perimeter-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 8. 콘솔 링크 조치 가이드
+
+- **VPC Service Controls 콘솔**: ( https://console.cloud.google.com/security/service-perimeter )
+- **Cloud KMS 콘솔**: ( https://console.cloud.google.com/security/kms )
+- **Cloud Storage 브라우저 콘솔**: ( https://console.cloud.google.com/storage/browser )
+- **Model Armor 콘솔**: ( https://console.cloud.google.com/security/model-armor )
+
+---
+
+## 9. 자원 정리 안내 (Teardown)
 
 본 도구는 순수 진단 및 상태 점검을 수행하므로 자체적으로 영구 리소스를 생성하거나 과금을 유발하지 않는다.
 진단 과정에서 테스트용으로 생성한 모의 버킷이나 키가 있는 경우 아래 명령어로 정리한다.
@@ -170,7 +189,7 @@ gcloud storage rm -r gs://<TEST_BUCKET_NAME>
 
 ---
 
-## 8. 관련 규격 문서
+## 10. 관련 규격 문서
 
 - [비즈니스 요구 사항 명세서 (BRD.md)](docs/BRD.md)
 - [기술 상세 설계서 (TDD.md)](docs/TDD.md)

@@ -72,7 +72,26 @@ FR-09        | 전송 보안          | [PASS] | 전송 구간 고강도 암호�
 
 ---
 
-## 2. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
+## 2. 사내 거버넌스 4대 필수 표준 라벨링
+
+혁신 금융 서비스(FSI) 보안 경계 대상 리소스(Cloud Storage 버킷, Cloud KMS 키링, VPC-SC 등) 배포 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `korea-regulatory-perimeter-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 3. 콘솔 링크 조치 가이드
+
+- **VPC Service Controls 콘솔**: ( https://console.cloud.google.com/security/service-perimeter )
+- **Cloud KMS 콘솔**: ( https://console.cloud.google.com/security/kms )
+- **Cloud Storage 브라우저 콘솔**: ( https://console.cloud.google.com/storage/browser )
+- **Model Armor 콘솔**: ( https://console.cloud.google.com/security/model-armor )
+
+---
+
+## 4. 실습 안내 (실제 환경 실행 시 자동 덮어쓰기)
 
 실제 Google Cloud 환경에서 본 진단을 수행하려면 아래 명령어를 실행한다.
 실행 결과는 본 `report.md` 파일에 자동으로 갱신(덮어쓰기)된다:

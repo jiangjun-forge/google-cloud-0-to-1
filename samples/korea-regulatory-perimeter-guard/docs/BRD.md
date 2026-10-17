@@ -97,6 +97,7 @@ Google Cloud 인프라 상에서 금융 당국의 1단계 특례 기준에 부�
 | **BR-07** | 개인 신용 정보 보호 | 신용정보법 제20조의2 | 원본 개인 신용 정보 직접 입력을 방지하기 위해 Sensitive Data Protection(SDP) 검사 템플릿에 대한민국 주민등록번호(`KOREA_RESIDENT_REGISTRATION_NUMBER`) 및 금융 계좌 규칙을 필수 등록하여야 한다. |
 | **BR-08** | 자격 증명 유출 차단 | 감독규정 제13조 | 정적 서비스 계정 JSON 키 발급을 조직 정책(`iam.disableServiceAccountKeyCreation`)으로 사전 차단하고 Workload Identity Federation(WIF)을 강제하여야 한다. |
 | **BR-09** | 전송 구간 암호화 | 감독규정 제14조 제2항 제2호 | 통신 회선상 전송 데이터의 도청을 방지하기 위해 SSL 정책을 통해 레거시 TLS 1.0, 1.1을 차단하고 TLS 1.2 이상 및 안전한 암호화 알고리즘을 강제하여야 한다. |
+| **BR-10** | 사내 거버넌스 4대 필수 라벨링 준수 | 사내 클라우드 거버넌스 규정 | 혁신 금융 서비스 워크로드 리소스 프로비저닝 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여 FinOps 비용 추적성을 보장하여야 한다. |
 
 ---
 
