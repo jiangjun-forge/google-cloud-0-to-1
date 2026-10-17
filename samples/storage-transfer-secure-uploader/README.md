@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기 (storage-transfer-secure-uploader)
 
-온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 클라우드 KMS(Cloud KMS) 암호화 및 무결성 검증을 거쳐 클라우드 스토리지(Cloud Storage)로 안전하게 이관하는 진단 도구다. (As of 2026-09-09)
+온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 클라우드 KMS(Cloud KMS) 암호화 및 무결성 검증을 거쳐 클라우드 스토리지(Cloud Storage)로 안전하게 이관하는 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Performance`, `#Security`  
@@ -127,7 +127,17 @@ STS 에이전트 풀: on-prem-posix-pool
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 7. 사내 거버넌스 4대 필수 표준 라벨링
+
+STS 연계 타깃 Cloud Storage 버킷, 전송 작업 및 Cloud KMS 키링 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `storage-transfer-secure-uploader`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 
 본 진단 도구는 전송 준비 상태를 검사하는 도구이며, 테스트용으로 생성한 전송 작업(Job)이나 에이전트 풀이 있다면 아래 명령어로 정리한다:
 

@@ -285,7 +285,27 @@ def build_markdown_report(
         "",
         "---",
         "",
-        "## 3. 자원 정리 안내 (Teardown)",
+        "## 3. 사내 거버넌스 4대 필수 표준 라벨링",
+        "",
+        "STS 연계 타깃 Cloud Storage 버킷, 전송 작업 및 Cloud KMS 키링 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:",
+        "- `managed-by`: `google-cloud-0-to-1`",
+        "- `scenario`: `storage-transfer-secure-uploader`",
+        "- `env`: `sample` (또는 `poc`)",
+        "- `created-by`: `customer-engineer`",
+        "",
+        "---",
+        "",
+        "## 4. 콘솔 링크 조치 가이드 및 공식 레퍼런스",
+        "",
+        f"- **Storage Transfer Service 온프레미스 콘솔**: ( https://console.cloud.google.com/transfer/on-premises?project={project_id} )",
+        f"- **Cloud Storage 버킷 브라우저**: ( https://console.cloud.google.com/storage/browser/{bucket}?project={project_id} )",
+        "- **공식 문서 - 온프레미스 데이터 전송 개요**: ( https://cloud.google.com/storage-transfer/docs/on-prem-overview )",
+        "- **공식 문서 - 온프레미스 에이전트 풀 관리**: ( https://cloud.google.com/storage-transfer/docs/on-prem-agent-pools )",
+        "- **공식 문서 - Cloud Storage 공개 접근 차단(PAP)**: ( https://cloud.google.com/storage/docs/public-access-prevention )",
+        "",
+        "---",
+        "",
+        "## 5. 자원 정리 안내 (Teardown)",
         "본 진단 도구는 전송 준비 상태를 검사하는 도구이며, 테스트용으로 생성한 전송 작업(Job)이나 에이전트 풀이 있다면 아래 명령어로 정리한다:",
         "```bash",
         f"gcloud transfer jobs delete JOB_NAME --project={project_id}",
@@ -296,8 +316,11 @@ def build_markdown_report(
     return "\n".join(lines)
 
 
-def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+def save_markdown_report(report_md: str, output_path: str | None = None) -> None:
     """마크다운 리포트를 파일로 기록/덮어쓴다."""
+    if output_path is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, "report.md")
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
