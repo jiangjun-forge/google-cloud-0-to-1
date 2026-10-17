@@ -69,5 +69,24 @@ gcloud storage buckets add-iam-policy-binding gs://<BUCKET_NAME> \
 
 ---
 
-## 4. 자원 정리 안내 (Teardown)
+## 4. 사내 거버넌스 4대 필수 표준 라벨링
+
+Agent Platform Search 데이터 저장소 연계 Cloud Storage 버킷 및 RAG 파이프라인 리소스 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `vertex-search-grounding-validator`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드 및 공식 레퍼런스
+
+- **Agent Platform Search 데이터 저장소 콘솔**: ( https://console.cloud.google.com/vertex-ai/data-stores?project=sample-project-id )
+- **공식 문서 - 비정형 데이터 저장소 생성 및 관리**: ( https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es )
+- **공식 문서 - 문서 파싱 및 청킹 가이드**: ( https://cloud.google.com/generative-ai-app-builder/docs/parse-chunk-documents )
+- **공식 문서 - Agent Platform Search를 활용한 Gemini 그라운딩**: ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
+
+---
+
+## 6. 자원 정리 안내 (Teardown)
 본 진단 도구는 읽기 전용으로 데이터 저장소 메타데이터와 스토리지 색인 상태를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다.

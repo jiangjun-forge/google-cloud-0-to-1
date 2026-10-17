@@ -20,9 +20,9 @@ description: >-
   Autopilot, hands-on diagnostics, and self-healing for vertex-search-grounding-validator: Agent Platform 및 RAG 파이프라인에서 Cloud Storage 원본 문서와 Vertex AI Search 데이터 저장소(Data Store) 간의 색인 누락, 청...
 ---
 
-# Vertex AI Search 데이터 저장소 색인 및 그라운딩 정합성 진단기 (Autopilot & Hands-on Guide)
+# Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기 (Autopilot & Hands-on Guide)
 
-본 스킬은 고객사 엔지니어와 실무자가 `vertex-search-grounding-validator` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 엔지니어와 실무자가 `vertex-search-grounding-validator` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -45,7 +45,7 @@ flowchart TD
 
 ## 2. Stage 1: 예습 (YOLO Autopilot 모드)
 
-고객 개발자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
+사내 개발자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
 1. 현재 활성화된 gcloud 프로젝트 및 기본 리전을 확인한다:
@@ -74,7 +74,7 @@ python diagnose.py --dry-run
 
 ## 3. Stage 2: 실습 (Developer Hands-on 단계)
 
-예습을 통해 전체 흐름을 파악한 고객 개발자가 콘솔과 터미널에서 직접 명령어를 수행하는 본 실습 단계다.
+예습을 통해 전체 흐름을 파악한 사내 개발자가 콘솔과 터미널에서 직접 명령어를 수행하는 본 실습 단계다.
 
 ### Step 2.1 저장소 이동 및 의존성 확인
 ```bash
