@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 서울 워크로드 대체 컴퓨트 엔진(Compute Engine) GPU 및 인프라 리전 레이턴시/가용성 프로브 (`gce-region-latency-probe`)
 
-서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다. (As of 2026-09-09)
+서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -100,7 +100,28 @@ python diagnose.py --dry-run --json
 
 ---
 
-## 6. 결과 확인 후 즉각 조치 가이드
+## 6. 결과 확인 후 즉각 조치 가이드 및 리소스 라벨링
+
+### 가. 대체 리전 인스턴스 배포 시 4대 필수 표준 라벨링
+사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 대체 리전에 Compute Engine 인스턴스를 생성할 때에는 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gce-region-latency-probe`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+```bash
+gcloud compute instances create [INSTANCE_NAME] \
+    --project=[PROJECT_ID] \
+    --zone=[ZONE] \
+    --machine-type=[MACHINE_TYPE] \
+    --accelerator=type=[GPU_TYPE],count=1 \
+    --maintenance-policy=TERMINATE \
+    --labels=managed-by=google-cloud-0-to-1,scenario=gce-region-latency-probe,env=sample,created-by=customer-engineer
+```
+
+### 나. 공식 문서 및 콘솔 경로
+- Google Cloud Console Compute Engine VM 인스턴스 ( https://console.cloud.google.com/compute/instances )
+- Google Cloud Console Network Topology ( https://console.cloud.google.com/net-intelligence/network-topology )
 - Compute Engine 리전 및 영역 안내 ( https://cloud.google.com/compute/docs/regions-zones )
 - Compute Engine GPU 리전 가용성 가이드 ( https://cloud.google.com/compute/docs/regions-zones/gpu-regions-zones )
 

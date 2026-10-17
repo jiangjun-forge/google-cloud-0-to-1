@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gce-region-latency-probe
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gce-region-latency-probe: 서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가...
+  Autopilot, hands-on diagnostics, and self-healing for gce-region-latency-probe: 서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다.
 ---
 
 # 서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시/가용성 프로브 (`gce-region-latency-probe`) (Autopilot & Hands-on Guide)
@@ -55,6 +55,7 @@ flowchart TD
    ```
 2. `samples/gce-region-latency-probe/.env.example`을 참조하여 `samples/gce-region-latency-probe/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/compute.viewer`) 충족 여부를 안내한다.
+4. 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨링(`managed-by=google-cloud-0-to-1`, `scenario=gce-region-latency-probe`, `env=sample`, `created-by=customer-engineer`) 규약을 고지한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:

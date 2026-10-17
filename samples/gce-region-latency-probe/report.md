@@ -53,3 +53,26 @@ us-central1        미국 아이오와 (Iowa - 비교군)     148.5 ms       SLA
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 실무자 즉각 조치 가이드 및 처방전
+
+### 가. 대체 리전 인스턴스 배포 시 4대 필수 표준 라벨링
+사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+
+```bash
+gcloud compute instances create [INSTANCE_NAME] \
+    --project=[PROJECT_ID] \
+    --zone=[ZONE] \
+    --machine-type=[MACHINE_TYPE] \
+    --accelerator=type=[GPU_TYPE],count=1 \
+    --maintenance-policy=TERMINATE \
+    --labels=managed-by=google-cloud-0-to-1,scenario=gce-region-latency-probe,env=sample,created-by=customer-engineer
+```
+
+### 나. 공식 문서 및 콘솔 경로
+- Google Cloud Console Compute Engine VM 인스턴스 ( https://console.cloud.google.com/compute/instances )
+- Google Cloud Console Network Topology ( https://console.cloud.google.com/net-intelligence/network-topology )
+- Compute Engine 리전 및 영역 안내 ( https://cloud.google.com/compute/docs/regions-zones )
+- Compute Engine GPU 리전 가용성 가이드 ( https://cloud.google.com/compute/docs/regions-zones/gpu-regions-zones )
