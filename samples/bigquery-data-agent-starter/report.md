@@ -62,3 +62,32 @@
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 실무자 즉각 조치 가이드 및 처방전
+
+### 1단계: 스몰셋 데이터셋 및 시맨틱 뷰 원클릭 배포
+명령어 한 줄로 BigQuery 스몰셋 4개 테이블, 실데이터 및 `v_cymbal_retail_semantic` 시맨틱 뷰를 자동 구축한다:
+```bash
+python diagnose.py --setup-demo
+```
+
+### 2단계: BigQuery Studio > Agents (Agent Catalog) 단독 에이전트 생성
+터미널에 출력된 System Instructions와 Verified Queries를 BigQuery Studio 대화형 에이전트 설정창에 복사/붙여넣기하여 즉시 활성화한다:
+```bash
+python diagnose.py --agent-config
+```
+
+### 3단계: [선택 사항] Gemini Enterprise App 연동 및 전사 공유
+전사 대화 포털에서 본 Data Agent를 멘션(@)하거나 활용할 수 있도록 A2A 프로토콜 기반으로 게시한다:
+```bash
+python diagnose.py --register-ge-app --app-id [GE_APP_ID]
+```
+
+### 4단계: 4대 표준 라벨 준수 및 실습 종료 후 자원 정리
+- 사내 거버넌스 준수를 위해 데이터셋 및 뷰 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=bigquery-data-agent-starter`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 유지한다.
+- 핸즈온 종료 후 불필요한 과금을 차단하기 위해 아래 명령어로 스몰셋 데이터셋을 일괄 삭제한다:
+```bash
+python diagnose.py --teardown
+```

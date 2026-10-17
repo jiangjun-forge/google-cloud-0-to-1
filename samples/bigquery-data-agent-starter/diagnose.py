@@ -229,7 +229,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.pos_transactions_gold` (
 )
 OPTIONS(
     description="POS 거래 원천 테이블",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("purpose", "bigquery-data-agent-starter"), ("temporary", "true")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
 );
 """,
         ),
@@ -247,7 +247,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.gold_inventory_reconciliation
 )
 OPTIONS(
     description="매장 재고 대사 원장 테이블",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("purpose", "bigquery-data-agent-starter"), ("temporary", "true")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
 );
 """,
         ),
@@ -265,7 +265,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.pos_anomaly_alerts` (
 )
 OPTIONS(
     description="POS 이상 거래 경보 테이블",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("purpose", "bigquery-data-agent-starter"), ("temporary", "true")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
 );
 """,
         ),
@@ -281,7 +281,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.historical_transactional_data
 )
 OPTIONS(
     description="고객 구매 및 보증 이력 테이블",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("purpose", "bigquery-data-agent-starter"), ("temporary", "true")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
 );
 """,
         ),
@@ -339,7 +339,7 @@ VALUES
 CREATE OR REPLACE VIEW `{project_id}.{dataset_id}.v_cymbal_retail_semantic`
 OPTIONS(
     description="BigQuery Data Agent 단독 및 Gemini Enterprise app 연동 실습용 시맨틱 골드 뷰. 순매출(net_revenue), 결품 커버 시간(est_cover_hours), 이상 거래 경보(alert_type) 내장.",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("purpose", "bigquery-data-agent-starter"), ("temporary", "true")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
 ) AS
 SELECT
     p.transaction_id,
@@ -389,9 +389,8 @@ LEFT JOIN `{project_id}.{dataset_id}.pos_anomaly_alerts` a
         dataset_ref.labels = {
             "managed-by": "google-cloud-0-to-1",
             "scenario": "bigquery-data-agent-starter",
-            "purpose": "bigquery-data-agent-starter",
             "env": "sample",
-            "temporary": "true",
+            "created-by": "customer-engineer",
         }
         client.create_dataset(dataset_ref, exists_ok=True)
         print(f"  -> [성공] BigQuery 데이터셋 확인/생성 완료: {project_id}.{dataset_id}")
@@ -582,6 +581,35 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         "python diagnose.py",
         "```",
         "",
+        "---",
+        "",
+        "## 3. 실무자 즉각 조치 가이드 및 처방전",
+        "",
+        "### 1단계: 스몰셋 데이터셋 및 시맨틱 뷰 원클릭 배포",
+        "명령어 한 줄로 BigQuery 스몰셋 4개 테이블, 실데이터 및 `v_cymbal_retail_semantic` 시맨틱 뷰를 자동 구축한다:",
+        "```bash",
+        "python diagnose.py --setup-demo",
+        "```",
+        "",
+        "### 2단계: BigQuery Studio > Agents (Agent Catalog) 단독 에이전트 생성",
+        "터미널에 출력된 System Instructions와 Verified Queries를 BigQuery Studio 대화형 에이전트 설정창에 복사/붙여넣기하여 즉시 활성화한다:",
+        "```bash",
+        "python diagnose.py --agent-config",
+        "```",
+        "",
+        "### 3단계: [선택 사항] Gemini Enterprise App 연동 및 전사 공유",
+        "전사 대화 포털에서 본 Data Agent를 멘션(@)하거나 활용할 수 있도록 A2A 프로토콜 기반으로 게시한다:",
+        "```bash",
+        "python diagnose.py --register-ge-app --app-id [GE_APP_ID]",
+        "```",
+        "",
+        "### 4단계: 4대 표준 라벨 준수 및 실습 종료 후 자원 정리",
+        "- 사내 거버넌스 준수를 위해 데이터셋 및 뷰 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=bigquery-data-agent-starter`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 유지한다.",
+        "- 핸즈온 종료 후 불필요한 과금을 차단하기 위해 아래 명령어로 스몰셋 데이터셋을 일괄 삭제한다:",
+        "```bash",
+        "python diagnose.py --teardown",
+        "```",
+        "",
     ])
 
     return "\n".join(lines)
@@ -589,6 +617,9 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
 
 def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
     """리포트 내용을 파일에 저장한다."""
+    if not os.path.isabs(output_path):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, output_path)
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)

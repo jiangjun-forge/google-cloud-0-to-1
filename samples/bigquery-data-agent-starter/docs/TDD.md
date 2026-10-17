@@ -11,7 +11,7 @@ All contents, designs, and code examples are subject to change, modification, or
 -->
 
 # 기술 상세 설계서 (TDD: Technical Design Document)
-## 프로젝트명: BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app)
+## 프로젝트명: BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app) (As of 2026-10-17)
 
 ---
 
@@ -71,6 +71,7 @@ flowchart TD
 | **FR-04** | `register_agent_to_ge_app` | BigQuery Studio Agents에서 Gemini Enterprise로 게시하는 UI 단계를 선택 사항(Optional)으로 안내하여야 한다. |
 | **FR-05** | `print_workshop_guide_and_prompts` | 45분 워크숍 타임라인과 골든 프롬프트 3선의 자연어 질문, 기대 SQL, 샘플 응답 행을 출력하여야 한다. |
 | **FR-06** | `teardown_demo_environment` | `--teardown` 실행 시 `client.delete_dataset(..., delete_contents=True)`를 호출하여 실습 리소스를 안전하게 제거하여야 한다. |
+| **FR-07** | `inject_mandatory_labels` | 데이터셋 생성 및 테이블/뷰 DDL 내에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=bigquery-data-agent-starter`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여야 한다. |
 
 ---
 
@@ -81,3 +82,4 @@ flowchart TD
 | **NFR-01** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python diagnose.py --dry-run` 명령만으로 45분 타임라인, SQL DDL/DML, 골든 프롬프트 3선을 1초 내에 출력한다. |
 | **NFR-02** | 보안 및 PII 배제 | 모든 소스 코드와 DDL, 샘플 데이터에는 특정 기업 고유 명칭이나 개인 식별 정보를 일절 포함하지 않으며 표준 엔터프라이즈 가명(`cymbal_gold`)만을 사용한다. |
 | **NFR-03** | 코드 독립성 | 타 샘플이나 모듈을 참조하지 않고 100% 자체 완결적으로 실행된다. |
+| **NFR-04** | 자원 거버넌스 및 라벨링 규약 | 워크숍 실습 인프라가 사내 거버넌스 및 FinOps 시스템에서 자동 식별될 수 있도록 표준 메타데이터 태깅을 강제한다. |

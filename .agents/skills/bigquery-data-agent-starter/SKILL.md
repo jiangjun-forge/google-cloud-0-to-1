@@ -17,12 +17,12 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: bigquery-data-agent-starter
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-starter: 45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 BigQuery 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, BigQuery Stud...
+  Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-starter: 45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(--setup-demo)로 BigQuery 스몰셋 데이터셋(cymbal_gold)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agents에서 Conversational Analytics Data Agent를 단독 생성 및 질의 실습하며 선택 사항으로 Gemini Enterprise app에 연동하는 워크숍 스타터 키트다.
 ---
 
 # BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 (Standalone & Optional Gemini Enterprise app) (Autopilot & Hands-on Guide)
 
-본 스킬은 고객사 엔지니어와 실무자가 `bigquery-data-agent-starter` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 엔지니어와 실무자가 `bigquery-data-agent-starter` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#GenAI`, `#Governance`, `#Performance`  
@@ -55,6 +55,7 @@ flowchart TD
    ```
 2. `samples/bigquery-data-agent-starter/.env.example`을 참조하여 `samples/bigquery-data-agent-starter/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/bigquery.dataEditor, roles/bigquery.jobUser, roles/discoveryengine.admin, roles/geminidataanalytics.dataAgentCreator`) 충족 여부를 안내한다.
+4. 사내 FinOps 거버넌스 및 자원 추적을 위해 리소스 생성 시 4대 필수 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-starter,env=sample`)이 자동 주입됨을 설명한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:

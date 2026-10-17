@@ -11,7 +11,7 @@ All contents, designs, and code examples are subject to change, modification, or
 -->
 
 # 비즈니스 요구 사항 명세서 (BRD: Business Requirements Document)
-## 프로젝트명: BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app)
+## 프로젝트명: BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app) (As of 2026-10-17)
 
 ---
 
@@ -50,6 +50,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-04** | 선택적 Gemini Enterprise app 연동 | `--register-ge-app` 실행 시 Agents에서 Gemini Enterprise App으로 게시하는 콘솔 UI 절차를 선택 사항(Optional)으로 명확히 안내하여야 한다. |
 | **BR-05** | 골든 프롬프트 3선 검증 | 지점별 순매출, 결품 위험 품목, 이상 거래 탐지 등 비즈니스 시나리오를 검증할 수 있는 대표 프롬프트를 제공하여야 한다. |
 | **BR-06** | 원클릭 리소스 정리 | `--teardown` 실행 시 실습에 사용된 `cymbal_gold` 데이터셋과 하위 테이블/뷰를 일괄 삭제하여 과금을 방지하여야 한다. |
+| **BR-07** | 자원 거버넌스 라벨링 | 생성되는 모든 데이터셋, 테이블, 뷰에 4대 필수 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=bigquery-data-agent-starter`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여야 한다. |
 
 ---
 
@@ -60,3 +61,4 @@ All contents, designs, and code examples are subject to change, modification, or
 | **NFR-01** | 완전 독립성 (Zero Dependency) | 타 모듈이나 외부 라이브러리 의존 없이 100% 자체 완결적으로 동작한다. |
 | **NFR-02** | 비파괴성 및 안전성 | `--dry-run` 모드는 실제 GCP 리소스 변경 없이 모든 DDL/DML과 지침을 사전 출력하여야 한다. |
 | **NFR-03** | 식별 정보 비식별화 | 모든 코드와 샘플 데이터는 특정 기업명을 배제하고 표준 가명(`cymbal_gold`)만을 사용한다. |
+| **NFR-04** | FinOps 자원 추적성 | 워크숍 실습 인프라가 사내 비용 관리 시스템에서 자동 식별될 수 있도록 표준 메타데이터 태깅을 강제한다. |
