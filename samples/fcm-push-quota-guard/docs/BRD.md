@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
+# 비즈니스 요구 사항 명세서 (BRD): FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단 (As of 2026-10-17)
 
 ## 1. 배경 및 목적
 모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다.
@@ -27,6 +27,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-02** | **표준화된 자동 진단 체계 구축** | 수동 콘솔 점검에 따른 인적 오류와 장애 복구 지연 시간을 단축하여야 한다. | 필수 (P0) |
 | **BR-03** | **가상 실행(Dry-run) 기반 무중단 사전 검증** | 실제 GCP 과금 발생 전 가상 실행(--dry-run)으로 안전하게 정책을 검증하여야 한다. | 필수 (P0) |
 | **BR-04** | **실무자 조치 가이드 및 자원 정리(Teardown) 안내** | 비개발 직군과 운영 실무자가 즉시 참조할 수 있는 콘솔 조치 경로와 테스트 리소스 정리 절차를 제공한다. | 권장 (P1) |
+| **BR-05** | **자원 거버넌스 라벨링 표준 준수** | FCM 발송 백엔드(Cloud Run, GKE 등) 및 Cloud Monitoring 알림 정책 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=fcm-push-quota-guard`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여 FinOps 비용 추적성을 보장하여야 한다. | 필수 (P0) |
 
 ---
 

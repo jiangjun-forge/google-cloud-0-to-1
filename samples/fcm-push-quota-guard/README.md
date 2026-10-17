@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
 
-모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다. (As of 2026-09-09)
+모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다. (As of 2026-10-17)
 
 **Audience**: `#Developer`, `#FinOps`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -110,7 +110,17 @@ def exponential_backoff_retry(attempt, base=1.0, max_backoff=32.0):
     time.sleep(sleep_time * jitter)
 ```
 
+### 4단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+- FCM 발송 백엔드(Cloud Run, GKE, Compute Engine 등) 및 Cloud Monitoring 알림 정책 생성 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨을 필수로 주입한다:
+  - `managed-by`: `google-cloud-0-to-1`
+  - `scenario`: `fcm-push-quota-guard`
+  - `env`: `sample`
+  - `created-by`: `customer-engineer`
+- gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=fcm-push-quota-guard,env=sample,created-by=customer-engineer`
+
 ### 공식 가이드 및 콘솔 링크
+- Google Cloud 콘솔 할당량 및 시스템 한도 ( https://console.cloud.google.com/iam-admin/quotas )
+- Firebase 콘솔 ( https://console.firebase.google.com )
 - FCM 스로틀링 및 할당량 공식 가이드 ( https://firebase.google.com/docs/cloud-messaging/throttling-and-quotas )
 - Cloud Monitoring Firebase 및 FCM 지표 목록 ( https://cloud.google.com/monitoring/api/metrics_gcp )
 

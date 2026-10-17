@@ -187,6 +187,9 @@ def print_text_report(report: Dict[str, Any]) -> None:
     print(f"   - 발송 큐에서 초당 최대 전송량을 {int(report['quota_limit_per_minute'] / 60):,} msg/sec 이하로 스로틀링한다.")
     print("3. Full Jitter 지수 백오프 재시도 적용:")
     print("   - wait_time = min(max_backoff, base_backoff * (2 ** attempt)) * random.uniform(0.5, 1.5)")
+    print("4. 사내 거버넌스 4대 필수 표준 라벨링 준수:")
+    print("   - 발송 백엔드(Cloud Run, GKE 등) 및 모니터링 알림 정책 생성 시 4대 표준 라벨 필수 적용:")
+    print("     --labels=managed-by=google-cloud-0-to-1,scenario=fcm-push-quota-guard,env=sample,created-by=customer-engineer")
     print("=" * 76 + "\n")
 
 
@@ -232,6 +235,9 @@ def build_markdown_report(report: Dict[str, Any], is_dry_run: bool) -> str:
         f"   - 발송 큐에서 초당 최대 전송량을 {int(report['quota_limit_per_minute'] / 60):,} msg/sec 이하로 스로틀링한다.",
         "3. Full Jitter 지수 백오프 재시도 적용:",
         "   - wait_time = min(max_backoff, base_backoff * (2 ** attempt)) * random.uniform(0.5, 1.5)",
+        "4. 사내 거버넌스 4대 필수 표준 라벨링 준수:",
+        "   - 발송 백엔드(Cloud Run, GKE 등) 및 모니터링 알림 정책 생성 시 4대 표준 라벨 필수 적용:",
+        "     --labels=managed-by=google-cloud-0-to-1,scenario=fcm-push-quota-guard,env=sample,created-by=customer-engineer",
         "=" * 76,
         "```",
         "",
@@ -246,15 +252,32 @@ def build_markdown_report(report: Dict[str, Any], is_dry_run: bool) -> str:
         "python diagnose.py",
         "```",
         "",
+        "---",
+        "",
+        "## 3. 실무자 즉각 조치 가이드 및 처방전",
+        "",
+        "### 1단계: Google Cloud 콘솔 할당량 상향(Quota Increase) 신청",
+        "- Google Cloud 콘솔 할당량 및 시스템 한도 ( https://console.cloud.google.com/iam-admin/quotas )",
+        "- Firebase 콘솔 ( https://console.firebase.google.com )",
+        "- FCM 스로틀링 및 할당량 공식 가이드 ( https://firebase.google.com/docs/cloud-messaging/throttling-and-quotas )",
+        "",
+        "### 2단계: 발송 큐 토큰 버킷 속도 제한 및 Full Jitter 지수 백오프 적용",
+        "- Cloud Monitoring Firebase 및 FCM 지표 목록 ( https://cloud.google.com/monitoring/api/metrics_gcp )",
+        "- 발송 백엔드에서 분당 할당량에 맞추어 초당 최대 송신 속도를 제어하고 무작위 지터를 적용하여 재시도 폭풍을 방어한다.",
+        "",
+        "### 3단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수",
+        "발송 인프라(Cloud Run, GKE 등) 및 모니터링 알림 정책 생성 시 FinOps 비용 분석 및 자원 추적을 위해 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=fcm-push-quota-guard,env=sample,created-by=customer-engineer`)을 누락 없이 주입한다.",
+        "",
     ])
     return "\n".join(lines)
 
 
-def save_markdown_report(content: str, filename: str = "report.md") -> None:
+def save_markdown_report(content: str, filename: str = "report.md") -> str:
     current_dir = os.path.dirname(os.path.abspath(__file__))
     report_path = os.path.join(current_dir, filename)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(content)
+    return report_path
 
 
 def main() -> None:
@@ -271,13 +294,13 @@ def main() -> None:
     )
 
     md_content = build_markdown_report(report, is_dry_run=args.dry_run)
-    save_markdown_report(md_content)
+    saved_path = save_markdown_report(md_content)
 
     if args.json_output:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         print_text_report(report)
-        print("[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
+        print(f"[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: {saved_path}")
 
 
 if __name__ == "__main__":

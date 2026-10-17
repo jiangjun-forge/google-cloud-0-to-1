@@ -39,6 +39,9 @@
    - 발송 큐에서 초당 최대 전송량을 10,000 msg/sec 이하로 스로틀링한다.
 3. Full Jitter 지수 백오프 재시도 적용:
    - wait_time = min(max_backoff, base_backoff * (2 ** attempt)) * random.uniform(0.5, 1.5)
+4. 사내 거버넌스 4대 필수 표준 라벨링 준수:
+   - 발송 백엔드(Cloud Run, GKE 등) 및 모니터링 알림 정책 생성 시 4대 표준 라벨 필수 적용:
+     --labels=managed-by=google-cloud-0-to-1,scenario=fcm-push-quota-guard,env=sample,created-by=customer-engineer
 ============================================================================
 ```
 
@@ -52,3 +55,19 @@
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 실무자 즉각 조치 가이드 및 처방전
+
+### 1단계: Google Cloud 콘솔 할당량 상향(Quota Increase) 신청
+- Google Cloud 콘솔 할당량 및 시스템 한도 ( https://console.cloud.google.com/iam-admin/quotas )
+- Firebase 콘솔 ( https://console.firebase.google.com )
+- FCM 스로틀링 및 할당량 공식 가이드 ( https://firebase.google.com/docs/cloud-messaging/throttling-and-quotas )
+
+### 2단계: 발송 큐 토큰 버킷 속도 제한 및 Full Jitter 지수 백오프 적용
+- Cloud Monitoring Firebase 및 FCM 지표 목록 ( https://cloud.google.com/monitoring/api/metrics_gcp )
+- 발송 백엔드에서 분당 할당량에 맞추어 초당 최대 송신 속도를 제어하고 무작위 지터를 적용하여 재시도 폭풍을 방어한다.
+
+### 3단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+발송 인프라(Cloud Run, GKE 등) 및 모니터링 알림 정책 생성 시 FinOps 비용 분석 및 자원 추적을 위해 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=fcm-push-quota-guard,env=sample,created-by=customer-engineer`)을 누락 없이 주입한다.

@@ -17,12 +17,12 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: fcm-push-quota-guard
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for fcm-push-quota-guard: 모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시...
+  Autopilot, hands-on diagnostics, and self-healing for fcm-push-quota-guard: 모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다.
 ---
 
-# FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단 (Autopilot & Hands-on Guide)
+# FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단 (Autopilot & Hands-on Guide) (As of 2026-10-17)
 
-본 스킬은 고객사 엔지니어와 실무자가 `fcm-push-quota-guard` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 클라우드 엔지니어와 실무자가 `fcm-push-quota-guard` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Developer`, `#FinOps`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -55,6 +55,7 @@ flowchart TD
    ```
 2. `samples/fcm-push-quota-guard/.env.example`을 참조하여 `samples/fcm-push-quota-guard/.env` 파일이 없을 경우 자동 생성하고, 감지된 프로젝트 ID와 리전으로 기본 세팅을 구성한다.
 3. 실행에 필요한 최소 IAM 권한(`roles/monitoring.viewer, roles/serviceusage.quotaAdmin, roles/serviceusage.serviceUsageViewer`) 충족 여부를 안내한다.
+4. 신규 리소스 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1,scenario=fcm-push-quota-guard,env=sample,created-by=customer-engineer`)을 누락 없이 적용하도록 안내한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 실제 클라우드 비용이나 리소스 변경 없이 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력한다:
