@@ -37,6 +37,9 @@ All contents, designs, and code examples are subject to change, modification, or
 ### FR-04: 마크다운 진단 리포트 (report.md) 자동 생성 및 덮어쓰기
 - 진단 실행 시 터미널 출력과 동일한 평가 지표 및 코드 처방전을 담은 `report.md` 파일을 자동 기록/갱신하여 사내 문서 공유 및 복습을 지원한다.
 
+### FR-05: 사내 거버넌스 4대 필수 라벨링 적용
+- 비동기 LRO 파이프라인 연계 리소스 구성 시 `managed-by=google-cloud-0-to-1`, `scenario=lro-polling-quota-guard`, `env=sample`, `created-by=customer-engineer` 라벨을 필수로 주입한다.
+
 ---
 
 ## 3. 비기능 요구 사항 (Non-Functional Requirements)
@@ -49,3 +52,6 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### NFR-03: 자동 탐지 우선 (Auto-Discovery First)
 - CLI 인자가 생략되었을 때 gcloud 활성 프로젝트 및 리전 설정을 계층적으로 탐색하여 자동 설정한다.
+
+### NFR-04: 리포트 절대 경로 저장 보장
+- 로컬 진단 스크립트 실행 시 산출물 저장 경로는 스크립트 파일이 위치한 디렉터리의 절대 경로를 기준으로 저장하여 작업 디렉터리와 무관하게 안정적인 저장을 보장한다.

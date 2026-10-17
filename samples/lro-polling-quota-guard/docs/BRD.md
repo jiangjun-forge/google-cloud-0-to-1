@@ -36,3 +36,6 @@ Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이
 
 ### BR-04: 엔터프라이즈 비동기 큐 분리 아키텍처 가이드
 - 워커 프로세스의 동기식 블로킹 대기를 제거하고 Cloud Tasks/Pub/Sub 기반의 작업 상태 일괄 수집 패턴으로 전환하는 중장기 아키텍처 표준을 제시해야 한다.
+
+### BR-05: 사내 거버넌스 4대 필수 라벨링 준수
+- 비동기 LRO 파이프라인 연계 리소스(Cloud Storage, Cloud Tasks, Pub/Sub 등) 프로비저닝 시 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여 FinOps 비용 추적성을 보장하여야 한다.

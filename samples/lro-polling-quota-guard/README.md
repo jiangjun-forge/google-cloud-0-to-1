@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Google Cloud LRO 비동기 작업 폴링 쿼터 고갈 및 429 장애 진단 도구 (lro-polling-quota-guard)
 
-Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이프라인에서 대시보드상 요청 RPM이 정상임에도 발생하는 원인 불명의 `429 RESOURCE_EXHAUSTED` 장애를 진단하고, Python SDK(`google-api-core`) 비동기 폴링 지수 백오프 최적화 및 비동기 분리 아키텍처를 처방하는 범용 진단 도구다. (As of 2026-09-18)
+Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이프라인에서 대시보드상 요청 RPM이 정상임에도 발생하는 원인 불명의 `429 RESOURCE_EXHAUSTED` 장애를 진단하고, Python SDK(`google-api-core`) 비동기 폴링 지수 백오프 최적화 및 비동기 분리 아키텍처를 처방하는 범용 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Performance`, `#Resilience`  
@@ -124,5 +124,15 @@ python diagnose.py -s document-ai -p <대상_프로젝트_ID> -l us-central1 -c 
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 7. 사내 거버넌스 4대 필수 표준 라벨링
+
+비동기 LRO 파이프라인 연계 리소스(Cloud Storage 버킷, Cloud Tasks 큐, Pub/Sub 토픽 등) 생성 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `lro-polling-quota-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 본 미니 프로젝트는 순수 진단 및 시뮬레이션 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

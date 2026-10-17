@@ -345,12 +345,32 @@ result = operation.result(polling=custom_polling, timeout=3600)
 - 대상 서비스: {svc['name']} (리전: {location})
 - 필수 상향 지표: `{svc['operation_quota_token']}` (기본 {res['operation_requests_quota_rpm']} RPM -> 1,000+ RPM 권장)
 - 콘솔 경로: IAM & Admin > Quotas ( https://console.cloud.google.com/iam-admin/quotas?project={project_id} )
+
+---
+
+## 4. 사내 거버넌스 4대 필수 표준 라벨링
+
+비동기 LRO 파이프라인 연계 리소스(Cloud Storage 버킷, Cloud Tasks 큐, Pub/Sub 토픽 등) 생성 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `lro-polling-quota-guard`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드
+
+- **Cloud 할당량(Quotas) 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/quotas?project={project_id} )
+- **Cloud Monitoring 측정항목 탐색기**: ( https://console.cloud.google.com/monitoring/metrics-explorer?project={project_id} )
 """
     return report.strip() + "\n"
 
 
-def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+def save_markdown_report(report_md: str, output_path: str | None = None) -> None:
     """마크다운 리포트를 파일로 기록/덮어쓴다."""
+    if output_path is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, "report.md")
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
