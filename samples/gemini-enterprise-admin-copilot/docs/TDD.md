@@ -60,7 +60,9 @@ flowchart TD
 | **BR-03** (라이선스 채택률 및 유휴 회수) | **FR-03** (BigQuery 활성도 분석 SQL 생성기) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` |
 | **BR-04** (Overage 과금 방어 및 결제 통제) | **FR-04** (Billing RBAC 및 쿼터 차단 명세) | **NFR-02**, **NFR-03** | `diagnose.py` |
 | **BR-05** (사내망 Exact FQDN 및 방화벽) | **FR-05** (FQDN 443 연결성 프로브 빌더) | **NFR-01**, **NFR-03** | `diagnose.py` |
-| **BR-06** (추천 칩 및 원클릭 리포트) | **FR-06** (Dolphin UI 칩 규약 및 report.md 생성) | **NFR-01**, **NFR-02** | `diagnose.py`, `report.md` |
+| **BR-06** (에이전트 스프롤 관리 헬 감사) | **FR-06** (BigQuery 3대 감사 SQL 팩 생성기) | **NFR-01**, **NFR-03** | `diagnose.py` |
+| **BR-07** (원클릭 로그 싱크 및 콘솔 딥링크) | **FR-07** (Cloud Logging 싱크 빌더 및 딥링크) | **NFR-01**, **NFR-02** | `diagnose.py` |
+| **BR-08** (추천 칩 및 원클릭 리포트) | **FR-08** (Dolphin UI 칩 규약 및 report.md 생성) | **NFR-01**, **NFR-02** | `diagnose.py`, `report.md` |
 
 ---
 

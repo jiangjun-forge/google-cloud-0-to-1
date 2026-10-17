@@ -1,6 +1,6 @@
 # Gemini Enterprise 어드민 코파일럿 보고서 (gemini-enterprise-admin-copilot)
 
-- **실행 일시**: 2026-10-17 05:15:11 UTC
+- **실행 일시**: 2026-10-17 05:25:03 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **배포 리전**: `global`
 - **Gemini Enterprise App 인스턴스**: `sample-ge-app-id`

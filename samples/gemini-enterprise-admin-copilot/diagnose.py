@@ -57,6 +57,22 @@ ADMIN_TOPIC_CATALOG = {
         "primary_action": "Exact FQDN 목록 추출 및 아웃바운드 443 포트 사전 프로브",
         "remediation_type": "NETWORK_PROBE_AND_PROXY_CONFIG",
     },
+    6: {
+        "id": "agent_sprawl_governance",
+        "name": "수백 개 에이전트 전수 감사 및 좀비 에이전트 식별 (BigQuery 쿼리 팩)",
+        "category": "Agent Governance & Sprawl",
+        "description": "임직원이 생성한 수백 개 에이전트 중 60일 미사용 좀비 에이전트, 토큰 과소비 톱 10, 장애 유발 에이전트 역추적",
+        "primary_action": "BigQuery 3대 어드민 감사 SQL 팩 실행 및 방치된 에이전트 일괄 비활성화",
+        "remediation_type": "BIGQUERY_AUDIT_SQL_PACK",
+    },
+    7: {
+        "id": "one_click_log_sink_setup",
+        "name": "Cloud Logging to BigQuery 30초 원클릭 감사 로그 싱크 구축 & GCP 콘솔 길잡이",
+        "category": "Logging & Console Navigator",
+        "description": "GCP 콘솔 메뉴를 몰라도 3단계로 GE Admin에 접근하고 명령어 한 줄로 BigQuery 감사 로그 자동 적재 파이프라인 완결",
+        "primary_action": "gcloud logging sinks create 자동화 스크립트 및 완성형 콘솔 딥링크 제공",
+        "remediation_type": "LOG_SINK_PROVISION_AND_CONSOLE_DEEPLINK",
+    },
 }
 
 CORE_FQDN_LIST = [
@@ -218,7 +234,7 @@ SELECT
     MAX(timestamp) AS last_active_time,
     DATE_DIFF(CURRENT_DATE(), DATE(MAX(timestamp)), DAY) AS days_since_last_call
 FROM
-    `{PROJECT_ID}.gemini_logging.cloudaudit_googleapis_com_data_access`
+    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
 WHERE
     protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
 GROUP BY 1
@@ -282,6 +298,117 @@ done
             "coreFqdnCount": len(CORE_FQDN_LIST),
             "sampleFqdns": CORE_FQDN_LIST[:5],
             "probePort": 443,
+        }
+
+    elif tid == "agent_sprawl_governance":
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# 수백 개 에이전트 전수 감사 및 BigQuery 3대 어드민 분석 SQL 팩 실행 가이드
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+
+echo "=========================================================================="
+echo "1. 최근 60일간 호출 0건인 좀비 에이전트(Ghost Agents) 적발 쿼리"
+echo "=========================================================================="
+cat << 'EOF'
+SELECT
+    protopayload_auditlog.resourceName AS agent_resource,
+    protopayload_auditlog.authenticationInfo.principalEmail AS creator_email,
+    MAX(timestamp) AS last_invoked_at,
+    DATE_DIFF(CURRENT_DATE(), DATE(MAX(timestamp)), DAY) AS idle_days
+FROM
+    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
+WHERE
+    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
+    AND protopayload_auditlog.methodName LIKE '%AgentService.Query%'
+GROUP BY 1, 2
+HAVING idle_days >= 60
+ORDER BY idle_days DESC;
+EOF
+
+echo "=========================================================================="
+echo "2. 전사 에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리"
+echo "=========================================================================="
+cat << 'EOF'
+SELECT
+    protopayload_auditlog.resourceName AS agent_resource,
+    COUNT(1) AS total_invocations,
+    COUNT(DISTINCT protopayload_auditlog.authenticationInfo.principalEmail) AS active_users
+FROM
+    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
+WHERE
+    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
+GROUP BY 1
+ORDER BY total_invocations DESC
+LIMIT 10;
+EOF
+
+echo "=========================================================================="
+echo "3. 429 쿼터 초과 및 에러 다발 문제 에이전트 역추적 쿼리"
+echo "=========================================================================="
+cat << 'EOF'
+SELECT
+    protopayload_auditlog.resourceName AS agent_resource,
+    protopayload_auditlog.status.code AS error_code,
+    protopayload_auditlog.status.message AS error_message,
+    COUNT(1) AS error_count
+FROM
+    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
+WHERE
+    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
+    AND protopayload_auditlog.status.code != 0
+GROUP BY 1, 2, 3
+ORDER BY error_count DESC;
+EOF
+"""
+        manifest = {
+            "queryPack": ["ghost_agents_60d", "top10_invocations", "error_agents_429"],
+            "governanceAction": "BULK_DEPRECATE_OR_ARCHIVE",
+            "logSinkPrerequisite": f"{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access",
+        }
+
+    elif tid == "one_click_log_sink_setup":
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Cloud Logging to BigQuery 원클릭 30초 감사 로그 싱크 자동 구축 스크립트
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+DATASET="gemini_logging"
+SINK_NAME="ge-audit-log-sink"
+REGION="asia-northeast3"
+
+echo "[1/3] BigQuery 감사 로그 전용 데이터셋 생성 (${{DATASET}})..."
+bq --project_id="${{PROJECT_ID}}" --location="${{REGION}}" mk --dataset "${{PROJECT_ID}}:${{DATASET}}" || true
+
+echo "[2/3] Cloud Logging 로그 라우터 싱크 생성..."
+gcloud logging sinks create "${{SINK_NAME}}" \\
+    "bigquery.googleapis.com/projects/${{PROJECT_ID}}/datasets/${{DATASET}}" \\
+    --project="${{PROJECT_ID}}" \\
+    --log-filter='protoPayload.serviceName="discoveryengine.googleapis.com"' \\
+    --description="Gemini Enterprise 감사 로그 자동 BigQuery 라우팅" || true
+
+echo "[3/3] 로그 싱크 서비스 계정에 BigQuery Data Editor 권한 바인딩..."
+WRITER_IDENTITY=$(gcloud logging sinks describe "${{SINK_NAME}}" --project="${{PROJECT_ID}}" --format="value(writerIdentity)")
+gcloud projects add-iam-policy-binding "${{PROJECT_ID}}" \\
+    --member="${{WRITER_IDENTITY}}" \\
+    --role="roles/bigquery.dataEditor" --quiet
+
+echo "=========================================================================="
+echo "감사 로그 싱크 구축 완료! 이제 Discovery Engine 호출 로그가 BigQuery에 실시간 적재됩니다."
+echo "BigQuery 데이터셋 콘솔: ( https://console.cloud.google.com/bigquery?project=${{PROJECT_ID}}&ws=!1m4!1m3!3m2!1s${{PROJECT_ID}}!2s${{DATASET}} )"
+echo "=========================================================================="
+"""
+        manifest = {
+            "sinkName": "ge-audit-log-sink",
+            "destinationDataset": f"{project_id}:gemini_logging",
+            "filterExpression": 'protoPayload.serviceName="discoveryengine.googleapis.com"',
+            "consoleDirectDeeplink": f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}",
         }
 
     return {
@@ -420,7 +547,7 @@ def main():
     parser.add_argument("--sa", help="어드민 실행 대행 서비스 계정 이메일")
     parser.add_argument("--domain", help="사내 도메인 명칭 (예: example-corp.com)")
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 호출 없이 가상 실행 검증")
-    parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~5)")
+    parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~7)")
     parser.add_argument("--prompt", help="사용자 정의 어드민 문의 내용")
     parser.add_argument("--interactive", action="store_true", default=False, help="대화형 번호 선택기 가동")
 

@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 어드민 코파일럿 (gemini-enterprise-admin-copilot)
 
-사내 IT 어드민 및 클라우드 인프라 팀이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 운영 중 직면하는 5대 핵심 관리 과제(도메인 충돌, 외부 마켓플레이스 차단 거버넌스, 유휴 라이선스 회수, Overage 과금 방어, 사내망 FQDN 허용)를 대화형으로 신속 진단하고 자율 해결할 수 있도록 지원하는 사내 어드민 전담 코파일럿 솔루션이다. (As of 2026-10-17)
+사내 IT 어드민 및 클라우드 인프라 팀이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 운영 중 직면하는 7대 핵심 관리 과제(도메인 충돌, 외부 마켓플레이스 차단 거버넌스, 유휴 라이선스 회수, Overage 과금 방어, 사내망 FQDN 허용, 수백 개 에이전트 관리 헬 감사, 30초 BigQuery 감사 로그 싱크 및 콘솔 길잡이)를 대화형으로 신속 진단하고 자율 해결할 수 있도록 지원하는 사내 어드민 전담 코파일럿 솔루션이다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#Compliance`, `#Security`  
@@ -28,6 +28,9 @@ All contents, designs, and code examples are subject to change, modification, or
 
 사내 엔터프라이즈 환경에서 Gemini Enterprise 도입 및 운영 중 다음과 같은 관리 이슈가 발생하고 있다면 본 솔루션 도입이 필요하다:
 
+- [ ] **GCP 콘솔 메뉴 미아**: Workspace나 온프레미스 어드민이 GCP 콘솔의 복잡한 GE Admin 메뉴 트리를 찾지 못해 설정 변경에 어려움을 겪는 경우
+- [ ] **에이전트 수백 개 난립(Agent Sprawl) 관리 헬**: 임직원들이 생성한 수백 개 에이전트 중 60일 이상 호출 0건인 좀비 에이전트나 토큰 과소비 에이전트를 파악하지 못하는 경우
+- [ ] **감사 로그 BigQuery 연동 부재**: Cloud Logging에 쌓이는 데이터 액세스 로그를 BigQuery로 자동 적재하는 로그 싱크(Log Sink) 설정 방법을 모르는 경우
 - [ ] **도메인 선점 오류**: 사내 도메인이 타 계정이나 기존 조직에 선점되어 테넌트 프로비저닝이 중단된 경우
 - [ ] **외부 마켓플레이스 에이전트 차단 요구**: 보안 규정상 미승인 외부 에이전트 사용을 금지하고 사내 승인 에이전트만 전사 갤러리에 노출시켜야 하는 경우
 - [ ] **유휴 라이선스 비용 누수**: 전사 배포된 고가 라이선스 중 30일 이상 미사용 중인 임직원 라이선스를 식별하여 회수해야 하는 경우
@@ -87,12 +90,18 @@ python diagnose.py --dry-run --chip 4
 # 5번 사내망 프록시 허용용 Exact 15대 코어 FQDN 진단
 python diagnose.py --dry-run --chip 5
 
+# 6번 수백 개 에이전트 전수 감사 및 좀비 에이전트 식별 (BigQuery 3대 쿼리 팩)
+python diagnose.py --dry-run --chip 6
+
+# 7번 Cloud Logging to BigQuery 30초 원클릭 감사 로그 싱크 구축 & GCP 콘솔 길잡이
+python diagnose.py --dry-run --chip 7
+
 # 사용자 맞춤형 어드민 문의 입력
 python diagnose.py --dry-run --prompt "임직원 퇴사 시 에이전트 소유권 이전 절차"
 ```
 
 ### 4.3. 대화형 번호 선택기 가동 (--interactive)
-터미널 대화형 환경에서 5대 관리 과제를 확인하고 번호로 선택하여 실행한다:
+터미널 대화형 환경에서 7대 관리 과제를 확인하고 번호로 선택하여 실행한다:
 ```bash
 python diagnose.py --interactive
 ```
@@ -101,8 +110,10 @@ python diagnose.py --interactive
 
 ## 5. 콘솔 링크 조치 가이드
 
+- **Gemini Enterprise 에이전트 목록 직결 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Cloud Logging 로그 라우터 콘솔**: ( https://console.cloud.google.com/logs/router )
+- **BigQuery 감사 로그 분석 콘솔**: ( https://console.cloud.google.com/bigquery )
 - **Google Admin 관리 콘솔**: ( https://admin.google.com/ )
-- **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
 - **Google Cloud 결제(Billing) 콘솔**: ( https://console.cloud.google.com/billing )
 - **Cloud DNS 및 도메인 콘솔**: ( https://console.cloud.google.com/net-services/dns/zones )
 

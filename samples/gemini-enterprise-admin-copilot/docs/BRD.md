@@ -40,7 +40,9 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-03** | 라이선스 채택률 및 유휴 라이선스 회수 | 부서별 활성 사용자 지표를 분석하고 30일 이상 미사용 임직원의 라이선스를 자동 회수할 수 있는 분석 쿼리를 제공해야 한다. |
 | **BR-04** | Overage 과금 방어 및 결제 거버넌스 | 일일 쿼터 초과 쓰로틀링을 방어하고, Google AI Studio 유료 API 키 발급을 차단하는 Billing RBAC 가이드를 도출해야 한다. |
 | **BR-05** | 사내망 Exact FQDN 및 방화벽 진단 | 와일드카드 도메인이 불허되는 사내 관문 프록시(SWG) 환경에서 필수 443 포트 아웃바운드 FQDN 목록을 산출해야 한다. |
-| **BR-06** | 대화형 추천 칩 및 원클릭 리포트 | Dolphin UI 네이티브 `suggested_questions` 추천 칩을 출력하고 `report.md` 표준 진단 보고서를 덮어써야 한다. |
+| **BR-06** | 에이전트 스프롤 및 관리 헬 감사 | 수백 개 에이전트 난립 시 60일 미사용 좀비 에이전트, 토큰 과소비 톱 10, 장애 에이전트를 식별하는 BigQuery 쿼리 팩을 제공해야 한다. |
+| **BR-07** | 원클릭 로그 싱크 및 콘솔 딥링크 | Cloud Logging의 감사 로그를 BigQuery로 라우팅하는 로그 싱크를 명령어 한 줄로 구축하고 GCP 콘솔 GE Admin 3단계 딥링크를 안내해야 한다. |
+| **BR-08** | 대화형 추천 칩 및 원클릭 리포트 | Dolphin UI 네이티브 `suggested_questions` 추천 칩을 출력하고 `report.md` 표준 진단 보고서를 덮어써야 한다. |
 
 ---
 

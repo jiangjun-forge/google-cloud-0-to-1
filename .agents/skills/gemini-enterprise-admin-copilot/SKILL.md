@@ -81,6 +81,12 @@ python diagnose.py --dry-run --chip 4
 
 # 5번 사내망 프록시 허용용 Exact 15대 코어 FQDN 진단
 python diagnose.py --dry-run --chip 5
+
+# 6번 수백 개 에이전트 전수 감사 및 좀비 에이전트 식별 (BigQuery 쿼리 팩)
+python diagnose.py --dry-run --chip 6
+
+# 7번 Cloud Logging to BigQuery 30초 원클릭 감사 로그 싱크 구축 & GCP 콘솔 길잡이
+python diagnose.py --dry-run --chip 7
 ```
 
 ---
