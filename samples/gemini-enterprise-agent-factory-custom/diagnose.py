@@ -353,8 +353,9 @@ gcloud run deploy "${{SERVICE_NAME}}" \\
     --project="${{PROJECT_ID}}" \\
     --region="${{REGION}}" \\
     --service-account="${{SERVICE_ACCOUNT}}" \\
+    --labels="managed-by=google-cloud-0-to-1,scenario=gemini-enterprise-agent-factory-custom,env=sample" \\
     --no-allow-unauthenticated \\
-    --set-env-vars="GOOGLE_CLOUD_PROJECT=${{PROJECT_ID}},GOOGLE_CLOUD_LOCATION=${{REGION}}"
+    --set-env-vars="GOOGLE_CLOUD_PROJECT=${{PROJECT_ID}},GOOGLE_CLOUD_LOCATION=global"
 
 SERVICE_URL=$(gcloud run services describe "${{SERVICE_NAME}}" \\
     --project="${{PROJECT_ID}}" \\
@@ -377,6 +378,11 @@ echo "=================================================="
             "authType": "OIDC_TOKEN",
         },
         "visibility": "ORGANIZATION",
+        "labels": {
+            "managed-by": "google-cloud-0-to-1",
+            "scenario": "gemini-enterprise-agent-factory-custom",
+            "env": "sample",
+        },
     }
 
     return {

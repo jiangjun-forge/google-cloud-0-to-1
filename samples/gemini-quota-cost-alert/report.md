@@ -47,7 +47,8 @@ gcloud functions deploy quota-auto-disable \
     --trigger-topic=gemini-cost-alerts \
     --entry-point=block_gemini_api \
     --project=sample-project-id \
-    --region=asia-northeast3
+    --region=asia-northeast3 \
+    --update-labels="managed-by=google-cloud-0-to-1,scenario=gemini-quota-cost-alert,env=sample"
 ========================================================================
 
 ========================================================================

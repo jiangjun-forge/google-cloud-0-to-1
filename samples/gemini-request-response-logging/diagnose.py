@@ -170,8 +170,9 @@ def execute_logging(project_id: str, dataset_id: str, location: str, model_id: s
     dataset.description = "Gemini API Foundation Model Request and Response Logs"
     dataset.labels = {
         "managed-by": "google-cloud-0-to-1",
+        "scenario": "gemini-request-response-logging",
         "purpose": "gemini-request-response-logging",
-        "env": "workshop-sandbox",
+        "env": "sample",
         "temporary": "true",
     }
     client.create_dataset(dataset, exists_ok=True)

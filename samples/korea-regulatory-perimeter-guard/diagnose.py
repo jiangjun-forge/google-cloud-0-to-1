@@ -256,7 +256,7 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
         print(f"[3/9] Cloud Storage 5년 불변 보존 및 Bucket Lock 점검 중...", flush=True)
         retention_pass = False
         retention_detail = f"프로젝트({project_id}) 내에 점검 가능한 Cloud Storage 버킷이 존재하지 않음"
-        remediation_retention = f"gcloud storage buckets create gs://{project_id}-fsi-audit --location={location} --retention-period=157680000s"
+        remediation_retention = f"gcloud storage buckets create gs://{project_id}-fsi-audit --location={location} --retention-period=157680000s --default-labels=managed-by=google-cloud-0-to-1,scenario=korea-regulatory-perimeter-guard,env=sample"
 
     findings.append({
         "id": "FR-03",

@@ -422,6 +422,15 @@ def build_meta_agent_manifest(env_info: dict):
                     "default": "PRIVATE",
                     "description": "에이전트 공개 범위 (기본: 작성자 개인/팀 전용)",
                 },
+                "labels": {
+                    "type": "object",
+                    "description": "GCP 필수 거버넌스 라벨 (managed-by, scenario, env)",
+                    "default": {
+                        "managed-by": "google-cloud-0-to-1",
+                        "scenario": "gemini-enterprise-agent-factory",
+                        "env": "sample",
+                    },
+                },
             },
             "required": ["display_name", "description", "instructions", "starter_prompts"],
         },

@@ -353,6 +353,11 @@ def generate_openapi_tool_manifest(tool_data: dict, env_info: dict):
         "governance_status": governance_status,
         "approval_flow": approval_flow,
         "secret_vault_ref": secret_ref,
+        "labels": {
+            "managed-by": "google-cloud-0-to-1",
+            "scenario": "gemini-enterprise-skill-factory",
+            "env": "sample",
+        },
     }
 
 

@@ -140,7 +140,8 @@ gcloud functions deploy quota-auto-disable \\
     --trigger-topic={topic_name} \\
     --entry-point=block_gemini_api \\
     --project={project_id} \\
-    --region=asia-northeast3
+    --region=asia-northeast3 \\
+    --update-labels="managed-by=google-cloud-0-to-1,scenario=gemini-quota-cost-alert,env=sample"
 ========================================================================
 """)
 
@@ -202,7 +203,8 @@ gcloud functions deploy quota-auto-disable \\
     --trigger-topic={topic} \\
     --entry-point=block_gemini_api \\
     --project={project_id} \\
-    --region=asia-northeast3
+    --region=asia-northeast3 \\
+    --update-labels="managed-by=google-cloud-0-to-1,scenario=gemini-quota-cost-alert,env=sample"
 ========================================================================
 
 ========================================================================

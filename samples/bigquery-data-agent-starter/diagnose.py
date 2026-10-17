@@ -388,8 +388,9 @@ LEFT JOIN `{project_id}.{dataset_id}.pos_anomaly_alerts` a
         dataset_ref.description = "BigQuery Data Agent 45-min Workshop Dataset"
         dataset_ref.labels = {
             "managed-by": "google-cloud-0-to-1",
+            "scenario": "bigquery-data-agent-starter",
             "purpose": "bigquery-data-agent-starter",
-            "env": "workshop-sandbox",
+            "env": "sample",
             "temporary": "true",
         }
         client.create_dataset(dataset_ref, exists_ok=True)
