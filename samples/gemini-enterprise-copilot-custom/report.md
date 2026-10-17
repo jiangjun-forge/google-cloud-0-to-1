@@ -1,6 +1,6 @@
 # Gemini Enterprise 커스텀 에이전트 스캐폴더 보고서 (gemini-enterprise-copilot-custom)
 
-- **실행 일시**: 2026-10-17 05:37:21 UTC
+- **실행 일시**: 2026-10-17 06:36:53 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **선택 아키텍처**: `bq_analytics_agent` (사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트)
@@ -47,7 +47,8 @@
   "labels": {
     "managed-by": "google-cloud-0-to-1",
     "scenario": "gemini-enterprise-copilot-custom",
-    "env": "sample"
+    "env": "sample",
+    "created-by": "customer-engineer"
   }
 }
 ```
@@ -102,3 +103,36 @@ SYSTEM_INSTRUCTION = """너는 사내 엔터프라이즈 환경에서 구동하�
    ```
 3. **Gemini Enterprise app 카탈로그 외부 에이전트 등록**:
    - Agent Platform (GEAP) 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에서 'External Agent' 추가 후 상기 매니페스트 입력.
+
+---
+
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+커스텀 에이전트 인프라 및 관리 리소스(Cloud Run 서비스, 서비스 계정, Artifact Registry 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-custom`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
+
+- **Cloud Run 콘솔**: 배포된 백엔드 컨테이너 서비스 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/run )
+- **Agent Platform (GEAP) 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **IAM 및 관리자 콘솔**: 서비스 계정(`custom-agent-sa@sample-project-id.iam.gserviceaccount.com`) 권한 및 인보커 바인딩 확인 ( https://console.cloud.google.com/iam-admin/iam )
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
+
+본 솔루션 검증 후 테스트용으로 생성된 Cloud Run 서비스 및 서비스 계정을 정리하고자 할 경우 아래 명령을 수행한다:
+
+1. **Cloud Run 서비스 삭제**:
+   ```bash
+   gcloud run services delete bq-analytics-agent --region=asia-northeast3 --quiet
+   ```
+2. **서비스 계정 삭제**:
+   ```bash
+   gcloud iam service-accounts delete custom-agent-sa@sample-project-id.iam.gserviceaccount.com --quiet
+   ```

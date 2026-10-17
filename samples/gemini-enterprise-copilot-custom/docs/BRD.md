@@ -45,6 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-04** | GitHub 레포 직결 무인 배포 (GitOps) | 개발자가 대화창에 GitHub 레포 URL을 제공하면 저장소 구조 검증, 런타임 빌드, 사내 갤러리 자동 등록을 원클릭으로 완결해야 한다. |
 | **BR-05** | Gemini Enterprise app 외부 에이전트 원클릭 연동 | 배포된 커스텀 에이전트 엔드포인트를 사내 Gemini Enterprise app 포털의 카탈로그에 '외부 에이전트'로 등록하고 연결성을 사전 검증해야 한다. |
 | **BR-06** | 엔터프라이즈 보안 및 격리 준수 | 서비스 계정 최소 권한 원칙(`roles/aiplatform.user`, `roles/run.invoker`), VPC 서비스 제어(VPC-SC) 보안 경계 고려사항을 설계에 강제해야 한다. |
+| **BR-07** | 표준 리소스 라벨링 적용 의무화 | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 생성되는 에이전트 서비스, 컨테이너 및 관련 리소스에 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여야 한다. |
 
 ---
 

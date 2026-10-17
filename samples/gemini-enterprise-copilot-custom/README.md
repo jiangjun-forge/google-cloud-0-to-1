@@ -130,12 +130,22 @@ agents-cli publish gemini-enterprise \
 ### 4.5. GitHub 레포 기반 무인 자동 배포 (ChatOps to GitOps)
 고객사 개발팀이 매번 터미널에서 CLI를 실행할 필요 없이, 최초 1회 본 에이전트(`Gemini Enterprise Custom Agent Scaffolder`)를 배포해 두면:
 1. 개발자가 GitHub 사내 저장소에 `agent.py`와 `requirements.txt`를 푸시한다.
-2. Gemini Enterprise 웹 채팅창에서 본 에이전트에게 깃 주소(`https://github.com/my-org/my-agent.git`)를 전송한다.
+2. Gemini Enterprise 웹 채팅창에서 본 에이전트에게 깃 주소 ( https://github.com/my-org/my-agent.git )를 전송한다.
 3. 에이전트가 레포 구조를 자동 검증하고, Agent Runtime 빌드 및 현재 GE App 갤러리(`/r/agents`)에 즉시 원클릭 등록을 완결한다.
 
 ---
 
-## 5. 콘솔 링크 조치 가이드
+## 5. 사내 거버넌스 4대 필수 표준 라벨링
+
+커스텀 에이전트 인프라 및 관리 리소스(Cloud Run 서비스, 서비스 계정, Artifact Registry 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-custom`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 6. 콘솔 링크 조치 가이드
 
 - **Cloud Run 콘솔**: 배포된 백엔드 컨테이너 서비스 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/run )
 - **Agent Platform (GEAP) 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
@@ -143,7 +153,7 @@ agents-cli publish gemini-enterprise \
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 7. 자원 정리 안내 (Teardown)
 
 본 솔루션 검증 후 테스트용으로 생성된 Cloud Run 서비스 및 서비스 계정을 정리하고자 할 경우 아래 명령을 수행한다:
 

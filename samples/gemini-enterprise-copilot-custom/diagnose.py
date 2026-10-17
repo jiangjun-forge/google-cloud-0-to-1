@@ -353,7 +353,7 @@ gcloud run deploy "${{SERVICE_NAME}}" \\
     --project="${{PROJECT_ID}}" \\
     --region="${{REGION}}" \\
     --service-account="${{SERVICE_ACCOUNT}}" \\
-    --labels="managed-by=google-cloud-0-to-1,scenario=gemini-enterprise-copilot-custom,env=sample" \\
+    --labels="managed-by=google-cloud-0-to-1,scenario=gemini-enterprise-copilot-custom,env=sample,created-by=customer-engineer" \\
     --no-allow-unauthenticated \\
     --set-env-vars="GOOGLE_CLOUD_PROJECT=${{PROJECT_ID}},GOOGLE_CLOUD_LOCATION=global"
 
@@ -382,6 +382,7 @@ echo "=================================================="
             "managed-by": "google-cloud-0-to-1",
             "scenario": "gemini-enterprise-copilot-custom",
             "env": "sample",
+            "created-by": "customer-engineer",
         },
     }
 
@@ -484,6 +485,39 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
    ```
 3. **Gemini Enterprise app 카탈로그 외부 에이전트 등록**:
    - Agent Platform (GEAP) 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에서 'External Agent' 추가 후 상기 매니페스트 입력.
+
+---
+
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+커스텀 에이전트 인프라 및 관리 리소스(Cloud Run 서비스, 서비스 계정, Artifact Registry 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-custom`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
+
+- **Cloud Run 콘솔**: 배포된 백엔드 컨테이너 서비스 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/run )
+- **Agent Platform (GEAP) 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **IAM 및 관리자 콘솔**: 서비스 계정(`{env_info['service_account']}`) 권한 및 인보커 바인딩 확인 ( https://console.cloud.google.com/iam-admin/iam )
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
+
+본 솔루션 검증 후 테스트용으로 생성된 Cloud Run 서비스 및 서비스 계정을 정리하고자 할 경우 아래 명령을 수행한다:
+
+1. **Cloud Run 서비스 삭제**:
+   ```bash
+   gcloud run services delete {service_name} --region={env_info['region']} --quiet
+   ```
+2. **서비스 계정 삭제**:
+   ```bash
+   gcloud iam service-accounts delete {env_info['service_account']} --quiet
+   ```
 """
 
 
@@ -601,7 +635,12 @@ def main():
 
     print("\n" + "=" * 75)
     print("  커스텀 에이전트 스캐폴딩 및 진단 완료 (모든 점검 통과)")
-    print("=" * 75 + "\n")
+    print("=" * 75)
+    print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
+    print("  - managed-by: google-cloud-0-to-1")
+    print("  - scenario: gemini-enterprise-copilot-custom")
+    print("  - env: sample")
+    print("  - created-by: customer-engineer\n")
 
 
 if __name__ == "__main__":

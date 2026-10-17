@@ -68,6 +68,7 @@ flowchart TD
 | **BR-04** (GitHub 레포 직결 무인 배포) | **FR-04** (GitOps 파이프라인 컴파일러) | **NFR-01**, **NFR-02** | `diagnose.py` GitOps 모듈 |
 | **BR-05** (Gemini Enterprise app 외부 에이전트 원클릭 연동) | **FR-05** (외부 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 연동 모듈 |
 | **BR-06** (엔터프라이즈 보안 및 격리 준수) | **FR-06** (IAM 권한 진단 및 마크다운 리포트) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
+| **BR-07** (표준 리소스 라벨링) | **FR-03**, **FR-06** (라벨링 자동 주입) | **NFR-04** (4대 표준 라벨링 준수) | `diagnose.py`, `deploy.sh` |
 
 ---
 
@@ -109,3 +110,6 @@ flowchart TD
 ### NFR-03: 결정론적 가상 실행(--dry-run) 및 사내 식별 정보 마스킹
 - `--dry-run` 모드 실행 시 실제 GCP API 호출 및 소스 파일 오버라이트 없이도 메모리 상에서 완벽한 코드 및 매니페스트 무결성을 스모크 테스트한다.
 - 가상 실행 시 사내 프로젝트 ID나 실제 환경 정보의 유출을 방지하기 위해 가명(`sample-project-id`, `sample-ge-app-id`)을 철저히 적용한다.
+
+### NFR-04: 사내 거버넌스 4대 필수 표준 라벨링 준수
+- 사내 거버넌스, FinOps 비용 배분 및 미정리 자원 자동 추적을 위해, 생성되는 Cloud Run 서비스, 컨테이너 빌드 및 외부 에이전트 매니페스트에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-copilot-custom`, `env=sample`, `created-by=customer-engineer`)을 필수로 주입한다.
