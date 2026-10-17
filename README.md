@@ -40,6 +40,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
     ├── gce-reservation-guard/                  # CUD 약정 대비 물리적 Reservation 확보율 및 Future Reservation 진단
     ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
+    ├── gemini-enterprise-admin-copilot/       # 사내 IT 어드민 전담 코파일럿 및 5대 핵심 운영 이슈 진단
     ├── gemini-enterprise-agent-factory/        # 자율형 사내 노코드 에이전트 팩토리 및 Gemini Enterprise app 대행 등록
     ├── gemini-enterprise-agent-resolver/       # 커스텀 에이전트 연동 권한 및 조직 정책 진단
     ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
