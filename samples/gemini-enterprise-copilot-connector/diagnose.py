@@ -377,7 +377,17 @@ flowchart LR
 
 ---
 
-## 6. 콘솔 링크 조치 가이드
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+데이터 커넥터 인프라 및 보안 볼트 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-connector`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
 
 - **Discovery Engine 데이터 저장소 콘솔**: ( https://console.cloud.google.com/gen-app-builder/data-stores )
 - **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
@@ -386,7 +396,7 @@ flowchart LR
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 8. 자원 정리 안내 (Teardown)
 
 본 테스트 검증 완료 후 생성된 리소스를 정리하려면 아래 명령어를 수행한다:
 
@@ -492,7 +502,12 @@ def main():
 
     print("\n" + "=" * 75)
     print("  데이터 커넥터 스펙 컴파일 및 진단 완료 (모든 점검 통과)")
-    print("=" * 75 + "\n")
+    print("=" * 75)
+    print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
+    print("  - managed-by: google-cloud-0-to-1")
+    print("  - scenario: gemini-enterprise-copilot-connector")
+    print("  - env: sample")
+    print("  - created-by: customer-engineer\n")
 
 
 if __name__ == "__main__":

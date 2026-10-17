@@ -48,6 +48,8 @@ flowchart TD
 고객사 아키텍트가 "데이터 커넥터 팩토리 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
+1. 현재 활성화된 gcloud 프로젝트 및 대상 Gemini Enterprise app 인스턴스 환경을 확인한다.
+2. 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨링(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-copilot-connector`, `env=sample`, `created-by=customer-engineer`) 규약을 고지한다.
 ```bash
 cd samples/gemini-enterprise-copilot-connector
 python diagnose.py --dry-run

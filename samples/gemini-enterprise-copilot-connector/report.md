@@ -1,6 +1,6 @@
 # Gemini Enterprise 데이터 커넥터 팩토리 보고서 (gemini-enterprise-copilot-connector)
 
-- **실행 일시**: 2026-10-17 05:36:29 UTC
+- **실행 일시**: 2026-10-17 06:34:40 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **배포 리전**: `global`
 - **Gemini Enterprise App 인스턴스**: `sample-ge-app-id`
@@ -155,7 +155,17 @@ echo "=================================================="
 
 ---
 
-## 6. 콘솔 링크 조치 가이드
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+데이터 커넥터 인프라 및 보안 볼트 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-connector`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
 
 - **Discovery Engine 데이터 저장소 콘솔**: ( https://console.cloud.google.com/gen-app-builder/data-stores )
 - **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
@@ -164,7 +174,7 @@ echo "=================================================="
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 8. 자원 정리 안내 (Teardown)
 
 본 테스트 검증 완료 후 생성된 리소스를 정리하려면 아래 명령어를 수행한다:
 

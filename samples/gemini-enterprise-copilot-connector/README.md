@@ -98,7 +98,17 @@ python diagnose.py --interactive
 
 ---
 
-## 5. 콘솔 링크 조치 가이드
+## 5. 사내 거버넌스 4대 필수 표준 라벨링
+
+데이터 커넥터 인프라 및 보안 볼트 리소스(Secret Manager 시크릿, Discovery Engine Data Store 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-connector`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 6. 콘솔 링크 조치 가이드
 
 - **Discovery Engine 데이터 저장소 콘솔**: ( https://console.cloud.google.com/gen-app-builder/data-stores )
 - **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
@@ -107,7 +117,7 @@ python diagnose.py --interactive
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 7. 자원 정리 안내 (Teardown)
 
 본 도구로 생성된 테스트 데이터 저장소나 Secret Manager 보안 볼트를 정리하고자 할 경우 아래 명령어를 순차적으로 실행한다:
 
