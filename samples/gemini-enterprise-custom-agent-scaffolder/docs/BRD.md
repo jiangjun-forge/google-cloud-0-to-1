@@ -30,6 +30,9 @@ All contents, designs, and code examples are subject to change, modification, or
    - 백엔드에 배포된 커스텀 에이전트를 전사 임직원이 사용하는 Gemini Enterprise app 웹 인터페이스에 노출시키려면, 프로젝트 간 IAM 권한 부여, 엔드포인트 바인딩, 조직 정책(Org Policy) 예외 처리가 수반되어 설정 오류가 빈번히 발생한다.
    - 백엔드 배포부터 Gemini Enterprise app 외부 에이전트 등록(External Agent Binding)까지 전 과정을 자동화하고 연결 상태를 즉시 진단할 수 있어야 한다.
 
+4. **GitHub 레포 URL 기반 무인 자동 배포 (ChatOps to GitOps)**:
+   - 개발팀이 CLI나 GCP 콘솔에 직접 접속하지 않고도, Gemini Enterprise app 대화창에서 개발 완료된 GitHub 저장소 주소(`https://github.com/...`)를 입력하는 것만으로 빌드, 배포, 갤러리 등록까지 완결되는 무인 배포 체계를 지원해야 한다.
+
 ---
 
 ## 2. 핵심 비즈니스 요구 사항 목록 (Business Requirements)
@@ -39,8 +42,9 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-01** | 하이코드 에이전트 자동 스캐폴딩 | 개발자의 요구사항(도메인, 데이터 소스, 목적)을 입력받아 즉시 실행 및 커스터마이징 가능한 표준 파이썬 에이전트 코드(`agent.py`)를 자동 생성해야 한다. |
 | **BR-02** | 엔터프라이즈 데이터 및 도구 템플릿 | 빅쿼리 SQL 쿼리, 사내 REST API 호출, MCP 도구 연동을 위한 함수 및 OpenAPI 3.0 스키마(`tools.py`)를 표준 규격으로 자동 도출해야 한다. |
 | **BR-03** | 컨테이너 및 서버리스 배포 자동화 | 생성된 에이전트를 클라우드 런(Cloud Run) 및 GEAP 에이전트 엔진에 배포하기 위한 `Dockerfile`과 배포 스크립트를 완비해야 한다. |
-| **BR-04** | Gemini Enterprise app 외부 에이전트 원클릭 연동 | 배포된 커스텀 에이전트 엔드포인트를 사내 Gemini Enterprise app 포털의 카탈로그에 '외부 에이전트'로 등록하고 연결성을 사전 검증해야 한다. |
-| **BR-05** | 엔터프라이즈 보안 및 격리 준수 | 서비스 계정 최소 권한 원칙(`roles/aiplatform.user`, `roles/run.invoker`), VPC 서비스 제어(VPC-SC) 보안 경계 고려사항을 설계에 강제해야 한다. |
+| **BR-04** | GitHub 레포 직결 무인 배포 (GitOps) | 개발자가 대화창에 GitHub 레포 URL을 제공하면 저장소 구조 검증, 런타임 빌드, 사내 갤러리 자동 등록을 원클릭으로 완결해야 한다. |
+| **BR-05** | Gemini Enterprise app 외부 에이전트 원클릭 연동 | 배포된 커스텀 에이전트 엔드포인트를 사내 Gemini Enterprise app 포털의 카탈로그에 '외부 에이전트'로 등록하고 연결성을 사전 검증해야 한다. |
+| **BR-06** | 엔터프라이즈 보안 및 격리 준수 | 서비스 계정 최소 권한 원칙(`roles/aiplatform.user`, `roles/run.invoker`), VPC 서비스 제어(VPC-SC) 보안 경계 고려사항을 설계에 강제해야 한다. |
 
 ---
 

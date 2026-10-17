@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동기 (gemini-enterprise-agent-factory-custom)
+# Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-custom-agent-scaffolder)
 
-클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(GEAP / Cloud Run)를 원클릭으로 스캐폴딩하고, 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 외부 에이전트로 등록 및 바인딩할 수 있도록 지원하는 엔지니어링 개발 도구다. (As of 2026-10-17)
+클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(GEAP / Cloud Run)를 원클릭으로 스캐폴딩하고, GitHub 레포 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 엔지니어링 개발 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Architecture`, `#Performance`, `#Security`  
@@ -123,9 +123,15 @@ agents-cli deploy --project=${PROJECT_ID} --region=us-central1
 # Gemini Enterprise app 사내 갤러리 등록
 agents-cli publish gemini-enterprise \
   --gemini-enterprise-app-id "projects/${PROJECT_NUMBER}/locations/global/collections/default_collection/engines/${GE_APP_ID}" \
-  --display-name "Custom Agent Scaffolder" \
-  --description "BigQuery 및 기간계 결합 High-code 커스텀 에이전트"
+  --display-name "Gemini Enterprise Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)" \
+  --description "BigQuery 및 기간계 결합 High-code 커스텀 에이전트 스캐폴더"
 ```
+
+### 4.5. GitHub 레포 기반 무인 자동 배포 (ChatOps to GitOps)
+고객사 개발팀이 매번 터미널에서 CLI를 실행할 필요 없이, 최초 1회 본 에이전트(`Gemini Enterprise Custom Agent Scaffolder`)를 배포해 두면:
+1. 개발자가 GitHub 사내 저장소에 `agent.py`와 `requirements.txt`를 푸시한다.
+2. Gemini Enterprise 웹 채팅창에서 본 에이전트에게 깃 주소(`https://github.com/my-org/my-agent.git`)를 전송한다.
+3. 에이전트가 레포 구조를 자동 검증하고, Agent Runtime 빌드 및 현재 GE App 갤러리(`/r/agents`)에 즉시 원클릭 등록을 완결한다.
 
 ---
 

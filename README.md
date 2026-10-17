@@ -41,9 +41,9 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gce-reservation-guard/                  # CUD 약정 대비 물리적 Reservation 확보율 및 Future Reservation 진단
     ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
     ├── gemini-enterprise-agent-factory/        # 자율형 사내 노코드 에이전트 팩토리 및 Gemini Enterprise app 대행 등록
-    ├── gemini-enterprise-agent-factory-custom/ # 하이코드 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 외부 연동
     ├── gemini-enterprise-agent-resolver/       # 커스텀 에이전트 연동 권한 및 조직 정책 진단
     ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
+    ├── gemini-enterprise-custom-agent-scaffolder/ # 하이코드 커스텀 에이전트 스캐폴더 및 GitOps 배포 도구
     ├── gemini-enterprise-domain-resolver/      # 사내 도메인 선점 충돌 진단 및 Cloud Identity 배포
     ├── gemini-enterprise-fqdn-checker/         # 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
     ├── gemini-enterprise-governance-guard/     # 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단

@@ -15,14 +15,14 @@ All contents, designs, and code examples are subject to change, modification, or
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
 ---
-name: gemini-enterprise-agent-factory-custom
+name: gemini-enterprise-custom-agent-scaffolder
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-agent-factory-custom: 사내 BigQuery, ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(GEAP / Cloud Run)를 원클릭 스캐폴딩하고 Gemini Enterprise app에 외부 에이전트로 연동하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-custom-agent-scaffolder: 사내 BigQuery, ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(GEAP / Cloud Run)를 원클릭 스캐폴딩하고, GitHub 레포 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록하는 도구다.
 ---
 
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동기 (`gemini-enterprise-agent-factory-custom`) (Autopilot & Hands-on Guide)
+# Gemini Enterprise 커스텀 에이전트 스캐폴더 (`gemini-enterprise-custom-agent-scaffolder`) (Autopilot & Hands-on Guide)
 
-본 스킬은 사내 클라우드 아키텍트와 백엔드 엔지니어가 `gemini-enterprise-agent-factory-custom` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
+본 스킬은 사내 클라우드 아키텍트와 백엔드 엔지니어가 `gemini-enterprise-custom-agent-scaffolder` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Architecture`, `#Performance`, `#Security`  
@@ -49,7 +49,7 @@ flowchart TD
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
 ```bash
-cd samples/gemini-enterprise-agent-factory-custom
+cd samples/gemini-enterprise-custom-agent-scaffolder
 python diagnose.py --dry-run
 ```
 

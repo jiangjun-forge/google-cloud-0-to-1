@@ -1,6 +1,6 @@
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동 보고서
+# Gemini Enterprise 커스텀 에이전트 스캐폴더 보고서 (gemini-enterprise-custom-agent-scaffolder)
 
-- **실행 일시**: 2026-10-17 01:17:09 UTC
+- **실행 일시**: 2026-10-17 04:59:40 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **선택 아키텍처**: `bq_analytics_agent` (사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트)
@@ -43,7 +43,12 @@
     "serviceAccount": "custom-agent-sa@sample-project-id.iam.gserviceaccount.com",
     "authType": "OIDC_TOKEN"
   },
-  "visibility": "ORGANIZATION"
+  "visibility": "ORGANIZATION",
+  "labels": {
+    "managed-by": "google-cloud-0-to-1",
+    "scenario": "gemini-enterprise-custom-agent-scaffolder",
+    "env": "sample"
+  }
 }
 ```
 
@@ -74,12 +79,12 @@ class AgentQueryResponse(BaseModel):
     tools_called: list[str]
     session_id: str
 
-# Google GenAI 최신 SDK 클라이언트 초기화
+# Google GenAI 최신 SDK 클라이언트 초기화 (글로벌 리전 권장)
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "sample-project-id")
-LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "asia-northeast3")
+LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "global")
 client = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
 
-SYSTEM_INSTRUCTION = """너는 사내 엔터프라이즈 환경에서 구동하는 백엔드 커스텀 에
+SYSTEM_INSTRUCTION = """너는 사내 엔터프라이즈 환경에서 구동하는 백엔드 커스
 ... [이하 생략: tools.py 및 deploy.sh 완비] ...
 ```
 

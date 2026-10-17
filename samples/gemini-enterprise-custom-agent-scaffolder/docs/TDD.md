@@ -65,8 +65,9 @@ flowchart TD
 | **BR-01** (하이코드 에이전트 스캐폴딩) | **FR-01** (에이전트 코어 코드 생성기) | **NFR-01** (무의존성 및 단일 파이썬 실행) | `diagnose.py` |
 | **BR-02** (엔터프라이즈 데이터 및 도구 템플릿) | **FR-02** (BigQuery 및 OpenAPI 도구 조립) | **NFR-02** (표준 소프트웨어 스택 준수) | `diagnose.py` 템플릿 모듈 |
 | **BR-03** (컨테이너 및 서버리스 배포 자동화) | **FR-03** (Dockerfile 및 배포 스크립트 도출) | **NFR-01**, **NFR-02** | `diagnose.py` 배포 빌더 |
-| **BR-04** (Gemini Enterprise app 외부 에이전트 원클릭 연동) | **FR-04** (외부 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 연동 모듈 |
-| **BR-05** (엔터프라이즈 보안 및 격리 준수) | **FR-05** (IAM 권한 진단 및 마크다운 리포트) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
+| **BR-04** (GitHub 레포 직결 무인 배포) | **FR-04** (GitOps 파이프라인 컴파일러) | **NFR-01**, **NFR-02** | `diagnose.py` GitOps 모듈 |
+| **BR-05** (Gemini Enterprise app 외부 에이전트 원클릭 연동) | **FR-05** (외부 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 연동 모듈 |
+| **BR-06** (엔터프라이즈 보안 및 격리 준수) | **FR-06** (IAM 권한 진단 및 마크다운 리포트) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
 
 ---
 

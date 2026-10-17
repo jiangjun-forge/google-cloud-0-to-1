@@ -1,11 +1,11 @@
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동 진단 도구.
+"""Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-custom-agent-scaffolder).
 
 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery), ERP, 모니터링 시스템을
 결합한 High-code 백엔드 에이전트(GEAP / Cloud Run)를 원클릭 스캐폴딩하고,
-제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 외부 에이전트로 등록 및 바인딩할 수 있도록 지원한다.
+GitHub 레포 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원한다.
 """
 
 import argparse
@@ -353,7 +353,7 @@ gcloud run deploy "${{SERVICE_NAME}}" \\
     --project="${{PROJECT_ID}}" \\
     --region="${{REGION}}" \\
     --service-account="${{SERVICE_ACCOUNT}}" \\
-    --labels="managed-by=google-cloud-0-to-1,scenario=gemini-enterprise-agent-factory-custom,env=sample" \\
+    --labels="managed-by=google-cloud-0-to-1,scenario=gemini-enterprise-custom-agent-scaffolder,env=sample" \\
     --no-allow-unauthenticated \\
     --set-env-vars="GOOGLE_CLOUD_PROJECT=${{PROJECT_ID}},GOOGLE_CLOUD_LOCATION=global"
 
@@ -380,7 +380,7 @@ echo "=================================================="
         "visibility": "ORGANIZATION",
         "labels": {
             "managed-by": "google-cloud-0-to-1",
-            "scenario": "gemini-enterprise-agent-factory-custom",
+            "scenario": "gemini-enterprise-custom-agent-scaffolder",
             "env": "sample",
         },
     }
@@ -421,7 +421,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
     ge_app_id = env_info["ge_app_id"]
     service_name = chip_data["id"].replace("_", "-")
 
-    return f"""# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동 보고서
+    return f"""# Gemini Enterprise 커스텀 에이전트 스캐폴더 보고서 (gemini-enterprise-custom-agent-scaffolder)
 
 - **실행 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 - **대상 프로젝트**: `{project_id}`
@@ -489,7 +489,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 def save_markdown_report(report_content: str):
     """산출물을 report.md 파일로 덮어쓴다."""
-    report_path = os.path.join(os.path.dirname(__file__), "report.md")
+    report_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "report.md")
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report_content)
     print(f"\n[성공] 마크다운 진단 보고서가 저장되었습니다: {report_path}")
@@ -530,6 +530,7 @@ def main():
     parser.add_argument("--chip", type=int, help="아키텍처 칩 번호 직접 지정 (1~6)")
     parser.add_argument("--prompt", help="사용자 직접 정의 아키텍처 요구사항")
     parser.add_argument("--interactive", action="store_true", default=False, help="대화형 선택기 가동")
+    parser.add_argument("--repo", help="GitHub 저장소 URL (예: https://github.com/my-org/my-agent.git) 기반 무인 GitOps 배포 검증")
 
     args = parser.parse_args()
 
@@ -538,7 +539,7 @@ def main():
         args.dry_run = True
 
     print("\n" + "=" * 75)
-    print("  Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-agent-factory-custom)")
+    print("  Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-custom-agent-scaffolder)")
     print("=" * 75)
 
     # 1. 환경 정보 해석
@@ -547,11 +548,22 @@ def main():
     print(f"[*] 대상 리전        : {env_info['region']}")
     print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
     print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
+    if args.repo:
+        print(f"[*] GitOps 레포 URL  : {args.repo}")
     print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 스캐폴딩 모드'}")
 
     # 2. 아키텍처 칩 선택
     chip_data = CUSTOM_ARCHITECTURE_CATALOG[1]
-    if args.prompt:
+    if args.repo:
+        chip_data = {
+            "id": "gitops_custom_agent",
+            "title": f"GitOps 에이전트 ({args.repo.split('/')[-1].replace('.git', '')})",
+            "description": f"GitHub 저장소({args.repo}) 기반 자동 빌드 및 배포 에이전트",
+            "backend_tech": "Agent Engine / Cloud Run GitOps",
+            "tools_included": ["git_clone_repo", "validate_manifest", "deploy_runtime", "publish_ge_gallery"],
+            "required_roles": ["roles/run.invoker", "roles/aiplatform.user"],
+        }
+    elif args.prompt:
         chip_data = {
             "id": "custom_agent",
             "title": args.prompt,
