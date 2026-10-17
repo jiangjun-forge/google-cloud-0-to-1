@@ -29,8 +29,9 @@ All contents, designs, and code examples are subject to change, modification, or
   - `ENFORCEABLE_ALLOWED`: 직접 `user:` 바인딩으로 기본 역할(`roles/discoveryengine.agentspaceUser`)을 보유하여 마커 역할로 차단 가능한 대상
   - `NOT_ENFORCEABLE`: 구글 그룹(`group:`), 도메인(`domain:`), 상속 권한, 상위 관리자 역할 보유자로 직접 차단이 불가하여 수동 검토가 필요한 대상
 
-### FR-03: 안전 처방전 및 IAM 차단 명령어 출력
-- 캡 초과 사용자에 대해 프로젝트 레벨에서 안전하게 권한을 임시 제한하는 gcloud 명령어(`CustomAntigravityCapBlocked` 부여) 및 복구 명령어를 처방한다.
+### FR-03: 안전 처방전 및 조건부 만료 IAM 차단 명령어 출력
+- 캡 초과 사용자에 대해 프로젝트 레벨에서 안전하게 권한을 임시 제한하는 gcloud 명령어(`CustomAntigravityCapBlocked` 부여) 및 익일 자정(00:00 UTC) 자동 만료 조건식(`request.time < timestamp(...)`)을 적용한 무인 자율 복구 명령어를 처방한다.
+- 대규모 개발 조직 전수 조사를 위한 Cloud Logging Log Analytics (BigQuery Linked Dataset) 표준 집계 SQL 쿼리를 제공한다.
 
 ### FR-04: 마크다운 진단 리포트 (report.md) 자동 생성 및 덮어쓰기
 - 진단 실행 시 터미널 출력과 완벽히 동기화된 마크다운 리포트를 자동 생성하여 FinOps 및 인프라 부서 보고서로 활용하도록 지원한다.

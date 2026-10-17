@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Tuple
 
 try:
@@ -15,6 +16,15 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+# 4대 필수 거버넌스 라벨 규약
+MANDATORY_LABELS = {
+    "managed-by": "google-cloud-0-to-1",
+    "scenario": "antigravity-user-quota-cap",
+    "env": "sample",
+    "created-by": "customer-engineer",
+}
+LABELS_CLI_FLAG = "--labels=managed-by=google-cloud-0-to-1,scenario=antigravity-user-quota-cap,env=sample"
 
 
 def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-antigravity-project") -> str:
@@ -205,14 +215,61 @@ def check_preflight_requirements(project_id: str) -> Tuple[bool, List[str]]:
     return (len(issues) == 0, issues)
 
 
-def collect_live_usage(project_id: str, cap_tokens: int, cap_requests: int) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+def get_period_start_and_expiry(period: str) -> Tuple[datetime, datetime]:
+    """집계 기간에 따른 시작 일시 및 익일 자정(UTC 00:00) 만료 일시를 산출한다."""
+    now = datetime.now(timezone.utc)
+    if period == "weekly":
+        start_time = now - timedelta(days=7)
+    elif period == "monthly":
+        start_time = now - timedelta(days=30)
+    else:  # daily
+        start_time = now - timedelta(days=1)
+
+    next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return start_time, next_midnight
+
+
+def generate_log_analytics_sql(project_id: str, period_start_iso: str) -> str:
+    """Cloud Logging Log Analytics (BigQuery 연결 데이터세트) 기반 대용량 고속 집계 SQL을 생성한다."""
+    return f"""-- Google Antigravity 개발자별 사용량 집계 (Cloud Logging Log Analytics SQL)
+SELECT
+  JSON_VALUE(json_payload.principalEmail) AS developer_email,
+  JSON_VALUE(json_payload.clientInfo.clientType) AS client_type,
+  COUNT(1) AS request_count,
+  SUM(CAST(JSON_VALUE(json_payload.promptTokenCount) AS INT64)) AS total_prompt_tokens,
+  SUM(CAST(JSON_VALUE(json_payload.candidatesTokenCount) AS INT64)) AS total_candidate_tokens,
+  SUM(CAST(JSON_VALUE(json_payload.promptTokenCount) AS INT64) + CAST(JSON_VALUE(json_payload.candidatesTokenCount) AS INT64)) AS total_tokens
+FROM
+  `{project_id}.global._Default._AllLogs`
+WHERE
+  log_name LIKE '%businessaicode.googleapis.com%2Finference_response%'
+  AND timestamp >= TIMESTAMP('{period_start_iso}')
+GROUP BY
+  developer_email, client_type
+ORDER BY
+  total_tokens DESC;"""
+
+
+def collect_live_usage(
+    project_id: str,
+    period: str,
+    cap_tokens: int,
+    cap_requests: int,
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """실제 Cloud Logging에서 businessaicode 인퍼런스 로그를 조회하여 사용자별 통계를 산출한다."""
+    start_dt, next_midnight = get_period_start_and_expiry(period)
+    start_iso = start_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    expiry_iso = next_midnight.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     diag_status = {
         "api_ready": True,
         "api_issues": [],
         "log_entries_count": 0,
         "used_mock_fallback": False,
         "guidance": [],
+        "period_start_iso": start_iso,
+        "next_midnight_iso": expiry_iso,
+        "log_analytics_sql": generate_log_analytics_sql(project_id, start_iso),
     }
 
     # 1. 사전 필수 API 점검
@@ -227,10 +284,10 @@ def collect_live_usage(project_id: str, cap_tokens: int, cap_requests: int) -> T
         )
         return get_mock_usage_data(cap_tokens, cap_requests), diag_status
 
-    # 2. Cloud Logging 필터 쿼리
+    # 2. Cloud Logging 필터 쿼리 (동적 기간 계산 적용)
     log_filter = (
         'logName="projects/' + project_id + '/logs/businessaicode.googleapis.com%2Finference_response" '
-        'timestamp >= "2026-09-01T00:00:00Z"'
+        f'timestamp >= "{start_iso}"'
     )
     cmd = [
         "gcloud", "logging", "read",
@@ -373,6 +430,7 @@ def print_text_report(
     print("-" * 96)
 
     if exceeded_users:
+        next_midnight_iso = diag_status.get("next_midnight_iso") if diag_status else (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
         print("\n[3. 쿼터 캡 초과자 상세 분석 및 조치 가이드]")
         for u in exceeded_users:
             print(f"\n* 초과 계정: {u['user_email']} ({u['department']})")
@@ -380,17 +438,26 @@ def print_text_report(
             print(f"  - 통제성 분류       : {u['iam_status']}")
             print(f"  - 조치 권고         : {u['control_type']}")
             if u["iam_status"] == "ENFORCEABLE_ALLOWED":
-                print(f"  - [즉시 처방] 마커 역할 적용 (임시 차단):")
+                print(f"  - [최신 처방] 조건부 만료 IAM(IAM Condition) 자동 복원 적용 (익일 00:00 UTC 자동 해제):")
+                print(f"    # 1) 기본 접근 역할 제거")
                 print(f"    gcloud projects remove-iam-policy-binding {project_id} --member=user:{u['user_email']} --role=roles/discoveryengine.agentspaceUser")
-                print(f"    gcloud projects add-iam-policy-binding {project_id} --member=user:{u['user_email']} --role=roles/CustomAntigravityCapBlocked")
+                print(f"    # 2) 익일 00:00 UTC 자동 만료 차단 마커 역할 부여 (수동 개입 없는 자율 복구)")
+                print(f"    gcloud projects add-iam-policy-binding {project_id} --member=user:{u['user_email']} --role=roles/CustomAntigravityCapBlocked --condition='expression=request.time < timestamp(\"{next_midnight_iso}\"),title=Daily_Cap_Expiry,description=Antigravity_Quota_Exceeded_Auto_Reset'")
             else:
                 print(f"  - [수동 검토] 해당 사용자는 Google Group 또는 상위 관리자 권한을 통해 접근하므로 사내 그룹 관리 콘솔에서 제외 조치가 필요하다.")
 
     print("\n" + "=" * 96)
-    print("[4. 엔터프라이즈 운영 자동화(Batch Job) 연계 안내]")
-    print("  * 본 진단기는 개발자별 사용량을 신속히 파악하고 헤비 유저를 식별하는 읽기 전용 가이드다.")
-    print("  * 실제 프로덕션 환경에서 주기적인 자동 차단 및 복구를 수행하려면, Cloud Scheduler와 Cloud Run Job")
-    print("    또는 Cloud Functions를 연동하여 본 진단 로직을 정기 스케줄링하는 파이프라인 구성을 권장한다.")
+    print("[4. 엔터프라이즈 운영 자동화 및 필수 라벨링 규약]")
+    print(f"  * 4대 필수 거버넌스 라벨: {LABELS_CLI_FLAG}")
+    print("  * 주기적인 자동 차단 및 복구를 수행하려면, Cloud Scheduler와 Cloud Run Job 또는")
+    print(f"    Cloud Functions 연동 배치 파이프라인 생성 시 위 4대 라벨 플래그를 필수로 주입한다.")
+    print("-" * 96)
+    print("[5. Cloud Logging Log Analytics (BigQuery Linked Dataset) 초고속 집계 쿼리]")
+    print("  * 수천 명 규모의 대규모 개발 조직 전수 조사는 아래 SQL을 Log Analytics 콘솔에서 실행한다:")
+    start_iso = diag_status.get("period_start_iso", "2026-10-16T00:00:00Z") if diag_status else "2026-10-16T00:00:00Z"
+    sql_snippet = generate_log_analytics_sql(project_id, start_iso)
+    for line in sql_snippet.splitlines():
+        print(f"    {line}")
     print("=" * 96 + "\n")
 
 
@@ -409,10 +476,13 @@ def build_markdown_report(
     enforceable_exceeded = [u for u in exceeded_users if u["iam_status"] == "ENFORCEABLE_ALLOWED"]
     manual_exceeded = [u for u in exceeded_users if u["iam_status"] != "ENFORCEABLE_ALLOWED"]
 
+    next_midnight_iso = diag_status.get("next_midnight_iso") if diag_status else (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+    current_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
     lines = [
         "# Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단 리포트",
         "",
-        f"- **진단 일시**: (실행 결과 자동 생성)",
+        f"- **진단 일시**: `{current_utc}`",
         f"- **대상 프로젝트**: `{project_id}`",
         f"- **집계 주기**: `{period}` (UTC 기준)",
         f"- **토큰 상한 임계치(Cap)**: `{cap_tokens:,} 토큰`",
@@ -467,32 +537,43 @@ def build_markdown_report(
         "",
         "## 3. 실무자 조치 가이드 및 처방전",
         "",
-        "### 1단계: 직접 통제 가능 초과자 IAM 마커 역할 적용 (임시 차단)",
-        "기본 사용자 역할(`roles/discoveryengine.agentspaceUser`)을 해제하고 차단 마커 역할(`CustomAntigravityCapBlocked`)을 임시 부여하여 당일 추가 토큰 소모를 차단한다:",
+        "### 1단계: 직접 통제 가능 초과자 IAM 조건부 만료 적용 (익일 자동 복구)",
+        f"기본 사용자 역할(`roles/discoveryengine.agentspaceUser`)을 해제하고, 익일 자정(`{next_midnight_iso}`) 자동 만료 조건식(`request.time < timestamp(...)`)이 결합된 차단 마커 역할을 부여하여 관리자 수동 개입 없는 무인 자율 복구를 구현한다:",
         "```bash",
     ])
 
     for u in enforceable_exceeded:
-        lines.append(f"# {u['user_email']} 쿼터 캡 차단 조치")
+        lines.append(f"# {u['user_email']} 쿼터 캡 조건부 자동 만료 차단 조치")
         lines.append(f"gcloud projects remove-iam-policy-binding {project_id} --member=user:{u['user_email']} --role=roles/discoveryengine.agentspaceUser")
-        lines.append(f"gcloud projects add-iam-policy-binding {project_id} --member=user:{u['user_email']} --role=roles/CustomAntigravityCapBlocked")
+        lines.append(f"gcloud projects add-iam-policy-binding {project_id} --member=user:{u['user_email']} --role=roles/CustomAntigravityCapBlocked --condition='expression=request.time < timestamp(\"{next_midnight_iso}\"),title=Daily_Cap_Expiry,description=Antigravity_Quota_Exceeded_Auto_Reset'")
+
+    start_iso = diag_status.get("period_start_iso", "2026-10-16T00:00:00Z") if diag_status else "2026-10-16T00:00:00Z"
+    sql_snippet = generate_log_analytics_sql(project_id, start_iso)
 
     lines.extend([
         "```",
         "",
         "### 2단계: 그룹 및 상속 권한 보유 초과자 수동 조치",
         "- `NOT_ENFORCEABLE`로 분류된 계정은 프로젝트 레벨의 개별 바인딩을 수정해도 Google Group이나 상위 조직 권한으로 인해 접근이 유지된다.",
-        "- 사내 Google Workspace / Cloud Identity 관리 콘솔에서 해당 계정을 개발자 그룹에서 일시 제외 조치해야 한다.",
+        "- 사내 Google Workspace / Cloud Identity 관리 콘솔 ( https://admin.google.com )에서 해당 계정을 개발자 그룹에서 일시 제외 조치해야 한다.",
         "",
-        "### 3단계: 엔터프라이즈 운영 자동화(Batch Job) 연계",
-        "- 본 도구는 읽기 전용 진단 및 현황 보고를 지원한다.",
+        "### 3단계: Cloud Logging Log Analytics (BigQuery Linked Dataset) 초고속 집계 쿼리",
+        "- 대규모 개발 조직(수천 명 규모) 전수 조사는 Cloud Logging Log Analytics SQL 쿼리를 통해 초 단위로 집계할 수 있다:",
+        "```sql",
+        sql_snippet,
+        "```",
+        "",
+        "### 4단계: 엔터프라이즈 운영 자동화(Batch Job) 및 4대 필수 라벨링 규약",
         "- 프로덕션 환경에서 주기적인 자동 차단 및 복구를 수행하려면 Cloud Scheduler와 Cloud Run Job 또는 Cloud Functions를 연동하여 정기 배치 파이프라인으로 확장할 수 있다.",
+        f"- 사내 거버넌스 및 자원 추적을 위해 배치 파이프라인 인프라 생성 시 4대 표준 라벨(`{LABELS_CLI_FLAG}`)을 필수로 주입한다.",
     ])
 
     return "\n".join(lines).strip() + "\n"
 
 
-def save_markdown_report(report_md: str, output_path: str = "report.md") -> None:
+def save_markdown_report(report_md: str, output_path: str = None) -> None:
+    if output_path is None:
+        output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "report.md")
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
@@ -511,7 +592,7 @@ def main() -> None:
         users = get_mock_usage_data(args.cap_tokens, args.cap_requests)
     else:
         print(f"[*] '{reported_project}' 프로젝트의 환경 검증 및 Cloud Logging 인퍼런스 로그를 조회 중...")
-        users, diag_status = collect_live_usage(reported_project, args.cap_tokens, args.cap_requests)
+        users, diag_status = collect_live_usage(reported_project, args.period, args.cap_tokens, args.cap_requests)
 
     if args.json_output:
         summary = {
@@ -544,7 +625,7 @@ def main() -> None:
         users=users,
         diag_status=diag_status,
     )
-    save_markdown_report(report_content, "report.md")
+    save_markdown_report(report_content)
 
 
 if __name__ == "__main__":

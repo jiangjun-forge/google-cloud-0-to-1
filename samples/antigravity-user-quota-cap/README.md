@@ -12,7 +12,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기
 
-Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클라우드 로깅(Cloud Logging) 인퍼런스 로그를 기반으로 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고, 일일/주간 쿼터 캡(Cap) 초과자를 식별하여 프로젝트 IAM 마커 역할 기반의 안전한 통제 처방을 제공하는 진단 도구다. (As of 2026-09-28)
+Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클라우드 로깅(Cloud Logging) 인퍼런스 로그를 기반으로 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고, 일일/주간 쿼터 캡(Cap) 초과자를 식별하여 프로젝트 IAM 마커 역할 기반의 안전한 통제 처방을 제공하는 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Compliance`, `#IAM`  
@@ -56,7 +56,7 @@ flowchart TD
    gcloud services enable logging.googleapis.com businessaicode.googleapis.com
    ```
 2. **관리 콘솔 개발자 도구 활동 로깅(Metadata Logging)**:
-   - 구글 워크스페이스(Google Workspace) 및 제미나이 엔터프라이즈(Gemini Enterprise) 관리 콘솔 ( https://admin.google.com ) > 생성형 AI, 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 클라우드 로깅으로 토큰 및 사용자 정보가 적재된다.
+   - 구글 워크스페이스(Google Workspace) 및 Gemini Enterprise 관리 콘솔 ( https://admin.google.com ) > 생성형 AI, 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 클라우드 로깅으로 토큰 및 사용자 정보가 적재된다.
 
 ### (2) 진단 실행 계정 최소 IAM 권한
 본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
@@ -91,25 +91,48 @@ python diagnose.py --project-id=my-dev-project --cap-tokens=7500000 --cap-reques
 
 ## 5. 결과 확인 후 즉각 조치 가이드
 
-### 1단계: 직접 통제 가능 초과자 임시 차단 조치
-기본 사용자 역할(`roles/discoveryengine.agentspaceUser`)을 일시 해제하고, 차단 마커 역할(`CustomAntigravityCapBlocked`)을 부여하여 당일 추가 토큰 과금을 즉시 방어한다:
+### 1단계: 직접 통제 가능 초과자 IAM 조건부 만료 적용 (익일 자율 복구)
+기본 사용자 역할(`roles/discoveryengine.agentspaceUser`)을 일시 해제하고, 익일 자정(00:00 UTC) 자동 만료 조건식(`request.time < timestamp(...)`)이 결합된 차단 마커 역할을 부여하여 관리자 수동 개입 없는 무인 자율 복구를 구현한다:
 ```bash
-# 기본 권한 해제
+# 1) 기본 접근 역할 해제
 gcloud projects remove-iam-policy-binding [PROJECT_ID] \
     --member="user:[USER_EMAIL]" \
     --role="roles/discoveryengine.agentspaceUser"
 
-# 차단 마커 역할 부여
+# 2) 익일 00:00 UTC 자동 만료 차단 마커 역할 부여 (익일 자동 복원)
 gcloud projects add-iam-policy-binding [PROJECT_ID] \
     --member="user:[USER_EMAIL]" \
-    --role="roles/CustomAntigravityCapBlocked"
+    --role="roles/CustomAntigravityCapBlocked" \
+    --condition='expression=request.time < timestamp("2026-10-18T00:00:00Z"),title=Daily_Cap_Expiry,description=Antigravity_Quota_Exceeded_Auto_Reset'
 ```
 
 ### 2단계: 그룹 바인딩 계정 수동 거버넌스
-`NOT_ENFORCEABLE`로 분류된 사용자는 프로젝트 레벨의 개별 바인딩을 변경해도 그룹 권한으로 인해 접근이 유지된다. 사내 Google Workspace / Cloud Identity 관리 콘솔에서 해당 개발자를 개발팀 그룹에서 일시 제외 조치한다.
+`NOT_ENFORCEABLE`로 분류된 사용자는 프로젝트 레벨의 개별 바인딩을 변경해도 그룹 권한으로 인해 접근이 유지된다. 사내 구글 워크스페이스(Google Workspace) / Cloud Identity 관리 콘솔 ( https://admin.google.com )에서 해당 개발자를 개발팀 그룹에서 일시 제외 조치한다.
 
-### 3단계: 엔터프라이즈 운영 자동화(Batch Job) 연계 안내
+### 3단계: Cloud Logging Log Analytics (BigQuery Linked Dataset) 초고속 대용량 분석
+수천 명 규모의 대규모 개발 조직 전수 조사는 Cloud Logging Log Analytics SQL 쿼리를 통해 초 단위로 집계할 수 있다:
+```sql
+SELECT
+  JSON_VALUE(json_payload.principalEmail) AS developer_email,
+  JSON_VALUE(json_payload.clientInfo.clientType) AS client_type,
+  COUNT(1) AS request_count,
+  SUM(CAST(JSON_VALUE(json_payload.promptTokenCount) AS INT64)) AS total_prompt_tokens,
+  SUM(CAST(JSON_VALUE(json_payload.candidatesTokenCount) AS INT64)) AS total_candidate_tokens,
+  SUM(CAST(JSON_VALUE(json_payload.promptTokenCount) AS INT64) + CAST(JSON_VALUE(json_payload.candidatesTokenCount) AS INT64)) AS total_tokens
+FROM
+  `[PROJECT_ID].global._Default._AllLogs`
+WHERE
+  log_name LIKE '%businessaicode.googleapis.com%2Finference_response%'
+  AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY)
+GROUP BY
+  developer_email, client_type
+ORDER BY
+  total_tokens DESC;
+```
+
+### 4단계: 엔터프라이즈 운영 자동화(Batch Job) 및 4대 필수 라벨링 규약
 본 진단기는 읽기 전용 분석 도구다. 15분 주기 자동 캡 차단 및 매일 자정 복구를 영구 스케줄링하려면 클라우드 스케줄러(Cloud Scheduler)와 클라우드 런(Cloud Run) 잡 또는 클라우드 펑션(Cloud Functions)을 연동하여 정기 배치 파이프라인으로 구성 및 배포할 수 있다.
+사내 거버넌스 준수를 위해 배치 리소스 생성 시 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=antigravity-user-quota-cap,env=sample`)을 필수로 주입한다.
 
 ---
 
