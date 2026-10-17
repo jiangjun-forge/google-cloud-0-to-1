@@ -357,6 +357,7 @@ def generate_openapi_tool_manifest(tool_data: dict, env_info: dict):
             "managed-by": "google-cloud-0-to-1",
             "scenario": "gemini-enterprise-skill-factory",
             "env": "sample",
+            "created-by": "customer-engineer",
         },
     }
 
