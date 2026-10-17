@@ -243,6 +243,42 @@ gcloud functions deploy quota-auto-disable \\
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 사내 거버넌스 4대 필수 표준 라벨링
+
+Cloud Pub/Sub 주제, Cloud Functions 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-quota-cost-alert`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 4. 콘솔 링크 조치 가이드
+
+- **Cloud Billing 콘솔**: ( https://console.cloud.google.com/billing )
+- **Cloud Pub/Sub 콘솔**: ( https://console.cloud.google.com/cloudpubsub )
+- **Cloud Functions 콘솔**: ( https://console.cloud.google.com/functions )
+- **Cloud Billing 예산 및 지출 한도 알림 생성**: ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
+- **Cloud Billing Pub/Sub 예산 알림 연동 가이드**: ( https://docs.cloud.google.com/billing/docs/how-to/notify )
+
+---
+
+## 5. 자원 정리 안내 (Teardown)
+
+실습 및 테스트 완료 후 불필요한 과금과 리소스 누수를 방지하기 위해 생성한 자원을 아래 순서로 반드시 정리한다:
+```bash
+# 1. Pub/Sub 알림 주제 삭제
+gcloud pubsub topics delete {topic} --project={project_id}
+
+# 2. Cloud Functions 자동 차단 함수 삭제
+gcloud functions delete quota-auto-disable --region=asia-northeast3 --project={project_id}
+
+# 3. 결제 예산 규칙 정리
+# GCP 결제 콘솔 ( https://console.cloud.google.com/billing ) 에 접속하여 '예산 및 알림' 메뉴에서 '{budget_name}' 예산 규칙을 삭제한다.
+```
 """
 
 
