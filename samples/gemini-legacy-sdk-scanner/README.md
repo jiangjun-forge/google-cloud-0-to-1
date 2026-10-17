@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 진단기 (`gemini-legacy-sdk-scanner`)
 
-소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 **`google-genai`로의 마이그레이션 가이드를 1분 만에 제공**하는 도구다. (As of 2026-06-16)
+소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 **`google-genai`로의 마이그레이션 가이드를 1분 만에 제공**하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Compliance`, `#Performance`  
@@ -140,6 +140,25 @@ pip install google-genai
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+신규 SDK 기반 클라우드 리소스 및 마이그레이션 파이프라인 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-legacy-sdk-scanner`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
+
+- **Google Gen AI SDK 공식 마이그레이션 가이드**: ( https://docs.cloud.google.com/gemini-enterprise-agent-platform/machine-learning/python-sdk/sdk-migration )
+- **Google AI Studio Gemini API 마이그레이션 가이드**: ( https://ai.google.dev/gemini-api/docs/migrate )
+- **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
+- **Google AI Studio 콘솔**: ( https://aistudio.google.com )
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 
 이 도구는 소스 코드 정적 분석기이므로 클라우드 상에 생성된 리소스가 없으며, 별도의 자원 정리 작업이 필요하지 않다.
