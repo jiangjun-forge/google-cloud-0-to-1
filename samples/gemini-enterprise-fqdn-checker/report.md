@@ -61,3 +61,27 @@ User Content     lh6.googleusercontent.com                  OK     OK       32.5
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 사내 거버넌스 4대 필수 표준 라벨링
+
+방화벽 규칙 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-fqdn-checker`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 4. 콘솔 링크 조치 가이드
+
+- **Cloud NGFW 방화벽 정책 콘솔**: ( https://console.cloud.google.com/net-security/firewall-manager/firewall-policies )
+- **VPC 네트워크 콘솔**: ( https://console.cloud.google.com/networking/networks/list )
+- **Private Service Connect 콘솔**: ( https://console.cloud.google.com/net-services/psc/list )
+
+---
+
+## 5. 자원 정리 안내 (Teardown)
+
+본 도구는 클라우드 자원을 생성하지 않는 네트워크 소켓 진단 유틸리티다. 진단 과정에서 발생하는 추가 과금이나 자원 잔류가 없다.

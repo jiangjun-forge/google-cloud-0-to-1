@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이 엔터프라이즈(Gemini Enterprise) 사내망 방화벽 FQDN 연결 진단기 (`gemini-enterprise-fqdn-checker`)
 
-사내망 보안 정책상 와일드카드 도메인 등록이 불가한 환경에서 Gemini Enterprise App 정상 구동에 필요한 필수 코어 API, 인증, 정적 에셋 FQDN의 아웃바운드 443 및 DNS 연결성을 1분 만에 일괄 진단하고 방화벽 허용 명세를 자동 생성하는 도구다. (As of 2026-09-09)
+사내망 보안 정책상 와일드카드 도메인 등록이 불가한 환경에서 Gemini Enterprise App 정상 구동에 필요한 필수 코어 API, 인증, 정적 에셋 FQDN의 아웃바운드 443 및 DNS 연결성을 1분 만에 일괄 진단하고 방화벽 허용 명세를 자동 생성하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
@@ -127,5 +127,23 @@ gcloud compute firewall-rules create allow-gemini-enterprise-egress \
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 6. 사내 거버넌스 4대 필수 표준 라벨링
+
+방화벽 규칙 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-fqdn-checker`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 7. 콘솔 링크 조치 가이드
+
+- **Cloud NGFW 방화벽 정책 콘솔**: ( https://console.cloud.google.com/net-security/firewall-manager/firewall-policies )
+- **VPC 네트워크 콘솔**: ( https://console.cloud.google.com/networking/networks/list )
+- **Private Service Connect 콘솔**: ( https://console.cloud.google.com/net-services/psc/list )
+
+---
+
+## 8. 자원 정리 안내 (Teardown)
 본 도구는 클라우드 자원을 생성하지 않는 네트워크 소켓 진단 유틸리티다. 진단 과정에서 발생하는 추가 과금이나 자원 잔류가 없다.
