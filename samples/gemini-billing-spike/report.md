@@ -64,3 +64,20 @@
 ```bash
 python diagnose.py
 ```
+
+---
+
+## 3. 실무자 즉각 조치 가이드 및 처방전
+
+### 가. 사내 거버넌스 4대 필수 표준 라벨링
+GCP 상에서 추가 모니터링 경보나 자동 차단 Cloud Functions 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-billing-spike`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+### 나. 공식 콘솔 조치 경로
+- 사용자 인증 정보 콘솔 ( https://console.cloud.google.com/apis/credentials?project=sample-project-id )
+- 서비스 계정 콘솔 ( https://console.cloud.google.com/iam-admin/serviceaccounts?project=sample-project-id )
+- Cloud Billing 예산 설정 ( https://console.cloud.google.com/billing/budgets )
+- IAM 및 관리자 할당량 설정 ( https://console.cloud.google.com/iam-admin/quotas?project=sample-project-id )

@@ -226,6 +226,11 @@ def parse_and_report(project_id: str, days: int, data: dict):
   print("\n추가 비용 누수 방지 권장 사항:")
   print(f"   - Cloud Billing 예산 설정 ( https://console.cloud.google.com/billing/budgets )")
   print(f"   - IAM 및 관리자 할당량 설정 ( https://console.cloud.google.com/iam-admin/quotas?project={project_id} )")
+  print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
+  print("  - managed-by: google-cloud-0-to-1")
+  print("  - scenario: gemini-billing-spike")
+  print("  - env: sample")
+  print("  - created-by: customer-engineer")
   print("=" * 72 + "\n")
 
 
@@ -388,6 +393,23 @@ def build_markdown_report(project_id: str, days: int, data: dict, is_dry_run: bo
       "```bash",
       "python diagnose.py",
       "```",
+      "",
+      "---",
+      "",
+      "## 3. 실무자 즉각 조치 가이드 및 처방전",
+      "",
+      "### 가. 사내 거버넌스 4대 필수 표준 라벨링",
+      "GCP 상에서 추가 모니터링 경보나 자동 차단 Cloud Functions 배포 시 4대 표준 라벨을 반드시 적용한다:",
+      "- `managed-by`: `google-cloud-0-to-1`",
+      "- `scenario`: `gemini-billing-spike`",
+      "- `env`: `sample` (또는 `poc`)",
+      "- `created-by`: `customer-engineer`",
+      "",
+      "### 나. 공식 콘솔 조치 경로",
+      f"- 사용자 인증 정보 콘솔 ( https://console.cloud.google.com/apis/credentials?project={project_id} )",
+      f"- 서비스 계정 콘솔 ( https://console.cloud.google.com/iam-admin/serviceaccounts?project={project_id} )",
+      "- Cloud Billing 예산 설정 ( https://console.cloud.google.com/billing/budgets )",
+      f"- IAM 및 관리자 할당량 설정 ( https://console.cloud.google.com/iam-admin/quotas?project={project_id} )",
       "",
   ])
   return "\n".join(lines)

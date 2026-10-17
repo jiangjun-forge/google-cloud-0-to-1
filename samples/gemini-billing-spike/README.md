@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 제미나이(Gemini) API 비용 급증 원인 진단 (`gemini-billing-spike`)
 
-데이터 액세스 감사 로그(Audit Logs)가 꺼져 있어도, 클라우드 모니터링(Cloud Monitoring) 기본 지표를 통해 **어떤 인증 수단(API 키, 서비스 계정, OAuth 등)에서 Gemini 호출 비용이 급증했는지 1분 만에 규명**하는 진단 가이드다. (As of 2026-07-01)
+데이터 액세스 감사 로그(Audit Logs)가 꺼져 있어도, 클라우드 모니터링(Cloud Monitoring) 기본 지표를 통해 **어떤 인증 수단(API 키, 서비스 계정, OAuth 등)에서 Gemini 호출 비용이 급증했는지 1분 만에 규명**하는 진단 가이드다. (As of 2026-10-17)
 
 **Audience**: `#Developer`, `#FinOps`, `#SecOps`  
 **Concern**: `#Billing`, `#CostSpike`, `#Security`  
@@ -170,15 +170,22 @@ python diagnose.py --project sample-project-id --days 90
 
 ---
 
-## 향후 비용 누수 방지 베스트 프랙티스
+## 향후 비용 누수 방지 베스트 프랙티스 및 리소스 라벨링
 
-1. **예산 알림(Budget Alert) 설정**:
-   - 청구 계정에서 예상 사용 금액의 50%, 90%, 100% 도달 시 담당자에게 즉시 이메일이 발송되도록 Cloud Billing 예산 및 알림 콘솔 ( https://console.cloud.google.com/billing/budgets ) 에서 구성한다.
-2. **일일 할당량(Quota Caps) 강제 적용**:
-   - 테스트/개발 프로젝트라면 Vertex AI API의 `분당 요청 수(RPM)` 또는 `일일 요청 한도`를 낮게 고정하여 실수로 인한 요금 폭탄을 구조적으로 차단하도록 IAM 및 관리자 할당량 콘솔 ( https://console.cloud.google.com/iam-admin/quotas ) 에서 설정한다.
+### 1. 사내 거버넌스 4대 필수 표준 라벨링
+비용 누수 방지를 위한 모니터링 알림 또는 자동 차단 스크립트/클라우드 펑션(Cloud Functions) 배포 시 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-billing-spike`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+### 2. 예산 알림(Budget Alert) 설정
+청구 계정에서 예상 사용 금액의 50%, 90%, 100% 도달 시 담당자에게 즉시 이메일이 발송되도록 Cloud Billing 예산 및 알림 콘솔 ( https://console.cloud.google.com/billing/budgets ) 에서 구성한다.
+
+### 3. 일일 할당량(Quota Caps) 강제 적용
+테스트/개발 프로젝트라면 Vertex AI API의 `분당 요청 수(RPM)` 또는 `일일 요청 한도`를 낮게 고정하여 실수로 인한 요금 폭탄을 구조적으로 차단하도록 IAM 및 관리자 할당량 콘솔 ( https://console.cloud.google.com/iam-admin/quotas ) 에서 설정한다.
 
 ---
 
 ## 자원 정리 안내 (Teardown)
-
 본 도구는 순수 Cloud Monitoring 플랫폼 지표 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.
