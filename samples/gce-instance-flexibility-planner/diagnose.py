@@ -425,6 +425,9 @@ def print_text_report(
     print("\n[5. 상업적 유연성(Flex CUD) 최적화 권고]")
     print("  * 자원 기반 CUD(Resource-based CUD)는 특정 머신 패밀리/단일 리전에 고착(Lock-in)되므로 N4, C4 신규 머신 전환 시 할인 혜택이 상실된다.")
     print("  * 다중 머신 패밀리 및 전 리전에 교차 적용되는 '금액 기반 Flex CUD(Flexible Committed Use Discounts)'를 결합하여 유연성과 비용 절감을 동시 달성할 것을 권장한다.")
+    print("\n[6. 사내 거버넌스 4대 필수 표준 라벨링 준수]")
+    print("  * GKE 노드 풀 및 Compute Engine 인스턴스 템플릿/MIG 생성 시 4대 표준 라벨 필수 적용:")
+    print("    --labels=managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer")
     print("=" * 96 + "\n")
 
 
@@ -513,6 +516,27 @@ def build_markdown_report(
         "",
         "- **자원 기반 CUD(Resource-based CUD) 한계**: 특정 VM 패밀리(예: N2)와 특정 리전에 고착되어 차세대 N4/C4A 머신으로 전환 시 약정 할인이 단절된다.",
         "- **Flex CUD 적용 권고**: 모든 범용/컴퓨팅 최적화 VM 패밀리 및 전 세계 모든 리전에 교차 적용되는 금액 기반 Flex CUD를 결합하여 인프라 유연성과 FinOps 비용 절감을 동시에 확보해야 한다.",
+        "",
+        "---",
+        "",
+        "## 5. 실무자 즉각 조치 가이드 및 처방전",
+        "",
+        "### 1단계: GKE 워크로드 Custom ComputeClass(CCC) 배포",
+        "- Google Cloud 콘솔 GKE 클러스터 ( https://console.cloud.google.com/kubernetes/list )",
+        "- GKE 공식 문서 ( https://cloud.google.com/kubernetes-engine/docs )",
+        "",
+        "### 2단계: Compute Engine Regional MIG instanceSelections 적용",
+        "- Google Cloud 콘솔 Compute Engine VM 인스턴스 ( https://console.cloud.google.com/compute/instances )",
+        "- Compute Engine Managed Instance Groups 공식 문서 ( https://cloud.google.com/compute/docs/instance-groups )",
+        "- Compute Engine 인스턴스 공식 문서 ( https://cloud.google.com/compute/docs/instances )",
+        "",
+        "### 3단계: 상업적 유연성(Flex CUD) 포트폴리오 전환",
+        "- 지속 사용 할인(CUD) 공식 문서 ( https://cloud.google.com/docs/cuds )",
+        "- Fluid Compute 네트워킹 공식 가이드 ( https://cloud.google.com/blog/topics/developers-practitioners/how-google-cloud-networking-supports-your-fluid-compute-choices-for-ai-workloads )",
+        "",
+        "### 4단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수",
+        "GKE 노드 풀 및 Compute Engine 인스턴스 템플릿/MIG 생성 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer`)을 누락 없이 주입한다.",
+        "",
     ])
 
     return "\n".join(lines).strip() + "\n"
@@ -584,7 +608,9 @@ def main() -> None:
         compute_class_yaml=compute_class_yaml,
         mig_config=mig_config,
     )
-    save_markdown_report(report_content, "report.md")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_path = os.path.join(script_dir, "report.md")
+    save_markdown_report(report_content, report_path)
 
 
 if __name__ == "__main__":

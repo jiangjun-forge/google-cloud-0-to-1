@@ -1,14 +1,27 @@
+<!--
+Copyright 2026 Google LLC. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+
+NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+[고지 사항] 본 저장소 및 문서는 구글 (Google LLC) 소유이며 Apache 2.0 라이선스 하에 예시 (Sample) 용도로 제공된다.
+프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
+-->
+
+> [!IMPORTANT]
+> **구글 (Google LLC) 참조용 샘플 고지 사항**:
+> 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
+
 ---
 name: gce-instance-flexibility-planner
 description: "Autopilot, hands-on diagnostics, and self-healing for gce-instance-flexibility-planner: Compute Engine 및 GKE 환경에서 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED)으로 인한 배포 중단 및 파드 적체 위험을 방어하기 위해, GKE Custom ComputeClass(CCC)의 능동적 마이그레이션 및 Compute Engine Regional MIG의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하는 진단 도구다."
 ---
 
-<!-- disableFinding(LINE_OVER_80) -->
-<!-- disableFinding(WHITESPACE_TRAILING) -->
+# GCE & GKE Instance Flexibility Planner Skill (As of 2026-10-17)
 
-# GCE & GKE Instance Flexibility Planner Skill
-
-본 스킬은 고객 및 파트너사 엔지니어가 Compute Engine 및 GKE 환경에서 단일 머신 타입/단일 존에 고착되어 발생하는 스톡아웃(ZONE_RESOURCE_POOL_EXHAUSTED) 장애를 사전에 방지하고, GKE Custom ComputeClass(CCC) 및 GCE Regional MIG 다중 머신 랭킹 정책을 원클릭으로 설계 및 검증할 수 있도록 돕는 실습/진단 가이드다.
+본 스킬은 사내 클라우드 엔지니어와 실무자가 Compute Engine 및 GKE 환경에서 단일 머신 타입/단일 존에 고착되어 발생하는 스톡아웃(ZONE_RESOURCE_POOL_EXHAUSTED) 장애를 사전에 방지하고, GKE Custom ComputeClass(CCC) 및 GCE Regional MIG 다중 머신 랭킹 정책을 원클릭으로 설계 및 검증할 수 있도록 돕는 실습/진단 가이드다.
 
 ```
                    [고객 실습 워크플로우 (3단계)]
@@ -39,6 +52,9 @@ description: "Autopilot, hands-on diagnostics, and self-healing for gce-instance
 3. **필요 최소 IAM 권한**:
    - `roles/compute.viewer`
    - `roles/container.viewer`
+
+4. **사내 거버넌스 4대 필수 표준 라벨링 준수**:
+   - 신규 리소스 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer`)을 누락 없이 적용하도록 안내한다.
 
 ---
 

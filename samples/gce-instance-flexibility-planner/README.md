@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 컴퓨트 엔진(Compute Engine) & GKE 인스턴스 유연성(Instance Flexibility) 및 스톡아웃 방어 설계기
 
-업계 전반의 AI 및 대규모 컴퓨트 수요 급증으로 인한 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 상황에서, 단일 머신 타입/단일 존 고착 위험을 진단하고 GKE(Google Kubernetes Engine) 커스텀 컴퓨트 클래스(Custom ComputeClass, CCC)의 능동적 마이그레이션(Active Migration) 및 컴퓨트 엔진(Compute Engine) 리전 관리형 인스턴스 그룹(Regional MIG)의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하여 무중단 복원력을 확보하는 올인원 아키텍처 진단 도구다. (As of 2026-09-29)
+업계 전반의 AI 및 대규모 컴퓨트 수요 급증으로 인한 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 상황에서, 단일 머신 타입/단일 존 고착 위험을 진단하고 GKE(Google Kubernetes Engine) 커스텀 컴퓨트 클래스(Custom ComputeClass, CCC)의 능동적 마이그레이션(Active Migration) 및 컴퓨트 엔진(Compute Engine) 리전 관리형 인스턴스 그룹(Regional MIG)의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하여 무중단 복원력을 확보하는 올인원 아키텍처 진단 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`  
 **Concern**: `#Billing`, `#Performance`, `#Resilience`  
@@ -106,6 +106,7 @@ gcloud container clusters get-credentials [CLUSTER_NAME] --region=[REGION]
 # ComputeClass 매니페스트 적용 (report.md의 YAML 내용 활용)
 kubectl apply -f compute-class.yaml
 ```
+- Google Cloud 콘솔 GKE 클러스터 ( https://console.cloud.google.com/kubernetes/list )
 - GKE 공식 문서 ( https://cloud.google.com/kubernetes-engine/docs )
 
 ### 2단계: Compute Engine Regional MIG instanceSelections 적용
@@ -117,8 +118,10 @@ gcloud compute instance-groups managed create [MIG_NAME] \
     --target-distribution-shape=BALANCED \
     --instance-template=[TEMPLATE_NAME] \
     --size=10 \
-    --instance-flexibility-policy=instance-selections.json
+    --instance-flexibility-policy=instance-selections.json \
+    --labels=managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer
 ```
+- Google Cloud 콘솔 Compute Engine VM 인스턴스 ( https://console.cloud.google.com/compute/instances )
 - Compute Engine Managed Instance Groups 공식 문서 ( https://cloud.google.com/compute/docs/instance-groups )
 
 ### 3단계: 대규모 단기 배치/분석 작업에 bulkInsert API 도입
@@ -133,6 +136,14 @@ gcloud compute instance-groups managed create [MIG_NAME] \
 ### 5단계: (선택 사항) Fluid Compute 크로스 리전 네트워킹 구성
 - 가속기(GPU/TPU) 품귀로 인해 단일 리전에서 전체 연산 용량을 확보하지 못할 경우, 구글 전용 글로벌 프라이빗 백본 기반의 Cross-Region VPC 및 Dynamic Routing을 활용하여 분산 리전 간 레이턴시를 최소화하는 유동적 컴퓨팅(Fluid Compute) 네트워킹을 결합한다.
 - Fluid Compute 네트워킹 공식 가이드 ( https://cloud.google.com/blog/topics/developers-practitioners/how-google-cloud-networking-supports-your-fluid-compute-choices-for-ai-workloads )
+
+### 6단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+- GKE 노드 풀 및 Compute Engine 인스턴스 템플릿/MIG 생성 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨을 필수로 주입한다:
+  - `managed-by`: `google-cloud-0-to-1`
+  - `scenario`: `gce-instance-flexibility-planner`
+  - `env`: `sample`
+  - `created-by`: `customer-engineer`
+- gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer`
 
 ---
 

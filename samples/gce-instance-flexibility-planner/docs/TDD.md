@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): Compute Engine & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기
+# 기술 상세 설계서 (TDD): Compute Engine & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기 (As of 2026-10-17)
 
 ## 1. 아키텍처 개요 및 설계 원칙
 본 도구는 Compute Engine 및 GKE 환경의 단일 머신 고착 취약점을 진단하고, 동등 사양 머신 패밀리 매핑 엔진을 통해 GKE Custom ComputeClass(CCC) 매니페스트 및 GCE MIG `instanceSelections` 정책을 원클릭으로 생성하는 순수 파이썬 단일 실행 도구(`diagnose.py`)로 구성된다.
@@ -50,3 +50,6 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### NFR-03: 가상 실행 모드 (--dry-run) 및 비식별화
 - 실제 GCP 호출 없이도 사전 시뮬레이션 데이터를 통해 1초 내에 검증 가능하며, 모의 실행 시 사내 실환경 프로젝트 ID 노출을 방지하기 위해 가명(`sample-project-id`)을 적용한다.
+
+### NFR-04: 자원 거버넌스 및 표준 라벨링 준수
+- 생성되는 모든 GCP 자원에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gce-instance-flexibility-planner`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 적용하여 자원 추적성과 비용 배분을 보장한다.

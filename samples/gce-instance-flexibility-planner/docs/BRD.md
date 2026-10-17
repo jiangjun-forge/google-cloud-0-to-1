@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): Compute Engine & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기
+# 비즈니스 요구 사항 명세서 (BRD): Compute Engine & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기 (As of 2026-10-17)
 
 ## 1. 비즈니스 배경 및 문제 정의
 생성형 AI, 에이전트 워크로드 및 대규모 데이터 분석 트래픽이 급증하면서 클라우드 업계 전반에 물리적 컴퓨팅 용량 제약(Capacity Constraints)이 상시화되고 있다. 특정 리전이나 존에서 특정 단일 머신 타입(예: `n2-standard-8`)에 전적으로 의존하는 전통적인 인프라 아키텍처는 `ZONE_RESOURCE_POOL_EXHAUSTED` 장애 발생 시 신규 파드 배포 중단, 오토스케일링 확장 실패, 서비스 다운타임으로 직결된다.
@@ -35,3 +35,6 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### BR-05: FinOps 상업적 유연성(Flex CUD) 결합 가이드 제공
 - 특정 머신 패밀리에 묶이는 자원 기반 CUD(Resource-based CUD)의 락인 한계를 극복하고, 전 리전/전 머신 패밀리에 교차 적용되는 금액 기반 Flex CUD 포트폴리오 최적화 방안을 제시해야 한다.
+
+### BR-06: 자원 거버넌스 라벨링 표준 준수
+- GKE 노드 풀 및 Compute Engine 인스턴스 템플릿/MIG 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gce-instance-flexibility-planner`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여 FinOps 비용 추적성을 보장하여야 한다.
