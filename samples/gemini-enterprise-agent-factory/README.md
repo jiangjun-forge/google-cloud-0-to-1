@@ -110,12 +110,25 @@ python diagnose.py --dry-run --prompt "사내 특허 출원 절차 및 선행 �
 python diagnose.py --publish
 ```
 
+### 4.4. 최신 Agents CLI 기반 배포 및 게시 (대안)
+구글 공식 최신 **Agents CLI (`google-agents-cli`)** 도구를 활용하여 원격 Agent Runtime에 배포하고 사내 Gemini Enterprise app 갤러리에 원클릭 게시할 수 있다:
+```bash
+# Agent Runtime 배포
+agents-cli deploy --project=${PROJECT_ID} --region=us-central1
+
+# Gemini Enterprise app 사내 갤러리 등록
+agents-cli publish gemini-enterprise \
+  --gemini-enterprise-app-id "projects/${PROJECT_NUMBER}/locations/global/collections/default_collection/engines/${GE_APP_ID}" \
+  --display-name "Agent Factory" \
+  --description "비개발자 임직원용 대화형 노코드 AI 에이전트 팩토리"
+```
+
 ---
 
 ## 5. 콘솔 링크 조치 가이드
 
 - **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 확인 ( https://gemini.google.com )
-- **Vertex AI Agent Builder 콘솔**: 사내 등록된 에이전트 및 데이터스토어 현황 관리 ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Agent Platform (GEAP) 콘솔**: 사내 등록된 에이전트 및 데이터스토어 현황 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **IAM 및 관리자 콘솔**: 대행 서비스 계정(`ge-agent-factory-sa`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---
@@ -129,4 +142,4 @@ python diagnose.py --publish
    gcloud iam service-accounts delete ge-agent-factory-sa@${PROJECT_ID}.iam.gserviceaccount.com --quiet
    ```
 2. **Gemini Enterprise app 카탈로그 에이전트 삭제**:
-   - Vertex AI Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에 접속하여 테스트용으로 생성된 에이전트를 선택 후 삭제한다.
+   - Agent Platform 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 테스트용으로 생성된 에이전트를 선택 후 삭제한다.

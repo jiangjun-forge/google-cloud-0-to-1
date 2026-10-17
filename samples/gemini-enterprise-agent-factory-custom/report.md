@@ -96,4 +96,4 @@ SYSTEM_INSTRUCTION = """너는 사내 엔터프라이즈 환경에서 구동하�
    bash deploy.sh
    ```
 3. **Gemini Enterprise app 카탈로그 외부 에이전트 등록**:
-   - Vertex AI Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에서 'External Agent' 추가 후 상기 매니페스트 입력.
+   - Agent Platform (GEAP) 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에서 'External Agent' 추가 후 상기 매니페스트 입력.

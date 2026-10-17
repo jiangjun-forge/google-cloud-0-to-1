@@ -432,7 +432,7 @@ def build_markdown_report(env_info: dict, tool_data: dict, tool_manifest: dict, 
 ## 4. 권장 후속 조치 및 에이전트 바인딩 가이드
 
 1. **Gemini Enterprise app 도구 레지스트리 확인**:
-   - Vertex AI Agent Builder 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에 접속하여 'Tools' 메뉴에서 등록된 `{tool_data['id']}`를 확인한다.
+   - Agent Platform (GEAP) 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 'Tools' 메뉴에서 등록된 `{tool_data['id']}`를 확인한다.
 2. **사내 에이전트에 스킬 장착**:
    - `gemini-enterprise-agent-factory`로 제작된 기존 노코드 에이전트 또는 커스텀 에이전트의 설정 화면에서 본 스킬을 활성화(Toggle ON)하여 즉시 실무에 투입한다.
 """

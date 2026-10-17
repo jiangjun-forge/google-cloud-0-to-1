@@ -114,12 +114,25 @@ python diagnose.py --write-files
 - `scaffold/deploy.sh`: Cloud Run 배포 쉘 스크립트
 - `scaffold/ge_agent_manifest.json`: Gemini Enterprise app 외부 연동 등록 JSON
 
+### 4.4. 최신 Agent Runtime (GEAP / Vertex AI Agent Engine) 직접 배포 (권장)
+Cloud Run 컨테이너 인프라 관리 없이 구글 완전 관리형 네이티브 런타임에 직결 배포하려면 최신 **Agents CLI (`google-agents-cli`)** 또는 Agent Engine SDK를 활용한다:
+```bash
+# Agents CLI로 Agent Runtime 배포
+agents-cli deploy --project=${PROJECT_ID} --region=us-central1
+
+# Gemini Enterprise app 사내 갤러리 등록
+agents-cli publish gemini-enterprise \
+  --gemini-enterprise-app-id "projects/${PROJECT_NUMBER}/locations/global/collections/default_collection/engines/${GE_APP_ID}" \
+  --display-name "Custom Agent Scaffolder" \
+  --description "BigQuery 및 기간계 결합 High-code 커스텀 에이전트"
+```
+
 ---
 
 ## 5. 콘솔 링크 조치 가이드
 
 - **Cloud Run 콘솔**: 배포된 백엔드 컨테이너 서비스 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/run )
-- **Vertex AI Agent Builder 콘솔**: 사내 등록된 외부 에이전트(External Agents) 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Agent Platform (GEAP) 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`custom-agent-sa`) 권한 및 인보커 바인딩 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---

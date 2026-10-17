@@ -160,7 +160,7 @@ customer-faq-ds            500          500          100.0%     OK
 ## 6. 결과 확인 후 즉각 조치 가이드
 
 1. **데이터 저장소 수동 재색인 및 상태 모니터링**:
-   - Agent Platform Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/gen-app-builder/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
+   - Agent Platform Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/vertex-ai/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
    - 비정형 데이터 저장소 생성 및 관리 ( https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es )
 2. **문서 청킹 및 Layout Parser 설정**:
    - 고품질 RAG 검색을 위해 복잡한 PDF 구조를 이해하는 Layout Parser와 적절한 청크 크기(200~500 토큰)를 설정한다.
@@ -177,5 +177,5 @@ customer-faq-ds            500          500          100.0%     OK
 
 ```bash
 # 테스트 데이터 저장소 삭제 안내
-# Agent Platform 콘솔 ( https://console.cloud.google.com/gen-app-builder/data-stores ) 에서 해당 저장소 선택 후 삭제(Delete)
+# Agent Platform 콘솔 ( https://console.cloud.google.com/vertex-ai/data-stores ) 에서 해당 저장소 선택 후 삭제(Delete)
 ```

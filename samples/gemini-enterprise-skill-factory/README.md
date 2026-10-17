@@ -113,11 +113,21 @@ python diagnose.py --dry-run --prompt "사내 사원증 발급 승인 시스템 
 python diagnose.py --publish --chip 1
 ```
 
+### 4.4. 최신 Model Context Protocol (MCP) 및 Agents CLI 연동 (대안)
+최신 구글 공식 **Agents CLI (`google-agents-cli`)** 및 ADK 2.11+의 `McpToolset`을 활용하여 사내 엔터프라이즈 도구를 현대적 표준 프로토콜로 직접 연동할 수 있다:
+```bash
+# Agent Runtime 환경 변수에 최신 MCP 프로토콜 활성화
+ADK_ENABLE_MCP_MODERN_PROTOCOL=1
+
+# Agents CLI를 통한 도구 바인딩 배포
+agents-cli deploy --project=${PROJECT_ID} --region=us-central1
+```
+
 ---
 
 ## 5. 콘솔 링크 조치 가이드
 
-- **Vertex AI Agent Builder 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Agent Platform (GEAP) 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
 - **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
 - **IAM 및 관리자 콘솔**: 스킬 대행 서비스 계정(`ge-skill-invoker-sa`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
