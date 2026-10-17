@@ -62,5 +62,23 @@ gcloud resource-manager org-policies disable-enforce "storage.publicAccessPreven
 
 ---
 
-## 2. 자원 정리 안내 (Teardown)
+## 2. 사내 거버넌스 4대 필수 표준 라벨링
+
+조직 정책 예외 적용 대상 인프라 자원(Compute Engine VM, Cloud Storage 버킷, 서비스 계정 등) 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `org-policy-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 3. 콘솔 링크 조치 가이드 및 공식 레퍼런스
+
+- **조직 정책 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/orgpolicies?project=sample-project-id )
+- **Cloud Logging 탐색기**: ( https://console.cloud.google.com/logs/viewer?project=sample-project-id )
+- **공식 문서 - 조직 정책 제약 조건 목록**: ( https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints )
+
+---
+
+## 4. 자원 정리 안내 (Teardown)
 본 도구는 순수 감사 로그 조회 도구이므로 별도의 자원 정리 작업이 필요하지 않다.

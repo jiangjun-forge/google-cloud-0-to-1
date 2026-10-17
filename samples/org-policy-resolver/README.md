@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # GCP 조직 정책(Organization Policy) 위반 감사 역추적 및 복구 (org-policy-resolver)
 
-GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정책 제약 조건(Constraints) 위반 에러를 감사 로그에서 역추적하고, **위반된 제약 조건 ID와 즉시 복구/우회 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-06-16)
+GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정책 제약 조건(Constraints) 위반 에러를 감사 로그에서 역추적하고, **위반된 제약 조건 ID와 즉시 복구/우회 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#SecOps`  
 **Concern**: `#Compliance`, `#Security`  
@@ -129,6 +129,24 @@ python diagnose.py --project your-project-id --days 7 --limit 5
       --project="my-prod-project"
 ------------------------------------------------------------------------
 ```
+
+---
+
+## 콘솔 링크 조치 가이드 및 공식 레퍼런스
+
+- **조직 정책 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/orgpolicies )
+- **Cloud Logging 탐색기**: ( https://console.cloud.google.com/logs/viewer )
+- **공식 문서 - 조직 정책 제약 조건 목록**: ( https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints )
+
+---
+
+## 사내 거버넌스 4대 필수 표준 라벨링
+
+조직 정책 예외 적용 대상 인프라 자원(Compute Engine VM, Cloud Storage 버킷, 서비스 계정 등) 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `org-policy-resolver`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
 
 ---
 
