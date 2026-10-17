@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-enterprise-copilot-custom
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-copilot-custom: 사내 BigQuery, ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(GEAP / Cloud Run)를 원클릭 스캐폴딩하고, GitHub 레포 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-copilot-custom: 사내 BigQuery, ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(Agent Platform / Cloud Run)를 원클릭 스캐폴딩하고, GitHub 레포 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록하는 도구다.
 ---
 
 # Gemini Enterprise 커스텀 에이전트 스캐폴더 (`gemini-enterprise-copilot-custom`) (Autopilot & Hands-on Guide)

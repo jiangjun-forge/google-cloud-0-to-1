@@ -19,7 +19,7 @@ Gemini Enterprise 앱 프로젝트: sample-ge-project <---> 커스텀 에이전�
 ---------------------------------------------------------------------------------------------------------
 Agent Engine IAM 권한 바인딩              CRITICAL     에이전트 프로젝트(sample-agent-project)에 GE 서비스 에이전트(service-104928374921@gcp-sa-discoveryengine.iam.gserviceaccount.com)의 'roles/aiplatform.user' 권한이 없음
 도메인 제한 공유 조직 정책 (Domain Restricted Sharing) CRITICAL     서로 다른 조직 간 연동 환경에서 'constraints/iam.allowedPolicyMemberDomains' 정책이 활성화되어 타 조직(organizations/987654321098) 소속 계정 또는 서비스 에이전트의 IAM 바인딩이 차단됨
-Reasoning Engine 리소스 식별자 규격          PASS         유효한 Reasoning Engine ID 형식 확인 완료 (8492049182740192841)
+Agent Engine 리소스 식별자 규격              PASS         유효한 Agent Engine ID 형식 확인 완료 (8492049182740192841)
 VPC Service Controls 보안 경계           PASS         VPC-SC 경계 간 통신 제한 없음
 =========================================================================================================
 
@@ -69,9 +69,9 @@ gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDo
 ```
 
 ### 다. 공식 문서 및 콘솔 경로
-- Google Cloud Console Vertex AI Reasoning Engines ( https://console.cloud.google.com/gen-app-builder/engines?project=sample-agent-project )
+- Google Cloud Console Agent Engine ( https://console.cloud.google.com/gen-app-builder/engines?project=sample-agent-project )
 - Google Cloud Console IAM & Admin ( https://console.cloud.google.com/iam-admin/iam?project=sample-agent-project )
 - Google Cloud Console Organization Policies ( https://console.cloud.google.com/iam-admin/orgpolicies?project=sample-agent-project )
-- Agent Platform Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
+- Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
 - 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )
 - Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )

@@ -139,16 +139,16 @@ def evaluate_cross_agent(data: dict) -> list[dict]:
   # 3. Agent Engine 리소스 식별자 형식 검사
   if engine_id and not engine_id.isdigit():
     results.append({
-        "check_item": "Reasoning Engine 리소스 식별자 규격",
+        "check_item": "Agent Engine 리소스 식별자 규격",
         "status": "WARNING",
-        "description": f"입력된 Engine ID('{engine_id}')가 유효한 숫자형 Reasoning Engine ID 형식이 아님",
+        "description": f"입력된 Engine ID('{engine_id}')가 유효한 숫자형 Agent Engine ID 형식이 아님",
         "remediation": "콘솔 또는 'gcloud beta ai reasoning-engines list' 명령어로 올바른 숫자 식별자를 확인하여 등록한다.",
     })
   else:
     results.append({
-        "check_item": "Reasoning Engine 리소스 식별자 규격",
+        "check_item": "Agent Engine 리소스 식별자 규격",
         "status": "PASS",
-        "description": f"유효한 Reasoning Engine ID 형식 확인 완료 ({engine_id})",
+        "description": f"유효한 Agent Engine ID 형식 확인 완료 ({engine_id})",
         "remediation": "-",
     })
 
@@ -286,10 +286,10 @@ def build_markdown_report(results: list[dict], ge_prj: str, agent_prj: str, is_d
       "```",
       "",
       "### 다. 공식 문서 및 콘솔 경로",
-      f"- Google Cloud Console Vertex AI Reasoning Engines ( https://console.cloud.google.com/gen-app-builder/engines?project={agent_prj} )",
+      f"- Google Cloud Console Agent Engine ( https://console.cloud.google.com/gen-app-builder/engines?project={agent_prj} )",
       f"- Google Cloud Console IAM & Admin ( https://console.cloud.google.com/iam-admin/iam?project={agent_prj} )",
       f"- Google Cloud Console Organization Policies ( https://console.cloud.google.com/iam-admin/orgpolicies?project={agent_prj} )",
-      "- Agent Platform Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )",
+      "- Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )",
       "- 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )",
       "- Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )",
       "",
@@ -310,7 +310,7 @@ def main():
   )
   parser.add_argument("--ge-project", default=os.getenv("GE_PROJECT_ID") or None, help="Gemini Enterprise 프로젝트 ID")
   parser.add_argument("--agent-project", default=os.getenv("AGENT_PROJECT_ID") or "sample-agent-project", help="Agent Engine 프로젝트 ID")
-  parser.add_argument("--engine-id", default=os.getenv("REASONING_ENGINE_ID") or "8492049182740192841", help="Reasoning Engine 고유 ID")
+  parser.add_argument("--engine-id", default=os.getenv("REASONING_ENGINE_ID") or "8492049182740192841", help="Agent Engine 고유 ID")
   parser.add_argument("--dry-run", action="store_true", help="실제 GCP 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()

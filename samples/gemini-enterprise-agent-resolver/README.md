@@ -46,7 +46,7 @@ flowchart TD
     
     CheckIAM --> CheckAgentUser{"aiplatform.user 역할 부여 여부"}
     CheckAgentUser -->|"누락"| CriticalIAM["[심각] 서비스 에이전트 권한 누락 판정: gcloud 바인딩 명령어 처방"]
-    CheckAgentUser -->|"부여됨"| CheckEngineID{"Reasoning Engine 식별자 검사"}
+    CheckAgentUser -->|"부여됨"| CheckEngineID{"Agent Engine 식별자 검사"}
     
     CheckEngineID --> CheckVPCSC{"VPC-SC 서비스 경계 격리 여부"}
     CheckVPCSC -->|"경계 위반"| WarnVPCSC["[주의] VPC-SC 차단: Ingress/Egress 규칙 처방"]
@@ -63,7 +63,7 @@ flowchart TD
 ## 3. 필요 IAM 권한
 - `roles/iam.securityReviewer` (IAM 정책 조회)
 - `roles/orgpolicy.policyViewer` (조직 정책 제약 조건 조회)
-- `roles/aiplatform.viewer` (Agent Platform Agent Engine 조회)
+- `roles/aiplatform.viewer` (Agent Engine 조회)
 
 ---
 
@@ -113,10 +113,10 @@ gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDo
 ```
 
 ### 다. 공식 문서 및 콘솔 경로
-- Google Cloud Console Vertex AI Reasoning Engines ( https://console.cloud.google.com/gen-app-builder/engines )
+- Google Cloud Console Agent Engine ( https://console.cloud.google.com/gen-app-builder/engines )
 - Google Cloud Console IAM & Admin ( https://console.cloud.google.com/iam-admin/iam )
 - Google Cloud Console Organization Policies ( https://console.cloud.google.com/iam-admin/orgpolicies )
-- Agent Platform Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
+- Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )
 - 도메인별 ID 제한 조직 정책 안내 ( https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains )
 - Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )
 

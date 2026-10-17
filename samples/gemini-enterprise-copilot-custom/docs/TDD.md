@@ -31,7 +31,7 @@ flowchart TD
     end
 
     subgraph ScaffoldingPhase ["2. 하이코드 산출물 자동 생성"]
-        AgentCode["에이전트 코어 로직<br/>(agent.py / Reasoning Engine)"]
+        AgentCode["에이전트 코어 로직<br/>(agent.py / Agent Engine)"]
         ToolsCode["도구 및 데이터 연동<br/>(tools.py / BigQuery, OpenAPI)"]
         DeploySpec["배포 매니페스트<br/>(Dockerfile, deploy.sh)"]
         PresetEngine --> AgentCode
