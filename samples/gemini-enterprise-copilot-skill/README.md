@@ -107,8 +107,21 @@ python diagnose.py --dry-run --chip 4
 python diagnose.py --dry-run --prompt "사내 사원증 발급 승인 시스템 REST API"
 ```
 
-### 4.3. 실제 사내 Gemini Enterprise app 도구 레지스트리 배포 (--publish)
-사내 Gemini Enterprise app 도구 레지스트리에 해당 스킬을 공식 배포하여 사내 에이전트들이 장착할 수 있도록 등록한다:
+### 4.3. 사내 GE App에 스킬 팩토리 1클릭 프로비저닝 (--deploy-engine)
+본 미니 프로젝트의 스킬 팩토리 에이전트를 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
+
+```bash
+# 1. 가상 실행으로 배포 명세 사전 검증
+python diagnose.py --dry-run --deploy-engine
+
+# 2. 실제 사내 환경 원클릭 배포 집행
+python diagnose.py --deploy-engine
+```
+
+성공 시 사내 임직원이 GE app 챗창에서 스킬 팩토리와 대화하며 Google Sheets, Slack, Jira 등 기간계 도구 연동 명세를 자율 생성할 수 있다.
+
+### 4.4. 실제 사내 Gemini Enterprise app 도구 등록 (--publish)
+사내 Gemini Enterprise app 도구 레지스트리에 개별 시스템 스킬을 공식 배포하여 사내 에이전트들이 장착할 수 있도록 등록한다:
 ```bash
 python diagnose.py --publish --chip 1
 ```

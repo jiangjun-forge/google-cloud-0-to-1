@@ -1,6 +1,6 @@
 # Gemini Enterprise 데이터 커넥터 팩토리 보고서 (gemini-enterprise-copilot-connector)
 
-- **실행 일시**: 2026-10-17 06:34:40 UTC
+- **실행 일시**: 2026-10-18 00:17:27 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **배포 리전**: `global`
 - **Gemini Enterprise App 인스턴스**: `sample-ge-app-id`

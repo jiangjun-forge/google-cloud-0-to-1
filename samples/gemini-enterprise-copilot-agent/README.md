@@ -104,8 +104,21 @@ python diagnose.py --dry-run --chip 2:1
 python diagnose.py --dry-run --prompt "사내 특허 출원 절차 및 선행 기술 검토 에이전트"
 ```
 
-### 4.3. 실제 사내 Gemini Enterprise app 배포 집행 (--publish)
-사내 Gemini Enterprise app 카탈로그에 `@에이전트 팩토리`를 정식으로 등록하여 전사 임직원이 사용할 수 있도록 배포한다:
+### 4.3. 사내 GE App에 노코드 에이전트 팩토리 1클릭 프로비저닝 (--deploy-engine)
+본 미니 프로젝트의 노코드 에이전트 팩토리를 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
+
+```bash
+# 1. 가상 실행으로 배포 명세 사전 검증
+python diagnose.py --dry-run --deploy-engine
+
+# 2. 실제 사내 환경 원클릭 배포 집행
+python diagnose.py --deploy-engine
+```
+
+성공 시 비개발자 임직원이 사내 GE app 챗창에서 노코드 에이전트 팩토리와 대화하며 자신만의 업무 보조 에이전트를 자율 생성할 수 있다.
+
+### 4.4. 실제 사내 Gemini Enterprise app 등록 (--publish)
+사내 Gemini Enterprise app 카탈로그에 `@에이전트 팩토리`를 등록하여 전사 임직원이 사용할 수 있도록 배포한다:
 ```bash
 python diagnose.py --publish
 ```

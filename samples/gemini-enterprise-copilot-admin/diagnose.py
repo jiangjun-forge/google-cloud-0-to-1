@@ -14,6 +14,7 @@ import json
 import os
 import subprocess
 import sys
+import requests
 
 # 5대 어드민 관리 칩 카탈로그
 ADMIN_TOPIC_CATALOG = {
@@ -546,6 +547,195 @@ def save_markdown_report(report_content: str):
     print(f"\n[성공] 마크다운 진단 보고서가 저장되었습니다: {report_path}")
 
 
+def _get_cloud_token() -> str:
+    """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
+    try:
+        out = subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True, timeout=10).strip()
+        tok = out.split()[-1]
+        if tok.startswith("ya29."):
+            return tok
+    except Exception:
+        pass
+    try:
+        import google.auth
+        import google.auth.transport.requests
+        creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        auth_req = google.auth.transport.requests.Request()
+        creds.refresh(auth_req)
+        return creds.token
+    except Exception as e:
+        raise RuntimeError(f"GCP 인증 토큰을 획득할 수 없습니다: {e}")
+
+
+def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
+    """Gemini Enterprise Admin Copilot을 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
+    project_id = env_info["project_id"]
+    re_location = "us-central1"
+    ge_app_id = env_info["ge_app_id"]
+    ge_location = "global"
+    staging_bucket = f"gs://{project_id}-agent-engine-staging"
+
+    display_name = "Gemini Enterprise Admin Copilot (사내 어드민 코파일럿)"
+    description = "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿"
+
+    labels = {
+        "managed-by": "google-cloud-0-to-1",
+        "scenario": "gemini-enterprise-copilot-admin",
+        "env": "sample",
+        "created-by": "customer-engineer",
+    }
+
+    print("\n" + "=" * 75)
+    print("  [원클릭 배포] Gemini Enterprise Admin Copilot 배포 파이프라인")
+    print("=" * 75)
+    print(f"[*] 대상 프로젝트 : {project_id}")
+    print(f"[*] Agent Engine  : {re_location}")
+    print(f"[*] GE App ID     : {ge_app_id} (위치: {ge_location})")
+    print(f"[*] 필수 4대 라벨 : {labels}")
+
+    if dry_run:
+        print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
+        simulated_re_id = "4756157723148550144"
+        simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
+        print(f"  [1] Vertex AI Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
+        print(f"  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
+        return {
+            "status": "DRY_RUN_PASSED",
+            "reasoning_engine": simulated_res,
+            "display_name": display_name,
+            "ge_app_id": ge_app_id,
+        }
+
+    try:
+        import vertexai
+        from vertexai import agent_engines
+        from google.adk.agents import Agent
+        import google.oauth2.credentials
+        import google.auth
+    except ImportError as e:
+        print(f"[오류] 필수 라이브러리가 누락되었습니다: {e}")
+        return {"status": "FAILED", "error": str(e)}
+
+    token = _get_cloud_token()
+    creds = google.oauth2.credentials.Credentials(token)
+    google.auth.default = lambda *args, **kwargs: (creds, project_id)
+
+    print("\n[단계 1/2] Vertex AI Agent Engine 초기화 및 패키징 중...")
+    vertexai.init(
+        project=project_id,
+        location=re_location,
+        staging_bucket=staging_bucket,
+        credentials=creds,
+    )
+
+    instruction = """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 코파일럿(Admin Copilot)' 마스터 에이전트입니다.
+사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 7대 핵심 관리 과제(수백 개 에이전트 스프롤 관리 헬, 원클릭 BigQuery 감사 로그 싱크 구축, GCP 콘솔 3단계 길잡이, 도메인 충돌 및 테넌트 온보딩, 외부 마켓플레이스 차단 거버넌스, 부서별 라이선스 채택률 및 유휴 라이선스 회수, Overage 과금 방어 및 AI Studio 키 차단, 폐쇄망 프록시 허용용 Exact 15대 코어 FQDN 진단)를 대화형으로 자율 진단하고 즉시 실행 가능한 조치 스크립트와 콘솔 가이드를 제공합니다.
+
+[단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
+모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
+```suggested_questions
+{"questions": ["좀비 에이전트 적발 SQL", "BigQuery 로그 싱크 30초 셋업", "GCP 콘솔 GE Admin 딥링크"], "type": "followup"}
+```
+- 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
+
+[소통 원칙]
+- 정중하고 품격 있는 문어체(-다, -한다)와 한글 맞춤법 복합어 띄어쓰기를 철저히 준수합니다.
+- 이모지나 특수 기호 대신 깔끔한 마크다운을 사용합니다.
+"""
+
+    adk_agent = Agent(
+        name="gemini_enterprise_admin_copilot",
+        description=description,
+        model="gemini-3.8-flash",
+        instruction=instruction,
+    )
+    app = agent_engines.AdkApp(agent=adk_agent, enable_tracing=True)
+
+    runtime_env = {
+        "GOOGLE_GENAI_USE_VERTEXAI": "1",
+        "GOOGLE_CLOUD_LOCATION": "global",
+        "ADK_ENABLE_MCP_MODERN_PROTOCOL": "1",
+    }
+
+    print("  - Agent Engine 프로비저닝 LRO 생성 중 (약 1분 소요)...")
+    remote = agent_engines.create(
+        agent_engine=app,
+        display_name=display_name,
+        description=description,
+        gcs_dir_name="ge_factory_admin_copilot",
+        requirements=[
+            "google-cloud-aiplatform[adk,agent_engines]==2.5.0",
+            "google-adk==2.11.0",
+            "google-genai==2.31.0",
+            "pydantic==2.13.5",
+            "requests",
+            "cloudpickle==3.1.2",
+            "google-auth",
+        ],
+        env_vars=runtime_env,
+    )
+
+    re_res = remote.resource_name
+    print(f"[성공] Vertex AI Agent Engine 생성 완료: {re_res}")
+
+    print("\n[단계 2/2] Gemini Enterprise app 사내 갤러리(/r/agents) 자동 바인딩 중...")
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "X-Goog-User-Project": project_id,
+    }
+    base_url = (
+        f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+        f"/locations/{ge_location}/collections/default_collection"
+        f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+    )
+
+    body = {
+        "displayName": display_name,
+        "description": description,
+        "sharingConfig": {"scope": "ALL_USERS"},
+        "customPlaceholderText": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
+        "starterPrompts": [
+            {"text": "사내 에이전트가 100개가 넘는데 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘"},
+            {"text": "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘"},
+            {"text": "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?"},
+            {"text": "에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리 알려줘"},
+        ],
+        "adkAgentDefinition": {
+            "toolSettings": {"toolDescription": description},
+            "provisionedReasoningEngine": {
+                "reasoningEngine": re_res
+            },
+        },
+    }
+
+    target_agent_id = None
+    list_resp = requests.get(base_url, headers=headers, timeout=30)
+    if list_resp.ok:
+        for a in list_resp.json().get("agents", []):
+            if a.get("displayName") == display_name:
+                target_agent_id = a.get("name").split("/")[-1]
+                break
+
+    if target_agent_id:
+        patch_url = f"{base_url}/{target_agent_id}?updateMask=displayName,description,starterPrompts,customPlaceholderText,adkAgentDefinition"
+        reg_resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
+    else:
+        reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+
+    if not reg_resp.ok:
+        print(f"[경고] GE App 등록 응답 이상 ({reg_resp.status_code}): {reg_resp.text}")
+    else:
+        print(f"[성공] Gemini Enterprise app 등록 완료 (공유 범위: ALL_USERS)")
+
+    return {
+        "status": "DEPLOYED",
+        "reasoning_engine": re_res,
+        "display_name": display_name,
+        "ge_app_id": ge_app_id,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Gemini Enterprise 어드민 코파일럿 진단 및 관리 가이드 도구",
@@ -560,6 +750,7 @@ def main():
     parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~7)")
     parser.add_argument("--prompt", help="사용자 정의 어드민 문의 내용")
     parser.add_argument("--interactive", action="store_true", default=False, help="대화형 번호 선택기 가동")
+    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Vertex AI Agent Engine 프로비저닝 및 Gemini Enterprise app 사내 갤러리 자동 등록")
 
     args = parser.parse_args()
 
@@ -577,7 +768,12 @@ def main():
     print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
     print(f"[*] 사내 대상 도메인 : {env_info['customer_domain']}")
     print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
-    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 진단 모드'}")
+    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 실행 모드'}")
+
+    if args.deploy_engine:
+        res = deploy_admin_copilot_engine(env_info, dry_run=args.dry_run)
+        print(f"\n[결과] 배포 상태: {res['status']}")
+        return
 
     # 2. 과제 칩 선택
     topic_data = ADMIN_TOPIC_CATALOG[1]

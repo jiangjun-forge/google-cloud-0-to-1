@@ -106,6 +106,19 @@ python diagnose.py --dry-run --prompt "임직원 퇴사 시 에이전트 소유�
 python diagnose.py --interactive
 ```
 
+### 4.4. 사내 GE App에 어드민 코파일럿 1클릭 배포 (--deploy-engine)
+본 미니 프로젝트의 어드민 코파일럿을 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
+
+```bash
+# 1. 가상 실행으로 배포 명세 사전 검증
+python diagnose.py --dry-run --deploy-engine
+
+# 2. 실제 사내 환경 원클릭 배포 집행
+python diagnose.py --deploy-engine
+```
+
+성공 시 사내 IT 관리자 및 임직원이 GE app 챗창에서 직접 좀비 에이전트 적발 SQL, BigQuery 30초 로그 싱크 구축, GCP 콘솔 길잡이 지침을 인터랙티브하게 안내받을 수 있다.
+
 ---
 
 ## 5. 사내 거버넌스 4대 필수 표준 라벨링

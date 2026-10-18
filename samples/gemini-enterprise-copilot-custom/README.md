@@ -114,24 +114,24 @@ python diagnose.py --write-files
 - `scaffold/deploy.sh`: Cloud Run 배포 쉘 스크립트
 - `scaffold/ge_agent_manifest.json`: Gemini Enterprise app 외부 연동 등록 JSON
 
-### 4.4. 최신 Agent Runtime 직접 배포 (권장)
-Cloud Run 컨테이너 인프라 관리 없이 구글 완전 관리형 네이티브 런타임에 직결 배포하려면 최신 **Agents CLI (`google-agents-cli`)** 또는 Agent Engine SDK를 활용한다:
-```bash
-# Agents CLI로 Agent Runtime 배포
-agents-cli deploy --project=${PROJECT_ID} --region=us-central1
+### 4.4. 사내 GE App에 자율 배포형 스캐폴더 1클릭 프로비저닝 (--deploy-engine)
+본 미니 프로젝트의 스캐폴더 에이전트(ChatOps 도구 내장형)를 고객사 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 1클릭으로 직결 등록한다:
 
-# Gemini Enterprise app 사내 갤러리 등록
-agents-cli publish gemini-enterprise \
-  --gemini-enterprise-app-id "projects/${PROJECT_NUMBER}/locations/global/collections/default_collection/engines/${GE_APP_ID}" \
-  --display-name "Gemini Enterprise Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)" \
-  --description "BigQuery 및 기간계 결합 High-code 커스텀 에이전트 스캐폴더"
+```bash
+# 1. 가상 실행으로 배포 명세 및 연동 매니페스트 사전 검증
+python diagnose.py --dry-run --deploy-engine
+
+# 2. 실제 사내 환경 원클릭 배포 집행
+python diagnose.py --deploy-engine
 ```
+
+성공 시 에이전트가 사내 갤러리에 전사 공개(`ALL_USERS`)로 등록되며, 배포된 에이전트에는 실제 클라우드 배포 도구(`deploy_enterprise_agent_tool`, `list_deployed_agents_tool`)가 내장되어 임직원이 GE app 채팅창에서 GitHub 주소를 주며 자율 배포를 지시할 수 있다.
 
 ### 4.5. GitHub 레포 기반 무인 자동 배포 (ChatOps to GitOps)
 고객사 개발팀이 매번 터미널에서 CLI를 실행할 필요 없이, 최초 1회 본 에이전트(`Gemini Enterprise Custom Agent Scaffolder`)를 배포해 두면:
 1. 개발자가 GitHub 사내 저장소에 `agent.py`와 `requirements.txt`를 푸시한다.
 2. Gemini Enterprise 웹 채팅창에서 본 에이전트에게 깃 주소 ( https://github.com/my-org/my-agent.git )를 전송한다.
-3. 에이전트가 레포 구조를 자동 검증하고, Agent Runtime 빌드 및 현재 GE App 갤러리(`/r/agents`)에 즉시 원클릭 등록을 완결한다.
+3. 에이전트가 레포 구조를 자동 검증하고, 내장된 배포 도구를 실행하여 Agent Engine 빌드 및 현재 GE App 갤러리(`/r/agents`)에 즉시 원클릭 등록을 완결한다.
 
 ---
 

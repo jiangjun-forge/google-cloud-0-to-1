@@ -96,6 +96,19 @@ python diagnose.py --dry-run --prompt "사내 ERP 구매 발주 데이터베이�
 python diagnose.py --interactive
 ```
 
+### 4.4. 사내 GE App에 커넥터 팩토리 1클릭 프로비저닝 (--deploy-engine)
+본 미니 프로젝트의 커넥터 팩토리 에이전트를 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
+
+```bash
+# 1. 가상 실행으로 배포 명세 사전 검증
+python diagnose.py --dry-run --deploy-engine
+
+# 2. 실제 사내 환경 원클릭 배포 집행
+python diagnose.py --deploy-engine
+```
+
+성공 시 사내 아키텍트 및 데이터 엔지니어가 GE app 챗창에서 커넥터 팩토리와 대화하며 Jira, Confluence, Salesforce, Drive 등 기간계 저장소의 ACL 및 Data Store 연동 스펙을 자율 생성할 수 있다.
+
 ---
 
 ## 5. 사내 거버넌스 4대 필수 표준 라벨링

@@ -14,6 +14,7 @@ import os
 import subprocess
 import sys
 from datetime import datetime, timezone
+import requests
 
 # 10대 산업/부서별 추천 칩 카탈로그 (Seed Chips)
 CHIP_CATALOG = {
@@ -622,6 +623,201 @@ def save_markdown_report(report_content: str):
     print(f"\n[성공] 마크다운 진단 보고서가 저장되었습니다: {report_path}")
 
 
+def _get_cloud_token() -> str:
+    """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
+    try:
+        out = subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True, timeout=10).strip()
+        tok = out.split()[-1]
+        if tok.startswith("ya29."):
+            return tok
+    except Exception:
+        pass
+    try:
+        import google.auth
+        import google.auth.transport.requests
+        creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        auth_req = google.auth.transport.requests.Request()
+        creds.refresh(auth_req)
+        return creds.token
+    except Exception as e:
+        raise RuntimeError(f"GCP 인증 토큰을 획득할 수 없습니다: {e}")
+
+
+def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
+    """Gemini Enterprise Agent Factory를 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
+    project_id = env_info["project_id"]
+    re_location = "us-central1"
+    ge_app_id = env_info["ge_app_id"]
+    ge_location = "global"
+    staging_bucket = f"gs://{project_id}-agent-engine-staging"
+
+    display_name = "Gemini Enterprise Agent Factory (사내 노코드 에이전트 팩토리)"
+    description = "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리"
+
+    labels = {
+        "managed-by": "google-cloud-0-to-1",
+        "scenario": "gemini-enterprise-copilot-agent",
+        "env": "sample",
+        "created-by": "customer-engineer",
+    }
+
+    print("\n" + "=" * 75)
+    print("  [원클릭 배포] Gemini Enterprise Agent Factory 배포 파이프라인")
+    print("=" * 75)
+    print(f"[*] 대상 프로젝트 : {project_id}")
+    print(f"[*] Agent Engine  : {re_location}")
+    print(f"[*] GE App ID     : {ge_app_id} (위치: {ge_location})")
+    print(f"[*] 필수 4대 라벨 : {labels}")
+
+    if dry_run:
+        print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
+        simulated_re_id = "6590530146371895296"
+        simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
+        print(f"  [1] Vertex AI Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
+        print(f"  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
+        return {
+            "status": "DRY_RUN_PASSED",
+            "reasoning_engine": simulated_res,
+            "display_name": display_name,
+            "ge_app_id": ge_app_id,
+        }
+
+    try:
+        import vertexai
+        from vertexai import agent_engines
+        from google.adk.agents import Agent
+        import google.oauth2.credentials
+        import google.auth
+    except ImportError as e:
+        print(f"[오류] 필수 라이브러리가 누락되었습니다: {e}")
+        return {"status": "FAILED", "error": str(e)}
+
+    token = _get_cloud_token()
+    creds = google.oauth2.credentials.Credentials(token)
+    google.auth.default = lambda *args, **kwargs: (creds, project_id)
+
+    print("\n[단계 1/2] Vertex AI Agent Engine 초기화 및 패키징 중...")
+    vertexai.init(
+        project=project_id,
+        location=re_location,
+        staging_bucket=staging_bucket,
+        credentials=creds,
+    )
+
+    instruction = """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 노코드 에이전트 팩토리(Agent Factory)' 마스터 에이전트입니다.
+사내 비개발자 및 실무 임직원이 자신의 업무를 자동화할 수 있는 맞춤형 AI 에이전트를 대화형으로 손쉽게 만들 수 있도록 안내하고 완성된 에이전트 시스템 지침 및 명세서를 생성해 주는 역할을 수행합니다.
+
+[핵심 단계별 인터뷰 절차]
+1단계 (목적 파악): 해결하려는 구체적인 업무 페인포인트와 주요 사용 부서 확인.
+2단계 (핵심 규칙): 에이전트가 지켜야 할 사내 규정과 처리 기준, 필수 기재 항목 정의.
+3단계 (지식 베이스): 연동할 사내 구글 드라이브(Google Drive), 구글 시트(Google Sheets), 문서, 사내 위키 등 데이터 저장소 정의.
+4단계 (최종 검증 및 합성): 5대 골든 규격(Role, Workflow, Guardrails, Fallback, Starter Prompts)으로 완성된 시스템 지침서 생성.
+
+[단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
+모든 답변 본문의 맨 끝에 반드시 다음 형식의 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
+```suggested_questions
+{"questions": ["추천 선택지 1", "추천 선택지 2", "추천 선택지 3"], "type": "followup"}
+```
+- 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
+
+[소통 원칙]
+- 정중하고 품격 있는 문어체(-다, -한다)와 한글 맞춤법 복합어 띄어쓰기를 철저히 준수합니다.
+- 이모지나 특수 기호 대신 깔끔한 마크다운을 사용합니다.
+"""
+
+    adk_agent = Agent(
+        name="gemini_enterprise_agent_factory",
+        description=description,
+        model="gemini-3.8-flash",
+        instruction=instruction,
+    )
+    app = agent_engines.AdkApp(agent=adk_agent, enable_tracing=True)
+
+    runtime_env = {
+        "GOOGLE_GENAI_USE_VERTEXAI": "1",
+        "GOOGLE_CLOUD_LOCATION": "global",
+        "ADK_ENABLE_MCP_MODERN_PROTOCOL": "1",
+    }
+
+    print("  - Agent Engine 프로비저닝 LRO 생성 중 (약 1분 소요)...")
+    remote = agent_engines.create(
+        agent_engine=app,
+        display_name=display_name,
+        description=description,
+        gcs_dir_name="ge_factory_agent_factory",
+        requirements=[
+            "google-cloud-aiplatform[adk,agent_engines]==2.5.0",
+            "google-adk==2.11.0",
+            "google-genai==2.31.0",
+            "pydantic==2.13.5",
+            "requests",
+            "cloudpickle==3.1.2",
+            "google-auth",
+        ],
+        env_vars=runtime_env,
+    )
+
+    re_res = remote.resource_name
+    print(f"[성공] Vertex AI Agent Engine 생성 완료: {re_res}")
+
+    print("\n[단계 2/2] Gemini Enterprise app 사내 갤러리(/r/agents) 자동 바인딩 중...")
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "X-Goog-User-Project": project_id,
+    }
+    base_url = (
+        f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+        f"/locations/{ge_location}/collections/default_collection"
+        f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+    )
+
+    body = {
+        "displayName": display_name,
+        "description": description,
+        "sharingConfig": {"scope": "ALL_USERS"},
+        "customPlaceholderText": "만들고 싶은 사내 맞춤 AI 에이전트의 업무나 목적을 입력하세요...",
+        "starterPrompts": [
+            {"text": "사내 특허 출원 절차 가이드 에이전트 만들어 줘"},
+            {"text": "주간 업무 보고서 취합 및 경영진 브리핑 에이전트 만들어 줘"},
+            {"text": "신규 입사자 온보딩 가이드 및 사내 규정 Q&A 에이전트 만들어 줘"},
+            {"text": "CS 고객 불만 유형 자동 분류 및 답변 초안 에이전트 만들어 줘"},
+        ],
+        "adkAgentDefinition": {
+            "toolSettings": {"toolDescription": description},
+            "provisionedReasoningEngine": {
+                "reasoningEngine": re_res
+            },
+        },
+    }
+
+    target_agent_id = None
+    list_resp = requests.get(base_url, headers=headers, timeout=30)
+    if list_resp.ok:
+        for a in list_resp.json().get("agents", []):
+            if a.get("displayName") == display_name:
+                target_agent_id = a.get("name").split("/")[-1]
+                break
+
+    if target_agent_id:
+        patch_url = f"{base_url}/{target_agent_id}?updateMask=displayName,description,starterPrompts,customPlaceholderText,adkAgentDefinition"
+        reg_resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
+    else:
+        reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+
+    if not reg_resp.ok:
+        print(f"[경고] GE App 등록 응답 이상 ({reg_resp.status_code}): {reg_resp.text}")
+    else:
+        print(f"[성공] Gemini Enterprise app 등록 완료 (공유 범위: ALL_USERS)")
+
+    return {
+        "status": "DEPLOYED",
+        "reasoning_engine": re_res,
+        "display_name": display_name,
+        "ge_app_id": ge_app_id,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 진단 및 배포 도구",
@@ -636,6 +832,7 @@ def main():
     parser.add_argument("--interactive", action="store_true", default=False, help="대화형 번호 선택기 강제 가동")
     parser.add_argument("--chip", help="부서/칩 식별자 지정 (예: 1:1 또는 vdi_unlock)")
     parser.add_argument("--prompt", help="사용자 직접 정의 에이전트 프롬프트 지정")
+    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Vertex AI Agent Engine 프로비저닝 및 Gemini Enterprise app 사내 갤러리 자동 등록")
 
     args = parser.parse_args()
 
@@ -653,7 +850,12 @@ def main():
     print(f"[*] 대상 리전        : {env_info['location']}")
     print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
     print(f"[*] 대행 서비스 계정 : {env_info['delegated_sa']}")
-    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 배포 모드'}")
+    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 실행 모드'}")
+
+    if args.deploy_engine:
+        res = deploy_agent_factory_engine(env_info, dry_run=args.dry_run)
+        print(f"\n[결과] 배포 상태: {res['status']}")
+        return
 
     # 2. 대행 서비스 계정 IAM 권한 진단
     print("\n[단계 1/4] 대행 서비스 계정(Delegated SA) IAM 권한 진단 중...")
