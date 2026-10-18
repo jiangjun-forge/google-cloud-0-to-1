@@ -5,7 +5,7 @@
 
 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery), ERP, 모니터링 시스템을
 결합한 High-code 백엔드 에이전트(Agent Runtime / Cloud Run)를 원클릭 스캐폴딩하고,
-GitHub 레포 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원한다.
+GitHub 저장소 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원한다.
 """
 
 import argparse
@@ -582,7 +582,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
     display_name = "GE Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)"
-    description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 스캐폴딩 및 GitHub 레포 직결 자동 배포(GitOps) 에이전트"
+    description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 스캐폴딩 및 GitHub 저장소 직결 자동 배포(GitOps) 에이전트"
 
     labels = {
         "managed-by": "google-cloud-0-to-1",
@@ -718,7 +718,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
         norm = agent_name.lower().strip()
         if norm in ("all", "모두", "전부", "전체") or "4대" in norm:
-            return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: GE Admin Copilot, GE Agent Factory, GE Connector Factory, GE Skill Factory, GitHub 레포 주소 기반 배포)"
+            return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: GE Admin Copilot, GE Agent Factory, GE Connector Factory, GE Skill Factory, GitHub 저장소 주소 기반 배포)"
 
         targets = []
         if "admin" in norm or "어드민" in norm:
@@ -729,9 +729,9 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             targets = ["gemini-enterprise-connector-factory"]
         elif "skill" in norm or "스킬" in norm:
             targets = ["gemini-enterprise-skill-factory"]
-        elif "github" in norm or "깃" in norm or "레포" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm:
+        elif "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm:
             repo_url = github_repo_url or "https://github.com/jiangjun-forge/google-cloud-0-to-1"
-            return f"[GitHub 레포 기반 배포 파이프라인] 지정된 저장소({repo_url})의 하이코드 백엔드 에이전트 스캐폴딩 스펙 및 배포 매니페스트가 성공적으로 검증되었습니다. (참조 레포: {repo_url})"
+            return f"[GitHub 저장소 기반 배포 파이프라인] 지정된 저장소({repo_url})의 하이코드 백엔드 에이전트 스캐폴딩 스펙 및 배포 매니페스트가 성공적으로 검증되었습니다. (참조 저장소: {repo_url})"
         else:
             for k in preset_agents_spec:
                 if k in norm:
@@ -739,7 +739,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     break
 
         if not targets:
-            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-factory, skill-factory 또는 GitHub 레포 주소"
+            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-factory, skill-factory 또는 GitHub 저장소 주소"
 
         reports = []
         for slug in targets:
@@ -776,7 +776,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 상태: 배포 및 GE App 전사 갤러리(`/r/agents`) 등록 성공\n"
                         f"  - Agent ID: `{agent_id}`\n"
                         f"  - 공유 범위: `ALL_USERS`\n"
-                        f"  - 참조 레포: `{github_repo_url or '내장 4대 팩토리 표준 규격'}`"
+                        f"  - 참조 저장소: `{github_repo_url or '내장 4대 팩토리 표준 규격'}`"
                     )
                 else:
                     reports.append(f"- **{cfg['display_name']}**: 등록 실패 (HTTP {resp.status_code}: {resp.text[:200]})")
@@ -836,7 +836,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 [단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
 모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
 ```suggested_questions
-{"questions": ["GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Connector Factory 배포", "GE Skill Factory 배포", "GitHub 레포 주소 기반 배포"], "type": "followup"}
+{"questions": ["GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Connector Factory 배포", "GE Skill Factory 배포", "GitHub 저장소 주소 기반 배포"], "type": "followup"}
 ```
 - 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
 
@@ -897,13 +897,13 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "displayName": display_name,
         "description": description,
         "sharingConfig": {"scope": "ALL_USERS"},
-        "customPlaceholderText": "GitHub 레포 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
+        "customPlaceholderText": "GitHub 저장소 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
         "starterPrompts": [
             {"text": "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘"},
             {"text": "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘"},
             {"text": "GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘"},
             {"text": "GE Skill Factory (사내 스킬 팩토리) 배포해 줘"},
-            {"text": "GitHub 레포 주소(https://github.com/...) 기반 배포해 줘"},
+            {"text": "GitHub 저장소 주소(https://github.com/...) 기반 배포해 줘"},
         ],
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": description},
@@ -975,7 +975,7 @@ def main():
     print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
     print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
     if args.repo:
-        print(f"[*] GitOps 레포 URL  : {args.repo}")
+        print(f"[*] GitOps 저장소 URL  : {args.repo}")
     print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 실행 모드'}")
 
     # [원클릭 클라우드 배포 모드]
