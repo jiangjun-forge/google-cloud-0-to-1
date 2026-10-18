@@ -132,7 +132,7 @@ agents-cli deploy --project=${PROJECT_ID} --region=us-central1
 # Gemini Enterprise app 사내 갤러리 등록
 agents-cli publish gemini-enterprise \
   --gemini-enterprise-app-id "projects/${PROJECT_NUMBER}/locations/global/collections/default_collection/engines/${GE_APP_ID}" \
-  --display-name "Gemini Enterprise Agent Factory (사내 노코드 에이전트 팩토리)" \
+  --display-name "GE Agent Factory (사내 노코드 에이전트 팩토리)" \
   --description "비개발자 임직원용 대화형 노코드 AI 에이전트 팩토리"
 ```
 

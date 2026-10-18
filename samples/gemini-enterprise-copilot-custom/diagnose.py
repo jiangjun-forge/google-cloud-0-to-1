@@ -581,7 +581,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "Gemini Enterprise Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)"
+    display_name = "GE Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)"
     description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 스캐폴딩 및 GitHub 레포 직결 자동 배포(GitOps) 에이전트"
 
     labels = {
@@ -592,7 +592,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] Gemini Enterprise Custom Agent Scaffolder 배포 파이프라인")
+    print("  [원클릭 배포] GE Custom Agent Scaffolder 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")
@@ -657,7 +657,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 [단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
 모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
 ```suggested_questions
-{"questions": ["4대 에이전트 전체 자동 배포", "어드민 코파일럿 즉시 배포", "등록된 에이전트 목록 조회"], "type": "followup"}
+{"questions": ["공식 4대 에이전트 전체 자동 배포", "GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Skill Factory 배포", "GE Connector Factory 배포"], "type": "followup"}
 ```
 - 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
 
@@ -720,10 +720,11 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "GitHub 레포 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
         "starterPrompts": [
-            {"text": "https://github.com/jiangjun-forge/google-cloud-0-to-1 레포 스펙으로 4대 에이전트 전체 자동 배포해 줘"},
-            {"text": "어드민 코파일럿 에이전트 지금 바로 GE app에 배포해 줘"},
-            {"text": "현재 사내 GE app에 등록된 에이전트 목록 조회해 줘"},
-            {"text": "사내 스킬 팩토리 에이전트 즉시 프로비저닝해 줘"},
+            {"text": "공식 4대 에이전트 전체 자동 배포 및 등록해 줘"},
+            {"text": "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘"},
+            {"text": "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘"},
+            {"text": "GE Skill Factory (사내 스킬 팩토리) 배포해 줘"},
+            {"text": "GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘"},
         ],
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": description},

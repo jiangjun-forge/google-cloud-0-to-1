@@ -456,7 +456,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "Gemini Enterprise Connector Factory (사내 데이터 커넥터 팩토리)"
+    display_name = "GE Connector Factory (사내 데이터 커넥터 팩토리)"
     description = "Jira, Confluence, Salesforce, Drive, SharePoint 등 기업 기간계 데이터를 GE App에 대화형으로 연동하는 커넥터 팩토리"
 
     labels = {
@@ -467,7 +467,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] Gemini Enterprise Connector Factory 배포 파이프라인")
+    print("  [원클릭 배포] GE Connector Factory 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")

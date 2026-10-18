@@ -125,13 +125,24 @@ python diagnose.py --dry-run --deploy-engine
 python diagnose.py --deploy-engine
 ```
 
-성공 시 에이전트가 사내 갤러리에 전사 공개(`ALL_USERS`)로 등록되며, 배포된 에이전트에는 실제 클라우드 배포 도구(`deploy_enterprise_agent_tool`, `list_deployed_agents_tool`)가 내장되어 임직원이 GE app 채팅창에서 GitHub 주소를 주며 자율 배포를 지시할 수 있다.
+성공 시 에이전트가 사내 갤러리에 전사 공개(`ALL_USERS`)로 등록되며, 배포된 에이전트에는 실제 클라우드 배포 도구(`deploy_enterprise_agent_tool`, `list_deployed_agents_tool`)와 **5대 원클릭 추천 칩**이 내장된다.
 
-### 4.5. GitHub 레포 기반 무인 자동 배포 (ChatOps to GitOps)
-고객사 개발팀이 매번 터미널에서 CLI를 실행할 필요 없이, 최초 1회 본 에이전트(`Gemini Enterprise Custom Agent Scaffolder`)를 배포해 두면:
-1. 개발자가 GitHub 사내 저장소에 `agent.py`와 `requirements.txt`를 푸시한다.
-2. Gemini Enterprise 웹 채팅창에서 본 에이전트에게 깃 주소 ( https://github.com/my-org/my-agent.git )를 전송한다.
-3. 에이전트가 레포 구조를 자동 검증하고, 내장된 배포 도구를 실행하여 Agent Engine 빌드 및 현재 GE App 갤러리(`/r/agents`)에 즉시 원클릭 등록을 완결한다.
+### 4.5. 엔드 투 엔드 고객 UX 여정 (2단계 무인 배포)
+
+고객사 개발팀과 현업 실무자의 업무 효율을 극대화하기 위해 설계된 표준 도입 UX 흐름은 다음과 같다:
+
+1. **1단계: 개발팀의 깃 클론 및 최초 1회 스캐폴더 배포**:
+   - 개발팀이 레포지토리를 복제(`git clone`)한 후, 본 디렉터리에서 `python diagnose.py --deploy-engine` 명령을 1회 실행하여 `GE Custom Agent Scaffolder`를 사내 GE App 전사 갤러리(`/r/agents`)에 등록한다.
+2. **2단계: GE App 챗창 진입 및 5대 칩 기반 무인 자동 배포 (ChatOps to GitOps)**:
+   - 더 이상 터미널이나 로컬 개발 환경을 다룰 필요 없이, 사내 임직원이나 관리자가 웹 브라우저로 **Gemini Enterprise app**에 접속한다.
+   - 사내 갤러리에서 **`GE Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)`** 대화창을 열면 화면에 표시되는 **5대 원클릭 추천 칩**을 마우스로 클릭하거나 사내 GitHub 레포 주소를 입력한다:
+     - `[칩 1]` **공식 4대 에이전트 전체 자동 배포 및 등록해 줘**
+     - `[칩 2]` **GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘**
+     - `[칩 3]` **GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘**
+     - `[칩 4]` **GE Skill Factory (사내 스킬 팩토리) 배포해 줘**
+     - `[칩 5]` **GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘**
+     - *(또는 사용자가 직접 입력)*: `https://github.com/my-org/my-custom-agent.git 레포 스펙으로 배포해 줘`
+   - 스캐폴더 에이전트가 내장 도구(`deploy_enterprise_agent_tool`)를 즉시 실행하여, Agent Engine 프로비저닝부터 GE App 사내 갤러리 등록까지 전 과정을 100% 무인 자동 완료한다.
 
 ---
 

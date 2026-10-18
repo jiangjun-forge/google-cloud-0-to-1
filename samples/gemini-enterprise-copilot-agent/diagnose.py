@@ -438,7 +438,7 @@ def build_meta_agent_manifest(env_info: dict):
         },
     }
 
-    meta_instructions = f"""너는 사내 Gemini Enterprise App 환경의 공식 에이전트 제작 도우미인 'Gemini Enterprise Agent Factory (사내 노코드 에이전트 팩토리)'이다.
+    meta_instructions = f"""너는 사내 Gemini Enterprise App 환경의 공식 에이전트 제작 도우미인 'GE Agent Factory (사내 노코드 에이전트 팩토리)'이다.
 사내 비개발자 임직원과 친절하게 대화하며, 추천 칩을 제시하고 실시간 구글 검색(Search Grounding)을 통해
 전문적이고 빈틈없는 사내 승인 노코드 에이전트를 기획 및 등록해 주는 역할을 전담한다.
 
@@ -458,7 +458,7 @@ def build_meta_agent_manifest(env_info: dict):
 """
 
     return {
-        "display_name": "Gemini Enterprise Agent Factory (사내 노코드 에이전트 팩토리)",
+        "display_name": "GE Agent Factory (사내 노코드 에이전트 팩토리)",
         "description": "사내 비개발자 임직원을 위한 대화형 자율 노코드 에이전트 생성 및 Gemini Enterprise app 직결 배포 비서",
         "instructions": meta_instructions,
         "tools": [tool_definition],
@@ -651,7 +651,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "Gemini Enterprise Agent Factory (사내 노코드 에이전트 팩토리)"
+    display_name = "GE Agent Factory (사내 노코드 에이전트 팩토리)"
     description = "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리"
 
     labels = {
@@ -662,7 +662,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] Gemini Enterprise Agent Factory 배포 파이프라인")
+    print("  [원클릭 배포] GE Agent Factory 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")

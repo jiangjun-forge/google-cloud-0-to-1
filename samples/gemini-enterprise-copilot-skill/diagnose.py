@@ -509,7 +509,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "Gemini Enterprise Skill Factory (사내 스킬 팩토리)"
+    display_name = "GE Skill Factory (사내 스킬 팩토리)"
     description = "Google Workspace 및 사내 기간계 시스템 연동 도구(MCP/Tools) 대화형 자율 생성 빌더"
 
     labels = {
@@ -520,7 +520,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] Gemini Enterprise Skill Factory 배포 파이프라인")
+    print("  [원클릭 배포] GE Skill Factory 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")

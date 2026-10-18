@@ -575,7 +575,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "Gemini Enterprise Admin Copilot (사내 어드민 코파일럿)"
+    display_name = "GE Admin Copilot (사내 어드민 코파일럿)"
     description = "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿"
 
     labels = {
@@ -586,7 +586,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] Gemini Enterprise Admin Copilot 배포 파이프라인")
+    print("  [원클릭 배포] GE Admin Copilot 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")
