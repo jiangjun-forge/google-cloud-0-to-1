@@ -657,7 +657,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 [단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
 모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
 ```suggested_questions
-{"questions": ["공식 4대 에이전트 전체 자동 배포", "GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Skill Factory 배포", "GE Connector Factory 배포"], "type": "followup"}
+{"questions": ["GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Connector Factory 배포", "GE Custom Agent 배포", "GE Skill Factory 배포"], "type": "followup"}
 ```
 - 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
 
@@ -720,11 +720,11 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "GitHub 레포 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
         "starterPrompts": [
-            {"text": "공식 4대 에이전트 전체 자동 배포 및 등록해 줘"},
             {"text": "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘"},
             {"text": "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘"},
-            {"text": "GE Skill Factory (사내 스킬 팩토리) 배포해 줘"},
             {"text": "GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘"},
+            {"text": "GE Custom Agent (사내 깃 저장소 기반) 배포해 줘"},
+            {"text": "GE Skill Factory (사내 스킬 팩토리) 배포해 줘"},
         ],
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": description},

@@ -33,6 +33,10 @@ All contents, designs, and code examples are subject to change, modification, or
 4. **GitHub 레포 URL 기반 무인 자동 배포 (ChatOps to GitOps)**:
    - 개발팀이 CLI나 GCP 콘솔에 직접 접속하지 않고도, Gemini Enterprise app 대화창에서 개발 완료된 GitHub 저장소 주소(`https://github.com/...`)를 입력하는 것만으로 빌드, 배포, 갤러리 등록까지 완결되는 무인 배포 체계를 지원해야 한다.
 
+5. **2단계 고객 온보딩 여정 및 단독 배포 거버넌스 확립**:
+   - 실무 고객 관점에서 최초 1회만 개발팀이 `git clone` 후 스캐폴더를 로컬 배포하면, 이후 4대 에이전트 및 추가 에이전트 확장은 일반 사용자나 관리자가 GE app 웹 챗창에서 원클릭으로 완결하는 2단계 UX를 제공하여야 한다.
+   - 대량 일괄 프로비저닝에 따른 리소스 낭비와 장애 전파를 방지하기 위해 전체 일괄 배포를 배제하고, 알파벳순 5대 추천 질문 칩 기반으로 한 번에 하나씩 독립 배포하는 거버넌스를 정립하여야 한다.
+
 ---
 
 ## 2. 핵심 비즈니스 요구 사항 목록 (Business Requirements)
@@ -46,6 +50,8 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-05** | Gemini Enterprise app 외부 에이전트 원클릭 연동 | 배포된 커스텀 에이전트 엔드포인트를 사내 Gemini Enterprise app 포털의 카탈로그에 '외부 에이전트'로 등록하고 연결성을 사전 검증해야 한다. |
 | **BR-06** | 엔터프라이즈 보안 및 격리 준수 | 서비스 계정 최소 권한 원칙(`roles/aiplatform.user`, `roles/run.invoker`), VPC 서비스 제어(VPC-SC) 보안 경계 고려사항을 설계에 강제해야 한다. |
 | **BR-07** | 표준 리소스 라벨링 적용 의무화 | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 생성되는 에이전트 서비스, 컨테이너 및 관련 리소스에 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여야 한다. |
+| **BR-08** | 2단계 무인 고객 온보딩 여정 | 개발팀의 로컬 CLI 개입을 최초 1회(`git clone` 후 `python diagnose.py --deploy-engine`)로 종결하고, 이후 모든 에이전트 확장 및 배포는 전사 Gemini Enterprise app 웹 챗창에서 100% 무인 완결되어야 한다. |
+| **BR-09** | 알파벳순 5대 추천 칩 및 단독 배포 거버넌스 | 전체 일괄 배포로 인한 부하 및 리소스 낭비를 방지하기 위해 4대 전체 일괄 배포를 배제하고, 한 번에 하나의 에이전트씩 독립 배포하도록 유도하며, 추천 질문 칩은 알파벳순(`GE Admin Copilot`, `GE Agent Factory`, `GE Connector Factory`, `GE Custom Agent`, `GE Skill Factory`)으로 엄격히 정렬 배치하여야 한다. |
 
 ---
 

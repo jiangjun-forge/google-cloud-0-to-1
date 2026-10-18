@@ -69,6 +69,8 @@ flowchart TD
 | **BR-05** (Gemini Enterprise app 외부 에이전트 원클릭 연동) | **FR-05** (외부 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 연동 모듈 |
 | **BR-06** (엔터프라이즈 보안 및 격리 준수) | **FR-06** (IAM 권한 진단 및 마크다운 리포트) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
 | **BR-07** (표준 리소스 라벨링) | **FR-03**, **FR-06** (라벨링 자동 주입) | **NFR-04** (4대 표준 라벨링 준수) | `diagnose.py`, `deploy.sh` |
+| **BR-08** (2단계 무인 고객 온보딩 여정) | **FR-06** (Agent Engine ChatOps 런타임) | **NFR-05** (단독 배포 및 자원 격리성) | `diagnose.py` |
+| **BR-09** (알파벳순 5대 추천 칩 및 단독 배포) | **FR-07** (알파벳순 5대 칩 및 단독 배포 도구) | **NFR-05** (단독 배포 및 자원 격리성) | `diagnose.py`, GE App |
 
 ---
 
@@ -94,6 +96,14 @@ flowchart TD
 - 개발자 계정 및 실행 서비스 계정의 필수 IAM 권한(`roles/aiplatform.user`, `roles/run.admin`, `roles/discoveryengine.editor`)을 사전 점검한다.
 - 진단 및 스캐폴딩 실행 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, Gemini Enterprise app 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
+### FR-06: Agent Engine 프로비저닝 및 ChatOps 실행 도구 체계
+- `python diagnose.py --deploy-engine` 단 1회 실행으로 Vertex AI Agent Engine에 ADK 기반 `GE Custom Agent Scaffolder`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
+- 컨테이너 런타임 내에 `deploy_enterprise_agent_tool`과 `list_deployed_agents_tool` 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다.
+
+### FR-07: 알파벳순 5대 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
+- GE App 매니페스트에 5대 원클릭 추천 질문 칩을 알파벳순(`GE Admin Copilot` -> `GE Agent Factory` -> `GE Connector Factory` -> `GE Custom Agent` -> `GE Skill Factory`)으로 정렬 배치한다.
+- 4대 전체 일괄 배포를 배제하고 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
+
 ---
 
 ## 4. 비기능 기술 요구 사항 명세 (Non-Functional Requirements)
@@ -113,3 +123,7 @@ flowchart TD
 
 ### NFR-04: 사내 거버넌스 4대 필수 표준 라벨링 준수
 - 사내 거버넌스, FinOps 비용 배분 및 미정리 자원 자동 추적을 위해, 생성되는 Cloud Run 서비스, 컨테이너 빌드 및 외부 에이전트 매니페스트에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-copilot-custom`, `env=sample`, `created-by=customer-engineer`)을 필수로 주입한다.
+
+### NFR-05: 단독 배포 장애 격리성 및 멱등성 (Isolated Idempotent Deployment)
+- 각 에이전트는 독립된 스펙으로 개별 프로비저닝되어 특정 에이전트 배포 실패 시에도 타 에이전트에 장애가 전파되지 않도록 완벽히 격리되어야 한다.
+- 이미 등록된 에이전트가 존재할 경우 중복 생성을 방지하고 기존 에이전트를 안전하게 패치(`updateMask`)하는 멱등성(Idempotence)을 보장해야 한다.

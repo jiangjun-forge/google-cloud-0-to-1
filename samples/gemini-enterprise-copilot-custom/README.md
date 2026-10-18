@@ -136,12 +136,12 @@ python diagnose.py --deploy-engine
 2. **2단계: GE App 챗창 진입 및 5대 칩 기반 무인 자동 배포 (ChatOps to GitOps)**:
    - 더 이상 터미널이나 로컬 개발 환경을 다룰 필요 없이, 사내 임직원이나 관리자가 웹 브라우저로 **Gemini Enterprise app**에 접속한다.
    - 사내 갤러리에서 **`GE Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)`** 대화창을 열면 화면에 표시되는 **5대 원클릭 추천 칩**을 마우스로 클릭하거나 사내 GitHub 레포 주소를 입력한다:
-     - `[칩 1]` **공식 4대 에이전트 전체 자동 배포 및 등록해 줘**
-     - `[칩 2]` **GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘**
-     - `[칩 3]` **GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘**
-     - `[칩 4]` **GE Skill Factory (사내 스킬 팩토리) 배포해 줘**
-     - `[칩 5]` **GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘**
-     - *(또는 사용자가 직접 입력)*: `https://github.com/my-org/my-custom-agent.git 레포 스펙으로 배포해 줘`
+     - `[칩 1]` **GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘**
+     - `[칩 2]` **GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘**
+     - `[칩 3]` **GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘**
+     - `[칩 4]` **GE Custom Agent (사내 깃 저장소 기반) 배포해 줘**
+     - `[칩 5]` **GE Skill Factory (사내 스킬 팩토리) 배포해 줘**
+     - *(단독 배포 원칙)*: 전체 일괄 배포로 인한 부하 및 리소스 낭비를 방지하기 위해 한 번에 하나의 에이전트씩 독립적으로 의사 결정하여 배포한다.
    - 스캐폴더 에이전트가 내장 도구(`deploy_enterprise_agent_tool`)를 즉시 실행하여, Agent Engine 프로비저닝부터 GE App 사내 갤러리 등록까지 전 과정을 100% 무인 자동 완료한다.
 
 ---
