@@ -718,7 +718,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
         norm = agent_name.lower().strip()
         if norm in ("all", "모두", "전부", "전체") or "4대" in norm:
-            return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: GE Admin Copilot, GE Agent Factory, GE Connector Factory, GE Custom Agent, GE Skill Factory)"
+            return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: GE Admin Copilot, GE Agent Factory, GE Connector Factory, GE Skill Factory, GitHub 레포 주소 기반 배포)"
 
         targets = []
         if "admin" in norm or "어드민" in norm:
@@ -729,8 +729,9 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             targets = ["gemini-enterprise-connector-factory"]
         elif "skill" in norm or "스킬" in norm:
             targets = ["gemini-enterprise-skill-factory"]
-        elif "custom" in norm or "커스텀" in norm or "github" in norm or "깃" in norm:
-            return f"[GE Custom Agent 배포 파이프라인] GitHub 저장소({github_repo_url or '사내 깃 저장소'}) 기반 커스텀 백엔드 에이전트의 스캐폴딩 스펙 및 배포 매니페스트가 성공적으로 검증되었습니다. (대상: High-code 백엔드 에이전트)"
+        elif "github" in norm or "깃" in norm or "레포" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm:
+            repo_url = github_repo_url or "https://github.com/jiangjun-forge/google-cloud-0-to-1"
+            return f"[GitHub 레포 기반 배포 파이프라인] 지정된 저장소({repo_url})의 하이코드 백엔드 에이전트 스캐폴딩 스펙 및 배포 매니페스트가 성공적으로 검증되었습니다. (참조 레포: {repo_url})"
         else:
             for k in preset_agents_spec:
                 if k in norm:
@@ -738,7 +739,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     break
 
         if not targets:
-            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-factory, custom-agent, skill-factory"
+            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-factory, skill-factory 또는 GitHub 레포 주소"
 
         reports = []
         for slug in targets:
@@ -835,7 +836,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 [단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
 모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
 ```suggested_questions
-{"questions": ["GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Connector Factory 배포", "GE Custom Agent 배포", "GE Skill Factory 배포"], "type": "followup"}
+{"questions": ["GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Connector Factory 배포", "GE Skill Factory 배포", "GitHub 레포 주소 기반 배포"], "type": "followup"}
 ```
 - 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
 
@@ -901,8 +902,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             {"text": "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘"},
             {"text": "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘"},
             {"text": "GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘"},
-            {"text": "GE Custom Agent (사내 깃 저장소 기반) 배포해 줘"},
             {"text": "GE Skill Factory (사내 스킬 팩토리) 배포해 줘"},
+            {"text": "GitHub 레포 주소(https://github.com/...) 기반 배포해 줘"},
         ],
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": description},
