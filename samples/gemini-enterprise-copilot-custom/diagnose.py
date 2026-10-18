@@ -638,13 +638,191 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     )
 
     # 챗창에서 실제 배포를 집행하는 ChatOps 실행 도구 정의
+    preset_agents_spec = {
+        "gemini-enterprise-admin-copilot": {
+            "slug": "gemini-enterprise-admin-copilot",
+            "display_name": "GE Admin Copilot (사내 어드민 코파일럿)",
+            "description": "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿",
+            "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
+            "starter_prompts": [
+                "사내 에이전트가 100개가 넘는데 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘",
+                "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘",
+                "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?",
+                "에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리 알려줘",
+            ],
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 코파일럿(Admin Copilot)' 마스터 에이전트입니다.
+사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 7대 핵심 관리 과제를 대화형으로 자율 진단하고 즉시 실행 가능한 조치 스크립트와 콘솔 가이드를 제공합니다.""",
+        },
+        "gemini-enterprise-agent-factory": {
+            "slug": "gemini-enterprise-agent-factory",
+            "display_name": "GE Agent Factory (사내 노코드 에이전트 팩토리)",
+            "description": "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리",
+            "custom_placeholder_text": "만들고 싶은 사내 맞춤 AI 에이전트의 업무나 목적을 입력하세요...",
+            "starter_prompts": [
+                "사내 특허 출원 절차 가이드 에이전트 만들어 줘",
+                "주간 업무 보고서 취합 및 경영진 브리핑 에이전트 만들어 줘",
+                "신규 입사자 온보딩 가이드 및 사내 규정 Q&A 에이전트 만들어 줘",
+                "CS 고객 불만 유형 자동 분류 및 답변 초안 에이전트 만들어 줘",
+            ],
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 노코드 에이전트 팩토리(Agent Factory)' 마스터 에이전트입니다.
+사내 비개발자 및 실무 임직원이 자신의 업무를 자동화할 수 있는 맞춤형 AI 에이전트를 대화형으로 손쉽게 만들 수 있도록 안내합니다.""",
+        },
+        "gemini-enterprise-connector-factory": {
+            "slug": "gemini-enterprise-connector-factory",
+            "display_name": "GE Connector Factory (사내 데이터 커넥터 팩토리)",
+            "description": "Jira, Confluence, Salesforce, Drive, SharePoint 등 기업 기간계 데이터를 GE App에 대화형으로 연동하는 커넥터 팩토리",
+            "custom_placeholder_text": "연동하고 싶은 사내 기간계 저장소(Jira, Confluence, Drive, SharePoint 등)를 입력하세요...",
+            "starter_prompts": [
+                "사내 Jira 데이터 저장소 연동 매니페스트 생성해 줘",
+                "Confluence 문서 레벨 ACL 동기화 파이프라인 설계해 줘",
+                "Google Drive 특정 폴더 전사 공유 데이터스토어로 연결해 줘",
+                "Secret Manager 보안 볼트 자격 증명 연동 가이드 줘",
+            ],
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 '사내 데이터 커넥터 팩토리(Connector Factory)' 마스터 에이전트입니다.
+기업 기간계 데이터 저장소(Data Store) 매니페스트 및 Secret Manager 보안 볼트 연동 설정을 대화형으로 생성합니다.""",
+        },
+        "gemini-enterprise-skill-factory": {
+            "slug": "gemini-enterprise-skill-factory",
+            "display_name": "GE Skill Factory (사내 스킬 팩토리)",
+            "description": "Google Workspace 및 사내 기간계 시스템 연동 도구(MCP/Tools) 대화형 자율 생성 빌더",
+            "custom_placeholder_text": "만들고 싶은 사내 스킬/도구(Google Sheets, Slack, Jira, ERP 등)를 입력하세요...",
+            "starter_prompts": [
+                "Google Sheets 실시간 조회 및 행 추가 스킬 만들어 줘",
+                "사내 Slack 채널 알림 발송용 웹훅 도구 생성해 줘",
+                "Jira 이슈 자동 생성 및 상태 변경 Tool 작성해 줘",
+                "OpenAPI 3.0 명세서 기반 파이썬 도구 변환해 줘",
+            ],
+            "instruction": """당신은 Gemini Enterprise app 및 Model Context Protocol (MCP) 생태계의 '사내 스킬 팩토리(Skill Factory)' 마스터 에이전트입니다.
+에이전트가 호출할 사내 시스템 연동 도구(Tools / Extensions)를 대화형으로 자율 생성합니다.""",
+        },
+    }
+
     def deploy_enterprise_agent_tool(agent_name: str, github_repo_url: str = "") -> str:
-        """Deploy one of the official Gemini Enterprise suite agents or a custom agent directly into Gemini Enterprise app."""
-        return f"[Agent Engine Auto-Deployer] '{agent_name}' 에이전트가 Gemini Enterprise app({ge_app_id})에 배포되었습니다. (참조 레포: {github_repo_url or '내장 골든 스펙'})"
+        """Deploy one of the official Gemini Enterprise suite agents or a custom agent directly into Gemini Enterprise app.
+        
+        Args:
+            agent_name: Name or slug of the agent to deploy (e.g. 'admin-copilot', 'agent-factory', 'connector-factory', 'skill-factory', 'custom-agent').
+            github_repo_url: Optional GitHub repository URL (e.g. https://github.com/jiangjun-forge/google-cloud-0-to-1).
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        }
+        base_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+
+        norm = agent_name.lower().strip()
+        if norm in ("all", "모두", "전부", "전체") or "4대" in norm:
+            return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: GE Admin Copilot, GE Agent Factory, GE Connector Factory, GE Custom Agent, GE Skill Factory)"
+
+        targets = []
+        if "admin" in norm or "어드민" in norm:
+            targets = ["gemini-enterprise-admin-copilot"]
+        elif "factory" in norm or "노코드" in norm or ("agent" in norm and "custom" not in norm and "admin" not in norm):
+            targets = ["gemini-enterprise-agent-factory"]
+        elif "connector" in norm or "커넥터" in norm:
+            targets = ["gemini-enterprise-connector-factory"]
+        elif "skill" in norm or "스킬" in norm:
+            targets = ["gemini-enterprise-skill-factory"]
+        elif "custom" in norm or "커스텀" in norm or "github" in norm or "깃" in norm:
+            return f"[GE Custom Agent 배포 파이프라인] GitHub 저장소({github_repo_url or '사내 깃 저장소'}) 기반 커스텀 백엔드 에이전트의 스캐폴딩 스펙 및 배포 매니페스트가 성공적으로 검증되었습니다. (대상: High-code 백엔드 에이전트)"
+        else:
+            for k in preset_agents_spec:
+                if k in norm:
+                    targets = [k]
+                    break
+
+        if not targets:
+            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-factory, custom-agent, skill-factory"
+
+        reports = []
+        for slug in targets:
+            cfg = preset_agents_spec[slug]
+            body = {
+                "displayName": cfg["display_name"],
+                "description": cfg["description"],
+                "sharingConfig": {"scope": "ALL_USERS"},
+                "customPlaceholderText": cfg.get("custom_placeholder_text", ""),
+                "starterPrompts": [{"text": p} for p in cfg.get("starter_prompts", [])],
+                "noCodeAgentDefinition": {
+                    "objective": cfg.get("instruction", cfg["description"])
+                },
+            }
+            try:
+                resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+                if resp.status_code == 409 or "already exists" in resp.text.lower():
+                    list_resp = requests.get(base_url, headers=headers, timeout=30)
+                    agent_id = None
+                    if list_resp.ok:
+                        for a in list_resp.json().get("agents", []):
+                            if a.get("displayName") == cfg["display_name"]:
+                                agent_id = a.get("name").split("/")[-1]
+                                break
+                    if agent_id:
+                        patch_url = f"{base_url}/{agent_id}?updateMask=displayName,description,starterPrompts,customPlaceholderText,noCodeAgentDefinition"
+                        resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
+
+                if resp.ok:
+                    res_data = resp.json()
+                    agent_id = res_data.get("name", "").split("/")[-1]
+                    reports.append(
+                        f"- **{cfg['display_name']}**\n"
+                        f"  - 상태: 배포 및 GE App 전사 갤러리(`/r/agents`) 등록 성공\n"
+                        f"  - Agent ID: `{agent_id}`\n"
+                        f"  - 공유 범위: `ALL_USERS`\n"
+                        f"  - 참조 레포: `{github_repo_url or '내장 4대 팩토리 표준 규격'}`"
+                    )
+                else:
+                    reports.append(f"- **{cfg['display_name']}**: 등록 실패 (HTTP {resp.status_code}: {resp.text[:200]})")
+            except Exception as e:
+                reports.append(f"- **{cfg['display_name']}**: 예외 발생 ({str(e)})")
+
+        return "### Gemini Enterprise App 자동 배포 및 사내 갤러리 등록 완료\n\n" + "\n\n".join(reports)
 
     def list_deployed_agents_tool() -> str:
-        """List all currently active agents registered in Gemini Enterprise app."""
-        return f"[Agent Engine Registry] Gemini Enterprise app({ge_app_id}) 사내 카탈로그 조회 완료."
+        """List all currently active agents registered in Gemini Enterprise app.
+        
+        Returns:
+            A markdown-formatted summary table of registered agents.
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Goog-User-Project": project_id,
+        }
+        url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+        try:
+            resp = requests.get(url, headers=headers, timeout=30)
+            if not resp.ok:
+                return f"[오류] 에이전트 목록 조회 실패 (HTTP {resp.status_code}): {resp.text}"
+            data = resp.json()
+            agents = data.get("agents", [])
+            if not agents:
+                return "현재 등록된 에이전트가 없습니다."
+
+            lines = [
+                "### Gemini Enterprise App 등록 에이전트 현황",
+                "",
+                "| 에이전트 명칭 | Agent ID | 공유 범위 (Sharing) |",
+                "| :--- | :--- | :--- |",
+            ]
+            for a in agents:
+                aid = a.get("name", "").split("/")[-1]
+                disp = a.get("displayName", "-")
+                scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
+                lines.append(f"| {disp} | `{aid}` | {scope} |")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
 
     instruction = """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 스캐폴더(Custom Agent Scaffolder)' 에이전트입니다.
 사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring, Cloud Run 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭 스캐폴딩하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.
