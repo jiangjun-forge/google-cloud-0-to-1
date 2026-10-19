@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 별도 프록시 없이 파운데이션 모델 설정을 통한 프롬프트/응답 빅쿼리 자동 내보내기 상태 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | BigQuery 감사 로그 싱크 구성 및 사용자별/모델별 토큰 소비량 실시간 분석 쿼리 도출 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **AI 프롬프트 감사 및 규제 준수**: 엔터프라이즈 환경에서 어떤 사내 사용자가 어떤 질문과 답변을 모델과 주고받았는지 규제 컴플라이언스 차원에서 영구 보관해야 할 때
@@ -39,7 +29,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -71,7 +61,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -95,14 +85,14 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 - **BigQuery 콘솔**: ( https://console.cloud.google.com/bigquery )
 - **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
 - **Vertex AI 요청 및 응답 로깅 공식 가이드**: ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/request-response-logging )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -115,7 +105,7 @@ BigQuery 데이터세트 생성 및 제미나이 모델 호출을 위한 IAM 권
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **사용자별 토큰 집계 결과와 실행 가능한 표준 SQL 쿼리**가 출력된다:
 
@@ -150,7 +140,7 @@ ORDER BY total_tokens DESC;
 ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 테스트 및 실습 완료 후 불필요한 BigQuery 스토리지 과금을 방지하기 위해 데이터세트를 삭제한다:
 

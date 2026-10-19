@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py` (또는 `--dry-run`) | 활성 프로젝트의 Cloud NAT 및 모니터링 지표 자동 수집 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 교차 진단 | DPA 지연 및 `OUT_OF_RESOURCES` 무음 드롭 판정 (`CRITICAL` / `HEALTHY`) |
-| **3. 처방 (Fix)** | 복붙용 gcloud 명령어 제공 | `min-ports-per-vm=256` 상향 및 호스트 커널 SYN 재시도 최적화 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 인프라에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] GKE 파드 또는 VM에서 외부 결제 PG사, 서드파티 API 호출 시 간헐적으로 `Connection timed out` 또는 `Connection reset by peer`가 발생할 때
@@ -40,7 +30,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -72,7 +62,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 graph TD
@@ -89,7 +79,7 @@ graph TD
 
 ---
 
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 진단 도구가 `CRITICAL` 또는 `WARNING` 상태를 출력한 경우 아래의 순서로 조치한다:
 
@@ -124,7 +114,7 @@ graph TD
 
 ---
 
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -135,7 +125,7 @@ graph TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 Cloud NAT는 외부 공인 IP가 없는 사설 서브넷의 가상 머신이나 GKE 노드가 인터넷으로 안전하게 나갈 수 있도록 지원한다. 이때 출발지 IP와 포트를 변환하여 전송하는데, 포트 할당 방식에 따라 다음과 같은 구조적 병목이 발생할 수 있다:
 
@@ -157,7 +147,7 @@ Cloud NAT는 외부 공인 IP가 없는 사설 서브넷의 가상 머신이나 
 
 ---
 
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 읽기 전용(Read-Only) 명령어로 작동하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 로컬에서 생성된 가상 환경이나 임시 설정 파일만 정리하면 된다:
 ```bash

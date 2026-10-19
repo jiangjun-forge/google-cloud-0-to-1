@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | FCM HTTP v1 분당 다운스트림 쿼터 초과(429 Quota Exceeded) 및 메시지 유실 위험 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 초당 토큰 버킷 속도 제한, Full Jitter 지수 백오프 및 사전 쿼터 증설 가이드 도출 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 대규모 사용자 기반 모바일 서비스에서 프로모션, 라이브 커머스, 재난 알림 등으로 수십만~수백만 건의 푸시 메시지를 일시에 발송할 때 다음과 같은 장애가 발생한다:
@@ -40,7 +30,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -72,7 +62,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -89,7 +79,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 ### 1단계: Google Cloud 콘솔 할당량 상향(Quota Increase) 신청
 1. 구글 클라우드 콘솔(Google Cloud Console)의 **IAM 및 관리자 > 할당량 및 시스템 한도** 메뉴로 이동한다.
@@ -136,7 +126,7 @@ def exponential_backoff_retry(attempt, base=1.0, max_backoff=32.0):
 - Cloud Monitoring Firebase 및 FCM 지표 목록 ( https://cloud.google.com/monitoring/api/metrics_gcp )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -148,7 +138,7 @@ def exponential_backoff_retry(attempt, base=1.0, max_backoff=32.0):
 
 ---
 
-## 8. 리소스 정리 (Teardown) 안내
+## 6. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다.
 상향된 FCM 할당량은 별도 비용이 발생하지 않으며, 이벤트 종료 후 필요 시 콘솔에서 기본값으로 다시 하향 조정할 수 있다.

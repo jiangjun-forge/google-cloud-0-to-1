@@ -16,17 +16,7 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클�
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Google Antigravity 개발자별 일일/주간 토큰 소비량 및 쿼터 캡(Cap) 초과자 식별 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 프로젝트 IAM 마커 역할(antigravity.quotaRestricted) 부여 및 알림 발송 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 전사 개발자에게 Google Antigravity를 배포했으나, 특정 헤비 유저가 과도하게 토큰을 소비하여 전체 풀링 쿼터가 조기 소진된다.
@@ -36,7 +26,7 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클�
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -68,7 +58,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -85,7 +75,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 ### 1단계: 직접 통제 가능 초과자 IAM 조건부 만료 적용 (익일 자율 복구)
 기본 사용자 역할(`roles/discoveryengine.agentspaceUser`)을 일시 해제하고, 익일 자정(00:00 UTC) 자동 만료 조건식(`request.time < timestamp(...)`)이 결합된 차단 마커 역할을 부여하여 관리자 수동 개입 없는 무인 자율 복구를 구현한다:
@@ -131,7 +121,7 @@ ORDER BY
 사내 거버넌스 준수를 위해 배치 리소스 생성 시 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=antigravity-user-quota-cap,env=sample`)을 필수로 주입한다.
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -156,6 +146,6 @@ ORDER BY
 
 ---
 
-## 8. 리소스 정리 (Teardown) 안내
+## 6. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

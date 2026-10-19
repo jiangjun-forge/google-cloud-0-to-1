@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Serverless VPC Connector 병목, Direct VPC Egress 서브넷 IP 고갈 및 PGA/NAT 라우팅 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Direct VPC Egress 활성화, 전용 /26 서브넷 바인딩 및 라우팅 설정 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 기존 Serverless VPC Access 커넥터(VPC Connector)의 최대 처리량 제약이나 인스턴스 기동 지연(Cold Start) 병목을 해소하고자 하는 경우
@@ -41,7 +31,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -73,7 +63,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -88,7 +78,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 ### 1단계: Direct VPC Egress 마이그레이션 적용
 - Cloud Run 콘솔 ( https://console.cloud.google.com/run ) > 대상 서비스 선택 > 수정 및 새 버전 배포 > 네트워킹 탭
@@ -110,7 +100,7 @@ flowchart TD
 - gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer`
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -123,7 +113,7 @@ flowchart TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ================================================================================
@@ -202,7 +192,7 @@ user-auth-service-prod   DIRECT_VPC     private-ranges-only OK
 ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 읽기 전용으로 Cloud Run 및 VPC 네트워크 메타데이터를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 실습을 위해 생성한 테스트용 Cloud Run 서비스나 서브넷이 있다면 아래 명령어로 정리한다:
 

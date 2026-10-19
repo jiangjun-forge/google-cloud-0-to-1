@@ -20,17 +20,7 @@ Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 타 프로젝트 커스텀 에이전트 연동 시 도메인 제한 공유(DRS) 조직 정책 및 IAM 격리 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 조직 정책 allow_list 추가 및 교차 프로젝트 서비스 계정 토큰 생성자 권한 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 사내 엔터프라이즈 환경에서 Gemini Enterprise 웹 앱(프로젝트 A, 조직 A)과 계열사/사업부별 커스텀 에이전트(Agent Engine, 프로젝트 B, 조직 B)가 서로 다른 프로젝트에 분리되어 있어 연동 시 403 Forbidden 오류가 발생한다.
@@ -40,7 +30,7 @@ Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -72,7 +62,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -99,7 +89,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 ### 가. 사내 거버넌스 4대 필수 표준 라벨링
 에이전트 인프라 및 연동 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
@@ -132,7 +122,7 @@ gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDo
 - Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -142,7 +132,7 @@ gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDo
 
 ---
 
-## 8. 리소스 정리 (Teardown) 안내
+## 6. 리소스 정리 (Teardown) 안내
 
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하지 않는다. 테스트 목적으로 부여한 크로스 프로젝트 IAM 권한은 다음 명령어로 회수할 수 있다:
 ```bash

@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 제미나이 API 비용 급증 및 예산 임계치 도달 시 자동 차단 안전 아키텍처 구비 상태 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Cloud Pub/Sub 및 Cloud Functions 기반 실시간 알림 전송 및 쿼터 한도 0 차단 자동화 배포 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **비용 급증 방어**: 비인가 호출이나 잘못 작성된 루프 코드로 인해 예산 상한을 초과했을 때 자동으로 서비스를 일시 차단하고자 할 때
@@ -39,7 +29,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -71,7 +61,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -99,7 +89,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 - **Cloud Billing 콘솔**: ( https://console.cloud.google.com/billing )
 - **Cloud Pub/Sub 콘솔**: ( https://console.cloud.google.com/cloudpubsub )
@@ -108,7 +98,7 @@ flowchart TD
 - **Cloud Billing Pub/Sub 예산 알림 연동 가이드**: ( https://docs.cloud.google.com/billing/docs/how-to/notify )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -125,7 +115,7 @@ flowchart TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **파이프라인 설계 가이드 및 모의 이벤트 페이로드**가 출력된다:
 
@@ -163,7 +153,7 @@ flowchart TD
 ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 실습 및 테스트가 끝난 후 불필요한 과금과 리소스 누수를 방지하기 위해 생성한 자원을 아래 순서로 반드시 정리한다:
 

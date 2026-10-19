@@ -20,17 +20,7 @@ GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정�
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 자원 생성 및 권한 변경 시 발생하는 조직 정책 제약 조건(Constraints) 위반 에러 감사 로그 역추적 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 위반된 제약 조건 ID 식별 및 조건부 태그 예외 설정 또는 gcloud 우회 명령어 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **자원 생성 중 제약 조건(Constraints) 차단**: VM 인스턴스 외부 IP 할당, 서비스 계정 키 생성, 스토리지 공개 버킷 생성 시 `Failed Precondition (code 9)` 오류와 함께 작업이 거부될 때
@@ -39,7 +29,7 @@ GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정�
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -71,7 +61,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -98,14 +88,14 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 - **조직 정책 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/orgpolicies )
 - **Cloud Logging 탐색기**: ( https://console.cloud.google.com/logs/viewer )
 - **공식 문서 - 조직 정책 제약 조건 목록**: ( https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -121,7 +111,7 @@ flowchart TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **위반 내역과 즉시 복구할 수 있는 복사 가능한 gcloud 명령어**가 출력된다:
 
@@ -150,6 +140,6 @@ flowchart TD
 ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 감사 로그 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.

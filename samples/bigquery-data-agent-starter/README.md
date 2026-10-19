@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 45분 워크숍 환경에서 BigQuery 샘플 데이터셋, 1P dataAgents API 및 A2A 연동 준비 상태 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | cymbal_gold 스몰셋 10초 구축, 에이전트 원클릭 프로비저닝 및 Gemini Enterprise 연동 가이드 제공 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 다음과 같은 요구 사항이 워크숍이나 사내 PoC에서 발생하고 있다면 즉시 본 스타터 키트를 활용해야 한다:
@@ -41,7 +31,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -73,7 +63,7 @@ python diagnose.py
 
 ---
 
-## 4. 45분 핸즈온 실습 및 프로비저닝 흐름
+## 3. 45분 핸즈온 실습 및 프로비저닝 흐름
 
 ```mermaid
 flowchart TD
@@ -91,13 +81,13 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 진단 결과 리포트(`report.md`)의 권장 조치 사항을 참조하여 설정을 반영한다.
 
 ---
 
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -112,7 +102,7 @@ flowchart TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 - **골든 프롬프트 1 (지점 및 결제 수단별 순매출 비교)**:
   ```text
@@ -128,7 +118,7 @@ flowchart TD
   ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 45분 핸즈온 실습이 끝난 후 불필요한 클라우드 리소스 과금을 예방하기 위해 아래 명령어로 스몰셋 데이터셋을 즉시 정리한다:
 

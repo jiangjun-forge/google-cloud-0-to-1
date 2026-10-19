@@ -20,17 +20,7 @@ Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 비동기 LRO 작업(STT, DocAI 등) 완료 대기 폴링 시 발생하는 원인 불명의 429 RESOURCE_EXHAUSTED 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | google-api-core 지수 백오프 최적화 파라미터 및 Eventarc 기반 비동기 이벤트 분리 아키텍처 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] Speech-to-Text V2 (`BatchRecognize`), Document AI (`BatchProcessDocuments`), Video Intelligence (`AnnotateVideo`), Translation V3 (`BatchTranslateDocument`) 등 대용량 비동기 배치 파이프라인에서 원인 모를 `429 RESOURCE_EXHAUSTED` 에러가 발생한다.
@@ -40,7 +30,7 @@ Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -71,7 +61,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -87,7 +77,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 1. **Python SDK 커스텀 Polling 설정 적용 (모든 LRO 공통 즉시 조치)**:
    기본 짧은 간격 폴링 대신 대용량 배치 처리에 적합한 지수 백오프 폴러를 주입하여 `GetOperation` 호출량을 85% 이상 절감한다:
@@ -113,7 +103,7 @@ flowchart TD
    - 필수 상향 지표: `operation_requests` (기본 120~150 RPM을 운영 트래픽에 맞추어 1,000+ RPM으로 상향)
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -126,7 +116,7 @@ flowchart TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 비동기 LRO 파이프라인 연계 리소스(Cloud Storage 버킷, Cloud Tasks 큐, Pub/Sub 토픽 등) 생성 시 다음 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -135,6 +125,6 @@ flowchart TD
 - `created-by`: `customer-engineer`
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 미니 프로젝트는 순수 진단 및 시뮬레이션 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

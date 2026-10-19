@@ -20,17 +20,7 @@ Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Sto
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Cloud Storage 원본 문서와 Vertex AI Search 데이터 저장소 간의 색인 누락, 청킹 오류 및 그라운딩 점수 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 비정형 문서 파싱 오류 식별, 색인 누락 파일 동기화 및 최적 청킹 파라미터(디지털 문서 레이아웃) 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] Cloud Storage 버킷에 신규 문서나 개정된 사내 규정을 업로드했으나, Agent Platform Search 및 제미나이(Gemini) 모델 답변에 최신 내용이 반영되지 않는 경우
@@ -41,7 +31,7 @@ Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Sto
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -73,7 +63,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -91,7 +81,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 1. **데이터 저장소 수동 재색인 및 상태 모니터링**:
    - Agent Platform Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/vertex-ai/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
@@ -104,7 +94,7 @@ flowchart TD
    - Agent Platform Search를 활용한 Gemini 그라운딩 ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -117,7 +107,7 @@ flowchart TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ================================================================================
@@ -184,7 +174,7 @@ customer-faq-ds            500          500          100.0%     OK
 ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 읽기 전용으로 데이터 저장소 메타데이터와 스토리지 색인 상태를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 실습용으로 생성한 테스트 데이터 저장소나 앱 엔진이 있다면 콘솔에서 삭제한다:
 

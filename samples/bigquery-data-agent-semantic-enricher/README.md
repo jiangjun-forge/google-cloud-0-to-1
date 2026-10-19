@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | BigQuery Data Agent(자연어 SQL 생성) 도입 시 테이블 설명 누락, 프로파일링 결손 및 용어집 미바인딩 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Dataplex 자동 프로파일링, 비즈니스 용어집(Glossary) 계산식 바인딩 및 시맨틱 보강 SQL 패치 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 다음과 같은 현상이 운영 또는 개발 환경에서 발생하고 있다면 즉시 본 진단 도구를 구동해야 한다:
@@ -42,7 +32,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -74,7 +64,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -91,7 +81,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 1. **테이블 및 컬럼 설명 패치 확인**:
    - Google Cloud 콘솔 BigQuery Studio에서 대상 테이블의 스키마 탭을 확인하여 각 필드에 구체적인 비즈니스 설명과 유효 범위가 반영되었는지 검증한다.
@@ -121,7 +111,7 @@ flowchart TD
    - gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-semantic-enricher,env=sample`
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -136,7 +126,7 @@ flowchart TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ==========================================================================================
@@ -178,7 +168,7 @@ Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (En
 ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 BigQuery 스키마 메타데이터 및 카탈로그 설명만을 점검하고 보강하므로, 별도의 컴퓨팅 인스턴스나 영구 스토리지 과금을 유발하지 않는다.
 가상 실행 과정에서 생성된 샘플 용어집 YAML 파일은 아래 명령어로 삭제한다:

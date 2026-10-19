@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 단일 머신/단일 존 고착 시 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 위험 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | GKE Custom ComputeClass(CCC) YAML 및 Regional MIG 다중 머신 랭킹 정책 산출 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 주요 리전(서울, 도쿄, 아이오와 등)에서 특정 머신 또는 GPU 타입(예: `g2-standard-8`, `a2-highgpu-8g`, `n2-standard-8`) 프로비저닝 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러로 배포나 스케일아웃이 실패한다.
@@ -42,7 +32,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -70,7 +60,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -85,7 +75,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 ### 1단계: GKE 워크로드 Custom ComputeClass(CCC) 배포
 산출된 `resilient-compute-class` 매니페스트를 GKE 클러스터에 적용한다. 용량 부족 시 하위 머신으로 자동 폴백되고, 최상위 머신(N4 등) 자원이 확보되면 워크로드가 무중단으로 자동 복귀(Active Migration)한다:
@@ -136,7 +126,7 @@ gcloud compute instance-groups managed create [MIG_NAME] \
 - gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer`
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -156,6 +146,6 @@ gcloud services enable compute.googleapis.com container.googleapis.com
 
 ---
 
-## 8. 리소스 정리 (Teardown) 안내
+## 6. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

@@ -20,17 +20,7 @@ Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOU
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 리전 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 감사 로그 및 CUD 대비 물리적 Reservation 확보율 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 미확보 용량에 대한 On-demand / Future Reservation 신청 명세 및 CUD 연계 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 주요 리전(서울, 도쿄, 아이오와 등)에서 N4, N2 또는 GPU 머신 프로비저닝 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러로 인스턴스 생성이 중단될 때
@@ -40,7 +30,7 @@ Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOU
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -70,7 +60,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -87,7 +77,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 ### 1단계: 무방비 CUD에 대한 온디맨드 Reservation 선점 (4대 표준 라벨 필수)
 물리적 용량이 없는 CUD에 대해 동일 존의 온디맨드 예약을 생성하여 하드웨어를 물리적으로 선점한다. 사내 거버넌스 및 자원 추적성을 위해 다음 4대 표준 라벨을 반드시 결합한다:
@@ -116,7 +106,7 @@ gcloud compute future-reservations submit [FR_NAME] --zone=[ZONE]
 - Future Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/future-reservations-overview )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -134,7 +124,7 @@ gcloud services enable compute.googleapis.com logging.googleapis.com
 
 ---
 
-## 8. 리소스 정리 (Teardown) 안내
+## 6. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 단, 진단 후 테스트로 생성한 온디맨드 Reservation은 검증 완료 후 즉시 삭제한다:
 ```bash

@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 제미나이 호출 시 발생하는 VPC-SC 보안 경계 차단(Perimeter Denial) 거부 사유 코드 감사 로그 역추적 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | VPC-SC 보안 경계 인그레스/이그레스 허용 규칙 및 액세스 레벨(Access Level) 복구 명세 도출 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **VPC-SC 경계 차단 장애**: 온프레미스 사설망, 하이브리드 클라우드 또는 특정 서브넷에서 Gemini 호출 시 알 수 없는 보안 정책 거부(Denial)가 발생할 때
@@ -39,7 +29,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -71,7 +61,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -102,7 +92,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 - **VPC-SC 문제 해결사 콘솔**: ( https://console.cloud.google.com/security/vpc-service-controls/troubleshooter )
 - **서비스 경계 관리 콘솔**: ( https://console.cloud.google.com/security/vpc-service-controls )
@@ -110,7 +100,7 @@ flowchart TD
 - **VPC Service Controls 수신 및 송신 규칙 공식 가이드**: ( https://cloud.google.com/vpc-service-controls/docs/ingress-egress-rules )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -126,7 +116,7 @@ Cloud Logging 감사 로그를 조회하기 위해 필요한 IAM 역할이다:
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **거부된 계정, 서비스, 메서드, 고유 거부 ID 및 처방**이 출력된다:
 
@@ -153,6 +143,6 @@ Cloud Logging 감사 로그를 조회하기 위해 필요한 IAM 역할이다:
 ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 감사 로그 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.

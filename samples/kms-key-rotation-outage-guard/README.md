@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | CMEK 암호화 키 순환 후 구버전 키 비활성화 시 영구 데이터 복호화 실패 및 서비스 중단 위험 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Cloud Storage 버킷 객체 키 버전 스캔, 재암호화(Rewrite) 검증 및 키 보존 수명주기 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] Cloud KMS CMEK 키를 90일 주기로 자동 순환(Rotation)하도록 설정한 후 구버전 키를 안전하게 정리하고자 하는 경우
@@ -40,7 +30,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -72,7 +62,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -88,7 +78,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 1. **파기 예정 키 복구(Restore)**:
    - Cloud KMS ( https://console.cloud.google.com/security/kms ) > 키 링 선택 > 키 선택 > 파기 예정 버전 복구
@@ -100,7 +90,7 @@ flowchart TD
    - 버킷 내 모든 객체의 암호화 버전이 최신 주 버전으로 일원화된 것을 확인한 후 구버전을 `DISABLED` 처리하여 보안 정책을 완결한다.
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -113,7 +103,7 @@ flowchart TD
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ================================================================================
@@ -166,7 +156,7 @@ v1       NO         DESTROY_SCHEDULED    2025-12-01T09:00:00Z   CRITICAL
 ```
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 읽기 전용으로 Cloud KMS 키 메타데이터와 버킷 객체 정보를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 실습용으로 생성한 테스트 KMS 키나 버킷이 있다면 불필요한 비용을 방지하기 위해 버킷을 비우고 삭제한다:
 

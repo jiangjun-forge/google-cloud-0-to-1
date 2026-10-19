@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 일일 풀링 쿼터 초과 쓰로틀링 및 AI Studio 유료 키 발급을 통한 섀도우 과금 누수 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 결제 계정 IAM Billing Account User 권한 회수 및 일일 쿼터 상한 알림 가이드 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 엔터프라이즈 환경에서 전사 임직원에게 공식 계정을 배포할 때 다음과 같은 3대 비용 누수 및 업무 중단 리스크가 발생한다: 1. **Gemini Enterprise 자체 일일 풀링 쿼터 소진 및 쓰로틀링**: 2. **Google AI Studio를 통한 비의도적 유료 API 호출 (가장 큰 위험 경로)**: 3. **계열사 IT 관리자의 결제 권한 남용 및 거버넌스 부재**:
@@ -41,7 +31,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -73,7 +63,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -87,7 +77,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 ### 1단계: Gemini Enterprise 관리 콘솔 내 Overage 차단 (필수)
 - Gemini Enterprise Admin Console > 구독 및 라이선스(Subscriptions/Licenses) > Overage Settings에서 **Toggle OFF** 상태를 유지한다.
@@ -117,7 +107,7 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 - **Antigravity (구글 클라우드 프로젝트 종량제 모드)**: 차단됨 (의도된 통제 목적에 정확히 부합)
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -130,7 +120,7 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 Cloud Billing 예산 알림, 조직 정책 태그 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -139,7 +129,7 @@ Cloud Billing 예산 알림, 조직 정책 태그 및 관련 클라우드 인프
 - `created-by`: `customer-engineer`
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 진단 및 모니터링 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다.
 테스트 목적으로 생성한 Cloud Billing 임시 예산(Budgets)을 삭제하려면 결제 콘솔의 예산 목록에서 해당 항목을 삭제한다.

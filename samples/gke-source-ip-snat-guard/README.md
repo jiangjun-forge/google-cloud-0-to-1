@@ -20,17 +20,7 @@ GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Passthrough NLB 경유 트래픽의 Client IP 유실(2-Hop SNAT) 및 Local 전환 시 파드 부하 불균등 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | externalTrafficPolicy: Local 전환 및 Weighted Pod Anti-Affinity 최적 k8s 매니페스트 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] AWS EKS에서 GKE로 애플리케이션을 이전한 후, 동일한 인그레스(Kong, Nginx 등) 구성임에도 백엔드 Pod 로그에 클라이언트 실제 IP 대신 노드 내부 IP가 간헐적으로 기록된다.
@@ -41,7 +31,7 @@ GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -73,7 +63,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 3. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -99,7 +89,7 @@ flowchart TD
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 - GKE 내부 부하 분산기 소스 IP 보존 가이드 ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing )
 - GKE 가중치 로드 밸런싱 구성 안내 ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress )
@@ -139,7 +129,7 @@ spec:
 ```
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -151,7 +141,7 @@ spec:
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 GKE 클러스터, LoadBalancer 서비스 및 연관 인프라 자원 배포 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -160,7 +150,7 @@ GKE 클러스터, LoadBalancer 서비스 및 연관 인프라 자원 배포 시 
 - `created-by`: `customer-engineer`
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하거나 과금을 유발하지 않는다. 테스트 목적으로 생성한 LoadBalancer 서비스가 있다면 다음 명령어로 삭제한다:
 ```bash

@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Gemini Enterprise App 내장 로깅 빅쿼리 테이블 기반 계정별 토큰 소비량 및 호출 지연 시간 분석 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 계정별/모델별 사용량 집계 쿼리 실행 및 이상 트래픽 유발 사용자 식별 처방 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 사내 엔터프라이즈 생성형 AI 거버넌스 및 비용 관리에서 다음과 같은 요구가 있을 때 본 솔루션을 활용한다:
@@ -41,7 +31,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -73,7 +63,7 @@ python diagnose.py
 
 ---
 
-## 4. 내장 로깅 파이프라인 및 BigQuery 분석 아키텍처
+## 3. 내장 로깅 파이프라인 및 BigQuery 분석 아키텍처
 
 ```mermaid
 flowchart LR
@@ -94,14 +84,14 @@ flowchart LR
 
 ---
 
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 - **Gemini Enterprise 관리 콘솔**: 사내 Gemini Enterprise app 프롬프트 및 응답 로깅 활성화 설정 ( https://gemini.google.com )
 - **BigQuery 콘솔**: 수집된 Gemini Enterprise app 로그 테이블 확인 및 맞춤형 대시보드 연동 ( https://console.cloud.google.com/bigquery )
 - **IAM 및 관리자 콘솔**: 로그 분석 담당자 BigQuery 뷰어 권한 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -117,14 +107,14 @@ BigQuery 로그 데이터세트 조회 및 진단 쿼리 실행을 위한 최소
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 - **Gemini Enterprise 관리 콘솔**: 사내 Gemini Enterprise app 프롬프트 및 응답 로깅 활성화 설정 ( https://gemini.google.com )
 - **BigQuery 콘솔**: 수집된 Gemini Enterprise app 로그 테이블 확인 및 맞춤형 대시보드 연동 ( https://console.cloud.google.com/bigquery )
 - **IAM 및 관리자 콘솔**: 로그 분석 담당자 BigQuery 뷰어 권한 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 본 솔루션은 구글 공식 관리형 로깅 기능을 활용하므로 별도의 상주 가상머신(VM)이나 서버리스 인스턴스가 존재하지 않는다.
 더 이상 로깅이 필요하지 않을 경우 아래 절차를 수행한다:

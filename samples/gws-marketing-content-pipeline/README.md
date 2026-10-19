@@ -20,17 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
-
-| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
-| :--- | :--- | :--- |
-| **1. 실행 (Input)** | `Google Drive 및 Sheets 환경 연동 (원클릭)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
-| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 구글 드라이브 및 구글 시트 환경에서 마케팅 캠페인 기획, 콘텐츠 생성 및 AI 페르소나 평가 파이프라인 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Gemini API 연동 Apps Script 자동화 및 구글 독스/시트 기반 멀티 채널 콘텐츠 순환 제작 체계 제공 |
-
----
-
-## 2. 발생 증상 및 진단 대상 체크리스트
+## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 본 가이드는 클라우드 인프라 승인이나 별도 개발 도구 설치 없이, 마케터가 일상적으로 사용하는 구글 드라이브(Google Drive)와 구글 시트(Google Sheets) 환경 안에서 생성형 AI 기반 마케팅 콘텐츠 파이프라인을 직접 구축하고 운영하는 실무 튜토리얼이다. 본 가이드를 따라 진행하면 다음 과업을 마케터가 자가 완결적으로 수행할 수 있다:
@@ -41,7 +31,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 빠른 시작 (Quickstart)
+## 2. 빠른 시작 (Quickstart)
 
 ### 1) 구글 드라이브 작업 공간 설정
 구글 드라이브에 캠페인 전용 폴더를 생성하고 Google AI Studio API 키를 등록한다.
@@ -58,7 +48,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 4. 마케팅 콘텐츠 제작 및 평가 파이프라인 흐름
+## 3. 마케팅 콘텐츠 제작 및 평가 파이프라인 흐름
 
 ```mermaid
 flowchart LR
@@ -75,14 +65,14 @@ flowchart LR
 ```
 
 ---
-## 5. 조치 가이드 및 권장 설정
+## 4. 조치 가이드 및 권장 설정
 
 - **Google Drive 콘솔**: ( https://drive.google.com )
 - **Google AI Studio API Key 발급 콘솔**: ( https://aistudio.google.com/app/apikey )
 - **Google Cloud 콘솔**: ( https://console.cloud.google.com )
 
 ---
-## 6. 사전 준비 사항 (필요 IAM 권한)
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
@@ -120,7 +110,7 @@ flowchart LR
 
 ---
 
-## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 본 솔루션은 Google Workspace 상에서 실행되나, 연관된 GCP 프로젝트 리소스(Cloud Storage 버킷, Vertex AI 엔드포인트 등) 연동 또는 확장 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -129,7 +119,7 @@ flowchart LR
 - `created-by`: `customer-engineer`
 
 ---
-## 8. 리소스 정리 (Teardown) 안내
+## 7. 리소스 정리 (Teardown) 안내
 
 - **숏폼 영상 권장 규격**: 브라우저 런타임 제약(6분 타임아웃, 30MB 페이로드)에 따라 15초~30초 이내의 숏폼 동영상을 권장한다. 1분 이상의 장문 인터뷰나 대용량 고화질 영상 처리가 필요한 엔터프라이즈 환경에서는 Google Cloud 환경(Vertex AI, Cloud Run)으로의 이관 컨설팅을 권장한다.
 - **자원 정리 안내**: 본 솔루션은 상시 가상 머신(VM)이나 전용 데이터베이스 등 상시 인프라 리소스를 생성하지 않는다. 실습 종료 후 구글 드라이브에서 해당 캠페인 폴더 1개만 휴지통으로 이동하여 비우면 모든 데이터가 정리된다.
