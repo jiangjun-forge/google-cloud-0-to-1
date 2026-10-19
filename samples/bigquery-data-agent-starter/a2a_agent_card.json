@@ -1,0 +1,114 @@
+{
+  "name": "cymbal-retail-data-agent",
+  "displayName": "Cymbal Retail Conversational Analytics Agent",
+  "description": "엔터프라이즈 옴니채널 유통 그룹의 공식 BigQuery 대화형 데이터 분석 에이전트.",
+  "url": "https://geminidataanalytics.googleapis.com/v1beta/a2a/projects/sample-project-id/locations/global/dataAgents/cymbal-retail-data-agent-mock-id",
+  "version": "1.0",
+  "protocolVersion": "1.0",
+  "preferredTransport": "INTERNAL_HTTP+JSON",
+  "defaultInputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": false,
+    "extensions": [
+      {
+        "uri": "https://www.googleapis.com/gemini-enterprise/a2a/extensions/full_history_when_stateless/v1",
+        "description": "Communicate in a stateless mode",
+        "required": true
+      },
+      {
+        "uri": "https://docs.cloud.google.com/gemini/docs/conversational-analytics-api/reference/a2a/extensions/client-id/v1",
+        "description": "GDA API client ID",
+        "required": true
+      },
+      {
+        "uri": "https://a2ui.org/a2a-extension/a2ui/v0.8",
+        "description": "Ability to render A2UI",
+        "required": false,
+        "params": {
+          "supportedCatalogIds": [
+            "https://a2ui.org/specification/v0_8/standard_catalog_definition.json"
+          ],
+          "acceptsInlineCatalogs": true
+        }
+      },
+      {
+        "uri": "https://www.googleapis.com/gemini-enterprise/a2a/extensions/starter_prompts/v1",
+        "description": "Recommended starter prompts for UI chips",
+        "required": false,
+        "params": {
+          "prompts": [
+            "지점(store_branch) 및 결제 수단(tender_type)별 총상품 금액(subtotal_amount), 할인 금액(discount), 세금(tax_amount)을 반영한 순매출(Net Revenue)을 비교해 줘.",
+            "현재 진열 재고(shelf_qty)와 창고 재고(backroom_qty) 합계를 시간당 판매 속도로 나눴을 때, 결품 예상 커버 시간(est_cover_hours)이 6시간 이하인 긴급 보충 대상 지점과 품목(item_sku)을 알려 줘.",
+            "이상 거래 경보 테이블(pos_anomaly_alerts)에서 프로모션 남용(cashier_promo_abuse) 경보가 발생한 지점과 담당 캐셔 ID, 심각도(severity)를 보여 줘."
+          ]
+        }
+      }
+    ]
+  },
+  "skills": [
+    {
+      "id": "sales-net-revenue-analytics",
+      "name": "Omnichannel Sales & Net Revenue Analysis",
+      "description": "Analyzes store branches, tender types, discounts, taxes, and net revenue.",
+      "inputModes": [
+        "text/plain",
+        "application/json"
+      ],
+      "outputModes": [
+        "text/plain",
+        "application/json"
+      ],
+      "tags": [
+        "sales",
+        "revenue",
+        "retail",
+        "omnichannel"
+      ]
+    },
+    {
+      "id": "inventory-cover-hours-guard",
+      "name": "Inventory Stockout Risk & Cover Hours Evaluation",
+      "description": "Calculates remaining shelf and backroom inventory cover hours based on hourly sales velocity.",
+      "inputModes": [
+        "text/plain",
+        "application/json"
+      ],
+      "outputModes": [
+        "text/plain",
+        "application/json"
+      ],
+      "tags": [
+        "inventory",
+        "stockout",
+        "supplychain"
+      ]
+    },
+    {
+      "id": "pos-anomaly-cashier-audit",
+      "name": "POS Anomaly Alerts & Cashier Promo Abuse Detection",
+      "description": "Identifies suspicious cashier promo overrides, manual price changes, and anomaly severity.",
+      "inputModes": [
+        "text/plain",
+        "application/json"
+      ],
+      "outputModes": [
+        "text/plain",
+        "application/json"
+      ],
+      "tags": [
+        "fraud",
+        "anomaly",
+        "audit",
+        "compliance"
+      ]
+    }
+  ]
+}

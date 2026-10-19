@@ -2,6 +2,8 @@
 
 - **생성 모드**: 모의 실행 (Dry-run)
 - **대상 프로젝트**: `sample-project-id`
+- **빅쿼리 리전**: `asia-northeast3` (데이터셋: `cymbal_gold`)
+- **GDA 런타임**: `global` (에이전트 이름: `cymbal-retail-data-agent`)
 - **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
 
 ---
@@ -12,17 +14,20 @@
 ========================================================================================
  [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]
 ========================================================================================
- - 대상 프로젝트 : sample-project-id (리전: asia-northeast3)
- - 호환 데이터셋 : cymbal_gold (테이블 4개 + 시맨틱 뷰 1개 + 실데이터 적재 완료)
- - 데이터 에이전트: cymbal-retail-data-agent (단독 실행 가능 / 선택 시 Gemini Enterprise app 연동: omni-retail-ge-app)
+ - 대상 프로젝트 : sample-project-id (프로젝트 번호: 123456789012)
+ - 빅쿼리 리전   : asia-northeast3 (데이터셋: cymbal_gold)
+ - GDA 런타임   : global (에이전트 이름: cymbal-retail-data-agent)
+ - GE App 엔진  : omni-retail-ge-app
  - 실행 모드     : 가상 모의 실행 (--dry-run)
 ----------------------------------------------------------------------------------------
 
- [45분 핸즈온 워크숍 역할 분담 타임라인 (CLI 자동화 vs 콘솔 UI 전용 조작)]
-  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)
-  * 05~10분 [CLI -> UI]  : Agents에 붙여넣을 System Instructions 및 Verified Queries 출력 (python diagnose.py --agent-config)
-  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agents에서 단독(Standalone) Data Agent 생성 및 질의 테스트
-  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 추가 연동 (python diagnose.py --register-ge-app)
+ [45분 핸즈온 워크숍 역할 분담 타임라인 (GDA 완전 관리형 골든 아키텍처)]
+  * 00~05분 [Step 1 CLI 데이터 패브릭]: cymbal_gold 스몰셋 4개 테이블, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)
+  * 05~15분 [Step 2 CLI 에이전트 엔진]: 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)
+            [보조 확인 경로]: BigQuery Studio 콘솔 UI 수동 생성 지침 출력 (python diagnose.py --agent-config)
+  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise App 사내 갤러리 등록 (python diagnose.py --register-ge-app)
+  * 25~45분 [Step 4 멀티턴 실습 및 종료]: 골든 프롬프트 3선 대화 질의 및 실습 종료 후 자원 정리 (python diagnose.py --teardown)
+  * [올인원 모드]: Step 1~3 전체 일괄 자동 배포 실행 (python diagnose.py --all)
 ----------------------------------------------------------------------------------------
 
  [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 Gemini Enterprise app 공용)]
@@ -73,16 +78,23 @@ python diagnose.py
 python diagnose.py --setup-demo
 ```
 
-### 2단계: BigQuery Studio > Agents (Agent Catalog) 단독 에이전트 생성
-터미널에 출력된 System Instructions와 Verified Queries를 BigQuery Studio 대화형 에이전트 설정창에 복사/붙여넣기하여 즉시 활성화한다:
+### 2단계: 구글 완전 관리형 GDA Data Agent 원클릭 프로비저닝 (권장 골든 경로)
+별도 컨테이너 빌드나 유휴 비용 없이 GDA `dataAgents` REST API를 통해 1초 만에 데이터 에이전트를 자동 생성하고 A2A 표준 명세를 저장한다:
 ```bash
-python diagnose.py --agent-config
+python diagnose.py --deploy-agent
+```
+> [보조 확인 경로] 콘솔 UI에서 직접 확인하거나 수동으로 생성할 경우 `python diagnose.py --agent-config` 명령으로 System Instructions와 Verified Queries를 화면에 출력할 수 있다.
+
+### 3단계: [선택 사항] Gemini Enterprise App 사내 갤러리 A2A 직결 등록
+Discovery Engine REST API를 통해 전사 대화 포털의 사내 갤러리에 `a2aAgentDefinition`으로 직결 등록한다:
+```bash
+python diagnose.py --register-ge-app
 ```
 
-### 3단계: [선택 사항] Gemini Enterprise App 연동 및 전사 공유
-전사 대화 포털에서 본 Data Agent를 멘션(@)하거나 활용할 수 있도록 A2A 프로토콜 기반으로 게시한다:
+### [올인원 모드] 1~3단계 통합 일괄 배포
+워크숍 시간 단축을 위해 데이터셋 구축, GDA 에이전트 배포, GE App 등록을 한 번에 실행한다:
 ```bash
-python diagnose.py --register-ge-app --app-id [GE_APP_ID]
+python diagnose.py --all
 ```
 
 ### 4단계: 4대 표준 라벨 준수 및 실습 종료 후 자원 정리

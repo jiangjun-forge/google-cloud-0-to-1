@@ -17,10 +17,10 @@
 """
 BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app).
 
-45분 핸즈온 워크숍 내에 참석자(실무자)가 CLI 명령어 한 줄로 BigQuery 스몰셋 데이터셋(cymbal_gold)과
-실데이터를 자동 구축하고, BigQuery Studio 내 Agents (Agent Catalog)에서 단독(Standalone)으로 Data Agent를 생성 및
-실습하며, 필요 시 선택 사항(Optional)으로 Gemini Enterprise App에 게시하여 실무 시나리오를
-시연할 수 있도록 설계된 스타터 키트다.
+45분 핸즈온 워크숍 내에 참석자(실무자)가 CLI 명령어 한 줄(--setup-demo)로 BigQuery 스몰셋 데이터셋(cymbal_gold)과
+실데이터를 자동 구축하고, 완전 관리형 에이전트 엔진(GDA dataAgents REST API)을 통해 CLI 원클릭(--deploy-agent)으로
+빅쿼리 데이터 에이전트를 자동 프로비저닝하며, A2A 표준 규격 기반으로 Gemini Enterprise App에 직결 연동하거나
+BigQuery Studio Agents 콘솔 UI에서 단독(Standalone)으로 실습할 수 있도록 설계된 실무 스타터 키트다.
 """
 
 import argparse
@@ -29,6 +29,9 @@ import os
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -75,8 +78,30 @@ def interactive_select(prompt_msg: str, candidates: List[str], default_idx: int 
     return candidates[default_idx]
 
 
+def load_env_file(filepath: str = ".env") -> None:
+    """로컬 .env 파일이 존재하는 경우 환경 변수를 메모리에 로드한다."""
+    p = Path(filepath)
+    if not p.is_file():
+        script_dir = Path(__file__).resolve().parent
+        p = script_dir / filepath
+    if p.is_file():
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        key, val = line.split("=", 1)
+                        key = key.strip()
+                        val = val.strip().strip('"').strip("'")
+                        if key and key not in os.environ:
+                            os.environ[key] = val
+        except Exception:
+            pass
+
+
 def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
     """CLI 인자 > .env > gcloud config > 대화형 선택기 > 사내 권장 기본값 순으로 설정을 확정한다."""
+    load_env_file()
     project_id = cli_args.project or os.environ.get("PROJECT_ID", "").strip()
     if cli_args.dry_run:
         project_id = project_id or "sample-project-id"
@@ -92,6 +117,14 @@ def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
     if not project_id:
         project_id = "sample-project-id"
 
+    project_number = getattr(cli_args, "project_number", None) or os.environ.get("PROJECT_NUMBER", "").strip()
+    if not project_number and not cli_args.dry_run:
+        gcloud_pnum = run_gcloud_cmd(["projects", "describe", project_id, "--format=value(projectNumber)"])
+        if gcloud_pnum:
+            project_number = gcloud_pnum
+    if not project_number:
+        project_number = "123456789012"
+
     location = cli_args.location or os.environ.get("LOCATION", "").strip()
     if not location and not cli_args.dry_run:
         gcloud_loc = run_gcloud_cmd(["config", "get-value", "compute/region"])
@@ -101,8 +134,14 @@ def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
         location = "asia-northeast3"
 
     dataset_id = cli_args.dataset or os.environ.get("DATASET_ID", "").strip() or "cymbal_gold"
-    ge_app_id = cli_args.app_id or os.environ.get("GE_APP_ID", "").strip() or "omni-retail-ge-app"
+    ge_engine_id = (
+        cli_args.app_id
+        or os.environ.get("GE_ENGINE_ID", "").strip()
+        or os.environ.get("GE_APP_ID", "").strip()
+        or "omni-retail-ge-app"
+    )
     data_agent_name = cli_args.agent_name or os.environ.get("DATA_AGENT_NAME", "").strip() or "cymbal-retail-data-agent"
+    gda_location = getattr(cli_args, "gda_location", None) or os.environ.get("GDA_LOCATION", "").strip() or "global"
 
     # 대상 데이터셋이 BigQuery에 이미 존재하는 경우 실제 리전 위치로 자동 동기화
     if not cli_args.dry_run and not cli_args.location and not os.environ.get("LOCATION"):
@@ -118,9 +157,12 @@ def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
 
     return {
         "project_id": project_id,
+        "project_number": project_number,
         "location": location,
+        "gda_location": gda_location,
         "dataset_id": dataset_id,
-        "ge_app_id": ge_app_id,
+        "ge_app_id": ge_engine_id,
+        "ge_engine_id": ge_engine_id,
         "data_agent_name": data_agent_name,
         "dry_run": cli_args.dry_run,
     }
@@ -408,10 +450,361 @@ LEFT JOIN `{project_id}.{dataset_id}.pos_anomaly_alerts` a
 
 
 # ==============================================================================
-# 4. [UI 전용 조작 가이드] BigQuery Studio Agents 단독 생성 및 Gemini Enterprise app 선택 연동
+# 4. [REST API 자동 배포] 완전 관리형 BigQuery Data Agent (GDA dataAgents) 및 A2A 연동
 # ==============================================================================
+def get_access_token() -> str:
+    """gcloud CLI 또는 구글 인증 라이브러리를 통해 액세스 토큰을 획득한다."""
+    try:
+        token = subprocess.check_output(
+            ["gcloud", "auth", "print-access-token"],
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=10,
+        ).strip()
+        if token:
+            return token
+    except Exception:
+        pass
+
+    try:
+        import google.auth  # type: ignore
+        import google.auth.transport.requests  # type: ignore
+
+        credentials, _ = google.auth.default(
+            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        )
+        req = google.auth.transport.requests.Request()
+        credentials.refresh(req)
+        return credentials.token
+    except Exception as exc:
+        print(f"[경고] 액세스 토큰 획득 실패: {exc}", file=sys.stderr)
+        return ""
+
+
+def send_request(
+    url: str,
+    method: str = "GET",
+    payload: Optional[Dict[str, Any]] = None,
+    token: Optional[str] = None,
+    project_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """구글 클라우드 REST API 요청을 송신하고 JSON 응답을 반환한다."""
+    if token is None:
+        token = get_access_token()
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    if project_id:
+        headers["X-Goog-User-Project"] = project_id
+
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8") if payload is not None else None
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            resp_body = resp.read().decode("utf-8")
+            return json.loads(resp_body) if resp_body else {}
+    except urllib.error.HTTPError as e:
+        error_content = e.read().decode("utf-8")
+        print(f"[API 요청 실패] [{method} {url}]: HTTP {e.code} {e.reason}", file=sys.stderr)
+        print(f"  응답 본문: {error_content}", file=sys.stderr)
+        raise
+    except Exception as exc:
+        print(f"[네트워크 오류] [{method} {url}]: {exc}", file=sys.stderr)
+        raise
+
+
+def poll_operation(operation_url: str, token: str, project_id: str, timeout_seconds: int = 120) -> Dict[str, Any]:
+    """장기 실행 작업(LRO)의 완료를 폴링하여 대기한다."""
+    start_time = time.time()
+    while time.time() - start_time < timeout_seconds:
+        resp = send_request(operation_url, method="GET", token=token, project_id=project_id)
+        if resp.get("done", False):
+            if "error" in resp:
+                raise RuntimeError(f"LRO 작업 실행 실패: {resp['error']}")
+            return resp
+        time.sleep(3)
+    raise TimeoutError(f"작업 대기 시간 초과 ({timeout_seconds}초): {operation_url}")
+
+
+def list_existing_gda_agents(project_id: str, location: str, token: str) -> Dict[str, str]:
+    """기존 생성된 GDA dataAgent 목록을 조회하여 표시 이름 기준 맵을 반환한다."""
+    url = f"https://geminidataanalytics.googleapis.com/v1beta/projects/{project_id}/locations/{location}/dataAgents"
+    try:
+        resp = send_request(url, method="GET", token=token, project_id=project_id)
+        agents = resp.get("dataAgents", [])
+        return {a.get("displayName"): a.get("name") for a in agents if "displayName" in a}
+    except Exception as e:
+        print(f"[안내] GDA 에이전트 목록 조회 참고: {e}", file=sys.stderr)
+        return {}
+
+
+def create_gda_data_agent(cfg: Dict[str, Any], token: Optional[str] = None) -> str:
+    """GDA dataAgents REST API를 호출하여 완전 관리형 BigQuery Data Agent를 자동 생성한다."""
+    project_id = cfg["project_id"]
+    dataset_id = cfg["dataset_id"]
+    location = cfg["gda_location"]
+    agent_name = cfg["data_agent_name"]
+
+    print("=" * 88)
+    print(" [Step 2: CLI 자동화 구간] 구글 완전 관리형 테넌트 GDA dataAgents 원클릭 프로비저닝")
+    print(f"  - 대상 프로젝트 : {project_id}")
+    print(f"  - 대상 데이터셋 : {dataset_id}")
+    print(f"  - GDA 런타임 리전: {location}")
+    print(f"  - 에이전트 표시명: {agent_name}")
+    print("=" * 88)
+
+    tables = [
+        "v_cymbal_retail_semantic",
+        "pos_transactions_gold",
+        "gold_inventory_reconciliation_ledger",
+        "pos_anomaly_alerts",
+        "historical_transactional_data",
+    ]
+    table_refs = [
+        {"projectId": project_id, "datasetId": dataset_id, "tableId": tbl}
+        for tbl in tables
+    ]
+
+    example_queries = [
+        {
+            "naturalLanguageQuestion": p["user_prompt"],
+            "sqlQuery": p["expected_sql"].format(project_id=project_id, dataset_id=dataset_id),
+        }
+        for p in GOLDEN_PROMPTS
+    ]
+
+    sys_inst = SYSTEM_INSTRUCTIONS_TEMPLATE.format(project_id=project_id, dataset_id=dataset_id)
+    context_payload = {
+        "systemInstruction": sys_inst,
+        "options": {
+            "datasource": {},
+            "model": "MODEL_UNSPECIFIED",
+        },
+        "exampleQueries": example_queries,
+        "datasourceReferences": {
+            "bq": {
+                "tableReferences": table_refs
+            }
+        },
+    }
+
+    payload = {
+        "displayName": agent_name,
+        "description": "Cymbal Retail Omnichannel BigQuery Data Agent (45-min Workshop)",
+        "labels": {
+            "managed-by": "google-cloud-0-to-1",
+            "scenario": "bigquery-data-agent-starter",
+            "env": "sample",
+            "created-by": "customer-engineer",
+        },
+        "dataAnalyticsAgent": {
+            "stagingContext": context_payload,
+            "publishedContext": context_payload,
+        },
+    }
+
+    if cfg["dry_run"]:
+        print("[가상 실행] --dry-run 모드가 활성화되어 GDA REST API 호출 페이로드를 시뮬레이션 출력한다.\n")
+        print(f"POST https://geminidataanalytics.googleapis.com/v1beta/projects/{project_id}/locations/{location}/dataAgents")
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        mock_resource = f"projects/{project_id}/locations/{location}/dataAgents/{agent_name}-mock-id"
+        print(f"\n[완료] 가상 실행 GDA Data Agent 리소스 경로: {mock_resource}")
+        return mock_resource
+
+    if token is None:
+        token = get_access_token()
+        if not token:
+            print("[오류] Google Cloud 인증 토큰을 획득할 수 없다. gcloud auth application-default login을 수행하라.", file=sys.stderr)
+            return ""
+
+    existing = list_existing_gda_agents(project_id, location, token)
+    if agent_name in existing:
+        resource_name = existing[agent_name]
+        print(f"  -> [재사용] 기존 GDA Data Agent 발견: {agent_name} -> {resource_name}")
+        return resource_name
+
+    url = f"https://geminidataanalytics.googleapis.com/v1beta/projects/{project_id}/locations/{location}/dataAgents"
+    print(f"  -> [요청 중] GDA Data Agent 리소스 프로비저닝 시작: {agent_name}...")
+    try:
+        lro = send_request(url, method="POST", payload=payload, token=token, project_id=project_id)
+        op_name = lro.get("name")
+        print(f"  -> [LRO 진행 중] 장기 실행 작업 폴링: {op_name}")
+        op_url = f"https://geminidataanalytics.googleapis.com/v1beta/{op_name}"
+        completed_op = poll_operation(op_url, token=token, project_id=project_id)
+
+        target_resource = (
+            completed_op.get("response", {}).get("name")
+            or completed_op.get("metadata", {}).get("target")
+            or f"projects/{project_id}/locations/{location}/dataAgents/{agent_name}"
+        )
+        print(f"  -> [성공] GDA Data Agent 생성 완료: {target_resource}")
+        return target_resource
+    except Exception as exc:
+        print(f"  -> [경고] GDA REST API 자동 생성 실패: {exc}", file=sys.stderr)
+        print("       (사내 환경에 GDA API 활성화 또는 권한이 부족한 경우 콘솔 UI 보조 경로를 사용할 수 있다: python diagnose.py --agent-config)")
+        return ""
+
+
+def build_a2a_agent_card(cfg: Dict[str, Any], gda_resource_name: str) -> Dict[str, Any]:
+    """A2A Agent Card 표준 규격 딕셔너리를 생성하고 로컬 파일(a2a_agent_card.json)로 저장한다."""
+    project_id = cfg["project_id"]
+    agent_name = cfg["data_agent_name"]
+
+    a2a_url = f"https://geminidataanalytics.googleapis.com/v1beta/a2a/{gda_resource_name}"
+    extensions = [
+        {
+            "uri": "https://www.googleapis.com/gemini-enterprise/a2a/extensions/full_history_when_stateless/v1",
+            "description": "Communicate in a stateless mode",
+            "required": True,
+        },
+        {
+            "uri": "https://docs.cloud.google.com/gemini/docs/conversational-analytics-api/reference/a2a/extensions/client-id/v1",
+            "description": "GDA API client ID",
+            "required": True,
+        },
+        {
+            "uri": "https://a2ui.org/a2a-extension/a2ui/v0.8",
+            "description": "Ability to render A2UI",
+            "required": False,
+            "params": {
+                "supportedCatalogIds": [
+                    "https://a2ui.org/specification/v0_8/standard_catalog_definition.json"
+                ],
+                "acceptsInlineCatalogs": True,
+            },
+        },
+        {
+            "uri": "https://www.googleapis.com/gemini-enterprise/a2a/extensions/starter_prompts/v1",
+            "description": "Recommended starter prompts for UI chips",
+            "required": False,
+            "params": {
+                "prompts": [p["user_prompt"] for p in GOLDEN_PROMPTS],
+            },
+        },
+    ]
+
+    skills = [
+        {
+            "id": "sales-net-revenue-analytics",
+            "name": "Omnichannel Sales & Net Revenue Analysis",
+            "description": "Analyzes store branches, tender types, discounts, taxes, and net revenue.",
+            "inputModes": ["text/plain", "application/json"],
+            "outputModes": ["text/plain", "application/json"],
+            "tags": ["sales", "revenue", "retail", "omnichannel"],
+        },
+        {
+            "id": "inventory-cover-hours-guard",
+            "name": "Inventory Stockout Risk & Cover Hours Evaluation",
+            "description": "Calculates remaining shelf and backroom inventory cover hours based on hourly sales velocity.",
+            "inputModes": ["text/plain", "application/json"],
+            "outputModes": ["text/plain", "application/json"],
+            "tags": ["inventory", "stockout", "supplychain"],
+        },
+        {
+            "id": "pos-anomaly-cashier-audit",
+            "name": "POS Anomaly Alerts & Cashier Promo Abuse Detection",
+            "description": "Identifies suspicious cashier promo overrides, manual price changes, and anomaly severity.",
+            "inputModes": ["text/plain", "application/json"],
+            "outputModes": ["text/plain", "application/json"],
+            "tags": ["fraud", "anomaly", "audit", "compliance"],
+        },
+    ]
+
+    card: Dict[str, Any] = {
+        "name": agent_name,
+        "displayName": "Cymbal Retail Conversational Analytics Agent",
+        "description": "엔터프라이즈 옴니채널 유통 그룹의 공식 BigQuery 대화형 데이터 분석 에이전트.",
+        "url": a2a_url,
+        "version": "1.0",
+        "protocolVersion": "1.0",
+        "preferredTransport": "INTERNAL_HTTP+JSON",
+        "defaultInputModes": ["text/plain", "application/json"],
+        "defaultOutputModes": ["text/plain", "application/json"],
+        "capabilities": {
+            "streaming": True,
+            "pushNotifications": False,
+            "extensions": extensions,
+        },
+        "skills": skills,
+    }
+
+    card_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "a2a_agent_card.json")
+    try:
+        with open(card_path, "w", encoding="utf-8") as f:
+            json.dump(card, f, indent=2, ensure_ascii=False)
+        print(f"  -> [파일 저장] A2A Agent Card 표준 규격 JSON 저장 완료: {card_path}")
+    except Exception as exc:
+        print(f"  -> [경고] Agent Card 파일 저장 실패: {exc}", file=sys.stderr)
+
+    return card
+
+
+def register_agent_to_ge_app_api(
+    cfg: Dict[str, Any],
+    card_content: Dict[str, Any],
+    token: Optional[str] = None,
+) -> Optional[str]:
+    """Discovery Engine REST API를 호출하여 Gemini Enterprise App 엔진에 A2A 에이전트를 직결 등록한다."""
+    project_number = cfg["project_number"]
+    engine_id = cfg["ge_engine_id"]
+    agent_name = cfg["data_agent_name"]
+    project_id = cfg["project_id"]
+
+    print("=" * 88)
+    print(f" [Step 3: 선택 사항 (Optional)] Discovery Engine API 기반 Gemini Enterprise App ({engine_id}) 직결 등록")
+    print("=" * 88)
+
+    ge_app_agents_url = (
+        f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_number}/"
+        f"locations/global/collections/default_collection/engines/{engine_id}/"
+        f"assistants/default_assistant/agents"
+    )
+
+    starter_prompts = [p["user_prompt"] for p in GOLDEN_PROMPTS]
+    payload: Dict[str, Any] = {
+        "displayName": "Cymbal Retail Conversational Analytics Agent",
+        "description": "BigQuery cymbal_gold 데이터셋 기반 대화형 데이터 분석 에이전트",
+        "state": "ENABLED",
+        "a2aAgentDefinition": {
+            "jsonAgentCard": json.dumps(card_content, ensure_ascii=False),
+        },
+        "agentInvocationSpec": {
+            "invocationMode": "AUTOMATIC",
+        },
+        "starterPrompts": [{"text": p} for p in starter_prompts],
+    }
+
+    if cfg["dry_run"]:
+        print("[가상 실행] --dry-run 모드가 활성화되어 Discovery Engine 등록 페이로드를 출력한다.\n")
+        print(f"POST {ge_app_agents_url}")
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        mock_ge_resource = f"projects/{project_number}/locations/global/collections/default_collection/engines/{engine_id}/assistants/default_assistant/agents/mock-a2a-agent"
+        print(f"\n[완료] 가상 실행 GE App 에이전트 등록 경로: {mock_ge_resource}")
+        return mock_ge_resource
+
+    if token is None:
+        token = get_access_token()
+
+    try:
+        resp = send_request(ge_app_agents_url, method="POST", payload=payload, token=token, project_id=project_id)
+        registered_name = resp.get("name", "")
+        print(f"  -> [성공] Gemini Enterprise App 사내 갤러리 등록 완료: {registered_name}")
+        return registered_name
+    except urllib.error.HTTPError as e:
+        print(f"  -> [안내] Discovery Engine 직결 등록 API 반환 (HTTP {e.code}): 콘솔 UI 수동 등록 보조 가이드를 안내한다.")
+        register_agent_to_ge_app_ui_guide(cfg)
+        return None
+    except Exception as exc:
+        print(f"  -> [안내] Discovery Engine 직결 등록 건너뜀 ({exc}): 콘솔 UI 수동 등록 보조 가이드를 안내한다.")
+        register_agent_to_ge_app_ui_guide(cfg)
+        return None
+
+
 def export_data_agent_config(cfg: Dict[str, Any]) -> None:
-    """BigQuery Studio > Agents (콘솔 UI 전용)에서 복사/붙여넣기할 System Instructions와 Verified Queries를 출력한다."""
+    """BigQuery Studio > Agents 콘솔 UI 수동 등록 시 복사/붙여넣기할 System Instructions와 Verified Queries를 출력한다 (보조 확인 경로)."""
     project_id = cfg["project_id"]
     dataset_id = cfg["dataset_id"]
     agent_name = cfg["data_agent_name"]
@@ -419,10 +812,10 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
     sys_inst = SYSTEM_INSTRUCTIONS_TEMPLATE.format(project_id=project_id, dataset_id=dataset_id)
 
     print("=" * 88)
-    print(f" [Step 2: 콘솔 UI 전용 구간] BigQuery Studio > Agents 단독(Standalone) 에이전트 생성 가이드")
+    print(f" [Step 2 보조 확인 경로: 콘솔 UI 수동 입력] BigQuery Studio > Agents 단독(Standalone) 에이전트 생성 가이드")
     print("=" * 88)
-    print(" [중요 안내] BigQuery Data Agent 생성 및 테이블 바인딩은 CLI(gcloud) 명령어가 지원되지 않으며,")
-    print("            반드시 Google Cloud 콘솔 UI(BigQuery Studio)에서 아래 순서로 클릭하여 진행한다.")
+    print(" [안내] CLI 자동 배포(python diagnose.py --deploy-agent)를 권장하며,")
+    print("       콘솔 UI에서 직접 확인하거나 수동으로 생성할 경우 아래 절차를 따른다.")
     print("-" * 88)
     print(" [콘솔 UI 클릭 순서 (소요 시간: 5분)]")
     print("  1) Google Cloud 콘솔 > BigQuery > Studio 화면 상단 [Create new] 영역에서 [AI and knowledge] 드롭다운 > [Agent] 클릭")
@@ -442,21 +835,21 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
     print("\n" + "=" * 88)
 
 
-def register_agent_to_ge_app(cfg: Dict[str, Any]) -> None:
-    """[선택 사항] BigQuery Studio Agents에서 생성한 Data Agent를 Gemini Enterprise App에 A2A 방식으로 등록 및 연동하는 UI 절차를 안내한다."""
-    ge_app_id = cfg["ge_app_id"]
+def register_agent_to_ge_app_ui_guide(cfg: Dict[str, Any]) -> None:
+    """[콘솔 UI 보조 경로] BigQuery Studio Agents에서 생성한 Data Agent를 Gemini Enterprise App에 A2A 방식으로 등록하는 UI 절차를 안내한다."""
+    ge_app_id = cfg["ge_engine_id"]
     agent_name = cfg["data_agent_name"]
 
     print("=" * 88)
-    print(f" [Step 3: 선택 사항 (Optional)] BigQuery Data Agent -> Gemini Enterprise App ({ge_app_id}) A2A 연동")
+    print(f" [Step 3 보조 확인 경로: 콘솔 UI 수동 등록] BigQuery Data Agent -> Gemini Enterprise App ({ge_app_id}) A2A 연동")
     print("=" * 88)
     print(" [안내] BigQuery Studio 내에서 단독(Standalone)으로 에이전트를 사용할 경우 본 단계는 생략 가능하다.")
-    print("       생성한 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때만 아래 A2A UI 절차를 수행한다.")
+    print("       생성한 에이전트를 Gemini Enterprise 웹 앱 대화창에 붙여 전사 공유하고자 할 때 콘솔 UI에서 아래 절차를 수행한다.")
     print("-" * 88)
     print(" [Phase A: BigQuery Studio > Agents에서 Agent Card (A2A JSON) 확인 및 복사]")
     print(f"  1) BigQuery Studio > 좌측 메뉴 [Agents (에이전트 / Agent Platform)] > [{agent_name}] 상세 페이지 진입")
     print("  2) 에이전트 상세 화면에서 [Publish (게시)]를 완료한 후 제공되는 [Agent Card (A2A JSON)] 텍스트 복사")
-    print("     (엔드포인트 URL, 지원 도구/스키마, 인증 요구 사항이 담긴 A2A 프로토콜 표준 메타데이터)")
+    print("     (또는 diagnose.py가 자동 생성한 a2a_agent_card.json 파일 내용 활용)")
     print("-" * 88)
     print(" [Phase B: Gemini Enterprise 관리 콘솔에서 'Custom agent via A2A'로 에이전트 등록]")
     print("  1) Google Cloud 콘솔 탐색 메뉴 > [Gemini Enterprise (또는 Agent Platform > Applications)] 메뉴 이동")
@@ -466,6 +859,18 @@ def register_agent_to_ge_app(cfg: Dict[str, Any]) -> None:
     print(f"  5) 등록 완료 후 에이전트 목록에서 [{agent_name}]의 상태 토글이 [Enabled (활성)]로 켜져 있는지 확인")
     print(f"  6) 좌측 메뉴 [Preview (미리보기)] 또는 웹 앱 URL 대화창에서 `@{agent_name}` 호출 또는 골든 프롬프트 질의 테스트를 수행한다.")
     print("=" * 88)
+
+
+def deploy_full_agent_workflow(cfg: Dict[str, Any]) -> None:
+    """Step 2(GDA dataAgent 배포) 및 Step 3(A2A Agent Card 생성 및 GE App 직결 등록)를 통합 수행한다."""
+    token = get_access_token() if not cfg["dry_run"] else "mock-token"
+    gda_resource = create_gda_data_agent(cfg, token=token)
+    if not gda_resource:
+        print("[경고] GDA Data Agent 리소스 경로를 획득하지 못하여 A2A Agent Card 생성을 건너뛴다.")
+        return
+
+    card = build_a2a_agent_card(cfg, gda_resource)
+    register_agent_to_ge_app_api(cfg, card, token=token)
 
 
 # ==============================================================================
@@ -479,17 +884,20 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     print("=" * 88)
     print(" [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]")
     print("=" * 88)
-    print(f" - 대상 프로젝트 : {project_id} (리전: {cfg['location']})")
-    print(f" - 호환 데이터셋 : {dataset_id} (테이블 4개 + 시맨틱 뷰 1개 + 실데이터 적재 완료)")
-    print(f" - 데이터 에이전트: {cfg['data_agent_name']} (단독 실행 가능 / 선택 시 Gemini Enterprise app 연동: {cfg['ge_app_id']})")
+    print(f" - 대상 프로젝트 : {project_id} (프로젝트 번호: {cfg['project_number']})")
+    print(f" - 빅쿼리 리전   : {cfg['location']} (데이터셋: {dataset_id})")
+    print(f" - GDA 런타임   : {cfg['gda_location']} (에이전트 이름: {cfg['data_agent_name']})")
+    print(f" - GE App 엔진  : {cfg['ge_engine_id']}")
     print(f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}")
     print("-" * 88)
 
-    print("\n [45분 핸즈온 워크숍 역할 분담 타임라인 (CLI 자동화 vs 콘솔 UI 전용 조작)]")
-    print("  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)")
-    print("  * 05~10분 [CLI -> UI]  : Agents에 붙여넣을 System Instructions 및 Verified Queries 출력 (python diagnose.py --agent-config)")
-    print("  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agents에서 단독(Standalone) Data Agent 생성 및 질의 테스트")
-    print("  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 추가 연동 (python diagnose.py --register-ge-app)")
+    print("\n [45분 핸즈온 워크숍 역할 분담 타임라인 (GDA 완전 관리형 골든 아키텍처)]")
+    print("  * 00~05분 [Step 1 CLI 데이터 패브릭]: cymbal_gold 스몰셋 4개 테이블, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)")
+    print("  * 05~15분 [Step 2 CLI 에이전트 엔진]: 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)")
+    print("            [보조 확인 경로]: BigQuery Studio 콘솔 UI 수동 생성 지침 출력 (python diagnose.py --agent-config)")
+    print("  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise App 사내 갤러리 등록 (python diagnose.py --register-ge-app)")
+    print("  * 25~45분 [Step 4 멀티턴 실습 및 종료]: 골든 프롬프트 3선 대화 질의 및 실습 종료 후 자원 정리 (python diagnose.py --teardown)")
+    print("  * [올인원 모드]: Step 1~3 전체 일괄 자동 배포 실행 (python diagnose.py --all)")
     print("-" * 88)
 
     print("\n [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 Gemini Enterprise app 공용)]")
@@ -528,6 +936,8 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         "",
         f"- **생성 모드**: {mode_str}",
         f"- **대상 프로젝트**: `{project_id}`",
+        f"- **빅쿼리 리전**: `{cfg['location']}` (데이터셋: `{dataset_id}`)",
+        f"- **GDA 런타임**: `{cfg['gda_location']}` (에이전트 이름: `{cfg['data_agent_name']}`)",
         "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
         "",
         "---",
@@ -538,17 +948,20 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         "=" * 88,
         " [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]",
         "=" * 88,
-        f" - 대상 프로젝트 : {project_id} (리전: {cfg['location']})",
-        f" - 호환 데이터셋 : {dataset_id} (테이블 4개 + 시맨틱 뷰 1개 + 실데이터 적재 완료)",
-        f" - 데이터 에이전트: {cfg['data_agent_name']} (단독 실행 가능 / 선택 시 Gemini Enterprise app 연동: {cfg['ge_app_id']})",
+        f" - 대상 프로젝트 : {project_id} (프로젝트 번호: {cfg['project_number']})",
+        f" - 빅쿼리 리전   : {cfg['location']} (데이터셋: {dataset_id})",
+        f" - GDA 런타임   : {cfg['gda_location']} (에이전트 이름: {cfg['data_agent_name']})",
+        f" - GE App 엔진  : {cfg['ge_engine_id']}",
         f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}",
         "-" * 88,
         "",
-        " [45분 핸즈온 워크숍 역할 분담 타임라인 (CLI 자동화 vs 콘솔 UI 전용 조작)]",
-        "  * 00~05분 [CLI 자동화] : cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)",
-        "  * 05~10분 [CLI -> UI]  : Agents에 붙여넣을 System Instructions 및 Verified Queries 출력 (python diagnose.py --agent-config)",
-        "  * 10~30분 [콘솔 UI 전용]: BigQuery Studio > Agents에서 단독(Standalone) Data Agent 생성 및 질의 테스트",
-        "  * 30~45분 [선택 사항]  : 필요 시 Gemini Enterprise App에 게시 및 추가 연동 (python diagnose.py --register-ge-app)",
+        " [45분 핸즈온 워크숍 역할 분담 타임라인 (GDA 완전 관리형 골든 아키텍처)]",
+        "  * 00~05분 [Step 1 CLI 데이터 패브릭]: cymbal_gold 스몰셋 4개 테이블, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)",
+        "  * 05~15분 [Step 2 CLI 에이전트 엔진]: 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)",
+        "            [보조 확인 경로]: BigQuery Studio 콘솔 UI 수동 생성 지침 출력 (python diagnose.py --agent-config)",
+        "  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise App 사내 갤러리 등록 (python diagnose.py --register-ge-app)",
+        "  * 25~45분 [Step 4 멀티턴 실습 및 종료]: 골든 프롬프트 3선 대화 질의 및 실습 종료 후 자원 정리 (python diagnose.py --teardown)",
+        "  * [올인원 모드]: Step 1~3 전체 일괄 자동 배포 실행 (python diagnose.py --all)",
         "-" * 88,
         "",
         " [실습 검증용 골든 프롬프트 3선 (Data Agent 대화창 또는 Gemini Enterprise app 공용)]",
@@ -591,16 +1004,23 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         "python diagnose.py --setup-demo",
         "```",
         "",
-        "### 2단계: BigQuery Studio > Agents (Agent Catalog) 단독 에이전트 생성",
-        "터미널에 출력된 System Instructions와 Verified Queries를 BigQuery Studio 대화형 에이전트 설정창에 복사/붙여넣기하여 즉시 활성화한다:",
+        "### 2단계: 구글 완전 관리형 GDA Data Agent 원클릭 프로비저닝 (권장 골든 경로)",
+        "별도 컨테이너 빌드나 유휴 비용 없이 GDA `dataAgents` REST API를 통해 1초 만에 데이터 에이전트를 자동 생성하고 A2A 표준 명세를 저장한다:",
         "```bash",
-        "python diagnose.py --agent-config",
+        "python diagnose.py --deploy-agent",
+        "```",
+        "> [보조 확인 경로] 콘솔 UI에서 직접 확인하거나 수동으로 생성할 경우 `python diagnose.py --agent-config` 명령으로 System Instructions와 Verified Queries를 화면에 출력할 수 있다.",
+        "",
+        "### 3단계: [선택 사항] Gemini Enterprise App 사내 갤러리 A2A 직결 등록",
+        "Discovery Engine REST API를 통해 전사 대화 포털의 사내 갤러리에 `a2aAgentDefinition`으로 직결 등록한다:",
+        "```bash",
+        "python diagnose.py --register-ge-app",
         "```",
         "",
-        "### 3단계: [선택 사항] Gemini Enterprise App 연동 및 전사 공유",
-        "전사 대화 포털에서 본 Data Agent를 멘션(@)하거나 활용할 수 있도록 A2A 프로토콜 기반으로 게시한다:",
+        "### [올인원 모드] 1~3단계 통합 일괄 배포",
+        "워크숍 시간 단축을 위해 데이터셋 구축, GDA 에이전트 배포, GE App 등록을 한 번에 실행한다:",
         "```bash",
-        "python diagnose.py --register-ge-app --app-id [GE_APP_ID]",
+        "python diagnose.py --all",
         "```",
         "",
         "### 4단계: 4대 표준 라벨 준수 및 실습 종료 후 자원 정리",
@@ -632,6 +1052,8 @@ def teardown_demo_environment(cfg: Dict[str, Any]) -> None:
     """실습 종료 후 생성된 BigQuery 데모 데이터셋을 삭제하여 비용 발생을 차단한다."""
     project_id = cfg["project_id"]
     dataset_id = cfg["dataset_id"]
+    agent_name = cfg["data_agent_name"]
+    location = cfg["gda_location"]
 
     print("=" * 88)
     print(f"[자원 정리] BigQuery 스몰셋 데이터셋({project_id}.{dataset_id}) 삭제 시작")
@@ -639,6 +1061,7 @@ def teardown_demo_environment(cfg: Dict[str, Any]) -> None:
 
     if cfg["dry_run"]:
         print(f"[가상 실행] DROP SCHEMA IF EXISTS `{project_id}.{dataset_id}` CASCADE;")
+        print(f"[가상 실행] DELETE https://geminidataanalytics.googleapis.com/v1beta/projects/{project_id}/locations/{location}/dataAgents/{agent_name}")
         print("[완료] 가상 실행(--dry-run) 자원 정리 시뮬레이션이 완료되었다.")
         return
 
@@ -647,9 +1070,22 @@ def teardown_demo_environment(cfg: Dict[str, Any]) -> None:
 
         client = bigquery.Client(project=project_id, location=cfg["location"])
         client.delete_dataset(f"{project_id}.{dataset_id}", delete_contents=True, not_found_ok=True)
-        print(f"[완료] `{project_id}.{dataset_id}` 데이터셋 및 하위 테이블/뷰가 모두 삭제되었다.")
+        print(f"  -> [완료] `{project_id}.{dataset_id}` 데이터셋 및 하위 테이블/뷰가 모두 삭제되었다.")
     except Exception as exc:
-        print(f"[경고] 데이터셋 삭제 중 오류가 발생하였다: {exc}")
+        print(f"  -> [경고] 데이터셋 삭제 중 오류가 발생하였다: {exc}")
+
+    # GDA 에이전트 삭제 시도
+    try:
+        token = get_access_token()
+        existing = list_existing_gda_agents(project_id, location, token)
+        if agent_name in existing:
+            resource_name = existing[agent_name]
+            del_url = f"https://geminidataanalytics.googleapis.com/v1beta/{resource_name}"
+            print(f"  -> [요청 중] GDA Data Agent 삭제 요청: {resource_name}...")
+            send_request(del_url, method="DELETE", token=token, project_id=project_id)
+            print(f"  -> [완료] GDA Data Agent ({agent_name}) 삭제 완료.")
+    except Exception as exc:
+        print(f"  -> [참고] GDA Data Agent 삭제 참고: {exc}")
 
 
 # ==============================================================================
@@ -660,8 +1096,10 @@ def parse_args() -> argparse.Namespace:
         description="BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app)"
     )
     parser.add_argument("-p", "--project", type=str, help="대상 Google Cloud 프로젝트 ID")
+    parser.add_argument("--project-number", type=str, help="Google Cloud 프로젝트 번호 (미지정 시 자동 조회)")
     parser.add_argument("-d", "--dataset", type=str, help="스몰셋 BigQuery 데이터셋 ID (기본값: cymbal_gold)")
     parser.add_argument("-l", "--location", type=str, help="BigQuery 리전 (기본값: asia-northeast3)")
+    parser.add_argument("--gda-location", type=str, help="GDA 런타임 리전 (기본값: global)")
     parser.add_argument("--app-id", type=str, help="[선택 사항] 등록할 Gemini Enterprise App (Engine) ID")
     parser.add_argument("--agent-name", type=str, help="BigQuery Data Agent 이름 (기본값: cymbal-retail-data-agent)")
     parser.add_argument(
@@ -672,17 +1110,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--setup-demo",
         action="store_true",
-        help="[CLI 자동화] 실제 BigQuery에 cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 1개를 원클릭 구축",
+        help="[Step 1] 실제 BigQuery에 cymbal_gold 스몰셋 테이블 4개, 실데이터, 시맨틱 뷰 1개를 원클릭 구축",
+    )
+    parser.add_argument(
+        "--deploy-agent",
+        "--deploy",
+        action="store_true",
+        help="[Step 2 권장] 구글 완전 관리형 GDA dataAgents REST API로 데이터 에이전트 자동 생성 및 A2A 규격 저장",
+    )
+    parser.add_argument(
+        "--agent-card",
+        action="store_true",
+        help="A2A Agent Card 표준 규격 JSON 파일(a2a_agent_card.json) 단독 생성",
     )
     parser.add_argument(
         "--agent-config",
         action="store_true",
-        help="[UI 입력용 재료 출력] BigQuery Studio > Agents에서 복사/붙여넣기할 System Instructions 및 Verified Queries 출력",
+        help="[Step 2 보조] BigQuery Studio > Agents 콘솔 UI 수동 입력용 System Instructions 및 Verified Queries 출력",
     )
     parser.add_argument(
         "--register-ge-app",
         action="store_true",
-        help="[선택 사항] BigQuery Data Agent를 Gemini Enterprise App에 게시(Publish) 및 활성화하는 UI 클릭 절차 안내",
+        help="[Step 3 선택] Discovery Engine REST API를 통해 Gemini Enterprise App 사내 갤러리에 직결 등록",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="[올인원 모드] Step 1(스몰셋 구축) + Step 2(GDA 에이전트 배포) + Step 3(GE App 직결 연동) 일괄 자동 실행",
     )
     parser.add_argument(
         "--query",
@@ -692,7 +1146,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--teardown",
         action="store_true",
-        help="실습 완료 후 생성된 BigQuery 스몰셋 데이터셋(cymbal_gold)을 삭제하여 비용 누수 차단",
+        help="실습 완료 후 생성된 BigQuery 스몰셋 데이터셋 및 GDA Data Agent를 삭제하여 비용 누수 차단",
     )
     return parser.parse_args()
 
@@ -705,8 +1159,29 @@ def main() -> None:
         teardown_demo_environment(cfg)
         return
 
+    if args.all:
+        print("[올인원 워크숍 모드] Step 1 -> Step 2 -> Step 3 전체 자동 프로비저닝을 순차 실행한다.\n")
+        setup_smallset_demo(cfg)
+        print()
+        deploy_full_agent_workflow(cfg)
+        report_md = build_markdown_report(cfg)
+        save_markdown_report(report_md, "report.md")
+        return
+
     if args.setup_demo:
         setup_smallset_demo(cfg)
+        return
+
+    if getattr(args, "deploy_agent", False) or getattr(args, "deploy", False):
+        token = get_access_token() if not cfg["dry_run"] else "mock-token"
+        gda_resource = create_gda_data_agent(cfg, token=token)
+        if gda_resource:
+            build_a2a_agent_card(cfg, gda_resource)
+        return
+
+    if args.agent_card:
+        mock_res = f"projects/{cfg['project_id']}/locations/{cfg['gda_location']}/dataAgents/{cfg['data_agent_name']}"
+        build_a2a_agent_card(cfg, mock_res)
         return
 
     if args.agent_config:
@@ -714,7 +1189,10 @@ def main() -> None:
         return
 
     if args.register_ge_app:
-        register_agent_to_ge_app(cfg)
+        mock_res = f"projects/{cfg['project_id']}/locations/{cfg['gda_location']}/dataAgents/{cfg['data_agent_name']}"
+        card = build_a2a_agent_card(cfg, mock_res)
+        token = get_access_token() if not cfg["dry_run"] else "mock-token"
+        register_agent_to_ge_app_api(cfg, card, token=token)
         return
 
     print_workshop_guide_and_prompts(cfg, custom_query=args.query)

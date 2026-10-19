@@ -17,12 +17,12 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: bigquery-data-agent-starter
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-starter: 45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(--setup-demo)로 BigQuery 스몰셋 데이터셋(cymbal_gold)과 실데이터를 10초 만에 자동 구축하고, BigQuery Studio 내 Agents에서 Conversational Analytics Data Agent를 단독 생성 및 질의 실습하며 선택 사항으로 Gemini Enterprise app에 연동하는 워크숍 스타터 키트다.
+  Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-starter: 45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(--setup-demo)로 BigQuery 스몰셋 데이터셋(cymbal_gold)과 실데이터를 10초 만에 자동 구축하고, 구글 1P 완전 관리형 GDA dataAgents REST API를 통해 CLI 원클릭(--deploy-agent)으로 데이터 에이전트를 프로비저닝하며, A2A 표준 규격 기반으로 Gemini Enterprise app에 직결 연동하는 워크숍 스타터 키트다.
 ---
 
 # BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 (Standalone & Optional Gemini Enterprise app) (Autopilot & Hands-on Guide)
 
-본 스킬은 사내 엔지니어와 실무자가 `bigquery-data-agent-starter` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다. (As of 2026-10-17)
+본 스킬은 사내 엔지니어와 실무자가 `bigquery-data-agent-starter` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다. (As of 2026-10-19)
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#GenAI`, `#Governance`, `#Performance`  

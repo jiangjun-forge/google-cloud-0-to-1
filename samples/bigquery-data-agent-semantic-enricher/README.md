@@ -161,10 +161,17 @@ Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (En
 3. **Knowledge Catalog 비즈니스 용어집 등록**:
    - 생성된 `dataplex_glossary_terms.yaml` 템플릿을 참조하여 Dataplex Knowledge Catalog에 비즈니스 용어와 계산 수식(`Formula`)을 등록하고 관련 테이블에 바인딩한다.
    - Dataplex Business Glossary 콘솔 ( https://console.cloud.google.com/dataplex/business-glossaries )
-4. **(선택 사항) 타 클라우드 스토리지 연동 시 Cross-Cloud Caching 활성화**:
+4. **Starter 키트 연계 및 완전 관리형 GDA `dataAgents` 자동 배포**:
+   - 메타데이터 보강이 완료된 데이터셋은 `bigquery-data-agent-starter` 도구를 통해 구글 관리형 런타임 GDA REST API로 1초 만에 완전 관리형 데이터 에이전트로 자동 프로비저닝된다:
+   ```bash
+   cd ../bigquery-data-agent-starter
+   python diagnose.py --deploy-agent
+   ```
+   - 보강된 컬럼 설명과 비즈니스 공식이 GDA 에이전트의 `systemInstruction` 및 `exampleQueries`로 자동 바인딩되어 환각을 0%에 가깝게 차단한다.
+5. **(선택 사항) 타 클라우드 스토리지 연동 시 Cross-Cloud Caching 활성화**:
    - BigQuery Omni 및 보더리스 레이크하우스(Borderless Lakehouse) 환경에서 타 클라우드(AWS S3, Azure Blob)의 객체를 쿼리하는 경우, Cross-Cloud Caching을 활성화하여 전송(Egress) 비용을 줄이고 반복 NL2SQL 쿼리 지연 시간을 최대 50% 단축한다.
    - Cross-Cloud Caching 안내 ( https://cloud.google.com/blog/products/data-analytics/borderless-lakehouse-cross-cloud-caching-and-connections )
-5. **GCP 리소스 생성 시 4대 필수 표준 라벨링 준수**:
+6. **GCP 리소스 생성 시 4대 필수 표준 라벨링 준수**:
    - 사내 거버넌스 및 FinOps 비용 추적을 위해 데이터셋, 테이블, Dataplex 데이터 스캔 생성 시 4대 표준 라벨을 필수로 주입한다:
      - `managed-by`: `google-cloud-0-to-1`
      - `scenario`: `bigquery-data-agent-semantic-enricher`

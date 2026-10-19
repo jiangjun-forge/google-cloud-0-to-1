@@ -11,20 +11,21 @@ All contents, designs, and code examples are subject to change, modification, or
 -->
 
 # 기술 상세 설계서 (TDD: Technical Design Document)
-## 프로젝트명: BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app) (As of 2026-10-17)
+## 프로젝트명: BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app) (As of 2026-10-19)
 
 ---
 
 ## 1. 시스템 아키텍처 개요 및 설계 원칙
 
 ### 1.1 설계 목표
-본 도구는 45분 핸즈온 워크숍 참석자가 BigQuery 스몰셋 데이터셋(`cymbal_gold`) 구축부터 BigQuery Data Agent 단독(Standalone) 생성, 선택적 Gemini Enterprise App 연동 및 골든 프롬프트 3선 검증까지 수행할 수 있도록 지원하는 **경량 워크숍 프로비저닝 및 연동 가이드 엔진**이다.
+본 도구는 45분 핸즈온 워크숍 참석자가 BigQuery 스몰셋 데이터셋(`cymbal_gold`) 구축부터 구글 1P 완전 관리형 런타임(GDA `dataAgents` REST API)을 통한 에이전트 자동 프로비저닝, A2A Agent Card 규격 생성, Discovery Engine REST API 기반 Gemini Enterprise App 사내 갤러리 직결 연동까지 수행할 수 있도록 지원하는 **경량 워크숍 프로비저닝 및 연동 가이드 엔진**이다.
 
 ### 1.2 핵심 설계 원칙
 1. **순수 파이썬 단일 실행 모델**: 쉘 래퍼 스크립트에 의존하지 않고 크로스 플랫폼에서 일관되게 동작하는 `python diagnose.py` 직접 실행 체계 구축.
-2. **계층형 캐스케이드 설정 탐색(Cascade Fallback)**: CLI 인자 > `.env` > `gcloud config` > 대화형 번호 선택기(`interactive_select`) > 사내 권장 기본값(`asia-northeast3`) 순으로 무중단 설정 확정.
-3. **독립 완결성(Zero Dependency)**: 외부 모듈이나 다른 샘플에 대한 코드 의존성 없이 100% 자체 완결적으로 동작.
-4. **Standalone 기본 / Gemini Enterprise app 선택형 구조**: BigQuery Studio 내 Agents (Agent Catalog) 단독 실습을 기본으로 하고, Gemini Enterprise App 연동(`--register-ge-app`)은 선택적 확장 단계로 구성.
+2. **구글 1P 관리형 런타임 표준**: 커스텀 컨테이너 빌드나 유휴 VM 호스팅 없이, GDA REST API를 호출하여 구글 관리형 테넌트에서 1초 만에 데이터 에이전트를 프로비저닝.
+3. **A2A 표준 프로토콜 바인딩**: A2UI, stateless, starter_prompts 확장을 내장한 A2A Agent Card 표준 규격(`a2a_agent_card.json`)을 생성하고 사내 갤러리에 직결 등록.
+4. **계층형 캐스케이드 설정 탐색(Cascade Fallback)**: CLI 인자 > `.env` > `gcloud config` > 대화형 번호 선택기(`interactive_select`) > 사내 권장 기본값(`asia-northeast3`, `global`) 순으로 무중단 설정 확정.
+5. **독립 완결성(Zero Dependency)**: 외부 모듈이나 다른 샘플에 대한 코드 의존성 없이 100% 자체 완결적으로 동작.
 
 ---
 
@@ -37,26 +38,29 @@ flowchart TD
         DiagnosePy["diagnose.py (워크숍 프로비저닝 컨트롤러)"]
     end
 
-    subgraph BigQuery_CymbalGold["BigQuery 데이터 패브릭 (cymbal_gold)"]
+    subgraph BigQuery_Fabric["Step 1: BigQuery 데이터 패브릭 (cymbal_gold)"]
         RawTables["4개 원천 테이블 (pos_transactions_gold 등)"]
         SemanticView["v_cymbal_retail_semantic (순매출, 결품 커버 시간 뷰)"]
     end
 
-    subgraph Agent_Catalog["BigQuery Studio Agents (Standalone 기본)"]
-        BQAgent["cymbal-retail-data-agent (System Instructions 바인딩)"]
+    subgraph GDA_Tenant["Step 2: 구글 관리형 런타임 (Gemini Data Analytics)"]
+        GDAResource["GDA dataAgents REST API (projects/.../locations/global/dataAgents/...)"]
+        A2ACard["A2A Agent Card JSON (a2a_agent_card.json)"]
     end
 
-    subgraph Optional_Extensions["선택적 확장 (Optional)"]
-        GEApp["Gemini Enterprise App (--register-ge-app)"]
+    subgraph GE_App_Gallery["Step 3: Gemini Enterprise App 사내 갤러리"]
+        GEApp["Discovery Engine API (a2aAgentDefinition 직결 등록)"]
     end
 
     User -->|1. --setup-demo| DiagnosePy
     DiagnosePy -->|DDL / DML 실행| RawTables
     RawTables --> SemanticView
-    User -->|2. --agent-config| DiagnosePy
-    DiagnosePy -.->|지침 입력| BQAgent
-    SemanticView -.->|데이터 소스 연결| BQAgent
-    BQAgent -.->|3. 선택적 게시| GEApp
+    User -->|2. --deploy-agent| DiagnosePy
+    DiagnosePy -->|POST /dataAgents| GDAResource
+    GDAResource -->|표준 카드 빌드| A2ACard
+    User -->|3. --register-ge-app| DiagnosePy
+    A2ACard -->|POST assistants/.../agents| GEApp
+    User -->|4. --all| DiagnosePy
 ```
 
 ---
@@ -65,13 +69,15 @@ flowchart TD
 
 | 요구 사항 ID | 구현 모듈 | 상세 기술 설계 명세 |
 | :--- | :--- | :--- |
-| **FR-01** | `resolve_config` | CLI 인자, `.env`, `gcloud config get-value project`를 순차 탐색하고, 미지정 시 `sys.stdin.isatty()` 기반 번호 선택기를 제공하여야 한다. |
-| **FR-02** | `setup_smallset_demo` | `cymbal_gold` 데이터셋 내에 4개 테이블(`pos_transactions_gold`, `gold_inventory_reconciliation_ledger`, `pos_anomaly_alerts`, `historical_transactional_data`) DDL과 샘플 데이터 `INSERT INTO`, `v_cymbal_retail_semantic` 뷰 SQL을 BigQuery API로 실행하여야 한다. |
-| **FR-03** | `export_data_agent_config` | 순매출 및 결품 커버 시간 공식이 명시된 System Instructions와 Verified Queries를 출력하여야 한다. |
-| **FR-04** | `register_agent_to_ge_app` | BigQuery Studio Agents에서 Gemini Enterprise로 게시하는 UI 단계를 선택 사항(Optional)으로 안내하여야 한다. |
-| **FR-05** | `print_workshop_guide_and_prompts` | 45분 워크숍 타임라인과 골든 프롬프트 3선의 자연어 질문, 기대 SQL, 샘플 응답 행을 출력하여야 한다. |
-| **FR-06** | `teardown_demo_environment` | `--teardown` 실행 시 `client.delete_dataset(..., delete_contents=True)`를 호출하여 실습 리소스를 안전하게 제거하여야 한다. |
-| **FR-07** | `inject_mandatory_labels` | 데이터셋 생성 및 테이블/뷰 DDL 내에 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=bigquery-data-agent-starter`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여야 한다. |
+| **FR-01** | `resolve_config` | CLI 인자, `.env`, `gcloud config get-value project`, `gcloud projects describe`를 순차 탐색하고 설정을 확정하여야 한다. |
+| **FR-02** | `setup_smallset_demo` | `cymbal_gold` 데이터셋 내에 4개 테이블 DDL과 샘플 데이터 `INSERT INTO`, `v_cymbal_retail_semantic` 뷰 SQL을 BigQuery API로 실행하여야 한다. |
+| **FR-03** | `create_gda_data_agent` | GDA REST API(`geminidataanalytics.googleapis.com/v1beta`)를 호출하여 `stagingContext` 및 `publishedContext`에 시스템 지침, 테이블 참조, 검증된 쿼리 3쌍을 주입하고 LRO를 대기하여야 한다. |
+| **FR-04** | `build_a2a_agent_card` | A2UI, starter_prompts, full_history_when_stateless 확장을 포함하는 A2A Agent Card 표준 규격을 빌드하고 로컬 JSON 파일로 저장하여야 한다. |
+| **FR-05** | `register_agent_to_ge_app_api` | Discovery Engine REST API(`discoveryengine.googleapis.com/v1alpha`)를 호출하여 GE App 엔진에 A2A 에이전트를 직결 등록하고, 실패 시 콘솔 UI 수동 등록 가이드를 제공하여야 한다. |
+| **FR-06** | `export_data_agent_config` | 콘솔 UI 수동 생성을 위한 System Instructions와 Verified Queries를 출력하여 보조 확인 경로를 제공하여야 한다. |
+| **FR-07** | `print_workshop_guide_and_prompts` | 45분 워크숍 타임라인과 골든 프롬프트 3선의 자연어 질문, 기대 SQL, 샘플 응답 행을 출력하여야 한다. |
+| **FR-08** | `teardown_demo_environment` | `--teardown` 실행 시 BigQuery 데이터셋과 GDA Data Agent 리소스를 안전하게 삭제하여 비용 누수를 방지하여야 한다. |
+| **FR-09** | `inject_mandatory_labels` | 데이터셋, 테이블, 뷰, GDA 리소스 생성 시 4대 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=bigquery-data-agent-starter`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 주입하여야 한다. |
 
 ---
 
@@ -79,7 +85,7 @@ flowchart TD
 
 | 요구 사항 ID | 분류 | 세부 설계 및 검증 방법 |
 | :--- | :--- | :--- |
-| **NFR-01** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python diagnose.py --dry-run` 명령만으로 45분 타임라인, SQL DDL/DML, 골든 프롬프트 3선을 1초 내에 출력한다. |
+| **NFR-01** | 모의 실행 (Dry-run) | 외부 네트워크나 GCP 권한 없이 `python diagnose.py --dry-run` 명령만으로 45분 타임라인, SQL DDL/DML, GDA 페이로드, A2A 카드를 1초 내에 출력한다. |
 | **NFR-02** | 보안 및 PII 배제 | 모든 소스 코드와 DDL, 샘플 데이터에는 특정 기업 고유 명칭이나 개인 식별 정보를 일절 포함하지 않으며 표준 엔터프라이즈 가명(`cymbal_gold`)만을 사용한다. |
 | **NFR-03** | 코드 독립성 | 타 샘플이나 모듈을 참조하지 않고 100% 자체 완결적으로 실행된다. |
-| **NFR-04** | 자원 거버넌스 및 라벨링 규약 | 워크숍 실습 인프라가 사내 거버넌스 및 FinOps 시스템에서 자동 식별될 수 있도록 표준 메타데이터 태깅을 강제한다. |
+| **NFR-04** | FinOps 자원 추적성 | 워크숍 실습 인프라가 사내 거버넌스 및 FinOps 시스템에서 자동 식별될 수 있도록 표준 메타데이터 태깅을 강제한다. |
