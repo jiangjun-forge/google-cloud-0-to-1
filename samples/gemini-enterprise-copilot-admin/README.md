@@ -70,7 +70,7 @@ python diagnose.py
 ## 3. 어드민 코파일럿 아키텍처 및 관리 흐름
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Admin["1. 사내 IT 어드민"]
         A["IT 어드민 / 인프라 팀"] -->|자연어 관리 질의| B["GE Admin Copilot<br/>(Reasoning Engine)"]
     end
@@ -115,6 +115,10 @@ flowchart LR
 ---
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
 에이전트 인프라 및 어드민 관리 리소스(BigQuery 데이터세트, 서비스 계정, Cloud Functions 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`

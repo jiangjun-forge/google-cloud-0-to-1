@@ -102,6 +102,10 @@ gcloud services enable compute.googleapis.com logging.googleapis.com cloudresour
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
+
 보안 심의 통제 대상 GCP 리소스(Cloud Storage 버킷, BigQuery 데이터셋, Cloud KMS 키링, Cloud Run 등) 배포 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `korea-ai-security-checklist`

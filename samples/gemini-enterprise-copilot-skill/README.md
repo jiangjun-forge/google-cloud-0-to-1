@@ -66,7 +66,7 @@ python diagnose.py
 ## 3. 사내 스킬 팩토리 아키텍처 및 프로비저닝 흐름
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Request["1. 사내 도구 요구사항 정의"]
         Developer["개발자 / 운영팀"] -->|자연어 도구 명세 입력| SkillFactory["GE Skill Factory<br/>(Reasoning Engine)"]
         SkillFactory -->|Open Skills 규격 컴파일| Spec["SKILL.md & OpenAPI 3.0 스펙"]
@@ -107,6 +107,10 @@ flowchart LR
 ---
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
 사내 스킬 인프라 및 보안 볼트 리소스(Secret Manager 시크릿, 대행 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`

@@ -66,7 +66,7 @@ python diagnose.py
 ## 3. 내장 로깅 파이프라인 및 BigQuery 분석 아키텍처
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph UserLayer["1. 사내 임직원 질의"]
         Emp["사내 임직원 (전사 사용자)"] -->|프롬프트 질의 및 에이전트 대화| Portal["Gemini Enterprise app<br/>(웹 포털 /r/agents)"]
     end
@@ -108,6 +108,10 @@ BigQuery 로그 데이터세트 조회 및 진단 쿼리 실행을 위한 최소
 ---
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
 - **Gemini Enterprise 관리 콘솔**: 사내 Gemini Enterprise app 프롬프트 및 응답 로깅 활성화 설정 ( https://gemini.google.com )
 - **BigQuery 콘솔**: 수집된 Gemini Enterprise app 로그 테이블 확인 및 맞춤형 대시보드 연동 ( https://console.cloud.google.com/bigquery )

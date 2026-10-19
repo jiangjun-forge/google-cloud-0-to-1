@@ -132,7 +132,15 @@ gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDo
 
 ---
 
-## 6. 리소스 정리 (Teardown) 안내
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
+
+---
+
+## 7. 리소스 정리 (Teardown) 안내
 
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하지 않는다. 테스트 목적으로 부여한 크로스 프로젝트 IAM 권한은 다음 명령어로 회수할 수 있다:
 ```bash

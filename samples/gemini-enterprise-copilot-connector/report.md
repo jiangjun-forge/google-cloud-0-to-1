@@ -13,7 +13,7 @@
 ## 1. 아키텍처 개요 및 핵심 연동 스펙
 
 ```mermaid
-flowchart LR
+flowchart TB
     SaaS["Jira Cloud 엔터프라이즈 커넥터"] -->|"OAUTH2_CLIENT_CREDENTIALS"| Vault["Secret Manager<br/>(connector-secret-jira-connector)"]
     Vault -->|"HOURLY_INCREMENTAL"| DS["Discovery Engine Data Store<br/>(ds-jira-connector-sample-p)"]
     DS -->|"ACL 동기화: IDENTITY_MAPPING_OIDC"| GEApp["Gemini Enterprise App<br/>(sample-ge-app-id)"]

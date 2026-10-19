@@ -327,7 +327,7 @@ def build_markdown_report(env_info: dict, connector_data: dict, artifacts: dict,
 ## 1. 아키텍처 개요 및 핵심 연동 스펙
 
 ```mermaid
-flowchart LR
+flowchart TB
     SaaS["{connector_data['name']}"] -->|"{connector_data['auth_type']}"| Vault["Secret Manager<br/>({artifacts['secret_vault_id']})"]
     Vault -->|"{connector_data['sync_mode']}"| DS["Discovery Engine Data Store<br/>({artifacts['data_store_id']})"]
     DS -->|"ACL 동기화: {connector_data['acl_mode']}"| GEApp["Gemini Enterprise App<br/>({ge_app_id})"]

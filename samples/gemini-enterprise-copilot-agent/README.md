@@ -66,7 +66,7 @@ python diagnose.py
 ## 3. 노코드 에이전트 팩토리 아키텍처 및 등록 흐름
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph UserPhase["1. 비개발자 임직원 인터뷰"]
         User["현업 실무자 / 비개발자"] -->|업무 자동화 아이디어 입력| Factory["GE Agent Factory<br/>(Reasoning Engine)"]
         Factory -->|대화형 인터뷰 & 템플릿 검증| Spec["에이전트 명세 완성<br/>(지침, 스타터 프롬프트)"]
@@ -107,6 +107,10 @@ flowchart LR
 ---
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
 에이전트 인프라 및 관리 리소스(서비스 계정, 커스텀 에이전트 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`

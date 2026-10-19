@@ -66,7 +66,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 서비스 흐름
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Dev["1. 엔지니어링 & GitOps"]
         A["개발자 / 아키텍트"] -->|GitHub 저장소 지정| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
         B -->|Google ADK 2.11+ 패키징| C["Agent Engine 이미지 & 스펙"]
@@ -108,6 +108,10 @@ flowchart LR
 ---
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
 커스텀 에이전트 인프라 및 관리 리소스(Agent Engine, 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`

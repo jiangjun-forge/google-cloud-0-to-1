@@ -122,6 +122,10 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
+
 Cloud Billing 예산 알림, 조직 정책 태그 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-overage-guard`

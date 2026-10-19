@@ -51,7 +51,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 3. 마케팅 콘텐츠 제작 및 평가 파이프라인 흐름
 
 ```mermaid
-flowchart LR
+flowchart TB
     A["사전 환경 구성<br/>(API Key & 작업 공간)"] --> B["1단계: 아이디어 메모<br/>(원천 아이디어 문서화)"]
     B --> C["2단계: 기획서 생성<br/>(PLAN 구글 독스)"]
     C --> D["3단계: 제작 명세서<br/>(SPEC 채널 규격)"]
@@ -111,6 +111,10 @@ flowchart LR
 ---
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+### 관련 상세 설계 및 요구 사항 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
 본 솔루션은 Google Workspace 상에서 실행되나, 연관된 GCP 프로젝트 리소스(Cloud Storage 버킷, Vertex AI 엔드포인트 등) 연동 또는 확장 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
