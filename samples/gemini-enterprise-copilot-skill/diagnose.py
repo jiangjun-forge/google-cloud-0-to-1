@@ -1,12 +1,12 @@
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Gemini Enterprise 자율형 사내 스킬 스캐폴더 진단 및 배포 도구.
+"""Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 도구.
 
 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 호출할 수 있는
-사내 시스템 연동 도구(Tools / Extensions / Action Skills)를 비개발자가
-대화형으로 자율 생성하고, Secret Manager 보안 볼트 및 거버넌스 승인을 거쳐
-Gemini Enterprise app 도구 레지스트리에 안전하게 등록할 수 있도록 지원한다.
+사내 시스템 연동 도구(Tools / Extensions / Action Skills) 및 맞춤 업무 스킬(SKILL.md)을
+비개발자가 대화형으로 자율 생성하고, Gemini Enterprise app Skills 목록에
+직접 원클릭으로 자동 프로비저닝 및 전사 공유할 수 있도록 지원하는 사내 스킬 팩토리다.
 """
 
 import argparse
@@ -221,7 +221,7 @@ def select_tool_interactive(dry_run: bool):
         return SYSTEM_TOOL_CATALOG[1]
 
     print("\n" + "=" * 70)
-    print("  Gemini Enterprise 자율형 사내 스킬 스캐폴더 (Skill Builder)")
+    print("  Gemini Enterprise 자율형 사내 스킬 팩토리 (Skill Factory)")
     print("  [생성할 사내 시스템 연동 도구 칩을 선택하세요]")
     print("=" * 70)
     for cat_id, data in sorted(SYSTEM_TOOL_CATALOG.items()):
@@ -390,7 +390,7 @@ def build_markdown_report(env_info: dict, tool_data: dict, tool_manifest: dict, 
     ge_app_id = env_info["ge_app_id"]
     sa_email = env_info["service_account"]
 
-    return f"""# Gemini Enterprise 자율형 사내 스킬 스캐폴더 진단 및 배포 보고서
+    return f"""# Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 보고서
 
 - **실행 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 - **대상 프로젝트**: `{project_id}`
@@ -502,15 +502,15 @@ def _get_cloud_token() -> str:
 
 
 def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
-    """Gemini Enterprise Skill Scaffolder를 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
+    """Gemini Enterprise Skill Factory를 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
     project_id = env_info["project_id"]
     re_location = "us-central1"
     ge_app_id = env_info["ge_app_id"]
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE Skill Scaffolder (사내 스킬 스캐폴더)"
-    description = "Google Workspace 및 사내 기간계 시스템 연동 도구(OpenAPI 3.0 / MCP Tools) 대화형 자율 생성 스캐폴더"
+    display_name = "GE Skill Factory (사내 스킬 팩토리)"
+    description = "사내 맞춤형 스킬(Open Skills / SKILL.md) 대화형 자율 생성 및 Gemini Enterprise app 전사 즉시 프로비저닝 팩토리"
 
     labels = {
         "managed-by": "google-cloud-0-to-1",
@@ -520,7 +520,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] GE Skill Scaffolder 배포 파이프라인")
+    print("  [원클릭 배포] GE Skill Factory 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")
@@ -554,6 +554,154 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     creds = google.oauth2.credentials.Credentials(token)
     google.auth.default = lambda *args, **kwargs: (creds, project_id)
 
+    # 1. 에이전트 내장 실행 도구 정의 (Skills 직접 프로비저닝)
+    def deploy_enterprise_skill_tool(
+        skill_name: str,
+        description: str,
+        instruction: str,
+        scope: str = "ALL_USERS",
+    ) -> str:
+        """Create and deploy a new official skill directly into the user's Gemini Enterprise app Skills catalog.
+
+        Args:
+            skill_name: English display name for the skill (letters, numbers, hyphens, spaces only, max 64 chars).
+            description: Concise description explaining what this skill does and when to invoke it.
+            instruction: Comprehensive SKILL.md-compatible instructions and prompt rules for the skill.
+            scope: Visibility scope ('ALL_USERS' for org-wide shared skill, or 'PRIVATE' for personal use).
+        """
+        import re
+        import requests
+        import google.auth
+        import google.auth.transport.requests
+
+        cleaned_name = re.sub(r"[^a-zA-Z0-9\s\-]", "", skill_name).strip()
+        if not cleaned_name:
+            cleaned_name = "Custom Enterprise Skill"
+        if len(cleaned_name) > 64:
+            cleaned_name = cleaned_name[:64].strip()
+
+        try:
+            creds, _ = google.auth.default()
+            auth_req = google.auth.transport.requests.Request()
+            creds.refresh(auth_req)
+            cur_token = creds.token
+
+            headers = {
+                "Authorization": f"Bearer {cur_token}",
+                "Content-Type": "application/json",
+                "X-Goog-User-Project": project_id,
+            }
+            base_url = (
+                f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+                f"/locations/{ge_location}/collections/default_collection"
+                f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+            )
+
+            body = {
+                "displayName": cleaned_name,
+                "description": description,
+                "skillAgentDefinition": {
+                    "instruction": instruction,
+                },
+            }
+            post_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+            if not post_resp.ok:
+                return f"[배포 실패] Discovery Engine API 오류 ({post_resp.status_code}): {post_resp.text}"
+
+            skill_data = post_resp.json()
+            skill_id = skill_data.get("name", "").split("/")[-1]
+            gcs_uri = skill_data.get("skillAgentDefinition", {}).get("gcsUri", "N/A")
+
+            if scope == "ALL_USERS":
+                patch_url = f"{base_url}/{skill_id}?updateMask=sharingConfig"
+                patch_body = {"sharingConfig": {"scope": "ALL_USERS"}}
+                patch_resp = requests.patch(patch_url, headers=headers, json=patch_body, timeout=30)
+                final_scope = "ALL_USERS (전사 공유)" if patch_resp.ok else "PRIVATE (개인용)"
+            else:
+                final_scope = "PRIVATE (개인용)"
+
+            return (
+                f"### Gemini Enterprise 스킬 배포 완료\n\n"
+                f"- **스킬 명칭**: `{cleaned_name}`\n"
+                f"- **스킬 ID**: `{skill_id}`\n"
+                f"- **공유 상태**: `{final_scope}`\n"
+                f"- **GCS 아티팩트 URI**: `{gcs_uri}`\n"
+                f"- **확인 방법**: GE App 좌측 **Skills** 메뉴를 새로고침(F5)하면 본인 및 팀원들의 스킬 갤러리에 즉시 표시됩니다."
+            )
+        except Exception as e:
+            return f"[예외 발생] 스킬 배포 실패: {str(e)}"
+
+    def list_enterprise_skills_tool() -> str:
+        """List all registered skills currently deployed in the Gemini Enterprise app.
+
+        Returns:
+            A markdown-formatted summary table of registered skills.
+        """
+        import requests
+        import google.auth
+        import google.auth.transport.requests
+
+        try:
+            creds, _ = google.auth.default()
+            auth_req = google.auth.transport.requests.Request()
+            creds.refresh(auth_req)
+            cur_token = creds.token
+
+            headers = {
+                "Authorization": f"Bearer {cur_token}",
+                "Content-Type": "application/json",
+                "X-Goog-User-Project": project_id,
+            }
+            base_url = (
+                f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+                f"/locations/{ge_location}/collections/default_collection"
+                f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+            )
+
+            resp = requests.get(f"{base_url}?pageSize=50", headers=headers, timeout=30)
+            if not resp.ok:
+                return f"[조회 실패] 에이전트/스킬 목록 조회 오류: {resp.text}"
+
+            agents = resp.json().get("agents", [])
+            skills = [a for a in agents if a.get("skillAgentDefinition") is not None]
+            if not skills:
+                return "현재 등록된 커스텀 스킬이 없습니다. '스킬 생성'을 요청하시면 즉시 배포할 수 있습니다."
+
+            lines = [
+                "| 스킬 명칭 | 스킬 ID | 상태 | 공유 범위 |",
+                "| :--- | :--- | :--- | :--- |",
+            ]
+            for s in skills:
+                disp = s.get("displayName", "N/A")
+                sid = s.get("name", "").split("/")[-1]
+                st = s.get("state", "PRIVATE")
+                sc = s.get("sharingConfig", {}).get("scope", "PRIVATE")
+                lines.append(f"| {disp} | `{sid}` | `{st}` | `{sc}` |")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"[예외 발생] 스킬 목록 조회 실패: {str(e)}"
+
+    def get_preset_skills_tool() -> str:
+        """Get the enterprise recommended preset skills catalog (Slack, Google Sheets, Jira, BigQuery, ERP).
+
+        Returns:
+            A markdown catalog of 8 core enterprise preset skills ready to be deployed.
+        """
+        lines = [
+            "### 사내 8대 엔터프라이즈 프리셋 스킬 카탈로그",
+            "원하시는 스킬 번호나 명칭을 말씀하시면 즉시 귀하의 GE App에 등록해 드립니다:\n",
+            "1. **Slack 긴급 장애 알림 스킬**: Slack 인커밍 웹훅 기반 장애/긴급 공지 채널 발송 (`slack_webhook_notifier`)",
+            "2. **Google Sheets 사내 실적 행 조회 스킬**: 구글 스프레드시트 데이터 검색 및 행 추출 (`sheets_data_lookup`)",
+            "3. **Google Sheets 신규 접수 행 추가 스킬**: 결재 신청 및 VOC 접수 내역 자동 추가 (`sheets_row_append`)",
+            "4. **Jira 버그 티켓 자동 등록 스킬**: 아틀라시안 지라 이슈 자동 발행 및 상태 조회 (`jira_issue_creator`)",
+            "5. **BigQuery 테이블 스키마 조회 스킬**: DW 데이터셋 및 테이블 스키마 안전 조회 (`bq_table_schema_reader`)",
+            "6. **사내 ERP 전표 유효성 검증 스킬**: 전표 번호 및 공급가액 정합성 사전 검증 (`erp_invoice_validator`)",
+            "7. **사내 문서 요약 및 번역 스킬**: 계약서/기술 문서 보안 요약 및 다국어 번역 (`doc_summarizer_translator`)",
+            "8. **보안 감사 이벤트 알림 스킬**: Cloud Audit Logs 이상 징후 감지 및 알림 (`security_audit_notifier`)",
+        ]
+        return "\n".join(lines)
+
     print("\n[단계 1/2] Vertex AI Agent Engine 초기화 및 패키징 중...")
     vertexai.init(
         project=project_id,
@@ -562,24 +710,30 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         credentials=creds,
     )
 
-    instruction = """당신은 Gemini Enterprise app 및 Model Context Protocol (MCP) 생태계의 '사내 스킬 스캐폴더(Skill Scaffolder)' 마스터 에이전트입니다.
-사내 Google Workspace (Google Sheets, Google Docs), Slack, Jira, 사내 DB 등 기간계 시스템과 안전하게 연동할 수 있는 도구(Tools / Extensions) 및 MCP 서버 연동 명세를 대화형으로 생성하고 Secret Manager 보안 볼트 연동 아키텍처를 안내합니다.
+    instruction = """당신은 Gemini Enterprise app 및 Open Skills 생태계의 '사내 스킬 팩토리(Skill Factory)' 마스터 에이전트입니다.
+사내 Google Workspace (Google Sheets, Google Docs), Slack, Jira, BigQuery, ERP 등 기간계 시스템과 안전하게 연동할 수 있는 업무 스킬(SKILL.md)을 대화형으로 자율 생성하고, 귀하에게 장착된 실제 배포 도구(`deploy_enterprise_skill_tool`)를 호출하여 사용자의 GE App Skills 갤러리에 즉시 자동 프로비저닝 및 전사 배포합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
 - 과거 레거시 모델(Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등)은 이미 선셋되었으므로 절대로 추천하거나 언급하지 않는다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
+[장착된 실제 실행 도구 (Tools)]
+당신에게는 실제 클라우드 환경에 스킬을 프로비저닝하고 조회할 수 있는 실제 실행 도구가 장착되어 있습니다:
+1. `deploy_enterprise_skill_tool`: 사용자가 스킬 생성을 요청하거나 확인하면, SKILL.md 지침을 컴파일하여 사용자의 Gemini Enterprise app Skills 목록에 즉시 배포합니다. (스킬 이름은 영문, 숫자, 하이픈, 공백만 허용).
+2. `list_enterprise_skills_tool`: 현재 사내에 등록된 활성 스킬 목록을 실시간 조회할 때 호출하십시오.
+3. `get_preset_skills_tool`: 사내 8대 엔터프라이즈 프리셋 스킬 카탈로그를 브리핑할 때 호출하십시오.
+
 [핵심 단계별 인터뷰 절차]
-1단계 (연동 대상 시스템 파악): 연동하려는 사내 시스템 및 액션 목적 확인.
-2단계 (API 메서드 및 파라미터 규격 정의): REST 메서드, 경로, 입력 파라미터, 반환 스키마 정의.
-3단계 (보안 볼트 및 자격 증명 바인딩): Secret Manager 기반 API 토큰 주입, 최소 권한 IAM 판정.
-4단계 (최종 산출물 합성): OpenAPI 3.0 스키마, Python Tool 함수 스니펫, 도구 매니페스트 출력.
+1단계 (연동 대상 시스템 파악): 연동하려는 사내 시스템 및 액션 목적 확인 (프리셋 도구 추천).
+2단계 (스킬 명칭 및 지침 규칙 정의): 영문 스킬 명칭, 설명, 핵심 지침(SKILL.md) 및 트리거 조건 도출.
+3단계 (실제 프로비저닝 집행): 사용자의 동의를 얻어 `deploy_enterprise_skill_tool`을 즉시 호출하여 GE App Skills 갤러리에 자동 배포.
+4단계 (결과 및 활용 안내): 발급된 스킬 ID, GCS 아티팩트 URI, GE App Skills 새로고침 안내 제공.
 
 [단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
 모든 답변 본문의 맨 끝에 반드시 다음 형식의 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
 ```suggested_questions
-{"questions": ["Google Sheets 조회 스킬", "Slack 알림 발송 Tool", "Jira 티켓 발행 스키마"], "type": "followup"}
+{"questions": ["Slack 긴급 장애 알림 스킬 배포해 줘", "Google Sheets 조회 스킬 등록해 줘", "사내 등록된 스킬 목록 조회"], "type": "followup"}
 ```
 - 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
 
@@ -589,10 +743,11 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 """
 
     adk_agent = Agent(
-        name="gemini_enterprise_skill_scaffolder",
+        name="gemini_enterprise_skill_factory",
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
+        tools=[deploy_enterprise_skill_tool, list_enterprise_skills_tool, get_preset_skills_tool],
     )
     app = agent_engines.AdkApp(agent=adk_agent, enable_tracing=True)
 
@@ -607,7 +762,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         agent_engine=app,
         display_name=display_name,
         description=description,
-        gcs_dir_name="ge_factory_skill_scaffolder",
+        gcs_dir_name="ge_factory_skill_factory",
         requirements=[
             "google-cloud-aiplatform[adk,agent_engines]==2.5.0",
             "google-adk==2.11.0",
@@ -639,12 +794,12 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         "displayName": display_name,
         "description": description,
         "sharingConfig": {"scope": "ALL_USERS"},
-        "customPlaceholderText": "에이전트에 장착할 사내 기간계 도구(MCP/Tools)나 API 연동 요구 사항을 입력하세요...",
+        "customPlaceholderText": "새로 생성할 사내 스킬 요구사항이나 연동 시스템을 입력하세요...",
         "starterPrompts": [
-            {"text": "Google Sheets 고객 피드백 데이터 조회 및 시트 업데이트 스킬 만들어 줘"},
-            {"text": "Slack 채널 긴급 장애 알림 발송 MCP 도구 명세 작성해 줘"},
-            {"text": "Jira 이슈 자동 생성 및 상태 변경 Tool 스키마 만들어 줘"},
-            {"text": "Secret Manager 보안 볼트 연동 인증 도구 템플릿 생성해 줘"},
+            {"text": "Slack 긴급 장애 알림 스킬 생성해서 내 GE App Skills에 등록해 줘"},
+            {"text": "Google Sheets 고객 피드백 조회 스킬 만들어 줘"},
+            {"text": "Jira 버그 티켓 자동 발행 스킬 생성 및 전사 공유해 줘"},
+            {"text": "현재 사내에 등록된 스킬 목록 조회해 줘"},
         ],
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": description},
@@ -659,14 +814,13 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     list_resp = requests.get(base_url, headers=headers, timeout=30)
     if list_resp.ok:
         for a in list_resp.json().get("agents", []):
-            if a.get("displayName") == display_name:
+            if a.get("displayName") in [display_name, "GE Skill Scaffolder (사내 스킬 스캐폴더)"]:
                 target_agent_id = a.get("name").split("/")[-1]
                 existing_state = a.get("state")
                 break
 
     if target_agent_id:
         if existing_state == "PRIVATE":
-            # PRIVATE 상태인 구버전 에이전트는 ENABLED 전환이 불가하므로 재등록
             requests.delete(f"{base_url}/{target_agent_id}", headers=headers, timeout=30)
             reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
         else:
@@ -690,7 +844,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 자율형 사내 스킬 스캐폴더 진단 및 배포 도구",
+        description="Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 도구",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
@@ -711,7 +865,7 @@ def main():
         args.dry_run = True
 
     print("\n" + "=" * 75)
-    print("  Gemini Enterprise 자율형 사내 스킬 스캐폴더 (gemini-enterprise-copilot-skill)")
+    print("  Gemini Enterprise 자율형 사내 스킬 팩토리 (gemini-enterprise-copilot-skill)")
     print("=" * 75)
 
     # 1. 환경 정보 해석
@@ -775,7 +929,7 @@ def main():
     save_markdown_report(report_content)
 
     print("\n" + "=" * 75)
-    print("  사내 스킬 스캐폴더 진단 및 매니페스트 생성 완료 (모든 점검 통과)")
+    print("  사내 스킬 팩토리 진단 및 매니페스트 생성 완료 (모든 점검 통과)")
     print("=" * 75)
     print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
     print("  - managed-by: google-cloud-0-to-1")
