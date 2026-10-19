@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom)
 
-클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트를 Agent Engine으로 원클릭 스캐폴딩하고, GitHub 저장소 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 사내 커스텀 에이전트 팩토리 도구다. (As of 2026-10-19)
+클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트를 Agent Engine으로 원클릭 구축하고, GitHub 저장소 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 사내 커스텀 에이전트 팩토리 도구다. (As of 2026-10-19)
 
 ---
 
@@ -26,7 +26,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
 | **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | BigQuery 및 기간계 결합 High-code 에이전트의 Agent Engine 호환성 및 패키징 상태 진단 |
-| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Agent Platform / Agent Engine 올인원 스캐폴딩 및 GitOps 자동 배포 스크립트 도출 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Agent Platform / Agent Engine 올인원 구축 및 GitOps 자동 배포 스크립트 도출 |
 
 ---
 
@@ -73,11 +73,24 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 4. 솔루션 아키텍처 및 서비스 흐름
 
 ```mermaid
-graph TD
-    A[진단 시작] --> B[분석 완료]
+flowchart LR
+    subgraph Dev["1. 엔지니어링 & GitOps"]
+        A["개발자 / 아키텍트"] -->|GitHub 저장소 지정| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
+        B -->|Google ADK 2.11+ 패키징| C["Agent Engine 이미지 & 스펙"]
+    end
+
+    subgraph Runtime["2. 런타임 & 엔터프라이즈 자산"]
+        C -->|원클릭 프로비저닝| D["Agent Engine<br/>(Reasoning Engine)"]
+        D <-->|도구 호출 (Tools)| E[("사내 BigQuery / ERP<br/>Cloud Storage 자산")]
+    end
+
+    subgraph Portal["3. 전사 임직원 인터페이스"]
+        D -->|Discovery Engine A2A 연동| F["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+        F <-->|자연어 업무 질의| G["사내 임직원<br/>(비즈니스 사용자)"]
+    end
 ```
 
 ---

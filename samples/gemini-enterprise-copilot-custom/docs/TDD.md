@@ -10,27 +10,27 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동기 기술 상세 설계서 (TDD)
+# Gemini Enterprise 커스텀 에이전트 팩토리 및 Gemini Enterprise app 연동기 기술 상세 설계서 (TDD)
 
-본 문서는 사내 엔지니어링 환경에서 구동하는 하이코드(High-code) 커스텀 에이전트 스캐폴더 및 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 사내 갤러리 연동 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
+본 문서는 사내 엔지니어링 환경에서 구동하는 하이코드(High-code) 커스텀 에이전트 팩토리 및 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 사내 갤러리 연동 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 처리 흐름
 
-본 도구는 크게 **커스텀 에이전트 스캐폴딩(코드 생성)** 단계, **Agent Engine 런타임 프로비저닝** 단계, **Gemini Enterprise app 사내 갤러리 바인딩** 단계의 3단계 파이프라인으로 구성된다.
+본 도구는 크게 **커스텀 에이전트 코드 생성 및 구축** 단계, **Agent Engine 런타임 프로비저닝** 단계, **Gemini Enterprise app 사내 갤러리 바인딩** 단계의 3단계 파이프라인으로 구성된다.
 
 ```mermaid
 flowchart TD
     subgraph InputPhase ["1. 아키텍처 요구사항 입력"]
         Dev["개발자 / 클라우드 아키텍트"]
-        CLI["스캐폴더 CLI<br/>(diagnose.py)"]
+        CLI["에이전트 팩토리 CLI<br/>(diagnose.py)"]
         PresetEngine["6대 도메인 아키텍처 칩<br/>(DB, ERP, SRE, API 등)"]
         Dev --> CLI
         CLI --> PresetEngine
     end
 
-    subgraph ScaffoldingPhase ["2. 하이코드 산출물 자동 생성"]
+    subgraph CodegenPhase ["2. 하이코드 산출물 자동 생성"]
         AgentCode["에이전트 코어 로직<br/>(agent.py / Google ADK)"]
         ToolsCode["도구 및 데이터 연동<br/>(tools.py / BigQuery, API)"]
         DeploySpec["배포 스펙<br/>(deploy.py, requirements.txt)"]
@@ -60,7 +60,7 @@ flowchart TD
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (하이코드 에이전트 스캐폴딩) | **FR-01** (에이전트 코어 코드 생성기) | **NFR-01** (무의존성 및 단일 파이썬 실행) | `diagnose.py` |
+| **BR-01** (하이코드 에이전트 자동 구축 및 코드 생성) | **FR-01** (에이전트 코어 코드 생성기) | **NFR-01** (무의존성 및 단일 파이썬 실행) | `diagnose.py` |
 | **BR-02** (엔터프라이즈 데이터 및 도구 템플릿) | **FR-02** (BigQuery 및 시스템 도구 조립) | **NFR-02** (표준 소프트웨어 스택 준수) | `diagnose.py` 템플릿 모듈 |
 | **BR-03** (에이전트 엔진 런타임 배포 자동화) | **FR-03** (deploy.py 및 의존성 도출) | **NFR-01**, **NFR-02** | `diagnose.py` 배포 빌더 |
 | **BR-04** (GitHub 저장소 직결 무인 배포) | **FR-04** (GitOps 파이프라인 컴파일러) | **NFR-01**, **NFR-02** | `diagnose.py` GitOps 모듈 |
@@ -91,14 +91,14 @@ flowchart TD
 
 ### FR-05: IAM 권한 진단 및 표준 마크다운 리포트 자동 생성
 - 개발자 계정 및 실행 서비스 계정의 필수 IAM 권한(`roles/aiplatform.user`, `roles/discoveryengine.editor`)을 사전 점검한다.
-- 진단 및 스캐폴딩 실행 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, Gemini Enterprise app 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
+- 진단 및 에이전트 생성 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, Gemini Enterprise app 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
 ### FR-06: Agent Engine 프로비저닝 및 ChatOps 실행 도구 체계
 - `python diagnose.py --deploy-engine` 단 1회 실행으로 Vertex AI Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
 - 런타임 내에 `deploy_enterprise_agent_tool`과 `list_deployed_agents_tool` 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다.
 
 ### FR-07: 알파벳순 5대 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
-- GE App 매니페스트에 5대 원클릭 추천 질문 칩을 알파벳순(`GE Admin Copilot` -> `GE Agent Factory` -> `GE Connector Scaffolder` -> `GE Skill Scaffolder` -> `GitHub 저장소 주소(https://github.com/...) 기반 배포`)으로 정렬 배치한다.
+- GE App 매니페스트에 5대 원클릭 추천 질문 칩을 알파벳순(`GE Admin Copilot` -> `GE Agent Factory` -> `GE Connector Scaffolder` -> `GE Skill Factory` -> `GitHub 저장소 주소(https://github.com/...) 기반 배포`)으로 정렬 배치한다.
 - 4대 전체 일괄 배포를 배제하고 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
 
 ---
@@ -106,7 +106,7 @@ flowchart TD
 ## 4. 비기능 기술 요구 사항 명세 (Non-Functional Requirements)
 
 ### NFR-01: 무의존성 및 순수 파이썬 단일 실행 원칙
-- 외부 쉘 스크립트나 별도 패키징 툴 없이 `python diagnose.py` 직접 실행만으로 스캐폴딩과 진단을 완결한다.
+- 외부 쉘 스크립트나 별도 패키징 툴 없이 `python diagnose.py` 직접 실행만으로 에이전트 생성과 진단을 완결한다.
 - 생성되는 하이코드 산출물 역시 표준 파이썬 라이브러리 기반으로 자립 실행이 가능해야 한다.
 
 ### NFR-02: 표준 소프트웨어 스택 준수

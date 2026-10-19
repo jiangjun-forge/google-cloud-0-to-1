@@ -73,11 +73,26 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 4. 기간계 데이터 커넥터 아키텍처 및 동기화 흐름
 
 ```mermaid
-graph TD
-    A[진단 시작] --> B[분석 완료]
+flowchart LR
+    subgraph Enterprise["1. 사내 기간계 데이터 자산"]
+        Jira["Jira / Confluence"]
+        SF["Salesforce / ServiceNow"]
+        Drive["Google Drive / SharePoint"]
+    end
+
+    subgraph Security["2. 보안 볼트 & 커넥터 팩토리"]
+        Enterprise <-->|API 토큰 / OAuth 자격 증명| SM["Secret Manager<br/>(암호화 보안 볼트)"]
+        SM --> Connector["GE Connector Factory<br/>(diagnose.py)"]
+        Connector --> Manifest["Data Store 매니페스트<br/>& ACL 동기화 스켈레톤"]
+    end
+
+    subgraph Grounding["3. Agent Platform 검색 그라운딩"]
+        Manifest --> DS["Discovery Engine Data Store<br/>(문서 레벨 보안 ACL 동기화)"]
+        DS --> GE["Gemini Enterprise app<br/>(사내 RAG 검색 증강 답변)"]
+    end
 ```
 
 ---

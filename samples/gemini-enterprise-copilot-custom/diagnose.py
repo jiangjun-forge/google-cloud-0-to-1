@@ -4,7 +4,7 @@
 """Gemini Enterprise 사내 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom).
 
 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery), ERP, 모니터링 시스템을
-결합한 High-code 엔터프라이즈 맞춤 에이전트를 Agent Engine으로 원클릭 스캐폴딩하고,
+결합한 High-code 엔터프라이즈 맞춤 에이전트를 Agent Engine으로 원클릭 구축하고,
 GitHub 저장소 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원한다.
 """
 
@@ -499,7 +499,7 @@ def diagnose_iam_and_connectivity(chip_data: dict, env_info: dict, dry_run: bool
 
 
 def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_diag: dict):
-    """스캐폴딩 및 진단 결과를 표준 report.md 양식으로 조립한다."""
+    """에이전트 빌드 및 진단 결과를 표준 report.md 양식으로 조립한다."""
     project_id = env_info["project_id"]
     ge_app_id = env_info["ge_app_id"]
     service_name = chip_data["id"].replace("_", "-")
@@ -513,7 +513,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ---
 
-## 1. 종합 진단 및 스캐폴딩 상태 요약
+## 1. 종합 진단 및 에이전트 빌드 상태 요약
 
 | 진단 항목 | 상태 | 상세 결과 |
 | :--- | :---: | :--- |
@@ -525,9 +525,9 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ---
 
-## 2. 생성된 하이코드 산출물 목록 (Scaffolded Artifacts)
+## 2. 생성된 하이코드 산출물 목록 (Agent Artifacts)
 
-본 도구를 통해 다음 5대 핵심 Agent Engine 소스 코드가 완벽하게 스캐폴딩되었다:
+본 도구를 통해 다음 5대 핵심 Agent Engine 소스 코드가 완벽하게 생성되었다:
 
 1. **`agent.py`**: Google ADK 및 `agent_engines.AdkApp` 기반 에이전트 정의 코드
 2. **`tools.py`**: 사내 시스템/BigQuery 직접 연동 도구 함수 모음
@@ -618,7 +618,7 @@ def save_markdown_report(report_content: str):
 
 
 def write_scaffold_files(artifacts: dict, base_dir: str):
-    """실제 디스크 디렉토리(scaffold/)에 스캐폴딩 파일들을 추출한다."""
+    """실제 디스크 디렉토리(scaffold/)에 에이전트 소스 파일들을 추출한다."""
     scaffold_dir = os.path.join(base_dir, "scaffold")
     os.makedirs(scaffold_dir, exist_ok=True)
 
@@ -635,7 +635,7 @@ def write_scaffold_files(artifacts: dict, base_dir: str):
         with open(fpath, "w", encoding="utf-8") as f:
             f.write(content)
 
-    print(f"[성공] Agent Engine 스캐폴딩 소스 파일 5종이 생성되었습니다: {scaffold_dir}/")
+    print(f"[성공] Agent Engine 소스 파일 5종이 생성되었습니다: {scaffold_dir}/")
 
 
 def _get_cloud_token() -> str:
@@ -668,7 +668,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
     display_name = "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)"
-    description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 스캐폴딩 및 GitHub 저장소 직결 자동 배포(GitOps) 에이전트 팩토리"
+    description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 구축 및 GitHub 저장소 직결 자동 배포(GitOps) 에이전트 팩토리"
 
     labels = {
         "managed-by": "google-cloud-0-to-1",
@@ -772,10 +772,10 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 '사내 데이터 커넥터 스캐폴더(Connector Scaffolder)' 마스터 에이전트입니다.
 기업 기간계 데이터 저장소(Data Store) 매니페스트 및 Secret Manager 보안 볼트 연동 설정을 대화형으로 생성합니다.""",
         },
-        "gemini-enterprise-skill-scaffolder": {
-            "slug": "gemini-enterprise-skill-scaffolder",
-            "display_name": "GE Skill Scaffolder (사내 스킬 스캐폴더)",
-            "description": "Google Workspace 및 사내 기간계 시스템 연동 도구(OpenAPI 3.0 / MCP Tools) 대화형 자율 생성 스캐폴더",
+        "gemini-enterprise-skill-factory": {
+            "slug": "gemini-enterprise-skill-factory",
+            "display_name": "GE Skill Factory (사내 스킬 팩토리)",
+            "description": "Google Workspace 및 사내 기간계 시스템 연동 도구(OpenAPI 3.0 / MCP Tools) 대화형 자율 생성 팩토리",
             "custom_placeholder_text": "만들고 싶은 사내 스킬/도구(Google Sheets, Slack, Jira, ERP 등)를 입력하세요...",
             "starter_prompts": [
                 "Google Sheets 실시간 조회 및 행 추가 스킬 만들어 줘",
@@ -783,23 +783,23 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 "Jira 이슈 자동 생성 및 상태 변경 Tool 작성해 줘",
                 "OpenAPI 3.0 명세서 기반 파이썬 도구 변환해 줘",
             ],
-            "instruction": """당신은 Gemini Enterprise app 및 Model Context Protocol (MCP) 생태계의 '사내 스킬 스캐폴더(Skill Scaffolder)' 마스터 에이전트입니다.
+            "instruction": """당신은 Gemini Enterprise app 및 Model Context Protocol (MCP) 생태계의 '사내 스킬 팩토리(Skill Factory)' 마스터 에이전트입니다.
 에이전트가 호출할 사내 시스템 연동 도구(Tools / Extensions)를 대화형으로 자율 생성합니다.""",
         },
         "gemini-enterprise-custom-agent-factory": {
             "slug": "gemini-enterprise-custom-agent-factory",
             "display_name": "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)",
-            "description": "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 스캐폴딩 및 GitHub 저장소 직결 자동 배포(GitOps) 에이전트 팩토리",
+            "description": "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 구축 및 GitHub 저장소 직결 자동 배포(GitOps) 에이전트 팩토리",
             "custom_placeholder_text": "GitHub 저장소 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
             "starter_prompts": [
                 "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘",
                 "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘",
                 "GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더) 배포해 줘",
-                "GE Skill Scaffolder (사내 스킬 스캐폴더) 배포해 줘",
+                "GE Skill Factory (사내 스킬 팩토리) 배포해 줘",
                 "GitHub 저장소 주소(https://github.com/...) 기반 배포해 줘",
             ],
             "instruction": """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 팩토리(Custom Agent Factory)' 에이전트입니다.
-사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭 스캐폴딩하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.""",
+사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭으로 구축하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.""",
         },
     }
 
@@ -839,7 +839,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             targets = ["gemini-enterprise-agent-factory"]
         elif "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm:
             repo_url = github_repo_url or "https://github.com/jiangjun-forge/google-cloud-0-to-1"
-            return f"[GitHub 저장소 기반 배포 파이프라인] 지정된 저장소({repo_url})의 하이코드 백엔드 에이전트 스캐폴딩 스펙 및 배포 매니페스트가 성공적으로 검증되었습니다. (참조 저장소: {repo_url})"
+            return f"[GitHub 저장소 기반 배포 파이프라인] 지정된 저장소({repo_url})의 하이코드 백엔드 에이전트 아키텍처 스펙 및 배포 매니페스트가 성공적으로 검증되었습니다. (참조 저장소: {repo_url})"
         else:
             for k in preset_agents_spec:
                 if k in norm:
@@ -847,7 +847,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     break
 
         if not targets:
-            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-scaffolder, skill-scaffolder, custom-agent-factory 또는 GitHub 저장소 주소"
+            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-scaffolder, skill-factory, custom-agent-factory 또는 GitHub 저장소 주소"
 
         # Agent Engine 리소스 매핑 및 동적 탐색 (정밀 라우팅)
         re_engines_map = {
@@ -978,8 +978,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         except Exception as e:
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
 
-    instruction = """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 스캐폴더(Custom Agent Scaffolder)' 에이전트입니다.
-사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭 스캐폴딩하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.
+    instruction = """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 팩토리(Custom Agent Factory)' 에이전트입니다.
+사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭으로 구축하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
@@ -988,7 +988,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
-1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(어드민 코파일럿, 에이전트 팩토리, 스킬 스캐폴더, 커넥터 스캐폴더 등)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면, 망설이지 말고 즉시 이 도구를 호출하여 실제 클라우드 배포를 집행하십시오!
+1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(어드민 코파일럿, 에이전트 팩토리, 스킬 팩토리, 커넥터 스캐폴더 등)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면, 망설이지 말고 즉시 이 도구를 호출하여 실제 클라우드 배포를 집행하십시오!
 2. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 후속 질문 안내 규약]
@@ -1062,7 +1062,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             {"text": "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘"},
             {"text": "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘"},
             {"text": "GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더) 배포해 줘"},
-            {"text": "GE Skill Scaffolder (사내 스킬 스캐폴더) 배포해 줘"},
+            {"text": "GE Skill Factory (사내 스킬 팩토리) 배포해 줘"},
             {"text": "GitHub 저장소 주소(https://github.com/...) 기반 배포해 줘"},
         ],
         "adkAgentDefinition": {
@@ -1199,7 +1199,7 @@ def main():
     save_markdown_report(report_content)
 
     print("\n" + "=" * 75)
-    print("  커스텀 에이전트 스캐폴딩 및 진단 완료 (모든 점검 통과)")
+    print("  커스텀 에이전트 빌드 및 진단 완료 (모든 점검 통과)")
     print("=" * 75)
     print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
     print("  - managed-by: google-cloud-0-to-1")

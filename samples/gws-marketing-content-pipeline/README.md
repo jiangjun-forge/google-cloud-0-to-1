@@ -58,7 +58,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 4. 마케팅 콘텐츠 제작 및 평가 파이프라인 흐름
 
 ```mermaid
 flowchart LR

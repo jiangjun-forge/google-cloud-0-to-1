@@ -77,11 +77,25 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 4. 어드민 코파일럿 아키텍처 및 관리 흐름
 
 ```mermaid
-graph TD
-    A[진단 시작] --> B[분석 완료]
+flowchart LR
+    subgraph Admin["1. 사내 IT 어드민"]
+        A["IT 어드민 / 인프라 팀"] -->|자연어 관리 질의| B["GE Admin Copilot<br/>(Reasoning Engine)"]
+    end
+
+    subgraph Tools["2. 내장 실행 도구 체계"]
+        B -->|콘솔 길잡이| C["get_admin_console_deeplinks_tool<br/>(원클릭 콘솔 딥링크)"]
+        B -->|활성 상태 점검| D["list_deployed_agents_tool<br/>(Discovery Engine REST)"]
+        B -->|감사 쿼리 생성| E["get_admin_audit_queries_tool<br/>(BigQuery 감사 SQL 팩)"]
+    end
+
+    subgraph Target["3. 엔터프라이즈 관리 대상"]
+        C --> F["Google Cloud Console<br/>(Agent Platform / IAM / Logs)"]
+        D --> G["전사 배포 에이전트 카탈로그<br/>(좀비 에이전트 식별)"]
+        E --> H[("BigQuery 감사 로그 데이터셋<br/>(cloudaudit.googleapis.com)")]
+    end
 ```
 
 ---

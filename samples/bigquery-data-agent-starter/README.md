@@ -73,7 +73,7 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 4. 45분 핸즈온 실습 및 프로비저닝 흐름
 
 ```mermaid
 flowchart TD

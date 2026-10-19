@@ -73,11 +73,24 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 4. 사내 스킬 팩토리 아키텍처 및 프로비저닝 흐름
 
 ```mermaid
-graph TD
-    A[진단 시작] --> B[분석 완료]
+flowchart LR
+    subgraph Request["1. 사내 도구 요구사항 정의"]
+        Developer["개발자 / 운영팀"] -->|자연어 도구 명세 입력| SkillFactory["GE Skill Factory<br/>(Reasoning Engine)"]
+        SkillFactory -->|Open Skills 규격 컴파일| Spec["SKILL.md & OpenAPI 3.0 스펙"]
+    end
+
+    subgraph Auth["2. 보안 볼트 연동 & 검증"]
+        Spec -->|인증 자격 증명 바인딩| Vault["Secret Manager<br/>(Webhook URL / API Key)"]
+        Vault --> ToolFunc["실행 파이썬 Tool 함수<br/>(google-adk 호환)"]
+    end
+
+    subgraph Deploy["3. GE App 전사 프로비저닝"]
+        ToolFunc --> Registry["Agent Registry / Tools 갤러리"]
+        Registry --> Agents["사내 Gemini Enterprise 에이전트<br/>(Slack 알림, Sheets 데이터 갱신)"]
+    end
 ```
 
 ---

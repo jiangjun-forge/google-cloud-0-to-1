@@ -10,9 +10,9 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동기 비즈니스 요구 사항 명세서 (BRD)
+# Gemini Enterprise 커스텀 에이전트 팩토리 및 Gemini Enterprise app 연동기 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스, 레거시 시스템 및 외부 API를 결합한 고성능 커스텀(High-code) 에이전트를 신속하게 스캐폴딩하고, 에이전트 런타임(Agent Runtime)에 배포한 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 외부 에이전트로 원클릭 연동할 수 있도록 지원하는 엔지니어링 도구의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스, 레거시 시스템 및 외부 API를 결합한 고성능 커스텀(High-code) 에이전트를 신속하게 구축하고, 에이전트 런타임(Agent Runtime)에 배포한 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 외부 에이전트로 원클릭 연동할 수 있도록 지원하는 엔지니어링 도구의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 
@@ -34,7 +34,7 @@ All contents, designs, and code examples are subject to change, modification, or
    - 개발팀이 CLI나 GCP 콘솔에 직접 접속하지 않고도, Gemini Enterprise app 대화창에서 개발 완료된 GitHub 저장소 주소(`https://github.com/...`)를 입력하는 것만으로 빌드, 배포, 갤러리 등록까지 완결되는 무인 배포 체계를 지원해야 한다.
 
 5. **2단계 고객 온보딩 여정 및 단독 배포 거버넌스 확립**:
-   - 실무 고객 관점에서 최초 1회만 개발팀이 `git clone` 후 스캐폴더를 로컬 배포하면, 이후 4대 에이전트 및 추가 에이전트 확장은 일반 사용자나 관리자가 GE app 웹 챗창에서 원클릭으로 완결하는 2단계 UX를 제공하여야 한다.
+   - 실무 고객 관점에서 최초 1회만 개발팀이 `git clone` 후 에이전트 팩토리를 로컬 배포하면, 이후 4대 에이전트 및 추가 에이전트 확장은 일반 사용자나 관리자가 GE app 웹 챗창에서 원클릭으로 완결하는 2단계 UX를 제공하여야 한다.
    - 대량 일괄 프로비저닝에 따른 리소스 낭비와 장애 전파를 방지하기 위해 전체 일괄 배포를 배제하고, 알파벳순 5대 추천 질문 칩 기반으로 한 번에 하나씩 독립 배포하는 거버넌스를 정립하여야 한다.
 
 ---
@@ -43,7 +43,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 구분 | 핵심 비즈니스 목표 및 요구 명세 |
 | :--- | :--- | :--- |
-| **BR-01** | 하이코드 에이전트 자동 스캐폴딩 | 개발자의 요구사항(도메인, 데이터 소스, 목적)을 입력받아 즉시 실행 및 커스터마이징 가능한 표준 파이썬 에이전트 코드(`agent.py`)를 자동 생성해야 한다. |
+| **BR-01** | 하이코드 에이전트 자동 구축 및 코드 생성 | 개발자의 요구사항(도메인, 데이터 소스, 목적)을 입력받아 즉시 실행 및 커스터마이징 가능한 표준 파이썬 에이전트 코드(`agent.py`)를 자동 생성해야 한다. |
 | **BR-02** | 엔터프라이즈 데이터 및 도구 템플릿 | 빅쿼리 SQL 쿼리, 사내 REST API 호출, MCP 도구 연동을 위한 함수 및 OpenAPI 3.0 스키마(`tools.py`)를 표준 규격으로 자동 도출해야 한다. |
 | **BR-03** | 에이전트 엔진 런타임 배포 자동화 | 생성된 에이전트를 에이전트 엔진(Agent Engine)에 배포하기 위한 `deploy.py`와 의존성 명세를 완비해야 한다. |
 | **BR-04** | GitHub 저장소 직결 무인 배포 (GitOps) | 개발자가 대화창에 GitHub 저장소 URL을 제공하면 저장소 구조 검증, 런타임 빌드, 사내 갤러리 자동 등록을 원클릭으로 완결해야 한다. |
@@ -51,14 +51,14 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-06** | 엔터프라이즈 보안 및 격리 준수 | 서비스 계정 최소 권한 원칙(`roles/aiplatform.user`, `roles/discoveryengine.editor`), VPC 서비스 제어(VPC-SC) 보안 경계 고려사항을 설계에 강제해야 한다. |
 | **BR-07** | 표준 리소스 라벨링 적용 의무화 | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 생성되는 에이전트 서비스 및 관련 리소스에 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여야 한다. |
 | **BR-08** | 2단계 무인 고객 온보딩 여정 | 개발팀의 로컬 CLI 개입을 최초 1회(`git clone` 후 `python diagnose.py --deploy-engine`)로 종결하고, 이후 모든 에이전트 확장 및 배포는 전사 Gemini Enterprise app 웹 챗창에서 100% 무인 완결되어야 한다. |
-| **BR-09** | 알파벳순 5대 추천 칩 및 단독 배포 거버넌스 | 전체 일괄 배포로 인한 부하 및 리소스 낭비를 방지하기 위해 4대 전체 일괄 배포를 배제하고, 한 번에 하나의 에이전트씩 독립 배포하도록 유도하며, 추천 질문 칩은 알파벳순(`GE Admin Copilot`, `GE Agent Factory`, `GE Connector Scaffolder`, `GE Skill Scaffolder`, `GitHub 저장소 주소 기반 배포`)으로 엄격히 정렬 배치하여야 한다. |
+| **BR-09** | 알파벳순 5대 추천 칩 및 단독 배포 거버넌스 | 전체 일괄 배포로 인한 부하 및 리소스 낭비를 방지하기 위해 4대 전체 일괄 배포를 배제하고, 한 번에 하나의 에이전트씩 독립 배포하도록 유도하며, 추천 질문 칩은 알파벳순(`GE Admin Copilot`, `GE Agent Factory`, `GE Connector Scaffolder`, `GE Skill Factory`, `GitHub 저장소 주소 기반 배포`)으로 엄격히 정렬 배치하여야 한다. |
 
 ---
 
 ## 3. 기대 효과 및 비즈니스 KPI
 
 1. **커스텀 에이전트 개발 및 배포 주기 80% 단축**:
-   - 인프라 및 SDK 연동 보일러플레이트 작성 소요 시간(평균 2~3일)을 10분 이내 스캐폴딩으로 단축한다.
+   - 인프라 및 SDK 연동 보일러플레이트 작성 소요 시간(평균 2~3일)을 10분 이내 코드 생성으로 단축한다.
 2. **사내 레거시 및 데이터베이스 AI 연결 가속**:
    - 표준화된 도구 템플릿을 통해 빅쿼리 및 ERP 등 핵심 기업 자산을 에이전트 도구로 즉시 결합할 수 있다.
 3. **개발팀과 현업 사용자의 단일 포털 통합**:

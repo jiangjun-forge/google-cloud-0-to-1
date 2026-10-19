@@ -73,11 +73,23 @@ python diagnose.py
 
 ---
 
-## 4. 진단 및 해결 흐름
+## 4. 내장 로깅 파이프라인 및 BigQuery 분석 아키텍처
 
 ```mermaid
-graph TD
-    A[진단 시작] --> B[분석 완료]
+flowchart LR
+    subgraph UserLayer["1. 사내 임직원 질의"]
+        Emp["사내 임직원 (전사 사용자)"] -->|프롬프트 질의 및 에이전트 대화| Portal["Gemini Enterprise app<br/>(웹 포털 /r/agents)"]
+    end
+
+    subgraph NativeLogging["2. 공식 내장 로깅 파이프라인"]
+        Portal -->|공식 내장 Prompt/Response Logging| Sink["Cloud Logging Router<br/>(자동 필터링)"]
+        Sink -->|실시간 스트리밍 적재| BQ[("BigQuery 감사 데이터셋<br/>gemini_logging.cloudaudit")]
+    end
+
+    subgraph Analytics["3. 관리자 분석 및 거버넌스"]
+        BQ --> Tool["진단 분석기 (diagnose.py)"]
+        Tool --> Dashboard["계정별 토큰 소비 랭킹<br/>모델별 지연 시간(Latency) 분석"]
+    end
 ```
 
 ---
