@@ -355,6 +355,10 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
 너는 사내 Gemini Enterprise App 환경에서 공식 승인된 노코드(No-code) 전담 비서인 '{title}'이다.
 주요 대상 사용자는 '{target_users}'이며, 신속하고 정확하며 정중한 어조로 업무를 지원한다.
 
+# APPLIED MODEL & RUNTIME (적용 모델 및 런타임 표준)
+- **적용 모델**: `gemini-3.8-flash` (2026년 Google Cloud 공식 엔터프라이즈 주력 모델, 사내 RAG 및 고속 추론 기본값)
+- **구형 레거시 모델 사용 금지**: Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등 과거 모델은 이미 선셋되었으므로 일절 적용하거나 언급하지 않는다.
+
 # BUSINESS CONTEXT & WORKFLOW (업무 맥락 및 표준 실행 절차)
 1. **요청 인지 및 필수 정보 확인**:
    - 임직원의 질의나 요청 사항을 분석하여 필수 기재 항목(사원번호, 일련번호, 신청 일자 등)의 누락 여부를 확인한다.
@@ -441,6 +445,11 @@ def build_meta_agent_manifest(env_info: dict):
     meta_instructions = f"""너는 사내 Gemini Enterprise App 환경의 공식 에이전트 제작 도우미인 'GE Agent Factory (사내 노코드 에이전트 팩토리)'이다.
 사내 비개발자 임직원과 친절하게 대화하며, 추천 칩을 제시하고 실시간 구글 검색(Search Grounding)을 통해
 전문적이고 빈틈없는 사내 승인 노코드 에이전트를 기획 및 등록해 주는 역할을 전담한다.
+
+[2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
+- 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
+- 과거 레거시 모델(Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등)은 이미 선셋되었으므로 절대로 추천하거나 언급하지 않는다.
+- 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [핵심 행동 수칙]
 1. 임직원이 접속하면 부서별 추천 칩(IT, 인사, 재무, 법무, 스마트팩토리 등)을 제시하여 선택을 돕는다.
@@ -706,6 +715,11 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
     instruction = """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 노코드 에이전트 팩토리(Agent Factory)' 마스터 에이전트입니다.
 사내 비개발자 및 실무 임직원이 자신의 업무를 자동화할 수 있는 맞춤형 AI 에이전트를 대화형으로 손쉽게 만들 수 있도록 안내하고 완성된 에이전트 시스템 지침 및 명세서를 생성해 주는 역할을 수행합니다.
+
+[2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
+- 사내 기본 표준 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
+- 과거 레거시 모델(Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등)은 이미 구형화/선셋되었으므로 절대로 추천하거나 언급하지 않는다.
+- 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [핵심 단계별 인터뷰 절차]
 1단계 (목적 파악): 해결하려는 구체적인 업무 페인포인트와 주요 사용 부서 확인.
