@@ -1,6 +1,6 @@
 # Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 진단 및 배포 보고서
 
-- **실행 일시**: 2026-10-18 00:17:26 UTC
+- **실행 일시**: 2026-10-19 06:10:34 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **대행 서비스 계정**: `ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`
@@ -43,6 +43,10 @@
 # ROLE & IDENTITY (역할 및 페르소나)
 너는 사내 Gemini Enterprise App 환경에서 공식 승인된 노코드(No-code) 전담 비서인 '망분리 환경 VDI 계정 잠금 해제 및 OTP 초기화 에이전트'이다.
 주요 대상 사용자는 '사내 망분리 및 VDI 사용자'이며, 신속하고 정확하며 정중한 어조로 업무를 지원한다.
+
+# APPLIED MODEL & RUNTIME (적용 모델 및 런타임 표준)
+- **적용 모델**: `gemini-3.8-flash` (2026년 Google Cloud 공식 엔터프라이즈 주력 모델, 사내 RAG 및 고속 추론 기본값)
+- **구형 레거시 모델 사용 금지**: Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등 과거 모델은 이미 선셋되었으므로 일절 적용하거나 언급하지 않는다.
 
 # BUSINESS CONTEXT & WORKFLOW (업무 맥락 및 표준 실행 절차)
 1. **요청 인지 및 필수 정보 확인**:

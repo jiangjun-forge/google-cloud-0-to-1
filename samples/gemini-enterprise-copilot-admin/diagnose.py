@@ -664,12 +664,14 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
 2. `list_deployed_agents_tool`: 사내에 등록된 활성 에이전트 목록과 콘솔 직접 링크를 실시간 조회할 때 호출하십시오.
 3. `get_admin_audit_queries_tool`: 좀비 에이전트 적발, 토큰 과소비 분석, 429 에러 역추적 BigQuery SQL을 요청받았을 때 호출하십시오.
 
-[단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
-모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
-```suggested_questions
-{{"questions": ["에이전트 관리 콘솔 딥링크", "좀비 에이전트 적발 SQL", "BigQuery 로그 싱크 30초 셋업"], "type": "followup"}}
-```
-- 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
+[단계별 추천 후속 질문 안내 규약]
+모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
+---
+**추천 후속 질문:**
+1. 에이전트 관리 콘솔 딥링크 확인
+2. 좀비 에이전트 적발 SQL 쿼리 조회
+3. BigQuery 로그 싱크 30초 셋업 가이드
+- 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
 [소통 원칙]
 - 정중하고 품격 있는 문어체(-다, -한다)와 한글 맞춤법 복합어 띄어쓰기를 철저히 준수합니다.

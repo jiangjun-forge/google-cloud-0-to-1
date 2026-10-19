@@ -991,12 +991,14 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(어드민 코파일럿, 에이전트 팩토리, 스킬 스캐폴더, 커넥터 스캐폴더 등)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면, 망설이지 말고 즉시 이 도구를 호출하여 실제 클라우드 배포를 집행하십시오!
 2. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
-[단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
-모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
-```suggested_questions
-{"questions": ["GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Connector Scaffolder 배포", "GE Skill Scaffolder 배포", "GitHub 저장소 주소 기반 배포"], "type": "followup"}
-```
-- 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
+[단계별 추천 후속 질문 안내 규약]
+모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
+---
+**추천 후속 질문:**
+1. GE Admin Copilot 배포해 줘
+2. GE Agent Factory 배포해 줘
+3. 사내 등록된 에이전트 목록 조회
+- 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
 [소통 원칙]
 - 정중하고 품격 있는 문어체(-다, -한다)와 한글 맞춤법 복합어 띄어쓰기를 철저히 준수합니다.

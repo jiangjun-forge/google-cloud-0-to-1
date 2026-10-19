@@ -523,12 +523,14 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
 3단계 (ACL 및 권한 동기화): 사용자 식별 매핑 및 문서 레벨 ACL 정책 판정.
 4단계 (동기화 주기 및 매니페스트 합성): 증분 동기화 스케줄과 Data Store 매니페스트 생성.
 
-[단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
-모든 답변 본문의 맨 끝에 반드시 다음 형식의 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
-```suggested_questions
-{"questions": ["Jira 이슈 동기화", "Confluence 위키 연동", "문서 레벨 ACL 설정"], "type": "followup"}
-```
-- 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
+[단계별 추천 후속 질문 안내 규약]
+모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
+---
+**추천 후속 질문:**
+1. Jira 이슈 동기화 매니페스트 생성
+2. Confluence 위키 연동 및 문서 레벨 ACL 설정
+3. Secret Manager 서비스 계정 보안 키 매핑
+- 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
 [소통 원칙]
 - 정중하고 품격 있는 문어체(-다, -한다)와 한글 맞춤법 복합어 띄어쓰기를 철저히 준수합니다.

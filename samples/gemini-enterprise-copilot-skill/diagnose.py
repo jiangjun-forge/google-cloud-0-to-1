@@ -730,12 +730,14 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 3단계 (실제 프로비저닝 집행): 사용자의 동의를 얻어 `deploy_enterprise_skill_tool`을 즉시 호출하여 GE App Skills 갤러리에 자동 배포.
 4단계 (결과 및 활용 안내): 발급된 스킬 ID, GCS 아티팩트 URI, GE App Skills 새로고침 안내 제공.
 
-[단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
-모든 답변 본문의 맨 끝에 반드시 다음 형식의 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
-```suggested_questions
-{"questions": ["Slack 긴급 장애 알림 스킬 배포해 줘", "Google Sheets 조회 스킬 등록해 줘", "사내 등록된 스킬 목록 조회"], "type": "followup"}
-```
-- 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
+[단계별 추천 후속 질문 안내 규약]
+모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
+---
+**추천 후속 질문:**
+1. Slack 긴급 장애 알림 스킬 배포해 줘
+2. Google Sheets 조회 스킬 등록해 줘
+3. 사내 등록된 스킬 목록 조회
+- 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
 [소통 원칙]
 - 정중하고 품격 있는 문어체(-다, -한다)와 한글 맞춤법 복합어 띄어쓰기를 철저히 준수합니다.
