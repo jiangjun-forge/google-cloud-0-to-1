@@ -628,18 +628,46 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         credentials=creds,
     )
 
-    instruction = """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 코파일럿(Admin Copilot)' 마스터 에이전트입니다.
-사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 7대 핵심 관리 과제(수백 개 에이전트 스프롤 관리 헬, 원클릭 BigQuery 감사 로그 싱크 구축, GCP 콘솔 3단계 길잡이, 도메인 충돌 및 테넌트 온보딩, 외부 마켓플레이스 차단 거버넌스, 부서별 라이선스 채택률 및 유휴 라이선스 회수, Overage 과금 방어 및 AI Studio 키 차단, 폐쇄망 프록시 허용용 Exact 15대 코어 FQDN 진단)를 대화형으로 자율 진단하고 즉시 실행 가능한 조치 스크립트와 콘솔 가이드를 제공합니다.
+    instruction = f"""당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 코파일럿(Admin Copilot)' 마스터 에이전트입니다.
+사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 7대 핵심 관리 과제(수백 개 에이전트 스프롤 관리 헬, 원클릭 BigQuery 감사 로그 싱크 구축, GCP 콘솔 3단계 길잡이, 도메인 충돌 및 테넌트 온보딩, 외부 마켓플레이스 차단 거버넌스, 부서별 라이선스 채택률 및 유휴 라이선스 회수, Overage 과금 방어 및 AI Studio 키 차단, 폐쇄망 프록시 허용용 Exact 15대 코어 FQDN 진단)를 대화형으로 자율 진단하고 즉시 실행 가능한 조치 스크립트와 콘솔 딥링크를 제공합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
 - 과거 레거시 모델(Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등)은 이미 선셋되었으므로 절대로 추천하거나 언급하지 않는다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
+[2026년 Google Cloud 콘솔 공식 정규 명칭 원칙]
+- 과거 구형 명칭(Search and Conversation, Generative AI App Builder, Vertex AI Agent Builder, Agentspace 등)은 2026년 현재 전면 개편되었으므로 절대 사용하지 않는다.
+- 현재 공식 정규 명칭만을 엄격히 사용한다:
+  * 에이전트 개발 및 운영 플랫폼: 'Agent Platform' (한글: '에이전트 플랫폼')
+  * 사내 임직원 웹 대화 포털: 'Gemini Enterprise' (한글: '제미나이 엔터프라이즈')
+  * 에이전트 실행 엔진: 'Agent Engine' (한글: '에이전트 엔진')
+  * 감사 및 로그 분석: 'Cloud Logging' / 'BigQuery'
+
+[GCP 콘솔 직접 딥링크(Deep Link) 안내 의무화 규약]
+- 관리자가 콘솔 위치나 설정을 물어보거나 관련 과제를 안내할 때, 복잡한 메뉴 경로 설명에 그치지 않고 반드시 실제 클릭 가능한 완결형 딥링크(Deep Link) URL을 괄호 병기 표준 `명칭 ( https://... )` 형식으로 즉시 제공해야 한다.
+- 주요 콘솔 딥링크:
+  * Agent Platform 에이전트 관리 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+  * Agent Platform 전체 엔진 목록 ( https://console.cloud.google.com/gen-app-builder/engines?project={project_id} )
+  * Agent Engine 런타임 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
+  * BigQuery Studio SQL 콘솔 ( https://console.cloud.google.com/bigquery?project={project_id} )
+  * Cloud Logging 로그 라우터 콘솔 ( https://console.cloud.google.com/logs/router?project={project_id} )
+  * IAM 및 서비스 계정 관리 콘솔 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
+  * 조직 정책(Org Policy) 거버넌스 콘솔 ( https://console.cloud.google.com/iam-admin/orgpolicies?project={project_id} )
+  * Cloud Billing 결제 관리 콘솔 ( https://console.cloud.google.com/billing )
+  * Gemini Enterprise 사내 웹 포털 ( https://gemini.google.com/app/{ge_app_id} )
+  * Gemini Enterprise 사내 에이전트 갤러리 ( https://gemini.google.com/app/{ge_app_id}/r/agents )
+
+[장착된 실제 실행 도구 (Tools)]
+당신에게는 관리자 업무를 즉시 지원할 수 있는 실행 도구가 장착되어 있습니다:
+1. `get_admin_console_deeplinks_tool`: GCP 콘솔 딥링크를 질의하거나 바로가기 링크를 요구할 때 즉시 호출하여 클릭 가능한 딥링크 표를 출력하십시오.
+2. `list_deployed_agents_tool`: 사내에 등록된 활성 에이전트 목록과 콘솔 직접 링크를 실시간 조회할 때 호출하십시오.
+3. `get_admin_audit_queries_tool`: 좀비 에이전트 적발, 토큰 과소비 분석, 429 에러 역추적 BigQuery SQL을 요청받았을 때 호출하십시오.
+
 [단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
 모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
 ```suggested_questions
-{"questions": ["좀비 에이전트 적발 SQL", "BigQuery 로그 싱크 30초 셋업", "GCP 콘솔 GE Admin 딥링크"], "type": "followup"}
+{{"questions": ["에이전트 관리 콘솔 딥링크", "좀비 에이전트 적발 SQL", "BigQuery 로그 싱크 30초 셋업"], "type": "followup"}}
 ```
 - 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
 
@@ -648,11 +676,149 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 이모지나 특수 기호 대신 깔끔한 마크다운을 사용합니다.
 """
 
+    def get_admin_console_deeplinks_tool(category: str = "") -> str:
+        """Get direct GCP console deep links for Gemini Enterprise app, Agent Platform, BigQuery, IAM, and Billing.
+
+        Args:
+            category: Optional filter (e.g. 'agent', 'logging', 'iam', 'billing', 'all').
+        """
+        links = [
+            ("Agent Platform 에이전트 관리 콘솔", f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"),
+            ("Agent Platform 전체 엔진 목록", f"https://console.cloud.google.com/gen-app-builder/engines?project={project_id}"),
+            ("Agent Engine (Reasoning Engine) 런타임 콘솔", f"https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id}"),
+            ("BigQuery Studio 감사 로그 데이터셋", f"https://console.cloud.google.com/bigquery?project={project_id}"),
+            ("Cloud Logging 로그 라우터 (Sink) 콘솔", f"https://console.cloud.google.com/logs/router?project={project_id}"),
+            ("IAM 및 관리자 권한 콘솔", f"https://console.cloud.google.com/iam-admin/iam?project={project_id}"),
+            ("서비스 계정 관리 콘솔", f"https://console.cloud.google.com/iam-admin/serviceaccounts?project={project_id}"),
+            ("조직 정책 (Org Policy) 콘솔", f"https://console.cloud.google.com/iam-admin/orgpolicies?project={project_id}"),
+            ("Cloud Billing 결제 관리 콘솔", "https://console.cloud.google.com/billing"),
+            ("Gemini Enterprise 사내 임직원 웹 포털", f"https://gemini.google.com/app/{ge_app_id}"),
+            ("Gemini Enterprise 사내 에이전트 갤러리", f"https://gemini.google.com/app/{ge_app_id}/r/agents"),
+        ]
+        lines = [
+            "### Google Cloud 및 Gemini Enterprise 어드민 콘솔 딥링크",
+            "",
+            "| 관리 영역 | 바로가기 딥링크 (클릭 시 즉시 이동) |",
+            "| :--- | :--- |",
+        ]
+        cat = category.lower().strip()
+        for name, url in links:
+            if not cat or cat == "all" or cat in name.lower() or cat in url.lower():
+                lines.append(f"| {name} | ( {url} ) |")
+        return "\n".join(lines)
+
+    def list_deployed_agents_tool() -> str:
+        """List all currently active agents registered in Gemini Enterprise app.
+
+        Returns:
+            A markdown-formatted summary table of registered agents with direct console links.
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Goog-User-Project": project_id,
+        }
+        url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+        try:
+            resp = requests.get(url, headers=headers, timeout=30)
+            if not resp.ok:
+                return f"[오류] 에이전트 목록 조회 실패 (HTTP {resp.status_code}): {resp.text}"
+            data = resp.json()
+            agents = data.get("agents", [])
+            if not agents:
+                return "현재 등록된 에이전트가 없습니다."
+
+            lines = [
+                "### Gemini Enterprise App 등록 에이전트 현황",
+                "",
+                "| 에이전트 명칭 | Agent ID | 상태 (State) | 공유 범위 (Sharing) | 콘솔 직접 관리 |",
+                "| :--- | :--- | :--- | :--- | :--- |",
+            ]
+            for a in agents:
+                aid = a.get("name", "").split("/")[-1]
+                disp = a.get("displayName", "-")
+                state = a.get("state", "UNKNOWN")
+                scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
+                agent_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents/{aid}?project={project_id}"
+                lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` | ( {agent_url} ) |")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
+
+    def get_admin_audit_queries_tool(query_type: str = "all") -> str:
+        """Get ready-to-run BigQuery audit SQL queries for detecting zombie agents, top token consumers, or error spikes.
+
+        Args:
+            query_type: 'zombie', 'top_tokens', 'errors', or 'all'.
+        """
+        queries = []
+        qt = query_type.lower().strip()
+        if qt in ("zombie", "all", "좀비"):
+            queries.append(
+                "### 1. 최근 60일간 호출 0건인 좀비 에이전트(Ghost Agents) 적발 쿼리\n\n"
+                "```sql\n"
+                f"SELECT\n"
+                f"    protopayload_auditlog.resourceName AS agent_resource,\n"
+                f"    protopayload_auditlog.authenticationInfo.principalEmail AS creator_email,\n"
+                f"    MAX(timestamp) AS last_invoked_at,\n"
+                f"    DATE_DIFF(CURRENT_DATE(), DATE(MAX(timestamp)), DAY) AS idle_days\n"
+                f"FROM\n"
+                f"    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`\n"
+                f"WHERE\n"
+                f"    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'\n"
+                f"    AND protopayload_auditlog.methodName LIKE '%AgentService.Query%'\n"
+                f"GROUP BY 1, 2\n"
+                f"HAVING idle_days >= 60\n"
+                f"ORDER BY idle_days DESC;\n"
+                "```"
+            )
+        if qt in ("top_tokens", "all", "토큰", "랭킹"):
+            queries.append(
+                "### 2. 전사 에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리\n\n"
+                "```sql\n"
+                f"SELECT\n"
+                f"    protopayload_auditlog.resourceName AS agent_resource,\n"
+                f"    COUNT(1) AS total_invocations,\n"
+                f"    COUNT(DISTINCT protopayload_auditlog.authenticationInfo.principalEmail) AS active_users\n"
+                f"FROM\n"
+                f"    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`\n"
+                f"WHERE\n"
+                f"    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'\n"
+                f"GROUP BY 1\n"
+                f"ORDER BY total_invocations DESC\n"
+                f"LIMIT 10;\n"
+                "```"
+            )
+        if qt in ("errors", "all", "에러", "오류", "429"):
+            queries.append(
+                "### 3. 429 쿼터 초과 및 에러 다발 문제 에이전트 역추적 쿼리\n\n"
+                "```sql\n"
+                f"SELECT\n"
+                f"    protopayload_auditlog.resourceName AS agent_resource,\n"
+                f"    protopayload_auditlog.status.code AS error_code,\n"
+                f"    protopayload_auditlog.status.message AS error_message,\n"
+                f"    COUNT(1) AS error_count\n"
+                f"FROM\n"
+                f"    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`\n"
+                f"WHERE\n"
+                f"    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'\n"
+                f"    AND protopayload_auditlog.status.code != 0\n"
+                f"GROUP BY 1, 2, 3\n"
+                f"ORDER BY error_count DESC;\n"
+                "```"
+            )
+        return "\n\n".join(queries)
+
     adk_agent = Agent(
         name="gemini_enterprise_admin_copilot",
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
+        tools=[get_admin_console_deeplinks_tool, list_deployed_agents_tool, get_admin_audit_queries_tool],
     )
     app = agent_engines.AdkApp(agent=adk_agent, enable_tracing=True)
 
