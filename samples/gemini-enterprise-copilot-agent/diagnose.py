@@ -714,7 +714,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     )
 
     instruction = """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 노코드 에이전트 팩토리(Agent Factory)' 마스터 에이전트입니다.
-사내 비개발자 및 실무 임직원이 자신의 업무를 자동화할 수 있는 맞춤형 AI 에이전트를 대화형으로 손쉽게 만들 수 있도록 안내하고 완성된 에이전트 시스템 지침 및 명세서를 생성해 주는 역할을 수행합니다.
+사내 비개발자 및 실무 임직원이 자신의 업무를 자동화할 수 있는 맞춤형 AI 에이전트를 대화형으로 손쉽게 만들 수 있도록 안내하고, 완성된 에이전트를 실제 사내 갤러리 및 Gemini Enterprise app에 자동 등록해 주는 역할을 수행합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 기본 표준 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
@@ -726,11 +726,17 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 2단계 (핵심 규칙): 에이전트가 지켜야 할 사내 규정과 처리 기준, 필수 기재 항목 정의.
 3단계 (지식 베이스): 연동할 사내 구글 드라이브(Google Drive), 구글 시트(Google Sheets), 문서, 사내 위키 등 데이터 저장소 정의.
 4단계 (최종 검증 및 합성): 5대 골든 규격(Role, Workflow, Guardrails, Fallback, Starter Prompts)으로 완성된 시스템 지침서 생성.
+5단계 (실제 클라우드 등록): 사용자가 에이전트 등록/배포에 동의하면, 반드시 `register_nocode_agent_tool` 도구를 호출하여 Gemini Enterprise app 사내 갤러리에 실제로 등록을 집행한다!
+
+[장착된 실제 실행 도구 (Tools)]
+당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
+1. `register_nocode_agent_tool`: 인터뷰를 마치고 에이전트 기획이 완료되면, 사용자가 "등록해 줘", "배포해 줘", "생성해 줘"라고 하거나 동의했을 때 즉시 이 도구를 호출하여 실제 클라우드에 에이전트를 등록하십시오! 이 도구를 호출해야만 사내 에이전트 목록에 나타납니다.
+2. `list_deployed_agents_tool`: 현재 사내에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
 모든 답변 본문의 맨 끝에 반드시 다음 형식의 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
 ```suggested_questions
-{"questions": ["추천 선택지 1", "추천 선택지 2", "추천 선택지 3"], "type": "followup"}
+{"questions": ["에이전트 등록 실행", "추천 선택지 2", "에이전트 목록 조회"], "type": "followup"}
 ```
 - 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
 
@@ -739,11 +745,158 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 이모지나 특수 기호 대신 깔끔한 마크다운을 사용합니다.
 """
 
+    def register_nocode_agent_tool(
+        display_name: str,
+        description: str,
+        instructions: str,
+        starter_prompts: str = "",
+    ) -> str:
+        """Register the newly designed no-code agent directly into Gemini Enterprise app so it appears in the enterprise gallery.
+
+        Args:
+            display_name: The display name of the agent (e.g. '사내 특허 출원 절차 가이드 에이전트').
+            description: Short summary of what the agent does.
+            instructions: Complete 5 golden prompt system instructions for the agent.
+            starter_prompts: Comma-separated starter questions (e.g. '특허 출원 지원 범위 알려줘, 필수 서류는 뭐야').
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        }
+        base_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+
+        # Agent Engine 리소스 동적 탐색
+        re_res = None
+        re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
+        try:
+            re_resp = requests.get(re_list_url, headers=headers, timeout=15)
+            if re_resp.ok:
+                re_engines = re_resp.json().get("reasoningEngines", [])
+                if re_engines:
+                    re_res = re_engines[0].get("name")
+        except Exception:
+            pass
+
+        prompts_list = [p.strip() for p in starter_prompts.split(",") if p.strip()] if starter_prompts else [
+            f"{display_name}의 주요 기능을 알려줘",
+            "업무 처리 절차와 승인 결재선 확인해 줘",
+            "필수 준비 서류와 주의 사항 알려줘",
+            "자주 묻는 질문(FAQ) 정리해 줘",
+        ]
+
+        body = {
+            "displayName": display_name,
+            "description": description,
+            "sharingConfig": {"scope": "ALL_USERS"},
+            "customPlaceholderText": f"{display_name}에게 업무 질문이나 요청을 입력하세요...",
+            "starterPrompts": [{"text": p} for p in prompts_list],
+        }
+        if re_res:
+            body["adkAgentDefinition"] = {
+                "toolSettings": {"toolDescription": description},
+                "provisionedReasoningEngine": {
+                    "reasoningEngine": re_res
+                },
+            }
+        else:
+            body["noCodeAgentDefinition"] = {
+                "objective": instructions
+            }
+
+        try:
+            resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+            if resp.status_code == 409 or "already exists" in resp.text.lower():
+                list_resp = requests.get(base_url, headers=headers, timeout=30)
+                agent_id = None
+                existing_state = None
+                if list_resp.ok:
+                    for a in list_resp.json().get("agents", []):
+                        if a.get("displayName") == display_name:
+                            agent_id = a.get("name").split("/")[-1]
+                            existing_state = a.get("state")
+                            break
+                if agent_id:
+                    if existing_state == "PRIVATE" and "adkAgentDefinition" in body:
+                        requests.delete(f"{base_url}/{agent_id}", headers=headers, timeout=30)
+                        resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+                    else:
+                        mask = "displayName,description,starterPrompts,customPlaceholderText"
+                        mask += ",adkAgentDefinition" if "adkAgentDefinition" in body else ",noCodeAgentDefinition"
+                        patch_url = f"{base_url}/{agent_id}?updateMask={mask}"
+                        resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
+
+            if resp.ok:
+                res_data = resp.json()
+                agent_id = res_data.get("name", "").split("/")[-1]
+                agent_state = res_data.get("state", "ENABLED")
+                return (
+                    f"### 사내 노코드 에이전트 등록 완료\n\n"
+                    f"- **에이전트 명칭**: {display_name}\n"
+                    f"- **Agent ID**: `{agent_id}`\n"
+                    f"- **등록 상태**: `{agent_state}` (정상 활성화)\n"
+                    f"- **공유 범위**: `전사 공유 (ALL_USERS)`\n"
+                    f"- **적용 모델**: `gemini-3.8-flash` (2026 최신 표준)\n"
+                    f"- **확인 경로**: 사내 Gemini Enterprise app 웹 포털 좌측 메뉴 및 사내 갤러리(/r/agents)\n\n"
+                    f"이제 사내 모든 임직원이 에이전트 목록 및 검색창에서 즉시 해당 에이전트를 호출하여 사용할 수 있습니다."
+                )
+            else:
+                return f"[등록 오류] 에이전트 등록 실패 (HTTP {resp.status_code}): {resp.text[:300]}"
+        except Exception as e:
+            return f"[등록 예외] 에이전트 등록 중 예외 발생: {str(e)}"
+
+    def list_deployed_agents_tool() -> str:
+        """List all currently active agents registered in Gemini Enterprise app.
+
+        Returns:
+            A markdown-formatted summary table of registered agents.
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Goog-User-Project": project_id,
+        }
+        url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+        try:
+            resp = requests.get(url, headers=headers, timeout=30)
+            if not resp.ok:
+                return f"[오류] 에이전트 목록 조회 실패 (HTTP {resp.status_code}): {resp.text}"
+            data = resp.json()
+            agents = data.get("agents", [])
+            if not agents:
+                return "현재 등록된 에이전트가 없습니다."
+
+            lines = [
+                "### Gemini Enterprise App 등록 에이전트 현황",
+                "",
+                "| 에이전트 명칭 | Agent ID | 상태 (State) | 공유 범위 (Sharing) |",
+                "| :--- | :--- | :--- | :--- |",
+            ]
+            for a in agents:
+                aid = a.get("name", "").split("/")[-1]
+                disp = a.get("displayName", "-")
+                state = a.get("state", "UNKNOWN")
+                scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
+                lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` |")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
+
     adk_agent = Agent(
         name="gemini_enterprise_agent_factory",
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
+        tools=[register_nocode_agent_tool, list_deployed_agents_tool],
     )
     app = agent_engines.AdkApp(agent=adk_agent, enable_tracing=True)
 
