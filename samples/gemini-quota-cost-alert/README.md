@@ -105,7 +105,7 @@ flowchart TD
 실제 리소스를 배포하거나 설정을 점검할 때 필요한 역할(Role) 목록이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| : | : | : |
+| :--- | :--- | :--- |
 | **클라우드 빌링 관리자 (또는 뷰어)** | `roles/billing.costsManager` 또는 `roles/billing.viewer` | 결제 예산 규칙 확인 및 생성 |
 | **클라우드 펍/섭 관리자** | `roles/pubsub.admin` | 알림 전달용 Cloud Pub/Sub 주제 생성 및 메시지 테스트 |
 | **클라우드 펑션스 개발자** | `roles/cloudfunctions.developer` | 자동 차단 Cloud Functions 배포 |

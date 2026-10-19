@@ -124,7 +124,7 @@ flowchart TD
 스크립트를 실행하는 사용자 또는 서비스 계정에 아래 역할(Role) 중 하나가 필요하다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| : | : | : |
+| :--- | :--- | :--- |
 | **모니터링 뷰어 (권장)** | `roles/monitoring.viewer` | Cloud Monitoring 지표 데이터 조회 |
 | **뷰어 (기본)** | `roles/viewer` | 프로젝트 리소스 및 지표 전반 조회 |
 

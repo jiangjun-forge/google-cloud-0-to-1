@@ -138,7 +138,7 @@ kubectl annotate service [SERVICE_NAME] \
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 서비스 | 필요 역할 (Role) | 최소 IAM 권한 |
-| : | : | : |
+| :--- | :--- | :--- |
 | `구글 쿠버네티스 엔진(GKE)` | `roles/container.viewer` | `container.clusters.get`, `container.clusters.list` |
 | `컴퓨트 엔진(Compute Engine)` | `roles/compute.networkViewer` | `compute.firewalls.list`, `compute.backendServices.get` |
 

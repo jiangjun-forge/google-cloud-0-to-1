@@ -110,7 +110,7 @@ flowchart TD
 본 도구 실행에는 Google Cloud 리소스 읽기 및 할당량 확인을 위한 최소 권한이 요구된다:
 
 | 역할 (Role) | 설명 |
-| : | : |
+| :--- | :--- |
 | 클라우드 모니터링 뷰어(`roles/monitoring.viewer`) | 클라우드 모니터링(Cloud Monitoring) 지표 및 사용량 조회 권한 |
 | 서비스 사용량 뷰어(`roles/serviceusage.serviceUsageViewer`) | 대상 API 활성화 상태 및 기본 할당량 확인 권한 |
 

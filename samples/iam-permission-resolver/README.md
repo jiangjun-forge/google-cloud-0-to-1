@@ -99,7 +99,7 @@ flowchart TD
 감사 로그를 조회하고 IAM 역할을 바인딩하기 위해 필요한 역할 목록이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| : | : | : |
+| :--- | :--- | :--- |
 | **클라우드 로깅 뷰어(roles/logging.viewer)** | `roles/logging.viewer` | Cloud Logging 데이터 액세스 감사 로그 읽기 |
 | **프로젝트 IAM 관리자(roles/resourcemanager.projectIamAdmin)** | `roles/resourcemanager.projectIamAdmin` | 추천된 IAM 역할을 계정에 최종 부여 |
 

@@ -54,7 +54,7 @@ flowchart TD
         DLP["Cloud DLP / SDP API (가명 처리 템플릿)"]
     end
 
-    User -->|명령 실행 (python diagnose.py)| DiagnosePy
+    User -->|"명령 실행 (python diagnose.py)"| DiagnosePy
     DiagnosePy --> ArgParser
     ArgParser -->|dry-run 플래그| MockProvider
     ArgParser -->|실제 프로젝트| LiveScanner

@@ -140,7 +140,7 @@ gcloud services enable compute.googleapis.com container.googleapis.com
 본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
 
 | 역할 (Role) | 설명 |
-| : | : |
+| :--- | :--- |
 | `roles/compute.viewer` | 컴퓨트 엔진(Compute Engine) 인스턴스 템플릿 및 MIG 설정 조회 권한 |
 | `roles/container.viewer` | GKE 클러스터 및 노드 풀 구성 상태 조회 권한 |
 

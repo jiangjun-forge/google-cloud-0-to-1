@@ -110,7 +110,7 @@ flowchart TD
 본 도구 구동을 위해 필요한 최소 IAM 권한은 다음과 같다.
 
 | 권한 역할 | 역할 명칭 | 필요 사유 |
-| : | : | : |
+| :--- | :--- | :--- |
 | `roles/accesscontextmanager.reader` | `Access Context Manager 독자(roles/accesscontextmanager.reader)` | VPC-SC 서비스 보안 경계 설정 조회 (감독규정 제15조) |
 | `roles/compute.viewer` | `Compute 뷰어(roles/compute.viewer)` | SSL 정책 TLS 최소 버전 조회 (감독규정 제14조) |
 | `roles/dlp.inspectTemplatesReader` | `DLP 검사 템플릿 독자(roles/dlp.inspectTemplatesReader)` | Sensitive Data Protection 가명 처리 템플릿 조회 (신용정보법 제20조의2) |

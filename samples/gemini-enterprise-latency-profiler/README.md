@@ -99,7 +99,7 @@ flowchart TD
 본 도구 구동을 위해 필요한 최소 IAM 권한은 다음과 같다.
 
 | 권한 역할 | 역할 명칭 | 필요 사유 |
-| : | : | : |
+| :--- | :--- | :--- |
 | `roles/aiplatform.user` | Vertex AI 사용자 | Vertex AI Gemini 스트리밍 API 호출 및 TTFT 실측 |
 | `roles/modelarmor.admin` (또는 뷰어) | Model Armor 관리자 | Model Armor 검사 엔드포인트 호출 및 필터링 지연 계측 |
 | `roles/monitoring.viewer` | 모니터링 뷰어 | 엔드포인트 지연 메트릭 조회 |

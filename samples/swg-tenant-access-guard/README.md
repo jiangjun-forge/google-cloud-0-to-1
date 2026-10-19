@@ -110,7 +110,7 @@ flowchart TD
 본 도구를 실행하고 관련 정책을 조회 및 배포하기 위해 다음 역할이 필요하다:
 
 | 역할 (Role) | 설명 |
-| : | : |
+| :--- | :--- |
 | 액세스 컨텍스트 관리자 정책 독자(`roles/accesscontextmanager.policyReader`) | Context-Aware Access 레벨 및 정책 조회/관리 |
 | 조직 뷰어(`roles/resourcemanager.organizationViewer`) | 조직 리소스 및 계층 구조 확인 |
 - 사내 관문 프록시(SWG, Forward Proxy) 설정 권한: 헤더 주입 룰 작성 및 배포

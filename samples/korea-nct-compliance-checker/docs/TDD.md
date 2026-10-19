@@ -53,7 +53,7 @@ flowchart TD
         Access_Approval["Access Approval (CSP 접근 사전 승인 설정)"]
     end
 
-    User -->|스크립트 구동 (python diagnose.py)| DiagnosePy
+    User -->|"스크립트 구동 (python diagnose.py)"| DiagnosePy
     DiagnosePy --> ArgParser
     ArgParser -->|dry-run 플래그| MockProvider
     ArgParser -->|실제 프로젝트| LiveScanner

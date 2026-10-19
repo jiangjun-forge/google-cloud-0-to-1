@@ -93,7 +93,7 @@ gcloud services enable compute.googleapis.com logging.googleapis.com cloudresour
 ### (2) 진단 실행 계정 최소 IAM 권한
 
 | 역할 (Role) | 설명 |
-| : | : |
+| :--- | :--- |
 | `조직 뷰어(roles/resourcemanager.organizationViewer)` | 사내 조직 정책(`resourceLocations`, `allowedPolicyMemberDomains` 등) 조회 권한 |
 | `클라우드 로깅 뷰어(roles/logging.viewer)` | Cloud Audit Logs 데이터 접근 감사 로깅 활성화 상태 조회 권한 |
 | `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | 클라우드 KMS(Cloud KMS) 키링 및 CMEK 적용 상태 확인 권한 |

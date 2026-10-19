@@ -92,7 +92,7 @@ flowchart TD
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 역할 (Role) | 최소 IAM 권한 |
-| : | : |
+| :--- | :--- |
 | 스토리지 관리자(`roles/storage.admin`) | `storage.buckets.get`, `storage.buckets.update` |
 | 스토리지 전송 관리자(`roles/storagetransfer.admin`) | `storagetransfer.agentpools.list`, `storagetransfer.jobs.create` |
 

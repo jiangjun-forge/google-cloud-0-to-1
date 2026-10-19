@@ -107,7 +107,7 @@ flowchart TD
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
-| : | : | : |
+| :--- | :--- | :--- |
 | `Cloud Run` | `roles/run.viewer` | `run.services.get`, `run.services.list` |
 | `Compute Engine` | `roles/compute.networkViewer` | `compute.networks.get`, `compute.routers.get`, `compute.subnetworks.get` |
 

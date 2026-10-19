@@ -102,7 +102,7 @@ flowchart TD
 감사 로그를 조회하고 조직 정책을 수정하기 위해 필요한 역할 목록이다:
 
 | 역할 (Role) | 설명 |
-| : | : |
+| :--- | :--- |
 | 로그 뷰어(`roles/logging.viewer`) | Cloud Logging 활동 감사 로그 읽기 |
 | 조직 정책 관리자(`roles/orgpolicy.policyAdmin`) | 프로젝트 레벨 조직 정책 제약 조건 비활성화 |
 

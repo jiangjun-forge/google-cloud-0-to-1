@@ -102,7 +102,7 @@ flowchart TB
 본 도구를 실행하고 실제 리소스를 배포하기 위해 필요한 최소 IAM 역할은 다음과 같다:
 
 | 역할 (Role) | 권한 및 용도 |
-| : | : |
+| :--- | :--- |
 | `roles/discoveryengine.admin` | Discovery Engine Data Store 생성, 스케줄 설정 및 엔진 바인딩 |
 | `roles/secretmanager.admin` (또는 `secretAccessor`) | 커넥터 인증 토큰 보관용 보안 볼트 시크릿 생성 및 접근 |
 | `roles/iam.serviceAccountUser` | 커넥터 실행 대행 서비스 계정 가장 실행 |

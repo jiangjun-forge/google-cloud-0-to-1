@@ -140,7 +140,7 @@ def sanitize_on_soil(prompt: str) -> tuple[str, bool]:
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 역할 (Role) | 설명 |
-| : | : |
+| :--- | :--- |
 | `Model Armor 뷰어(roles/modelarmor.viewer)` | Model Armor 템플릿 읽기 권한 (`modelarmor.templates.get`, `modelarmor.templates.list`) |
 | `DLP 리더(roles/dlp.reader)` | Sensitive Data Protection 검사 템플릿 조회 권한 (`dlp.inspectTemplates.get`) |
 

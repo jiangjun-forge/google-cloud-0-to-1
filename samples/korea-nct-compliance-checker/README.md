@@ -105,7 +105,7 @@ flowchart TD
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 서비스 | 필요 역할(Role) | 최소 IAM 권한 | 필요 사유 |
-| : | : | : | : |
+| :--- | :--- | :--- | :--- |
 | `Access Approval` | `Access Approval 뷰어(roles/accessapproval.viewer)` | `accessapproval.settings.get` | CSP 임의 접근 사전 승인 설정 조회 |
 | `Cloud IAM` | `보안 검토자(roles/iam.securityReviewer)` | `iam.denyPolicies.get`, `iam.denyPolicies.list` | RAG 벡터 저장 차단 IAM Deny 확인 (법 제10조) |
 | `Cloud KMS` | `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.keyRings.list`, `cloudkms.cryptoKeys.list` | 서울 리전 CMEK 이중 암호화 키링 상태 조회 (안내서 기준) |

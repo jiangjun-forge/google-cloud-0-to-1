@@ -118,7 +118,7 @@ gcloud services enable compute.googleapis.com logging.googleapis.com
 ### (2) 진단 실행 계정 최소 IAM 권한
 
 | 역할 (Role) | 설명 |
-| : | : |
+| :--- | :--- |
 | `roles/compute.viewer` | CUD 약정 및 온디맨드/Future Reservation 목록 조회 권한 |
 | `roles/logging.viewer` | 클라우드 로깅(Cloud Logging) 스톡아웃 감사 로그 조회 권한 |
 

@@ -101,7 +101,7 @@ flowchart TD
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 역할 (Role) | 최소 IAM 권한 |
-| : | : |
+| :--- | :--- |
 | 로그 뷰어(`roles/logging.viewer`) | `logging.logEntries.list` |
 | 보안 검토자(`roles/iam.securityReviewer`) | `iam.serviceAccountKeys.list`, `resourcemanager.projects.getIamPolicy` |
 

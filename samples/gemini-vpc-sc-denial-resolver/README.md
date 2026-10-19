@@ -107,7 +107,7 @@ flowchart TD
 Cloud Logging 감사 로그를 조회하기 위해 필요한 IAM 역할이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| : | : | : |
+| :--- | :--- | :--- |
 | **클라우드 로깅 뷰어 (권장)** | `roles/logging.viewer` | Cloud Logging 정책 감사 로그 읽기 |
 | **보안 뷰어 (선택)** | `roles/iam.securityViewer` | 보안 정책 및 거부 감사 로그 통합 조회 |
 

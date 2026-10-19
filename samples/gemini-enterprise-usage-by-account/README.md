@@ -98,7 +98,7 @@ flowchart TB
 BigQuery 로그 데이터세트 조회 및 진단 쿼리 실행을 위한 최소 권한(Least Privilege)은 다음과 같다:
 
 | 역할 (Role) | 권한 ID | 용도 및 최소 권한 세부 사항 |
-| : | : | : |
+| :--- | :--- | :--- |
 | `roles/bigquery.dataViewer` | 분석 실행 계정 | 수집된 BigQuery 로그 테이블 및 스키마 읽기 |
 | `roles/bigquery.jobUser` | 분석 실행 계정 | 계정별 토큰 집계 쿼리 작업(Job) 실행 |
 

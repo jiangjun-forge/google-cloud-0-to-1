@@ -101,7 +101,7 @@ flowchart TD
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 역할 (Role) | 최소 IAM 권한 |
-| : | : |
+| :--- | :--- |
 | 디스커버리 엔진 뷰어(`roles/discoveryengine.viewer`) | `discoveryengine.dataStores.get`, `discoveryengine.documents.list` |
 | 스토리지 객체 뷰어(`roles/storage.objectViewer`) | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
 

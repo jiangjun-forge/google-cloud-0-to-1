@@ -97,7 +97,7 @@ flowchart TD
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
-| : | : | : |
+| :--- | :--- | :--- |
 | `Cloud KMS` | `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.cryptoKeys.get`, `cloudkms.cryptoKeyVersions.list` |
 | `Cloud Storage` | `스토리지 객체 뷰어(roles/storage.objectViewer)` | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
 

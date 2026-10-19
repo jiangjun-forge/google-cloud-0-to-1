@@ -99,7 +99,7 @@ flowchart TD
 BigQuery 데이터세트 생성 및 제미나이 모델 호출을 위한 IAM 권한 목록이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| : | : | : |
+| :--- | :--- | :--- |
 | **빅쿼리 데이터 편집자 (권장)** | `roles/bigquery.dataEditor` | 로그 저장용 데이터세트 및 테이블 생성 |
 | **버텍스 AI 사용자** | `roles/aiplatform.user` | 제미나이 모델 호출 및 로깅 파라미터 설정 |
 
