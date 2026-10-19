@@ -18,21 +18,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 구글 클라우드 IAM(Cloud IAM) 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#SecOps`  
-**Concern**: `#IAM`, `#Security`  
-**Service**: `#CloudIAM`, `#CloudLogging`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 클라우드 감사 로그 기반 403 Permission Denied 발생 이벤트의 누락 권한 실시간 역추적 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 과도한 Owner/Editor 대신 최소 권한(Least Privilege) 맞춤형 IAM 역할 바인딩 명령어 처방 |
 
 ---
 
-## 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- **원인 미상의 403 권한 거부**: 파이프라인이나 서비스에서 `Permission Denied` 오류가 발생했으나 정확히 어떤 IAM 역할(Role)이 누락되었는지 확인하기 어려울 때
-- **과도한 권한 부여(오버 그랜트) 방지**: 문제를 해결하겠다고 `roles/editor`나 `roles/owner`를 남발하지 않고 최소 권한 역할만 선별하여 안전하게 부여하고자 할 때
-- **감사 로그 기반의 즉각 처방**: Cloud Logging의 `cloudaudit.googleapis.com/data_access` 감사 로그를 분석하여 계정 형태(사용자 vs 서비스 계정)에 맞춘 gcloud 명령어를 원클릭으로 확보하고자 할 때
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] **원인 미상의 403 권한 거부**: 파이프라인이나 서비스에서 `Permission Denied` 오류가 발생했으나 정확히 어떤 IAM 역할(Role)이 누락되었는지 확인하기 어려울 때
+- [ ] **과도한 권한 부여(오버 그랜트) 방지**: 문제를 해결하겠다고 `roles/editor`나 `roles/owner`를 남발하지 않고 최소 권한 역할만 선별하여 안전하게 부여하고자 할 때
+- [ ] **감사 로그 기반의 즉각 처방**: Cloud Logging의 `cloudaudit.googleapis.com/data_access` 감사 로그를 분석하여 계정 형태(사용자 vs 서비스 계정)에 맞춘 gcloud 명령어를 원클릭으로 확보하고자 할 때
 
 ---
 
-## 진단 및 복구 흐름 (Activity Diagram)
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+[진단 결과] GCP IAM 권한 거부(403) 감사 추적 및 해결 처방 리포트
+  - 대상 프로젝트: sample-project-id
+  - 조회 기간: 최근 7일
+========================================================================
+발견된 권한 거부 실패 내역: 3건
+[실패 건 #1]
+  - 실패 주체 계정: backend-developer@company.com
+  - 요청 대상 서비스: aiplatform.googleapis.com
+  - 실행 실패 액션: google.cloud.aiplatform.v1beta1.PredictionService.GenerateContent
+  - 실제 오류 내용: Permission 'aiplatform.endpoints.predict' denied on resource
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -57,13 +96,20 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 사전 준비 사항 (필요 권한 - IAM)
+- **Cloud IAM 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/iam )
+- **Cloud Logging 감사 로그 탐색기**: ( https://console.cloud.google.com/logs/query )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 감사 로그를 조회하고 IAM 역할을 바인딩하기 위해 필요한 역할 목록이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| :--- | :--- | :--- |
+| : | : | : |
 | **클라우드 로깅 뷰어(roles/logging.viewer)** | `roles/logging.viewer` | Cloud Logging 데이터 액세스 감사 로그 읽기 |
 | **프로젝트 IAM 관리자(roles/resourcemanager.projectIamAdmin)** | `roles/resourcemanager.projectIamAdmin` | 추천된 IAM 역할을 계정에 최종 부여 |
 
@@ -72,35 +118,7 @@ flowchart TD
 
 ---
 
-## 1분 퀵스타트 (실행 방법)
-
-### 방법 1: 구글 클라우드 쉘 (Google Cloud Shell) - *가장 권장*
-
-```bash
-# 1. 저장소 클론 및 폴더 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/iam-permission-resolver
-
-# 2. 사전 가상 체험 또는 데모 모드 (권한 없이 가상 시뮬레이션)
-python diagnose.py --dry-run
-
-# 3. 실제 프로젝트 대상 최근 14일 감사 로그 진단 실행
-python diagnose.py -p your-project-id -d 14
-```
-
-### 방법 2: 로컬 환경 (Local Python)
-
-```bash
-# 가상 실행
-python diagnose.py --dry-run
-
-# 실제 실행
-python diagnose.py --project your-project-id --days 7 --limit 5
-```
-
----
-
-## 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **실패 내역과 즉시 복구할 수 있는 복사 가능한 gcloud 명령어**가 출력된다:
 
@@ -129,24 +147,6 @@ python diagnose.py --project your-project-id --days 7 --limit 5
 ```
 
 ---
-
-## 사내 거버넌스 4대 필수 표준 라벨링
-
-신규 서비스 계정 및 연계 리소스 배포 시 다음 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `iam-permission-resolver`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 콘솔 링크 조치 가이드
-
-- **Cloud IAM 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/iam )
-- **Cloud Logging 감사 로그 탐색기**: ( https://console.cloud.google.com/logs/query )
-
----
-
-## 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 감사 로그 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.

@@ -18,27 +18,62 @@ All contents, designs, and code examples are subject to change, modification, or
 
 제미나이 엔터프라이즈 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(클라우드 빌링(Cloud Billing))으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방하는 종합 비용 가드레일 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#FinOps`, `#SecOps`  
-**Concern**: `#Billing`, `#Compliance`, `#Resilience`  
-**Service**: `#AgentPlatform`, `#CloudBilling`  
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 일일 풀링 쿼터 초과 쓰로틀링 및 AI Studio 유료 키 발급을 통한 섀도우 과금 누수 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 결제 계정 IAM Billing Account User 권한 회수 및 일일 쿼터 상한 알림 가이드 처방 |
 
 ---
 
-## 1. 배경 및 문제 증상 (비용 리스크 3대 유형)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-엔터프라이즈 환경에서 전사 임직원에게 공식 계정을 배포할 때 다음과 같은 3대 비용 누수 및 업무 중단 리스크가 발생한다:
-
-1. **Gemini Enterprise 자체 일일 풀링 쿼터 소진 및 쓰로틀링**:
-   - 오버리지 빌링이 비활성화(OFF)된 경우, 피크 시간대 일일 쿼터가 소진되면 당일 자정까지 전사 AI 질의가 일시 차단되는 업무 장애 발생.
-   - 반대로 오버리지 토글을 켰을 때(ON) 월 지출 상한선(Spend Cap)이 없으면 통제 불능의 초과 비용(Runaway Cost) 청구 위험.
-2. **Google AI Studio를 통한 비의도적 유료 API 호출 (가장 큰 위험 경로)**:
-   - 일반 임직원이 Google AI Studio에 회사 공식 계정으로 로그인한 뒤, 회사 Cloud Billing이 연결된 GCP 프로젝트를 선택하여 API 키(`AIzaSy...`)를 발급하고 `generativelanguage.googleapis.com`을 호출하면 종량제(Pay-as-you-go)로 전사 결제 계정에 비용이 청구됨.
-3. **계열사 IT 관리자의 결제 권한 남용 및 거버넌스 부재**:
-   - 계열사 중간 관리자에게 `roles/billing.admin` 또는 `roles/billing.user` 권한이 부여될 경우, 승인되지 않은 유료 프로젝트를 임의로 생성하거나 결제 계정에 연결하여 통제되지 않는 인프라 비용을 발생시킴.
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+엔터프라이즈 환경에서 전사 임직원에게 공식 계정을 배포할 때 다음과 같은 3대 비용 누수 및 업무 중단 리스크가 발생한다: 1. **Gemini Enterprise 자체 일일 풀링 쿼터 소진 및 쓰로틀링**: 2. **Google AI Studio를 통한 비의도적 유료 API 호출 (가장 큰 위험 경로)**: 3. **계열사 IT 관리자의 결제 권한 남용 및 거버넌스 부재**:
+- [ ] 오버리지 빌링이 비활성화(OFF)된 경우, 피크 시간대 일일 쿼터가 소진되면 당일 자정까지 전사 AI 질의가 일시 차단되는 업무 장애 발생.
+- [ ] 반대로 오버리지 토글을 켰을 때(ON) 월 지출 상한선(Spend Cap)이 없으면 통제 불능의 초과 비용(Runaway Cost) 청구 위험.
+- [ ] 일반 임직원이 Google AI Studio에 회사 공식 계정으로 로그인한 뒤, 회사 Cloud Billing이 연결된 GCP 프로젝트를 선택하여 API 키(`AIzaSy...`)를 발급하고 `generativelanguage.googleapis.com`을 호출하면 종량제(Pay-as-you-go)로 전사 결제 계정에 비용이 청구됨.
+- [ ] 계열사 중간 관리자에게 `roles/billing.admin` 또는 `roles/billing.user` 권한이 부여될 경우, 승인되지 않은 유료 프로젝트를 임의로 생성하거나 결제 계정에 연결하여 통제되지 않는 인프라 비용을 발생시킴.
 
 ---
 
-## 2. 진단 워크플로우
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+권장 월간 지출 상한(Cap): $1,000.00
+예산 알림 임계치        : 80%
+----------------------------------------------------------------------------------------
+[1. 엔터프라이즈 에디션별 오버리지 및 일일 쿼터 현황]
+* Gemini Enterprise Plus
+  - 오버리지 빌링 설정: ON (활성화)
+  - 일일 쿼터 소진율  : 78.5%
+  - 진단 판정         : [OVERAGE_RUNAWAY_RISK]
+  - 세부 분석         : 오버리지 빌링이 활성화되어 있어 쿼터 소진 후에도 업무는 지속되나, Spend Cap 부재 시 통제되지 않은 초과 토큰 비용이 발생할 수 있다.
+* Gemini Enterprise Standard
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -52,35 +87,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 사전 요구 사항 및 IAM 권한
-
-본 도구를 실행하고 결제 지표 및 보안 정책을 진단하기 위해 다음 권한이 필요하다:
-
-- `roles/billing.viewer`: Cloud Billing 계정 지출 한도 및 예산 설정 조회
-- `roles/orgpolicy.policyViewer`: 조직 정책(`constraints/gcp.restrictServiceUsage`) 설정 조회
-- `roles/serviceusage.serviceUsageViewer`: 프로젝트 API 활성화 상태 조회
-- `roles/monitoring.viewer`: 일일 풀링 쿼터 사용률 지표 조회
-
----
-
-## 4. 원클릭 실행 및 검증
-
-### 가상 검증 실행 (--dry-run)
-실제 클라우드 호출 없이 4대 가드레일 상태 및 에디션별 오버리지 위험 판정을 시뮬레이션한다. 실행 시 `report.md` 파일이 자동 생성된다:
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 진단
-환경 변수 또는 CLI 인자를 지정하여 사내 환경의 결제 거버넌스를 점검한다. 진단 결과는 `report.md`에 자동으로 덮어써진다:
-```bash
-python diagnose.py --project-id=example-corp-ai --billing-account-id=012345-6789AB-CDEF01 --spend-cap-usd=1000 --alert-threshold=80
-```
-
----
-
-## 5. 결과 확인 후 단계별 조치 가이드
+## 5. 조치 가이드 및 권장 설정
 
 ### 1단계: Gemini Enterprise 관리 콘솔 내 Overage 차단 (필수)
 - Gemini Enterprise Admin Console > 구독 및 라이선스(Subscriptions/Licenses) > Overage Settings에서 **Toggle OFF** 상태를 유지한다.
@@ -110,8 +117,20 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 - **Antigravity (구글 클라우드 프로젝트 종량제 모드)**: 차단됨 (의도된 통제 목적에 정확히 부합)
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+본 도구를 실행하고 결제 지표 및 보안 정책을 진단하기 위해 다음 권한이 필요하다:
+
+- `roles/billing.viewer`: Cloud Billing 계정 지출 한도 및 예산 설정 조회
+- `roles/orgpolicy.policyViewer`: 조직 정책(`constraints/gcp.restrictServiceUsage`) 설정 조회
+- `roles/serviceusage.serviceUsageViewer`: 프로젝트 API 활성화 상태 조회
+- `roles/monitoring.viewer`: 일일 풀링 쿼터 사용률 지표 조회
+
+---
+
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 Cloud Billing 예산 알림, 조직 정책 태그 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -120,18 +139,7 @@ Cloud Billing 예산 알림, 조직 정책 태그 및 관련 클라우드 인프
 - `created-by`: `customer-engineer`
 
 ---
-
-## 7. 콘솔 링크 조치 가이드
-
-- **Gemini Enterprise 오버리지 빌링 공식 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/overages )
-- **Cloud Billing 예산 및 지출 한도 알림 생성**: ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
-- **리소스 서비스 사용 제한 조직 정책 가이드**: ( https://docs.cloud.google.com/organization-policy/restrict-services )
-- **Cloud Billing 콘솔**: ( https://console.cloud.google.com/billing )
-- **조직 정책 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/orgpolicies )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 진단 및 모니터링 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다.
 테스트 목적으로 생성한 Cloud Billing 임시 예산(Budgets)을 삭제하려면 결제 콘솔의 예산 목록에서 해당 항목을 삭제한다.

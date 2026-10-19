@@ -18,21 +18,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정책 제약 조건(Constraints) 위반 에러를 감사 로그에서 역추적하고, **위반된 제약 조건 ID와 즉시 복구/우회 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#SecOps`  
-**Concern**: `#Compliance`, `#Security`  
-**Service**: `#CloudLogging`, `#ResourceManager`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 자원 생성 및 권한 변경 시 발생하는 조직 정책 제약 조건(Constraints) 위반 에러 감사 로그 역추적 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 위반된 제약 조건 ID 식별 및 조건부 태그 예외 설정 또는 gcloud 우회 명령어 처방 |
 
 ---
 
-## 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- **자원 생성 중 제약 조건(Constraints) 차단**: VM 인스턴스 외부 IP 할당, 서비스 계정 키 생성, 스토리지 공개 버킷 생성 시 `Failed Precondition (code 9)` 오류와 함께 작업이 거부될 때
-- **위반된 정확한 조직 정책 ID 규명**: 에러 메시지가 길거나 복잡하여 정확히 어떤 조직 정책(`constraints/...`)에 걸렸는지 신속히 파악하기 어려울 때
-- **테스트/개발 프로젝트 단위의 안전한 정책 해제**: 전사 정책을 훼손하지 않고 해당 프로젝트에 한해 신속히 예외를 적용할 수 있는 `gcloud resource-manager org-policies disable-enforce` 명령어를 즉시 확보하고자 할 때
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] **자원 생성 중 제약 조건(Constraints) 차단**: VM 인스턴스 외부 IP 할당, 서비스 계정 키 생성, 스토리지 공개 버킷 생성 시 `Failed Precondition (code 9)` 오류와 함께 작업이 거부될 때
+- [ ] **위반된 정확한 조직 정책 ID 규명**: 에러 메시지가 길거나 복잡하여 정확히 어떤 조직 정책(`constraints/...`)에 걸렸는지 신속히 파악하기 어려울 때
+- [ ] **테스트/개발 프로젝트 단위의 안전한 정책 해제**: 전사 정책을 훼손하지 않고 해당 프로젝트에 한해 신속히 예외를 적용할 수 있는 `gcloud resource-manager org-policies disable-enforce` 명령어를 즉시 확보하고자 할 때
 
 ---
 
-## 진단 및 복구 흐름 (Activity Diagram)
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+[진단 결과] GCP 조직 정책(Organization Policy) 위반 감사 추적 리포트
+  - 대상 프로젝트: sample-project-id
+  - 조회 기간: 최근 7일
+========================================================================
+발견된 조직 정책 위반 실패 내역: 3건
+[위반 건 #1]
+  - 실패 주체 계정  : security-engineer@company.com
+  - 요청 대상 서비스: iam.googleapis.com
+  - 실행 실패 액션  : google.iam.admin.v1.CreateServiceAccountKey
+  - 실제 오류 내용  : Operation denied by organization policy: constraints/iam.disableServiceAccountKeyCreation violated
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -59,13 +98,21 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 사전 준비 사항 (필요 권한 - IAM)
+- **조직 정책 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/orgpolicies )
+- **Cloud Logging 탐색기**: ( https://console.cloud.google.com/logs/viewer )
+- **공식 문서 - 조직 정책 제약 조건 목록**: ( https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 감사 로그를 조회하고 조직 정책을 수정하기 위해 필요한 역할 목록이다:
 
 | 역할 (Role) | 설명 |
-| :--- | :--- |
+| : | : |
 | 로그 뷰어(`roles/logging.viewer`) | Cloud Logging 활동 감사 로그 읽기 |
 | 조직 정책 관리자(`roles/orgpolicy.policyAdmin`) | 프로젝트 레벨 조직 정책 제약 조건 비활성화 |
 
@@ -74,35 +121,7 @@ flowchart TD
 
 ---
 
-## 1분 퀵스타트 (실행 방법)
-
-### 방법 1: 구글 클라우드 쉘 (Google Cloud Shell) - *가장 권장*
-
-```bash
-# 1. 저장소 클론 및 폴더 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/org-policy-resolver
-
-# 2. 사전 가상 체험 또는 데모 모드 (권한 없이 가상 시뮬레이션)
-python diagnose.py --dry-run
-
-# 3. 실제 프로젝트 대상 최근 14일 조직 정책 위반 로그 진단 실행
-python diagnose.py -p your-project-id -d 14
-```
-
-### 방법 2: 로컬 환경 (Local Python)
-
-```bash
-# 가상 실행
-python diagnose.py --dry-run
-
-# 실제 실행
-python diagnose.py --project your-project-id --days 7 --limit 5
-```
-
----
-
-## 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **위반 내역과 즉시 복구할 수 있는 복사 가능한 gcloud 명령어**가 출력된다:
 
@@ -131,25 +150,6 @@ python diagnose.py --project your-project-id --days 7 --limit 5
 ```
 
 ---
-
-## 콘솔 링크 조치 가이드 및 공식 레퍼런스
-
-- **조직 정책 관리 콘솔**: ( https://console.cloud.google.com/iam-admin/orgpolicies )
-- **Cloud Logging 탐색기**: ( https://console.cloud.google.com/logs/viewer )
-- **공식 문서 - 조직 정책 제약 조건 목록**: ( https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints )
-
----
-
-## 사내 거버넌스 4대 필수 표준 라벨링
-
-조직 정책 예외 적용 대상 인프라 자원(Compute Engine VM, Cloud Storage 버킷, 서비스 계정 등) 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `org-policy-resolver`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 감사 로그 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.

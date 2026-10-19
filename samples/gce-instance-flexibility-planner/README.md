@@ -18,14 +18,21 @@ All contents, designs, and code examples are subject to change, modification, or
 
 업계 전반의 AI 및 대규모 컴퓨트 수요 급증으로 인한 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 상황에서, 단일 머신 타입/단일 존 고착 위험을 진단하고 GKE(Google Kubernetes Engine) 커스텀 컴퓨트 클래스(Custom ComputeClass, CCC)의 능동적 마이그레이션(Active Migration) 및 컴퓨트 엔진(Compute Engine) 리전 관리형 인스턴스 그룹(Regional MIG)의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하여 무중단 복원력을 확보하는 올인원 아키텍처 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#FinOps`  
-**Concern**: `#Billing`, `#Performance`, `#Resilience`  
-**Service**: `#ComputeEngine`, `#GoogleKubernetesEngine`  
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 단일 머신/단일 존 고착 시 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 위험 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | GKE Custom ComputeClass(CCC) YAML 및 Regional MIG 다중 머신 랭킹 정책 산출 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 주요 리전(서울, 도쿄, 아이오와 등)에서 특정 머신 또는 GPU 타입(예: `g2-standard-8`, `a2-highgpu-8g`, `n2-standard-8`) 프로비저닝 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러로 배포나 스케일아웃이 실패한다.
 - [ ] LLM 서빙 및 인퍼런스 환경에서 NVIDIA L4, T4 또는 A100 GPU 단일 패밀리에 고착되어 스톡아웃 시 파드가 Pending 상태에 갇힌다.
 - [ ] GKE 오토스케일러가 노드를 증설하지 못해 대량의 파드가 `Pending` 상태로 적체되거나, 스팟 노드 대규모 회수 시 대체 노드를 구하지 못한다.
@@ -35,7 +42,35 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+* 다중 머신 패밀리 및 전 리전에 교차 적용되는 '금액 기반 Flex CUD(Flexible Committed Use Discounts)'를 결합하여 유연성과 비용 절감을 동시 달성할 것을 권장한다.
+[6. 사내 거버넌스 4대 필수 표준 라벨링 준수]
+  * GKE 노드 풀 및 Compute Engine 인스턴스 템플릿/MIG 생성 시 4대 표준 라벨 필수 적용:
+    --labels=managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer
+================================================================================================
+[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/gce-instance-flexibility-planner/report.md
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -50,52 +85,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 사전 준비 사항 및 필요 권한
-
-### (1) 필수 API 활성화
-본 도구가 사내 클러스터와 인스턴스 그룹 설정을 조회하려면 아래 API가 활성화되어 있어야 한다:
-```bash
-gcloud services enable compute.googleapis.com container.googleapis.com
-```
-
-### (2) 진단 실행 계정 최소 IAM 권한
-본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
-
-| 역할 (Role) | 설명 |
-| :--- | :--- |
-| `roles/compute.viewer` | 컴퓨트 엔진(Compute Engine) 인스턴스 템플릿 및 MIG 설정 조회 권한 |
-| `roles/container.viewer` | GKE 클러스터 및 노드 풀 구성 상태 조회 권한 |
-
----
-
-## 4. 1분 퀵스타트
-
-### 가상 모의 실행 (Dry-run) - 예습
-실제 GCP 호출 없이 8 vCPU / 32 GB RAM 기준 표준 워크로드의 동등 사양 랭킹과 GKE CCC 매니페스트 및 MIG 정책 생성을 1초 만에 검증한다:
-```bash
-python diagnose.py --dry-run
-```
-
-### 사내 실측 진단 실행 - 실습 및 복습
-현재 활성화된 프로젝트의 실데이터를 기반으로 단일 고착 취약점을 진단하고 맞춤형 유연성 정책을 산출한다:
-```bash
-# 기본 활성 프로젝트 및 기본 머신(n2-standard-8) 유연성 설계
-python diagnose.py
-
-# 특정 프로젝트, 특정 리전 및 기준 머신(16코어 표준) 지정
-python diagnose.py --project-id=sample-project-id --region=asia-northeast3 --base-machine=n2-standard-16
-
-# GPU 인퍼런스/서빙 워크로드 (NVIDIA L4 기준 대체 랭킹 및 GKE CCC/MIG 정책 산출)
-python diagnose.py --base-machine=g2-standard-8
-
-# GPU 대규모 파인튜닝/연산 워크로드 (NVIDIA A100/H100 기준 대체 랭킹 산출)
-python diagnose.py --base-machine=a2-highgpu-8g
-```
-
----
-
-## 5. 결과 확인 후 즉각 조치 가이드
+## 5. 조치 가이드 및 권장 설정
 
 ### 1단계: GKE 워크로드 Custom ComputeClass(CCC) 배포
 산출된 `resilient-compute-class` 매니페스트를 GKE 클러스터에 적용한다. 용량 부족 시 하위 머신으로 자동 폴백되고, 최상위 머신(N4 등) 자원이 확보되면 워크로드가 무중단으로 자동 복귀(Active Migration)한다:
@@ -146,6 +136,26 @@ gcloud compute instance-groups managed create [MIG_NAME] \
 - gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer`
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 자원 정리 안내 (Teardown)
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+### (1) 필수 API 활성화
+본 도구가 사내 클러스터와 인스턴스 그룹 설정을 조회하려면 아래 API가 활성화되어 있어야 한다:
+```bash
+gcloud services enable compute.googleapis.com container.googleapis.com
+```
+
+### (2) 진단 실행 계정 최소 IAM 권한
+본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
+
+| 역할 (Role) | 설명 |
+| : | : |
+| `roles/compute.viewer` | 컴퓨트 엔진(Compute Engine) 인스턴스 템플릿 및 MIG 설정 조회 권한 |
+| `roles/container.viewer` | GKE 클러스터 및 노드 풀 구성 상태 조회 권한 |
+
+---
+
+## 8. 리소스 정리 (Teardown) 안내
+
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

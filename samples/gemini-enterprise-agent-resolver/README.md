@@ -18,21 +18,61 @@ All contents, designs, and code examples are subject to change, modification, or
 
 Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책(Domain Restricted Sharing) 차단, 서비스 에이전트 IAM 권한 부재, VPC-SC 경계 위반을 1분 만에 자동 진단하고 복구 명령어를 처방하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#SecOps`  
-**Concern**: `#IAM`, `#Resilience`, `#Security`  
-**Service**: `#AgentPlatform`, `#GeminiEnterprise`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 타 프로젝트 커스텀 에이전트 연동 시 도메인 제한 공유(DRS) 조직 정책 및 IAM 격리 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 조직 정책 allow_list 추가 및 교차 프로젝트 서비스 계정 토큰 생성자 권한 처방 |
 
 ---
 
-## 1. 문제 증상 체크리스트
-- 사내 엔터프라이즈 환경에서 Gemini Enterprise 웹 앱(프로젝트 A, 조직 A)과 계열사/사업부별 커스텀 에이전트(Agent Engine, 프로젝트 B, 조직 B)가 서로 다른 프로젝트에 분리되어 있어 연동 시 403 Forbidden 오류가 발생한다.
-- 상대 조직의 서비스 에이전트에 권한을 부여하려 할 때, 상위 조직 정책 `constraints/iam.allowedPolicyMemberDomains`에 의해 외부 도메인 계정 바인딩이 차단된다.
-- Gemini Enterprise Agent Registry에 커스텀 에이전트 등록 시 필수 서비스 에이전트(`service-[NUM]@gcp-sa-discoveryengine.iam.gserviceaccount.com`)에 `roles/aiplatform.user` 역할이 부여되지 않아 에이전트 호출이 실패한다.
-- VPC Service Controls(VPC-SC) 서비스 경계가 설정된 환경에서 두 프로젝트 간 API 호출이 차단되어 에이전트 목록 검색 및 추론이 불가능하다.
+## 2. 발생 증상 및 진단 대상 체크리스트
+
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 사내 엔터프라이즈 환경에서 Gemini Enterprise 웹 앱(프로젝트 A, 조직 A)과 계열사/사업부별 커스텀 에이전트(Agent Engine, 프로젝트 B, 조직 B)가 서로 다른 프로젝트에 분리되어 있어 연동 시 403 Forbidden 오류가 발생한다.
+- [ ] 상대 조직의 서비스 에이전트에 권한을 부여하려 할 때, 상위 조직 정책 `constraints/iam.allowedPolicyMemberDomains`에 의해 외부 도메인 계정 바인딩이 차단된다.
+- [ ] Gemini Enterprise Agent Registry에 커스텀 에이전트 등록 시 필수 서비스 에이전트(`service-[NUM]@gcp-sa-discoveryengine.iam.gserviceaccount.com`)에 `roles/aiplatform.user` 역할이 부여되지 않아 에이전트 호출이 실패한다.
+- [ ] VPC Service Controls(VPC-SC) 서비스 경계가 설정된 환경에서 두 프로젝트 간 API 호출이 차단되어 에이전트 목록 검색 및 추론이 불가능하다.
 
 ---
 
-## 2. 처리 흐름도
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+Gemini Enterprise Cross-Project 에이전트 연동 진단 시작 (GE: sample-ge-project, Agent: sample-agent-project)
+--> 가상 실행 모드 (--dry-run) 활성화: Cross-Org 시뮬레이션 데이터를 분석한다.
+=========================================================================================================
+Gemini Enterprise 앱 프로젝트: sample-ge-project <---> 커스텀 에이전트 프로젝트: sample-agent-project
+=========================================================================================================
+점검 항목                                상태           진단 내용
+---------------------------------------------------------------------------------------------------------
+Agent Engine IAM 권한 바인딩              CRITICAL     에이전트 프로젝트(sample-agent-project)에 GE 서비스 에이전트(service-104928374921@gcp-sa-discoveryengine.iam.gserviceaccount.com)의 'roles/aiplatform.user' 권한이 없음
+도메인 제한 공유 조직 정책 (Domain Restricted Sharing) CRITICAL     서로 다른 조직 간 연동 환경에서 'constraints/iam.allowedPolicyMemberDomains' 정책이 활성화되어 타 조직(organizations/987654321098) 소속 계정 또는 서비스 에이전트의 IAM 바인딩이 차단됨
+Agent Engine 리소스 식별자 규격              PASS         유효한 Agent Engine ID 형식 확인 완료 (8492049182740192841)
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -59,36 +99,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 필요 IAM 권한
-- `roles/iam.securityReviewer` (IAM 정책 조회)
-- `roles/orgpolicy.policyViewer` (조직 정책 제약 조건 조회)
-- `roles/aiplatform.viewer` (Agent Engine 조회)
-
----
-
-## 4. 원클릭 실행법
-
-### 가상 검증 실행 (--dry-run)
-실제 GCP API 호출 없이 Cross-Org 시뮬레이션 데이터를 바탕으로 정책 충돌을 즉시 확인한다.
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 진단
-두 프로젝트 간 연동 상태를 점검한다.
-```bash
-python diagnose.py --ge-project="sample-ge-project" --agent-project="sample-agent-project" --engine-id="8492049182740192841"
-```
-
-결과를 JSON 포맷으로 수집할 경우:
-```bash
-python diagnose.py --dry-run --json
-```
-
----
-
-## 5. 결과 확인 후 즉각 조치 가이드 및 리소스 라벨링
+## 5. 조치 가이드 및 권장 설정
 
 ### 가. 사내 거버넌스 4대 필수 표준 라벨링
 에이전트 인프라 및 연동 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
@@ -121,8 +132,18 @@ gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDo
 - Gemini Enterprise 제품 개요 ( https://docs.cloud.google.com/gemini/enterprise/docs )
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 자원 정리 안내 (Teardown)
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+- `roles/iam.securityReviewer` (IAM 정책 조회)
+- `roles/orgpolicy.policyViewer` (조직 정책 제약 조건 조회)
+- `roles/aiplatform.viewer` (Agent Engine 조회)
+
+---
+
+## 8. 리소스 정리 (Teardown) 안내
+
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하지 않는다. 테스트 목적으로 부여한 크로스 프로젝트 IAM 권한은 다음 명령어로 회수할 수 있다:
 ```bash
 gcloud projects remove-iam-policy-binding [AGENT_PROJECT_ID] \

@@ -14,13 +14,21 @@ All contents, designs, and code examples are subject to change, modification, or
 
 Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클라우드 로깅(Cloud Logging) 인퍼런스 로그를 기반으로 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고, 일일/주간 쿼터 캡(Cap) 초과자를 식별하여 프로젝트 IAM 마커 역할 기반의 안전한 통제 처방을 제공하는 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#FinOps`  
-**Concern**: `#Billing`, `#Compliance`, `#IAM`  
-**Service**: `#AgentPlatform`, `#CloudLogging`  
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Google Antigravity 개발자별 일일/주간 토큰 소비량 및 쿼터 캡(Cap) 초과자 식별 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 프로젝트 IAM 마커 역할(antigravity.quotaRestricted) 부여 및 알림 발송 처방 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
+
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 전사 개발자에게 Google Antigravity를 배포했으나, 특정 헤비 유저가 과도하게 토큰을 소비하여 전체 풀링 쿼터가 조기 소진된다.
 - [ ] Google Cloud 콘솔에서 프로젝트 총량만 보이고, 개발자 개인별 토큰(Prompt / Candidate) 소모량 현황을 파악하기 어렵다.
 - [ ] 개발자별로 일일 쿼터 상한(예: 500만 토큰)을 설정하고, 초과자를 식별하여 접근을 안전하게 일시 제어하고자 한다.
@@ -28,7 +36,39 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클�
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+================================================================================================
+ [Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단 리포트]
+================================================================================================
+대상 프로젝트 ID    : sample-project-id
+쿼터 집계 주기      : daily (UTC 기준)
+토큰 상한 임계치(Cap): 5,000,000 토큰
+요청 상한 임계치(Cap): 1,000 회
+진단 모드           : 모의 실행 (Dry-run)
+------------------------------------------------------------------------------------------------
+[1. 전사 Antigravity 사용량 및 쿼터 캡 요약 지표]
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -45,51 +85,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 사전 준비 사항 및 필요 권한
-
-### (1) 필수 API 활성화 및 관리 콘솔 설정
-본 도구가 Cloud Logging을 통해 Antigravity 인퍼런스 지표를 실측하려면 아래 API와 관리 콘솔 로깅 설정이 선행되어야 한다 (스크립트 실행 시 미흡 항목 자동 탐지 및 조치 명령어 안내):
-
-1. **필수 API 활성화**:
-   ```bash
-   gcloud services enable logging.googleapis.com businessaicode.googleapis.com
-   ```
-2. **관리 콘솔 개발자 도구 활동 로깅(Metadata Logging)**:
-   - 구글 워크스페이스(Google Workspace) 및 Gemini Enterprise 관리 콘솔 ( https://admin.google.com ) > 생성형 AI, 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 클라우드 로깅으로 토큰 및 사용자 정보가 적재된다.
-
-### (2) 진단 실행 계정 최소 IAM 권한
-본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
-
-| 역할 (Role) | 설명 |
-| :--- | :--- |
-| `roles/logging.viewer` | Cloud Logging 인퍼런스 로그(`businessaicode.googleapis.com`) 조회 권한 |
-| `roles/serviceusage.serviceUsageViewer` | 필수 API 활성화 상태 사전 점검 권한 |
-| `roles/resourcemanager.viewer` | 프로젝트 IAM 정책 및 사용자 바인딩 상태 확인 권한 |
-
----
-
-## 4. 1분 퀵스타트
-
-### 가상 모의 실행 (Dry-run) - 예습
-실제 GCP 로그 조회 없이 5명 규모의 가상 개발팀 시뮬레이션 데이터를 기반으로 쿼터 캡 판정 및 리포트 생성을 1초 만에 검증한다:
-```bash
-python diagnose.py --dry-run
-```
-
-### 사내 실측 진단 실행 - 실습 및 복습
-현재 활성화된 프로젝트의 실데이터를 기반으로 일일 토큰 캡(5,000,000 토큰) 초과자를 진단한다. 진단 결과는 `report.md`에 자동으로 덮어써진다:
-```bash
-# 기본 활성 프로젝트 점검 (일일 500만 토큰 기준)
-python diagnose.py
-
-# 특정 프로젝트 및 커스텀 캡(일일 750만 토큰, 요청 1,500회) 지정
-python diagnose.py --project-id=my-dev-project --cap-tokens=7500000 --cap-requests=1500
-```
-
----
-
-## 5. 결과 확인 후 즉각 조치 가이드
+## 5. 조치 가이드 및 권장 설정
 
 ### 1단계: 직접 통제 가능 초과자 IAM 조건부 만료 적용 (익일 자율 복구)
 기본 사용자 역할(`roles/discoveryengine.agentspaceUser`)을 일시 해제하고, 익일 자정(00:00 UTC) 자동 만료 조건식(`request.time < timestamp(...)`)이 결합된 차단 마커 역할을 부여하여 관리자 수동 개입 없는 무인 자율 복구를 구현한다:
@@ -135,6 +131,31 @@ ORDER BY
 사내 거버넌스 준수를 위해 배치 리소스 생성 시 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=antigravity-user-quota-cap,env=sample`)을 필수로 주입한다.
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 자원 정리 가이드 (Teardown)
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+### (1) 필수 API 활성화 및 관리 콘솔 설정
+본 도구가 Cloud Logging을 통해 Antigravity 인퍼런스 지표를 실측하려면 아래 API와 관리 콘솔 로깅 설정이 선행되어야 한다 (스크립트 실행 시 미흡 항목 자동 탐지 및 조치 명령어 안내):
+
+1. **필수 API 활성화**:
+   ```bash
+   gcloud services enable logging.googleapis.com businessaicode.googleapis.com
+   ```
+2. **관리 콘솔 개발자 도구 활동 로깅(Metadata Logging)**:
+   - 구글 워크스페이스(Google Workspace) 및 Gemini Enterprise 관리 콘솔 ( https://admin.google.com ) > 생성형 AI, 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 클라우드 로깅으로 토큰 및 사용자 정보가 적재된다.
+
+### (2) 진단 실행 계정 최소 IAM 권한
+본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:
+
+| 역할 (Role) | 설명 |
+| : | : |
+| `roles/logging.viewer` | Cloud Logging 인퍼런스 로그(`businessaicode.googleapis.com`) 조회 권한 |
+| `roles/serviceusage.serviceUsageViewer` | 필수 API 활성화 상태 사전 점검 권한 |
+| `roles/resourcemanager.viewer` | 프로젝트 IAM 정책 및 사용자 바인딩 상태 확인 권한 |
+
+---
+
+## 8. 리소스 정리 (Teardown) 안내
+
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

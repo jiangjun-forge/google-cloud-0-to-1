@@ -18,23 +18,62 @@ All contents, designs, and code examples are subject to change, modification, or
 
 엔터프라이즈 생성형 AI 파이프라인에서 발생하는 체감 지연 시간(Latency)의 원인을 전송 네트워크(DNS, TCP, TLS), 보안 가드레일(Model Armor, Sensitive Data Protection), 컨텍스트 증강(Search Grounding), 순수 LLM 추론(TTFT, 토큰 생성 속도) 구간별로 분해 계측하여 워터폴(Waterfall) 차트 및 병목 최적화 권고안을 제공하는 실측 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#SecOps`
-**Concern**: `#Performance`, `#Resilience`, `#Security`
-**Service**: `#CloudMonitoring`, `#GeminiAPI`, `#ModelArmor`, `#VertexAI`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 생성형 AI 파이프라인 구간별(네트워크, Model Armor/SDP 가드레일, RAG, 추론 TTFT) 지연 시간 분해 계측 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 워터폴 병목 구간 식별 및 리전 재배치, 스트리밍 전환, 캐싱 최적화 가이드 도출 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- 사내 엔터프라이즈 제미나이 앱이나 버텍스 AI(Vertex AI) 기반 서비스가 일반 컨슈머 웹앱(`gemini.google.com`) 대비 지연 시간이 발생하는 원인을 정밀 분석하고 개선하고자 하는 경우
-- 지연 시간의 원인이 모델 자체의 추론 속도 문제인지, 보안 가드레일(Model Armor)의 동기 검사 오버헤드인지 객관적인 데이터로 입증해야 하는 경우
-- 구글 검색 그라운딩(Search Grounding) 또는 사내 지식 검색(RAG) 도입으로 인해 추가되는 지연 시간을 구간별(Hop-by-hop)로 정량화해야 하는 경우
-- 첫 번째 토큰 도달 시간(TTFT: Time To First Token)과 출력 스트리밍 전송 속도(TPS)를 분리 측정하여 UI/UX 렌더링 병목을 진단해야 하는 경우
-- 온프레미스 전용선, VPC-SC, Private Service Connect(PSC) 등 사내 프라이빗 네트워크 경로의 TCP/TLS 핸드셰이크 오버헤드를 실측하고자 하는 경우
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 사내 엔터프라이즈 제미나이 앱이나 버텍스 AI(Vertex AI) 기반 서비스가 일반 컨슈머 웹앱(`gemini.google.com`) 대비 지연 시간이 발생하는 원인을 정밀 분석하고 개선하고자 하는 경우
+- [ ] 지연 시간의 원인이 모델 자체의 추론 속도 문제인지, 보안 가드레일(Model Armor)의 동기 검사 오버헤드인지 객관적인 데이터로 입증해야 하는 경우
+- [ ] 구글 검색 그라운딩(Search Grounding) 또는 사내 지식 검색(RAG) 도입으로 인해 추가되는 지연 시간을 구간별(Hop-by-hop)로 정량화해야 하는 경우
+- [ ] 첫 번째 토큰 도달 시간(TTFT: Time To First Token)과 출력 스트리밍 전송 속도(TPS)를 분리 측정하여 UI/UX 렌더링 병목을 진단해야 하는 경우
+- [ ] 온프레미스 전용선, VPC-SC, Private Service Connect(PSC) 등 사내 프라이빗 네트워크 경로의 TCP/TLS 핸드셰이크 오버헤드를 실측하고자 하는 경우
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+신뢰 스택 세부 진단 및 권고안:
+============================================================================================
+* HOP-01 [네트워크 전송 (DNS, TCP, TLS)] - 138.5 ms (7.9%)
+  - 원인 분석: 클라이언트 단말에서 asia-northeast3 엔드포인트까지의 네트워크 악수 및 TLS 협상 시간
+  - 최적화안: VPC 내부 Private Service Connect (PSC) 전용선 경유로 RTT를 단축하거나 글로벌 애니캐스트 활용 권장
+* HOP-02 [Model Armor 보안 가드레일] - 562.0 ms (32.0%)
+  - 원인 분석: 프롬프트 인젝션, 탈옥, Sensitive Data Protection (SDP) 민감 정보 실시간 인그레스 스캔 오버헤드
+  - 최적화안: 모든 필터를 동기 실행하지 않고 필요도가 낮은 규칙의 비동기 감사 분리 또는 필터 신뢰도 임계치 튜닝 필요
+* HOP-03 [구글 검색 그라운딩 (Grounding)] - 325.4 ms (18.6%)
+  - 원인 분석: 실시간 구글 검색 쿼리 실행, 결과 파싱, 인라인 컨텍스트 주입에 소요된 추가 지연 시간
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -50,36 +89,34 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항
+1. **Model Armor 가드레일 지연 완화**:
+   - 실시간 인스펙션 오버헤드가 과도할 경우, 불필요하게 높은 민감도 설정을 튜닝하거나 응답 검사(Egress Filtering)를 스트리밍 후처리 미들웨어에서 비동기 감사로 전환한다.
+
+2. **순수 추론 시간 단축 (Prompt Caching 및 PT 도입)**:
+   - 반복되는 시스템 지침이나 사내 가이드라인 문서가 긴 경우, Vertex AI 프롬프트 캐싱(Context Caching)을 적용하여 첫 토큰 지연(TTFT)을 최대 80% 절감한다.
+   - 프로덕션 환경의 예측 가능한 베이스로드 확보를 위해 Provisioned Throughput(PT)을 도입하여 멀티 테넌트 큐잉 지연을 제거한다.
+
+3. **엔드투엔드 네트워크 RTT 최적화**:
+   - 사내 클라이언트와 구글 백본망 간의 통신 구간을 최적화하기 위해 Private Service Connect(PSC) 엔드포인트를 구축하여 퍼블릭 인터넷 경유에 따른 패킷 지연을 방어한다.
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 본 도구 구동을 위해 필요한 최소 IAM 권한은 다음과 같다.
 
 | 권한 역할 | 역할 명칭 | 필요 사유 |
-| :--- | :--- | :--- |
+| : | : | : |
 | `roles/aiplatform.user` | Vertex AI 사용자 | Vertex AI Gemini 스트리밍 API 호출 및 TTFT 실측 |
 | `roles/modelarmor.admin` (또는 뷰어) | Model Armor 관리자 | Model Armor 검사 엔드포인트 호출 및 필터링 지연 계측 |
 | `roles/monitoring.viewer` | 모니터링 뷰어 | 엔드포인트 지연 메트릭 조회 |
 
 ---
 
-## 4. 원클릭 실행법
-
-### 가상 검증 실행 (--dry-run)
-실제 구글 클라우드 API 호출 없이 모의 가상 데이터를 이용해 스모크 테스트 및 워터폴 분석을 수행한다:
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 진단
-사내 활성 프로젝트 및 대상 엔드포인트에 대해 실측 프로파일링을 수행한다:
-```bash
-python diagnose.py --project="your-project-id" --location="asia-northeast3" --model="gemini-3.8-flash"
-```
-
----
-
-## 5. 결과 출력 예시 (Vertex AI API vs Gemini Enterprise app 완결형 파이프라인 비교)
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ============================================================================================
@@ -114,52 +151,7 @@ HOP-05   | 보안 통제        |   621.9 ms (13.0%)   | [====                  
 ```
 
 ---
-
-## 6. 아키텍처 관점의 파이프라인 지연 시간 차이 분석
-
-1. **초기 응답 지연 시간(TTFT) 구조 차이**:
-   - **순수 Vertex AI API**: 사용자의 요청 시 선행 보안 필터나 지식 검색 단계 없이 **0.5~0.8초 내에 첫 번째 토큰이 스트리밍 전송**되어 초기 응답 시점이 빠르다.
-   - **Gemini Enterprise app**: Model Armor의 악성 프롬프트 인스펙션(약 0.7초) 및 사내 데이터스토어 인덱스 검색과 IAM/ACL 권한 필터링(약 2초)이 모두 완료된 후에 비로소 LLM 토큰 생성이 시작되므로, 초기 토큰 노출 시점까지 대기 구간이 발생한다.
-2. **사내 문서 RAG 요약 및 사후 보안 검증**:
-   - 검색된 사내 문서를 컨텍스트에 주입하여 답변을 요약 생성하는 RAG 연산과, 생성된 응답에 대한 사후 민감정보(PII/SDP) 검사(약 0.6초)가 동기식으로 실행되어 전체 파이프라인 소요 시간이 누적된다.
-3. **아키텍처 결론**:
-   - 양 파이프라인 간의 지연 시간 차이는 모델 자체의 추론 성능 문제가 아니며, **사내 비공개 데이터 기반 그라운딩(Grounding)과 기업 보안 거버넌스(Model Armor)가 동기식으로 작동하는 구조적 차이**에서 비롯된다.
-
----
-
-## 7. 결과 확인 후 즉각 조치 가이드
-
-1. **Model Armor 가드레일 지연 완화**:
-   - 실시간 인스펙션 오버헤드가 과도할 경우, 불필요하게 높은 민감도 설정을 튜닝하거나 응답 검사(Egress Filtering)를 스트리밍 후처리 미들웨어에서 비동기 감사로 전환한다.
-
-2. **순수 추론 시간 단축 (Prompt Caching 및 PT 도입)**:
-   - 반복되는 시스템 지침이나 사내 가이드라인 문서가 긴 경우, Vertex AI 프롬프트 캐싱(Context Caching)을 적용하여 첫 토큰 지연(TTFT)을 최대 80% 절감한다.
-   - 프로덕션 환경의 예측 가능한 베이스로드 확보를 위해 Provisioned Throughput(PT)을 도입하여 멀티 테넌트 큐잉 지연을 제거한다.
-
-3. **엔드투엔드 네트워크 RTT 최적화**:
-   - 사내 클라이언트와 구글 백본망 간의 통신 구간을 최적화하기 위해 Private Service Connect(PSC) 엔드포인트를 구축하여 퍼블릭 인터넷 경유에 따른 패킷 지연을 방어한다.
-
----
-
-## 8. 사내 거버넌스 4대 필수 표준 라벨링
-
-지연 시간 프로파일링 및 엔드포인트 테스트 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `gemini-enterprise-latency-profiler`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 9. 콘솔 링크 조치 가이드
-
-- **Model Armor 콘솔**: ( https://console.cloud.google.com/security/model-armor )
-- **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
-- **Private Service Connect 콘솔**: ( https://console.cloud.google.com/net-services/psc )
-
----
-
-## 10. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 도구는 지연 시간 측정용 단발성 API 호출만 수행하므로 영구 인프라 자원을 생성하지 않는다.
 테스트 과정에서 발급된 임시 인증 토큰은 세션 종료 시 자동으로 만료된다.

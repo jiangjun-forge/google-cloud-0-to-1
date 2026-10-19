@@ -18,21 +18,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 클라우드 KMS(Cloud KMS) 암호화 및 무결성 검증을 거쳐 클라우드 스토리지(Cloud Storage)로 안전하게 이관하는 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#SecOps`  
-**Concern**: `#Compliance`, `#Performance`, `#Security`  
-**Service**: `#CloudKMS`, `#CloudStorage`, `#StorageTransferService`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 온프레미스 대용량 영상의 STS 전송 시 네트워크 단절, 체크섬 불일치 및 KMS 암호화 누락 위험 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | MD5/CRC32C 엔드투엔드 무결성 검증, CMEK 강제 암호화 및 다중 에이전트 대역폭 분할 가이드 도출 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- 현장 온프레미스 NAS/SAN 스토리지에 적재된 수백 기가바이트 이상의 영상 데이터를 버텍스 AI(Vertex AI) 멀티모달 분석용으로 클라우드에 이전하고자 할 때
-- 네트워크 대역폭 고갈을 방지하기 위해 정밀한 대역폭 제한(Bandwidth Throttling)을 적용하고 전송 에이전트 상태를 실시간 진단해야 하는 경우
-- 국가 핵심 기술 및 기업 보안 규정에 맞추어 사전 비식별화, 전송 중 CRC32c 체크섬 검증, 타깃 버킷 Cloud KMS CMEK 이중 암호화, 공개 접근 차단(PAP)을 일괄 점검하고자 하는 경우
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 현장 온프레미스 NAS/SAN 스토리지에 적재된 수백 기가바이트 이상의 영상 데이터를 버텍스 AI(Vertex AI) 멀티모달 분석용으로 클라우드에 이전하고자 할 때
+- [ ] 네트워크 대역폭 고갈을 방지하기 위해 정밀한 대역폭 제한(Bandwidth Throttling)을 적용하고 전송 에이전트 상태를 실시간 진단해야 하는 경우
+- [ ] 국가 핵심 기술 및 기업 보안 규정에 맞추어 사전 비식별화, 전송 중 CRC32c 체크섬 검증, 타깃 버킷 Cloud KMS CMEK 이중 암호화, 공개 접근 차단(PAP)을 일괄 점검하고자 하는 경우
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+=====================================================================================
+온프레미스 대용량 미디어 STS 전송 및 보안 무결성 사전 진단 리포트
+진단 모드: 가상 실행 (Dry-run)
+대상 프로젝트: sample-project-id
+타깃 버킷: gs://secure-media-archive
+STS 에이전트 풀: on-prem-posix-pool
+설정 대역폭 제한: 100 MB/s
+=====================================================================================
+[안전 전송 파이프라인 점검 현황]
+-------------------------------------------------------------------------------------
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -45,41 +84,31 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항
+1. **Storage Transfer Service 온프레미스 에이전트 관리**:
+   - Storage Transfer Service > 온프레미스 ( https://console.cloud.google.com/transfer/on-premises )
+   - 온프레미스 데이터 전송 개요 ( https://cloud.google.com/storage-transfer/docs/on-prem-overview )
+   - 온프레미스 에이전트 풀 관리 ( https://cloud.google.com/storage-transfer/docs/on-prem-agent-pools )
+2. **Cloud Storage 버킷 보안 강화**:
+   - Cloud Storage > 버킷 브라우저 ( https://console.cloud.google.com/storage/browser )
+   - 공개 접근 차단(PAP) 적용 ( https://cloud.google.com/storage/docs/public-access-prevention )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 역할 (Role) | 최소 IAM 권한 |
-| :--- | :--- |
+| : | : |
 | 스토리지 관리자(`roles/storage.admin`) | `storage.buckets.get`, `storage.buckets.update` |
 | 스토리지 전송 관리자(`roles/storagetransfer.admin`) | `storagetransfer.agentpools.list`, `storagetransfer.jobs.create` |
 
 ---
 
-## 4. 1분 퀵스타트
-
-### 가상 실행 (Dry-run)
-
-실제 GCP API 호출이나 권한 없이도 모의 전송 사전 점검을 즉시 시뮬레이션할 수 있다:
-
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 실행
-
-```bash
-# 기본 환경 변수 기준 실행
-python diagnose.py
-
-# 특정 버킷, 에이전트 풀 및 대역폭 제한(50MB/s) 지정 실행
-python diagnose.py --project=my-secure-project --bucket=secure-media-archive --agent-pool=secure-posix-pool --bandwidth-limit=50
-```
-
----
-
-## 5. 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 =====================================================================================
@@ -114,30 +143,7 @@ STS 에이전트 풀: on-prem-posix-pool
 ```
 
 ---
-
-## 6. 결과 확인 후 즉각 조치 가이드
-
-1. **Storage Transfer Service 온프레미스 에이전트 관리**:
-   - Storage Transfer Service > 온프레미스 ( https://console.cloud.google.com/transfer/on-premises )
-   - 온프레미스 데이터 전송 개요 ( https://cloud.google.com/storage-transfer/docs/on-prem-overview )
-   - 온프레미스 에이전트 풀 관리 ( https://cloud.google.com/storage-transfer/docs/on-prem-agent-pools )
-2. **Cloud Storage 버킷 보안 강화**:
-   - Cloud Storage > 버킷 브라우저 ( https://console.cloud.google.com/storage/browser )
-   - 공개 접근 차단(PAP) 적용 ( https://cloud.google.com/storage/docs/public-access-prevention )
-
----
-
-## 7. 사내 거버넌스 4대 필수 표준 라벨링
-
-STS 연계 타깃 Cloud Storage 버킷, 전송 작업 및 Cloud KMS 키링 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `storage-transfer-secure-uploader`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 전송 준비 상태를 검사하는 도구이며, 테스트용으로 생성한 전송 작업(Job)이나 에이전트 풀이 있다면 아래 명령어로 정리한다:
 

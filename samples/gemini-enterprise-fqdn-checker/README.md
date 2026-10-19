@@ -18,22 +18,62 @@ All contents, designs, and code examples are subject to change, modification, or
 
 사내망 보안 정책상 와일드카드 도메인 등록이 불가한 환경에서 Gemini Enterprise App 정상 구동에 필요한 필수 코어 API, 인증, 정적 에셋 FQDN의 아웃바운드 443 및 DNS 연결성을 1분 만에 일괄 진단하고 방화벽 허용 명세를 자동 생성하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#SecOps`  
-**Concern**: `#Compliance`, `#Security`  
-**Service**: `#CloudNextGenerationFirewall`, `#GeminiEnterprise`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 폐쇄망 프록시 환경에서 Gemini Enterprise App 필수 코어 15대 FQDN의 아웃바운드 443 연결성 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Exact FQDN 차단 목록 식별 및 사내 프록시/방화벽 허용 규칙 명세서 자동 생성 |
 
 ---
 
-## 1. 문제 증상 체크리스트
-- 사내 보안 방화벽 규정상 와일드카드 도메인(`*.googleapis.com`, `*.gstatic.com`) 일괄 허용이 전면 금지되어 있다.
-- 사내 PC 또는 VDI 환경에서 Gemini Enterprise App 접속 시 흰 화면(Blank Page)만 표시되거나 폰트와 스타일이 깨진다.
-- 텍스트 질의는 일부 동작하나 Deep Research 실행, 멀티모달 이미지 생성 및 UI 렌더링 시 통신 에러가 발생한다. (원인: `discoveryengine.clients6.google.com` 차단)
-- Google Cloud 계정 인증(`accounts.google.com`, `auth.cloud.google.com`) 단계에서 세션이 만료되거나 무한 리다이렉트가 발생한다.
-- Private Service Connect(PSC) 내부망을 구성했으나 일부 필수 공개 FQDN에 대한 외부 DNS 해독 및 TCP 443 아웃바운드가 누락되어 있다.
+## 2. 발생 증상 및 진단 대상 체크리스트
+
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 사내 보안 방화벽 규정상 와일드카드 도메인(`*.googleapis.com`, `*.gstatic.com`) 일괄 허용이 전면 금지되어 있다.
+- [ ] 사내 PC 또는 VDI 환경에서 Gemini Enterprise App 접속 시 흰 화면(Blank Page)만 표시되거나 폰트와 스타일이 깨진다.
+- [ ] 텍스트 질의는 일부 동작하나 Deep Research 실행, 멀티모달 이미지 생성 및 UI 렌더링 시 통신 에러가 발생한다. (원인: `discoveryengine.clients6.google.com` 차단)
+- [ ] Google Cloud 계정 인증(`accounts.google.com`, `auth.cloud.google.com`) 단계에서 세션이 만료되거나 무한 리다이렉트가 발생한다.
+- [ ] Private Service Connect(PSC) 내부망을 구성했으나 일부 필수 공개 FQDN에 대한 외부 DNS 해독 및 TCP 443 아웃바운드가 누락되어 있다.
 
 ---
 
-## 2. 처리 흐름도
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+Gemini Enterprise 필수 FQDN 사내망 연결성 진단 시작
+--> 가상 실행 모드 (--dry-run) 활성화: 모의 방화벽 차단 시나리오를 분석한다.
+=========================================================================================================
+카테고리             FQDN                                       DNS    TLS/443  지연(ms)     결과        
+---------------------------------------------------------------------------------------------------------
+Core API         discoveryengine.googleapis.com             OK     OK       32.5       [정상]      
+Core API         global-discoveryengine.googleapis.com      OK     OK       32.5       [정상]      
+Core API         us-discoveryengine.googleapis.com          OK     OK       32.5       [정상]      
+Core API         eu-discoveryengine.googleapis.com          OK     OK       32.5       [정상]      
+Core API         content-discoveryengine.googleapis.com     OK     OK       32.5       [정상]
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -59,41 +99,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 필요 네트워크 및 IAM 요구 사항
-- **실행 환경**: 사내망, 온프레미스 사내 PC, VDI, Compute Engine VM 또는 Cloud Shell
-- **아웃바운드 포트**: TCP Port 443 (HTTPS)
-- **IAM 권한**: 로컬 네트워크 및 도메인 소켓 테스트이므로 GCP IAM 권한이 없어도 진단 가능하다. (GCP 방화벽 정책 생성 시 `roles/compute.securityAdmin` 필요)
-
----
-
-## 4. 원클릭 실행법
-
-### 가상 검증 실행 (--dry-run)
-기업 방화벽 차단 시나리오(`discoveryengine.clients6.google.com` 차단 및 DNS 실패)를 시뮬레이션하여 진단 보고서와 처방 출력을 즉시 확인한다.
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 사내망 환경 전수 진단
-현재 실행 중인 네트워크 환경에서 모든 필수 FQDN에 대한 실시간 DNS 및 TCP 443 연결성을 진단한다.
-```bash
-python diagnose.py
-```
-
-특정 카테고리(예: Core API)만 선별 진단할 경우:
-```bash
-python diagnose.py --category="Core API"
-```
-
-타 보안 관제 시스템 및 자동화 도구와 연동하기 위해 JSON으로 출력할 경우:
-```bash
-python diagnose.py --json
-```
-
----
-
-## 5. 방화벽 설정 및 조치 가이드
+## 5. 조치 가이드 및 권장 설정
 
 ### 1) 최우선 조치 대상 코어 FQDN
 - `discoveryengine.googleapis.com` (기본 API 엔드포인트)
@@ -126,8 +132,17 @@ gcloud compute firewall-rules create allow-gemini-enterprise-egress \
 ```
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+- **실행 환경**: 사내망, 온프레미스 사내 PC, VDI, Compute Engine VM 또는 Cloud Shell
+- **아웃바운드 포트**: TCP Port 443 (HTTPS)
+- **IAM 권한**: 로컬 네트워크 및 도메인 소켓 테스트이므로 GCP IAM 권한이 없어도 진단 가능하다. (GCP 방화벽 정책 생성 시 `roles/compute.securityAdmin` 필요)
+
+---
+
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 방화벽 규칙 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -136,14 +151,6 @@ gcloud compute firewall-rules create allow-gemini-enterprise-egress \
 - `created-by`: `customer-engineer`
 
 ---
+## 8. 리소스 정리 (Teardown) 안내
 
-## 7. 콘솔 링크 조치 가이드
-
-- **Cloud NGFW 방화벽 정책 콘솔**: ( https://console.cloud.google.com/net-security/firewall-manager/firewall-policies )
-- **VPC 네트워크 콘솔**: ( https://console.cloud.google.com/networking/networks/list )
-- **Private Service Connect 콘솔**: ( https://console.cloud.google.com/net-services/psc/list )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
 본 도구는 클라우드 자원을 생성하지 않는 네트워크 소켓 진단 유틸리티다. 진단 과정에서 발생하는 추가 과금이나 자원 잔류가 없다.

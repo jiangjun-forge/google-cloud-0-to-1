@@ -1,6 +1,6 @@
 # Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석 보고서
 
-- **생성 일시**: 2026-10-17 06:51:00 UTC
+- **생성 일시**: 2026-10-19 06:45:11 UTC
 - **실행 모드**: 가상 실행 (Dry-run)
 - **대상 프로젝트**: `sample-project-id`
 - **BigQuery 데이터세트**: `gemini_enterprise_logs`

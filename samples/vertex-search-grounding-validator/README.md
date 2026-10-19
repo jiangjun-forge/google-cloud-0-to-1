@@ -18,23 +18,62 @@ All contents, designs, and code examples are subject to change, modification, or
 
 Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Storage) 원본 문서와 Agent Platform Search 데이터 저장소(Data Store) 간의 색인 누락, 청킹(Chunking) 실패, 서비스 에이전트 권한 누락 및 Gemini 그라운딩 검색 품질 저하를 1분 만에 일괄 진단하고 처방하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`  
-**Concern**: `#Performance`, `#Resilience`  
-**Service**: `#AgentPlatform`, `#CloudStorage`, `#GeminiAPI`, `#VertexAI`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Cloud Storage 원본 문서와 Vertex AI Search 데이터 저장소 간의 색인 누락, 청킹 오류 및 그라운딩 점수 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 비정형 문서 파싱 오류 식별, 색인 누락 파일 동기화 및 최적 청킹 파라미터(디지털 문서 레이아웃) 처방 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- Cloud Storage 버킷에 신규 문서나 개정된 사내 규정을 업로드했으나, Agent Platform Search 및 제미나이(Gemini) 모델 답변에 최신 내용이 반영되지 않는 경우
-- 원본 스토리지 객체 수 대비 데이터 저장소에 실제 색인(Indexed) 완료된 문서 수가 현저히 부족하여 색인 누락율을 전수 파악해야 하는 경우
-- 복잡한 표(Table), 다단 레이아웃, 스캔 PDF 파일이 단순 Digital Parser로 처리되어 검색 결과가 깨지거나 누락되는 경우
-- Discovery Engine 서비스 에이전트(`gcp-sa-discoveryengine`)에 스토리지 읽기 권한(`roles/storage.objectViewer`)이 누락되어 색인 동기화가 차단된 경우
-- Gemini 그라운딩 프로브 질의를 통해 검색 청크(Chunk) 품질과 신뢰도 점수(Grounding Score)를 사전 정량 평가하고자 하는 경우
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] Cloud Storage 버킷에 신규 문서나 개정된 사내 규정을 업로드했으나, Agent Platform Search 및 제미나이(Gemini) 모델 답변에 최신 내용이 반영되지 않는 경우
+- [ ] 원본 스토리지 객체 수 대비 데이터 저장소에 실제 색인(Indexed) 완료된 문서 수가 현저히 부족하여 색인 누락율을 전수 파악해야 하는 경우
+- [ ] 복잡한 표(Table), 다단 레이아웃, 스캔 PDF 파일이 단순 Digital Parser로 처리되어 검색 결과가 깨지거나 누락되는 경우
+- [ ] Discovery Engine 서비스 에이전트(`gcp-sa-discoveryengine`)에 스토리지 읽기 권한(`roles/storage.objectViewer`)이 누락되어 색인 동기화가 차단된 경우
+- [ ] Gemini 그라운딩 프로브 질의를 통해 검색 청크(Chunk) 품질과 신뢰도 점수(Grounding Score)를 사전 정량 평가하고자 하는 경우
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+* 진단 결과: [WARNING] GCS 원본 대비 550건(22.9%) 색인 누락 및 스캔 PDF 표/도표 파싱 불가로 그라운딩 신뢰도 저하 (레이아웃 파서 전환 및 재색인 필요)
+- 데이터 저장소: customer-faq-ds (대고객 서비스 FAQ 저장소)
+  * 콘텐츠 유형: CONTENT_REQUIRED (HTML/웹)
+  * 원본 버킷: gs://demo-customer-faqs
+  * 누락 문서 수: 0건
+  * 적용 파서: HTML_PARSER
+  * 청킹 단위: 250 토큰
+  * 서비스 에이전트 IAM 권한: 정상 (roles/storage.objectViewer)
+  * 프로브 질의: "서비스 환불 및 라이선스 이전 절차"
+  * 검색 청크 수: 4개
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -52,44 +91,33 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항
+1. **데이터 저장소 수동 재색인 및 상태 모니터링**:
+   - Agent Platform Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/vertex-ai/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
+   - 비정형 데이터 저장소 생성 및 관리 ( https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es )
+2. **문서 청킹 및 Layout Parser 설정**:
+   - 고품질 RAG 검색을 위해 복잡한 PDF 구조를 이해하는 Layout Parser와 적절한 청크 크기(200~500 토큰)를 설정한다.
+   - 문서 파싱 및 청킹 가이드 ( https://cloud.google.com/generative-ai-app-builder/docs/parse-chunk-documents )
+3. **제미나이(Gemini) 그라운딩 연동 최적화**:
+   - 검색된 문서를 파운데이션 모델에 공급할 때 검색 점수 임계치(Dynamic Retrieval Threshold)를 설정하여 무관한 문서 인입을 차단한다.
+   - Agent Platform Search를 활용한 Gemini 그라운딩 ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 역할 (Role) | 최소 IAM 권한 |
-| :--- | :--- |
+| : | : |
 | 디스커버리 엔진 뷰어(`roles/discoveryengine.viewer`) | `discoveryengine.dataStores.get`, `discoveryengine.documents.list` |
 | 스토리지 객체 뷰어(`roles/storage.objectViewer`) | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
 
 ---
 
-## 4. 1분 퀵스타트
-
-### 가상 실행 (Dry-run)
-
-실제 GCP API 호출이나 권한 없이도 모의 RAG 파이프라인 시나리오를 즉시 시뮬레이션할 수 있다:
-
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 실행
-
-```bash
-# 기본 프로젝트 및 글로벌 위치 기준 전체 데이터 저장소 점검
-python diagnose.py
-
-# 특정 프로젝트 및 특정 데이터 저장소 지정 실행
-python diagnose.py --project=my-prod-project --location=global --datastore=enterprise-knowledge-ds
-
-# 특정 버킷 및 테스트 프로브 질의어 지정 실행
-python diagnose.py --project=my-prod-project --location=global --datastore=enterprise-knowledge-ds --bucket=my-enterprise-docs --query="2026 보안 가이드라인"
-```
-
----
-
-## 5. 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ================================================================================
@@ -156,32 +184,7 @@ customer-faq-ds            500          500          100.0%     OK
 ```
 
 ---
-
-## 6. 결과 확인 후 즉각 조치 가이드
-
-1. **데이터 저장소 수동 재색인 및 상태 모니터링**:
-   - Agent Platform Search 데이터 저장소 콘솔 ( https://console.cloud.google.com/vertex-ai/data-stores ) > 대상 데이터 저장소 > 활동(Activity) 탭
-   - 비정형 데이터 저장소 생성 및 관리 ( https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es )
-2. **문서 청킹 및 Layout Parser 설정**:
-   - 고품질 RAG 검색을 위해 복잡한 PDF 구조를 이해하는 Layout Parser와 적절한 청크 크기(200~500 토큰)를 설정한다.
-   - 문서 파싱 및 청킹 가이드 ( https://cloud.google.com/generative-ai-app-builder/docs/parse-chunk-documents )
-3. **제미나이(Gemini) 그라운딩 연동 최적화**:
-   - 검색된 문서를 파운데이션 모델에 공급할 때 검색 점수 임계치(Dynamic Retrieval Threshold)를 설정하여 무관한 문서 인입을 차단한다.
-   - Agent Platform Search를 활용한 Gemini 그라운딩 ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
-
----
-
-## 7. 사내 거버넌스 4대 필수 표준 라벨링
-
-Agent Platform Search 데이터 저장소 연계 Cloud Storage 버킷 및 RAG 파이프라인 리소스 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `vertex-search-grounding-validator`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 읽기 전용으로 데이터 저장소 메타데이터와 스토리지 색인 상태를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 실습용으로 생성한 테스트 데이터 저장소나 앱 엔진이 있다면 콘솔에서 삭제한다:
 

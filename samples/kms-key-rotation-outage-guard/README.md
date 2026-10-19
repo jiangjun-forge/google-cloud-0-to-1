@@ -18,22 +18,61 @@ All contents, designs, and code examples are subject to change, modification, or
 
 클라우드 KMS(Cloud KMS) 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 클라우드 스토리지(Cloud Storage) 객체 및 영구 데이터의 복호화 실패로 인한 대형 서비스 장애(Outage)를 사전 탐지하고 안전한 데이터 재암호화(Rewrite) 워크플로우를 처방하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#SecOps`  
-**Concern**: `#Resilience`, `#Security`  
-**Service**: `#CloudKMS`, `#CloudStorage`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | CMEK 암호화 키 순환 후 구버전 키 비활성화 시 영구 데이터 복호화 실패 및 서비스 중단 위험 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Cloud Storage 버킷 객체 키 버전 스캔, 재암호화(Rewrite) 검증 및 키 보존 수명주기 처방 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- Cloud KMS CMEK 키를 90일 주기로 자동 순환(Rotation)하도록 설정한 후 구버전 키를 안전하게 정리하고자 하는 경우
-- 보안 규정 준수를 위해 이전 버전의 키를 비활성화(Disable)하거나 파기 예정(Destroy Scheduled)으로 전환하려 할 때, 해당 키로 암호화된 기존 데이터가 남아 있는지 검증해야 하는 경우
-- 구버전 키가 비활성화되어 `Cloud Storage` 객체 다운로드 또는 `BigQuery` 테이블 조회 시 즉시 400/403 KMS 복호화 거부 장애가 발생하는 사태를 미연에 방지하려는 경우
-- 최신 주 버전(Primary Version) 키로 기존 스토리지 객체들을 온라인 상태에서 무중단 일괄 재암호화(`rewrite`)하는 표준 절차가 필요한 경우
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] Cloud KMS CMEK 키를 90일 주기로 자동 순환(Rotation)하도록 설정한 후 구버전 키를 안전하게 정리하고자 하는 경우
+- [ ] 보안 규정 준수를 위해 이전 버전의 키를 비활성화(Disable)하거나 파기 예정(Destroy Scheduled)으로 전환하려 할 때, 해당 키로 암호화된 기존 데이터가 남아 있는지 검증해야 하는 경우
+- [ ] 구버전 키가 비활성화되어 `Cloud Storage` 객체 다운로드 또는 `BigQuery` 테이블 조회 시 즉시 400/403 KMS 복호화 거부 장애가 발생하는 사태를 미연에 방지하려는 경우
+- [ ] 최신 주 버전(Primary Version) 키로 기존 스토리지 객체들을 온라인 상태에서 무중단 일괄 재암호화(`rewrite`)하는 표준 절차가 필요한 경우
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+================================================================================
+Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방 리포트
+진단 모드: 가상 실행 (Dry-run)
+대상 프로젝트: sample-project-id
+암호화 키 경로: projects/sample-project-id/locations/asia-northeast3/keyRings/prod-keyring/cryptoKeys/customer-data-key
+현재 주 버전(Primary): 버전 3
+자동 순환 주기: 90일 (7,776,000초)
+================================================================================
+[1단계] Cloud KMS CryptoKey 버전별 라이프사이클 상태 점검
+--------------------------------------------------------------------------------
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -49,44 +88,32 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항
+1. **파기 예정 키 복구(Restore)**:
+   - Cloud KMS ( https://console.cloud.google.com/security/kms ) > 키 링 선택 > 키 선택 > 파기 예정 버전 복구
+   - Cloud KMS 키 순환 및 버전 관리 ( https://cloud.google.com/kms/docs/key-rotation )
+2. **Cloud Storage 객체 재암호화(Rewrite)**:
+   - 이전 버전 키로 암호화된 객체는 Cloud Storage의 온라인 `rewrite` 명령어를 통해 서비스 중단 없이 최신 주 버전(Primary) 키로 다시 암호화할 수 있다.
+   - Cloud Storage 고객 관리 암호화 키(CMEK) 관리 ( https://cloud.google.com/storage/docs/encryption/customer-managed-keys )
+3. **구버전 키 비활성화 및 안전 폐기**:
+   - 버킷 내 모든 객체의 암호화 버전이 최신 주 버전으로 일원화된 것을 확인한 후 구버전을 `DISABLED` 처리하여 보안 정책을 완결한다.
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
-| :--- | :--- | :--- |
+| : | : | : |
 | `Cloud KMS` | `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.cryptoKeys.get`, `cloudkms.cryptoKeyVersions.list` |
 | `Cloud Storage` | `스토리지 객체 뷰어(roles/storage.objectViewer)` | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
 
 ---
 
-## 4. 1분 퀵스타트
-
-### 가상 실행 (Dry-run)
-
-실제 GCP API 호출이나 권한 없이도 모의 암호화 키 순환 시나리오를 즉시 시뮬레이션할 수 있다:
-
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 실행
-
-```bash
-# 기본 환경 변수 기반 실행
-python diagnose.py
-
-# 특정 프로젝트 및 특정 키 링/키 이름 지정 실행
-python diagnose.py --project=my-prod-project --location=asia-northeast3 --keyring=prod-keyring --key-name=customer-data-key
-
-# 특정 Cloud Storage 버킷 지정 객체 전수 점검
-python diagnose.py --project=my-prod-project --location=asia-northeast3 --keyring=prod-keyring --key-name=customer-data-key --bucket=my-customer-archive
-```
-
----
-
-## 5. 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ================================================================================
@@ -139,31 +166,7 @@ v1       NO         DESTROY_SCHEDULED    2025-12-01T09:00:00Z   CRITICAL
 ```
 
 ---
-
-## 6. 결과 확인 후 즉각 조치 가이드
-
-1. **파기 예정 키 복구(Restore)**:
-   - Cloud KMS ( https://console.cloud.google.com/security/kms ) > 키 링 선택 > 키 선택 > 파기 예정 버전 복구
-   - Cloud KMS 키 순환 및 버전 관리 ( https://cloud.google.com/kms/docs/key-rotation )
-2. **Cloud Storage 객체 재암호화(Rewrite)**:
-   - 이전 버전 키로 암호화된 객체는 Cloud Storage의 온라인 `rewrite` 명령어를 통해 서비스 중단 없이 최신 주 버전(Primary) 키로 다시 암호화할 수 있다.
-   - Cloud Storage 고객 관리 암호화 키(CMEK) 관리 ( https://cloud.google.com/storage/docs/encryption/customer-managed-keys )
-3. **구버전 키 비활성화 및 안전 폐기**:
-   - 버킷 내 모든 객체의 암호화 버전이 최신 주 버전으로 일원화된 것을 확인한 후 구버전을 `DISABLED` 처리하여 보안 정책을 완결한다.
-
----
-
-## 7. 사내 거버넌스 4대 필수 표준 라벨링
-
-신규 KMS 키 링/암호화 키 및 Cloud Storage 버킷 리소스 프로비저닝 시 다음 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `kms-key-rotation-outage-guard`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 읽기 전용으로 Cloud KMS 키 메타데이터와 버킷 객체 정보를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 실습용으로 생성한 테스트 KMS 키나 버킷이 있다면 불필요한 비용을 방지하기 위해 버킷을 비우고 삭제한다:
 

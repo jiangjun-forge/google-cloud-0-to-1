@@ -18,23 +18,62 @@ All contents, designs, and code examples are subject to change, modification, or
 
 클라우드 런(Cloud Run) 환경에서 Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 클라우드 NAT(Cloud NAT) 라우팅 정합성을 1분 만에 일괄 진단하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`  
-**Concern**: `#Performance`, `#Resilience`  
-**Service**: `#CloudRun`, `#ComputeEngine`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Serverless VPC Connector 병목, Direct VPC Egress 서브넷 IP 고갈 및 PGA/NAT 라우팅 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Direct VPC Egress 활성화, 전용 /26 서브넷 바인딩 및 라우팅 설정 처방 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- 기존 Serverless VPC Access 커넥터(VPC Connector)의 최대 처리량 제약이나 인스턴스 기동 지연(Cold Start) 병목을 해소하고자 하는 경우
-- 커넥터 유지에 수반되는 고정 가상 머신(e2-micro 등) 인스턴스 비용을 절감하고 Direct VPC Egress 로 전환하고자 하는 경우
-- Cloud Run 컨테이너가 급격히 수평 확장(Auto-scaling)될 때 할당된 서브넷의 사설 IP가 고갈되어 파드가 기동 실패(Crash)하는 위험을 사전에 방지하려는 경우
-- `all-traffic` 옵션 설정 후 Cloud NAT 미구성으로 인해 외부 공용 API(결제 게이트웨이, 서드파티 웹훅) 통신이 차단되는 장애를 진단해야 하는 경우
-- 서브넷의 Private Google Access(PGA) 설정 누락으로 클라우드 스토리지(Cloud Storage), 빅쿼리(BigQuery) 등 구글 사설 API 호출이 실패하는 원인을 규명하려는 경우
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 기존 Serverless VPC Access 커넥터(VPC Connector)의 최대 처리량 제약이나 인스턴스 기동 지연(Cold Start) 병목을 해소하고자 하는 경우
+- [ ] 커넥터 유지에 수반되는 고정 가상 머신(e2-micro 등) 인스턴스 비용을 절감하고 Direct VPC Egress 로 전환하고자 하는 경우
+- [ ] Cloud Run 컨테이너가 급격히 수평 확장(Auto-scaling)될 때 할당된 서브넷의 사설 IP가 고갈되어 파드가 기동 실패(Crash)하는 위험을 사전에 방지하려는 경우
+- [ ] `all-traffic` 옵션 설정 후 Cloud NAT 미구성으로 인해 외부 공용 API(결제 게이트웨이, 서드파티 웹훅) 통신이 차단되는 장애를 진단해야 하는 경우
+- [ ] 서브넷의 Private Google Access(PGA) 설정 누락으로 클라우드 스토리지(Cloud Storage), 빅쿼리(BigQuery) 등 구글 사설 API 호출이 실패하는 원인을 규명하려는 경우
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+[2단계] 서브넷 IP 고갈 위험 및 네트워크 라우팅 세부 진단
+--------------------------------------------------------------------------------
+- 서비스: order-api-prod
+  * 연동 방식: CONNECTOR
+  * VPC 커넥터: projects/demo-vpc-egress-project/locations/asia-northeast3/connectors/legacy-vpc-conn
+  * 진단 결과: [WARNING] 레거시 Serverless VPC Access 커넥터 사용 중, 대역폭 병목 및 커넥터 유휴 비용 발생 (Direct VPC Egress 전환 권장)
+- 서비스: payment-gateway-prod
+  * 연동 방식: DIRECT_VPC
+  * 대상 서브넷: sub-run-prod-01 (대역: 10.10.1.0/28)
+  * Private Google Access: 비활성화 (경고)
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -49,44 +88,42 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항
+### 1단계: Direct VPC Egress 마이그레이션 적용
+- Cloud Run 콘솔 ( https://console.cloud.google.com/run ) > 대상 서비스 선택 > 수정 및 새 버전 배포 > 네트워킹 탭
+- Cloud Run Direct VPC Egress 설정 가이드 ( https://cloud.google.com/run/docs/configuring/vpc-direct-vpc )
+- VPC 네트워크 연결 옵션 비교 ( https://cloud.google.com/run/docs/configuring/connecting-vpc )
+
+### 2단계: 서브넷 Private Google Access 및 Cloud NAT 라우팅 정합성 확보
+- VPC 네트워크 ( https://console.cloud.google.com/networking/networks/list ) > 서브넷 선택 > 수정 > 비공개 Google 액세스 사용 설정
+- Private Google Access 개요 ( https://cloud.google.com/vpc/docs/private-google-access )
+- Cloud NAT 콘솔 ( https://console.cloud.google.com/net-services/nat/list )
+- 외부 아웃바운드 트래픽(`all-traffic`)을 안전하게 처리하기 위한 Cloud NAT 게이트웨이를 배치한다.
+
+### 3단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+- Cloud Run 서비스 및 관련 클라우드 인프라 생성/배포 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨을 필수로 주입한다:
+  - `managed-by`: `google-cloud-0-to-1`
+  - `scenario`: `cloud-run-direct-vpc-egress-checker`
+  - `env`: `sample`
+  - `created-by`: `customer-engineer`
+- gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer`
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
-| :--- | :--- | :--- |
+| : | : | : |
 | `Cloud Run` | `roles/run.viewer` | `run.services.get`, `run.services.list` |
 | `Compute Engine` | `roles/compute.networkViewer` | `compute.networks.get`, `compute.routers.get`, `compute.subnetworks.get` |
 
 ---
 
-## 4. 1분 퀵스타트
-
-### 가상 실행 (Dry-run)
-
-실제 GCP API 호출이나 권한 없이도 모의 아키텍처 환경을 즉시 시뮬레이션할 수 있다:
-
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 실행
-
-```bash
-# 기본 활성 프로젝트 및 기본 리전(asia-northeast3) 대상 실행
-python diagnose.py
-
-# 특정 프로젝트 및 특정 리전 지정 실행
-python diagnose.py --project=my-prod-project --region=asia-northeast3
-
-# 특정 서비스 단독 점검
-python diagnose.py --project=my-prod-project --region=asia-northeast3 --service=order-api-prod
-```
-
----
-
-## 5. 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ================================================================================
@@ -165,31 +202,7 @@ user-auth-service-prod   DIRECT_VPC     private-ranges-only OK
 ```
 
 ---
-
-## 6. 결과 확인 후 즉각 조치 가이드
-
-### 1단계: Direct VPC Egress 마이그레이션 적용
-- Cloud Run 콘솔 ( https://console.cloud.google.com/run ) > 대상 서비스 선택 > 수정 및 새 버전 배포 > 네트워킹 탭
-- Cloud Run Direct VPC Egress 설정 가이드 ( https://cloud.google.com/run/docs/configuring/vpc-direct-vpc )
-- VPC 네트워크 연결 옵션 비교 ( https://cloud.google.com/run/docs/configuring/connecting-vpc )
-
-### 2단계: 서브넷 Private Google Access 및 Cloud NAT 라우팅 정합성 확보
-- VPC 네트워크 ( https://console.cloud.google.com/networking/networks/list ) > 서브넷 선택 > 수정 > 비공개 Google 액세스 사용 설정
-- Private Google Access 개요 ( https://cloud.google.com/vpc/docs/private-google-access )
-- Cloud NAT 콘솔 ( https://console.cloud.google.com/net-services/nat/list )
-- 외부 아웃바운드 트래픽(`all-traffic`)을 안전하게 처리하기 위한 Cloud NAT 게이트웨이를 배치한다.
-
-### 3단계: GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
-- Cloud Run 서비스 및 관련 클라우드 인프라 생성/배포 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨을 필수로 주입한다:
-  - `managed-by`: `google-cloud-0-to-1`
-  - `scenario`: `cloud-run-direct-vpc-egress-checker`
-  - `env`: `sample`
-  - `created-by`: `customer-engineer`
-- gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-direct-vpc-egress-checker,env=sample,created-by=customer-engineer`
-
----
-
-## 7. 자원 정리 (Teardown) 가이드
+## 8. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 읽기 전용으로 Cloud Run 및 VPC 네트워크 메타데이터를 조회하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 실습을 위해 생성한 테스트용 Cloud Run 서비스나 서브넷이 있다면 아래 명령어로 정리한다:
 

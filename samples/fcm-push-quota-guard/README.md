@@ -18,23 +18,61 @@ All contents, designs, and code examples are subject to change, modification, or
 
 모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded 쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다. (As of 2026-10-17)
 
-**Audience**: `#Developer`, `#FinOps`  
-**Concern**: `#Performance`, `#Resilience`  
-**Service**: `#CloudMonitoring`  
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | FCM HTTP v1 분당 다운스트림 쿼터 초과(429 Quota Exceeded) 및 메시지 유실 위험 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 초당 토큰 버킷 속도 제한, Full Jitter 지수 백오프 및 사전 쿼터 증설 가이드 도출 |
 
 ---
 
-## 1. 배경 및 문제 증상
+## 2. 발생 증상 및 진단 대상 체크리스트
 
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 대규모 사용자 기반 모바일 서비스에서 프로모션, 라이브 커머스, 재난 알림 등으로 수십만~수백만 건의 푸시 메시지를 일시에 발송할 때 다음과 같은 장애가 발생한다:
-
-- **FCM API 429 할당량 초과**: FCM HTTP v1 API의 프로젝트당 분당 다운스트림 메시지 기본 전송 한도(600,000+건/분)를 초과하여 대량의 `429 RESOURCE_EXHAUSTED` 에러 발생 및 푸시 전송 실패.
-- **재시도 폭풍(Retry Storm)과 지연 누적**: 실패한 요청에 대해 고정 지연 또는 즉시 무제한 재시도를 수행하여 FCM 인프라 쓰로틀링이 가중되고 알림이 제때 전달되지 않는 사고.
-- **기기 토큰 팬아웃 병목**: 단일 기기 토큰에 대한 개별 API 루프 호출로 인해 백엔드 연결 고갈 및 불필요한 네트워크 지연 초래.
+- [ ] **FCM API 429 할당량 초과**: FCM HTTP v1 API의 프로젝트당 분당 다운스트림 메시지 기본 전송 한도(600,000+건/분)를 초과하여 대량의 `429 RESOURCE_EXHAUSTED` 에러 발생 및 푸시 전송 실패.
+- [ ] **재시도 폭풍(Retry Storm)과 지연 누적**: 실패한 요청에 대해 고정 지연 또는 즉시 무제한 재시도를 수행하여 FCM 인프라 쓰로틀링이 가중되고 알림이 제때 전달되지 않는 사고.
+- [ ] **기기 토큰 팬아웃 병목**: 단일 기기 토큰에 대한 개별 API 루프 호출로 인해 백엔드 연결 고갈 및 불필요한 네트워크 지연 초래.
 
 ---
 
-## 2. 진단 워크플로우
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+종합 진단 상태          : ACTION_REQUIRED
+----------------------------------------------------------------------------
+[항목별 세부 진단 결과]
+1. [CRITICAL] DOWNSTREAM_QUOTA_EXCEEDED
+   내용: 피크 시 분당 발송량(750,000건)이 기본 할당량(600,000건)을 125.0% 초과하여 약 20.0%의 요청이 429 쓰로틀링 에러로 실패한다.
+2. [WARNING] TOKEN_BUCKET_RATE_LIMITING
+   내용: 발송 백엔드에 토큰 버킷 속도 제한기(Rate Limiter)가 누락되어 있어 이벤트 발생 시 일시에 요청이 몰려 FCM 인프라 쓰로틀링을 유발한다.
+3. [WARNING] EXPONENTIAL_BACKOFF_AND_JITTER
+   내용: 429 에러 발생 시 고정 대기 재시도 또는 즉시 재시도로 인해 '재시도 폭풍(Retry Storm)'이 발생하고 있다. Full Jitter 기반 지수 백오프 도입이 시급하다.
+4. [INFO] TOPIC_FANOUT_OPTIMIZATION
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -51,34 +89,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 사전 요구 사항 및 IAM 권한
-
-본 도구를 실행하고 할당량 및 모니터링 지표를 진단하기 위해 다음 권한이 필요하다:
-
-- `roles/serviceusage.serviceUsageViewer`: FCM API 할당량 및 제한 수치 조회
-- `roles/monitoring.viewer`: 클라우드 모니터링(Cloud Monitoring) 다운스트림 메시지 전송량 및 429 에러율 지표 조회
-- `roles/serviceusage.quotaAdmin`: (선택) 콘솔에서 할당량 상향 요청 승인 및 관리
-
----
-
-## 4. 원클릭 실행 및 검증
-
-### (1) 가상 모의 진단 (`--dry-run`)
-실제 트래픽 유발 없이 피크 발송량 대비 429 실패율 및 복원력 처방을 사전 검증한다:
-```bash
-python diagnose.py --dry-run
-```
-
-### (2) 운영 환경 진단
-환경 변수 또는 CLI 인자를 지정하여 실행한다:
-```bash
-python diagnose.py --project-id sample-project-id --peak-msg-per-min 750000 --quota-limit-per-min 600000
-```
-
----
-
-## 5. 단계별 조치 가이드
+## 5. 조치 가이드 및 권장 설정
 
 ### 1단계: Google Cloud 콘솔 할당량 상향(Quota Increase) 신청
 1. 구글 클라우드 콘솔(Google Cloud Console)의 **IAM 및 관리자 > 할당량 및 시스템 한도** 메뉴로 이동한다.
@@ -125,8 +136,19 @@ def exponential_backoff_retry(attempt, base=1.0, max_backoff=32.0):
 - Cloud Monitoring Firebase 및 FCM 지표 목록 ( https://cloud.google.com/monitoring/api/metrics_gcp )
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 자원 정리 안내 (Teardown)
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+본 도구를 실행하고 할당량 및 모니터링 지표를 진단하기 위해 다음 권한이 필요하다:
+
+- `roles/serviceusage.serviceUsageViewer`: FCM API 할당량 및 제한 수치 조회
+- `roles/monitoring.viewer`: 클라우드 모니터링(Cloud Monitoring) 다운스트림 메시지 전송량 및 429 에러율 지표 조회
+- `roles/serviceusage.quotaAdmin`: (선택) 콘솔에서 할당량 상향 요청 승인 및 관리
+
+---
+
+## 8. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다.
 상향된 FCM 할당량은 별도 비용이 발생하지 않으며, 이벤트 종료 후 필요 시 콘솔에서 기본값으로 다시 하향 조정할 수 있다.

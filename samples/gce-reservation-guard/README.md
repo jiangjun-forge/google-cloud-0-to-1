@@ -18,14 +18,21 @@ All contents, designs, and code examples are subject to change, modification, or
 
 Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 사태를 감사 로그로 역추적하고, 요금 할인만 적용되고 물리적 용량 확보가 없는 무방비 약정(Unreserved CUD) 위험과 GPU/특수 머신의 Future Reservation(FR) 미제출 및 승인 지연 문제를 한 번에 진단하여 하드웨어 가용성을 보장하는 통합 인프라 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#FinOps`  
-**Concern**: `#Billing`, `#Performance`, `#Resilience`  
-**Service**: `#ComputeEngine`, `#GoogleKubernetesEngine`  
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 리전 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 감사 로그 및 CUD 대비 물리적 Reservation 확보율 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 미확보 용량에 대한 On-demand / Future Reservation 신청 명세 및 CUD 연계 처방 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 주요 리전(서울, 도쿄, 아이오와 등)에서 N4, N2 또는 GPU 머신 프로비저닝 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러로 인스턴스 생성이 중단될 때
 - [ ] 1년 또는 3년 CUD(지속 사용 약정)를 체결했음에도 물리적 하드웨어 용량을 보장받지 못해 요금은 계속 나가면서 인스턴스를 띄우지 못하는 FinOps 손실이 발생할 때
 - [ ] GPU(H100, A100, L4) 대규모 프로젝트를 위해 Future Reservation을 생성했으나, 콘솔에서 제출(Submit)을 누락하여 `DRAFTING` 상태로 방치되어 있을 때
@@ -33,7 +40,37 @@ Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOU
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+GKE ComputeClass(CCC) 및 MIG instanceSelections 다중 머신 유연성을 동시 적용할 것을 권장한다.
+[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:
+  - managed-by: google-cloud-0-to-1
+  - scenario: gce-reservation-guard
+  - env: sample
+  - created-by: customer-engineer
+================================================================================================
+[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/gce-reservation-guard/report.md
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -50,44 +87,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 사전 준비 사항 및 필요 권한
-
-### (1) 필수 API 활성화
-```bash
-gcloud services enable compute.googleapis.com logging.googleapis.com
-```
-
-### (2) 진단 실행 계정 최소 IAM 권한
-
-| 역할 (Role) | 설명 |
-| :--- | :--- |
-| `roles/compute.viewer` | CUD 약정 및 온디맨드/Future Reservation 목록 조회 권한 |
-| `roles/logging.viewer` | 클라우드 로깅(Cloud Logging) 스톡아웃 감사 로그 조회 권한 |
-
----
-
-## 4. 1분 퀵스타트
-
-### 가상 모의 실행 (Dry-run) - 예습
-실제 GCP 호출 없이 시뮬레이션 데이터를 바탕으로 무방비 CUD 탐지 및 Future Reservation 미제출 검사를 1초 만에 검증한다:
-```bash
-python diagnose.py --dry-run
-```
-
-### 사내 실측 진단 실행 - 실습 및 복습
-현재 활성화된 프로젝트의 실데이터를 기반으로 CUD 용량 보장율과 Future Reservation 현황을 통합 진단한다:
-```bash
-# 기본 활성 프로젝트 점검
-python diagnose.py
-
-# 특정 프로젝트 및 특정 리전 지정
-python diagnose.py -p sample-project-id -r asia-northeast3 -d 14
-```
-
----
-
-## 5. 결과 확인 후 즉각 조치 가이드 및 리소스 라벨링
+## 5. 조치 가이드 및 권장 설정
 
 ### 1단계: 무방비 CUD에 대한 온디맨드 Reservation 선점 (4대 표준 라벨 필수)
 물리적 용량이 없는 CUD에 대해 동일 존의 온디맨드 예약을 생성하여 하드웨어를 물리적으로 선점한다. 사내 거버넌스 및 자원 추적성을 위해 다음 4대 표준 라벨을 반드시 결합한다:
@@ -116,8 +116,26 @@ gcloud compute future-reservations submit [FR_NAME] --zone=[ZONE]
 - Future Reservations 공식 문서 ( https://cloud.google.com/compute/docs/instances/future-reservations-overview )
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 자원 정리 안내 (Teardown)
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+### (1) 필수 API 활성화
+```bash
+gcloud services enable compute.googleapis.com logging.googleapis.com
+```
+
+### (2) 진단 실행 계정 최소 IAM 권한
+
+| 역할 (Role) | 설명 |
+| : | : |
+| `roles/compute.viewer` | CUD 약정 및 온디맨드/Future Reservation 목록 조회 권한 |
+| `roles/logging.viewer` | 클라우드 로깅(Cloud Logging) 스톡아웃 감사 로그 조회 권한 |
+
+---
+
+## 8. 리소스 정리 (Teardown) 안내
+
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 단, 진단 후 테스트로 생성한 온디맨드 Reservation은 검증 완료 후 즉시 삭제한다:
 ```bash
 gcloud compute reservations delete res-guaranteed-capacity --zone=[ZONE] --quiet

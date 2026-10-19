@@ -18,21 +18,61 @@ All contents, designs, and code examples are subject to change, modification, or
 
 서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`  
-**Concern**: `#Performance`, `#Resilience`  
-**Service**: `#CloudMonitoring`, `#ComputeEngine`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 서울 리전 GPU 재고 부족 시 인접 4대 리전(도쿄, 오사카, 대만, 싱가포르) RTT 및 GPU 가용성 측정 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 100ms 미만 RTT 충족 최적 대체 리전 추천 및 다중 리전 분산 배포 가이드 도출 |
 
 ---
 
-## 1. 문제 증상 체크리스트
-- 서울 리전(`asia-northeast3`)에서 고성능 GPU(A100, H100, G4, L4) 및 최신 고성능 머신 타입(C4, N4 등) 할당 쿼터 부족 또는 온디맨드 인스턴스 생성 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러가 빈번하게 발생한다.
-- 국내 데이터 레지던시 의무 규정은 없으나, 실시간 대화형 추론이나 서빙 지연 시간을 고려하여 서울 사용자 기준 100ms 미만 왕복 지연 시간(RTT)을 반드시 충족해야 한다.
-- 도쿄, 오사카, 대만, 싱가포르 등 인접 아시아 태평양(APAC) 리전 중 어떤 리전이 지연 시간이 가장 짧고 목표 GPU 및 고성능 머신 타입을 보유하고 있는지 즉각적인 비교 데이터가 부족하다.
-- 미국 리전(`us-central1` 등)으로 우회 배포할 경우 발생하는 레이턴시 페널티(140ms 이상)가 서비스 품질(SLA)에 미치는 영향을 사전에 수치로 검증해야 한다.
+## 2. 발생 증상 및 진단 대상 체크리스트
+
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 서울 리전(`asia-northeast3`)에서 고성능 GPU(A100, H100, G4, L4) 및 최신 고성능 머신 타입(C4, N4 등) 할당 쿼터 부족 또는 온디맨드 인스턴스 생성 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러가 빈번하게 발생한다.
+- [ ] 국내 데이터 레지던시 의무 규정은 없으나, 실시간 대화형 추론이나 서빙 지연 시간을 고려하여 서울 사용자 기준 100ms 미만 왕복 지연 시간(RTT)을 반드시 충족해야 한다.
+- [ ] 도쿄, 오사카, 대만, 싱가포르 등 인접 아시아 태평양(APAC) 리전 중 어떤 리전이 지연 시간이 가장 짧고 목표 GPU 및 고성능 머신 타입을 보유하고 있는지 즉각적인 비교 데이터가 부족하다.
+- [ ] 미국 리전(`us-central1` 등)으로 우회 배포할 경우 발생하는 레이턴시 페널티(140ms 이상)가 서비스 품질(SLA)에 미치는 영향을 사전에 수치로 검증해야 한다.
 
 ---
 
-## 2. 처리 흐름도
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시 진단 시작 (지연 기준: 100.0 ms, 타깃 GPU: 전체)
+--> 가상 실행 모드 (--dry-run) 활성화: 사전 벤치마크 데이터를 분석한다.
+============================================================================================================
+리전                 위치                       측정 지연(ms)      기준 충족              지원 GPU
+------------------------------------------------------------------------------------------------------------
+asia-northeast1    일본 도쿄 (Tokyo)            34.2 ms        최적 적합 (<60ms)      A100, H100, L4, G4
+asia-northeast2    일본 오사카 (Osaka)           38.6 ms        최적 적합 (<60ms)      A100, L4
+asia-east1         대만 창화 (Changhua)         46.8 ms        최적 적합 (<60ms)      A100, H100, L4, G4
+asia-southeast1    싱가포르 (Singapore)         76.4 ms        허용 범위 (<=100.0ms)  A100, H100, L4, G4
+us-central1        미국 아이오와 (Iowa - 비교군)     148.5 ms       SLA 초과 (>100.0ms)  A100, H100, L4, G4
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -53,42 +93,8 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 필요 IAM 권한
-- 로컬 네트워크 소켓 레이턴시 측정에는 GCP IAM 권한이 필요하지 않다.
-- 실제 컴퓨트 엔진(Compute Engine) 인스턴스 생성 및 쿼터 조회 시:
-  - `roles/compute.viewer` (Compute Engine 조회)
-  - `compute.regions.get`, `compute.regions.list`
-
----
-
-## 4. 원클릭 실행법
-
-### 가상 검증 실행 (--dry-run)
-실제 네트워크 호출 없이 서울 기준 사전 검증된 실측 벤치마크 데이터를 바탕으로 순위 추천 로직을 즉시 확인한다.
-```bash
-python diagnose.py --dry-run
-```
-
-### 특정 GPU 모델 기준 실시간 레이턴시 프로브
-H100 가속기 지원 리전만 필터링하여 서울 발 실시간 네트워크 레이턴시를 측정하고 추천 순위를 도출한다.
-```bash
-python diagnose.py --gpu-type="H100"
-```
-
-최대 허용 지연 시간을 60ms로 엄격하게 제한할 경우:
-```bash
-python diagnose.py --threshold-ms=60.0 --gpu-type="L4"
-```
-
-타 배포 파이프라인 연동을 위한 JSON 출력:
-```bash
-python diagnose.py --dry-run --json
-```
-
----
-
-## 5. 리전별 특징 및 배포 권고안 요약
 1. **일본 도쿄 (`asia-northeast1`)**: ~30-40ms RTT
    - 최저 지연 및 최다 가용량, A100/H100/G4 풍부, 1순위 최우선 추천.
 2. **일본 오사카 (`asia-northeast2`)**: ~35-45ms RTT
@@ -99,35 +105,31 @@ python diagnose.py --dry-run --json
    - 100ms 이내 진입, 차세대 가속기 및 AI 인프라 최우선 배치 거점.
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 결과 확인 후 즉각 조치 가이드 및 리소스 라벨링
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
-### 가. 대체 리전 인스턴스 배포 시 4대 필수 표준 라벨링
-사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 대체 리전에 Compute Engine 인스턴스를 생성할 때에는 다음 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `gce-region-latency-probe`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
-```bash
-gcloud compute instances create [INSTANCE_NAME] \
-    --project=[PROJECT_ID] \
-    --zone=[ZONE] \
-    --machine-type=[MACHINE_TYPE] \
-    --accelerator=type=[GPU_TYPE],count=1 \
-    --maintenance-policy=TERMINATE \
-    --labels=managed-by=google-cloud-0-to-1,scenario=gce-region-latency-probe,env=sample,created-by=customer-engineer
-```
-
-### 나. 공식 문서 및 콘솔 경로
-- Google Cloud Console Compute Engine VM 인스턴스 ( https://console.cloud.google.com/compute/instances )
-- Google Cloud Console Network Topology ( https://console.cloud.google.com/net-intelligence/network-topology )
-- Compute Engine 리전 및 영역 안내 ( https://cloud.google.com/compute/docs/regions-zones )
-- Compute Engine GPU 리전 가용성 가이드 ( https://cloud.google.com/compute/docs/regions-zones/gpu-regions-zones )
+- 로컬 네트워크 소켓 레이턴시 측정에는 GCP IAM 권한이 필요하지 않다.
+- 실제 컴퓨트 엔진(Compute Engine) 인스턴스 생성 및 쿼터 조회 시:
+  - `roles/compute.viewer` (Compute Engine 조회)
+  - `compute.regions.get`, `compute.regions.list`
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+1. **일본 도쿄 (`asia-northeast1`)**: ~30-40ms RTT
+   - 최저 지연 및 최다 가용량, A100/H100/G4 풍부, 1순위 최우선 추천.
+2. **일본 오사카 (`asia-northeast2`)**: ~35-45ms RTT
+   - 도쿄와 유사한 저지연, 도쿄 일시 품절 시 즉각적인 백업 리전.
+3. **대만 창화 (`asia-east1`)**: ~40-55ms RTT
+   - APAC 내 구글 대규모 인프라 거점, 안정적인 2순위 대안.
+4. **싱가포르 (`asia-southeast1`)**: ~70-90ms RTT
+   - 100ms 이내 진입, 차세대 가속기 및 AI 인프라 최우선 배치 거점.
+
+---
+## 8. 리소스 정리 (Teardown) 안내
+
 본 도구는 순수 네트워크 레이턴시 측정 스크립트로 클라우드 리소스를 생성하지 않는다. 테스트로 배포한 Compute Engine GPU 및 인스턴스는 사용 완료 후 즉시 삭제한다:
 ```bash
 gcloud compute instances delete [INSTANCE_NAME] --zone=[ZONE] --quiet

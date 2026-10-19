@@ -18,14 +18,21 @@ All contents, designs, and code examples are subject to change, modification, or
 
 사내 정보보호팀, CISO 및 금융감독원/금융보안원의 생성형 AI 도입 보안성 심의에 대비하여, 구글의 고객 데이터 비학습(No-Training) 정책, 인적 검토 배제(No Human Review), ISO/IEC 42001 국제 인증 및 사내 GCP 프로젝트의 실제 기술적 통제(VPC-SC, CMEK, Audit Logs) 상태를 실시간 대조하여 20대 핵심 보안 체크리스트 완제품 소명서(`report.md`)를 1분 만에 자동 생성하는 컴플라이언스 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Compliance`, `#SecOps`  
-**Concern**: `#Compliance`, `#IAM`, `#Resilience`, `#Security`  
-**Service**: `#CloudIAM`, `#CloudKMS`, `#GeminiEnterprise`, `#ModelArmor`, `#SensitiveDataProtection`, `#VertexAI`, `#VPCServiceControls`  
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 사내 정보보호팀 및 CISO 보안성 심의 대비 고객 데이터 비학습, 인적 검토 배제, ISO 42001 실사 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | GCP 실제 인프라 설정과 20대 핵심 보안 체크리스트를 자동 대조한 완제품 소명서 보고서 생성 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 사내 업무 혁신을 위해 Gemini API(버텍스 AI(Vertex AI)) 또는 Gemini Enterprise App을 도입하려 하나, 사내 정보보호팀 및 CISO의 보안성 심의 승인 장벽에 부딪혔을 때
 - [ ] 보안팀으로부터 수십 개 문항의 엑셀/워드 체크리스트(데이터 재학습 여부, 전송 암호화, 인적 검토, 접근 통제 등)를 수신했으나, 구글 공식 약관과 기술적 증적 작성이 막막할 때
 - [ ] 금융감독원/금융보안원 보안성 심의 또는 K-ISMS 심사를 앞두고, 클라우드 프로젝트의 실제 보안 설정(CMEK, Audit Logs, Bucket Lock)을 객관적으로 입증해야 할 때
@@ -33,7 +40,33 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+* 본 진단 결과는 report.md 파일에 완제품 'AI 보안성 심의 소명서' 양식으로 자동 생성되었다.
+  * 사내 보안팀 또는 금융감독원/금융보안원 보안성 심의 질의서 대응 시 report.md 표를 즉시 활용할 수 있다.
+========================================================================================================
+[안내] 복습 및 사내 보안팀 제출용 소명서가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/korea-ai-security-checklist/report.md
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -45,48 +78,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 사전 준비 사항 및 필요 권한
-
-### (1) 필수 API 활성화 (실측 감사 시)
-```bash
-gcloud services enable compute.googleapis.com logging.googleapis.com cloudresourcemanager.googleapis.com
-```
-
-### (2) 진단 실행 계정 최소 IAM 권한
-
-| 역할 (Role) | 설명 |
-| :--- | :--- |
-| `조직 뷰어(roles/resourcemanager.organizationViewer)` | 사내 조직 정책(`resourceLocations`, `allowedPolicyMemberDomains` 등) 조회 권한 |
-| `클라우드 로깅 뷰어(roles/logging.viewer)` | Cloud Audit Logs 데이터 접근 감사 로깅 활성화 상태 조회 권한 |
-| `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | 클라우드 KMS(Cloud KMS) 키링 및 CMEK 적용 상태 확인 권한 |
-
----
-
-## 4. 1분 퀵스타트
-
-### 가상 모의 실행 (Dry-run) - 예습
-실제 GCP 호출 없이 사전 정의된 시뮬레이션 데이터와 공식 보안 소명서를 바탕으로 완제품 체크리스트 리포트를 1초 만에 즉시 생성한다:
-```bash
-python diagnose.py --dry-run
-```
-
-### 사내 실측 진단 실행 - 실습 및 복습
-현재 활성화된 프로젝트의 실데이터를 기반으로 기술적 보안 통제를 실시간 감사하고 맞춤형 소명서를 생성한다:
-```bash
-# 기본 활성 프로젝트 점검 (서울 리전 기준)
-python diagnose.py
-
-# 특정 프로젝트 및 특정 리전 지정
-python diagnose.py -p my-gemini-project -r asia-northeast3
-
-# JSON 포맷 출력 (사내 GRC 시스템 연동용)
-python diagnose.py --dry-run --json
-```
-
----
-
-## 5. 결과 확인 후 즉각 조치 가이드
+## 5. 조치 가이드 및 권장 설정
 
 ### 1단계: 완제품 소명서 확인 및 사내 제출
 실행 즉시 생성된 [report.md](report.md)를 열어 20대 핵심 보안 체크리스트 조견표와 증적 내용을 확인하고, 사내 정보보호팀 또는 규제 심의 신청 서류의 첨부 증적으로 제출한다 (세부 20대 항목 명세 및 법적 근거는 [docs/CHECKLIST.md](docs/CHECKLIST.md) 참조):
@@ -99,8 +91,26 @@ python diagnose.py --dry-run --json
 - **조직 정책 미적용 시**: `gcp.resourceLocations` 및 `iam.disableServiceAccountKeyCreation` 정책을 활성화하여 중앙 통제를 강화한다.
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+### (1) 필수 API 활성화 (실측 감사 시)
+```bash
+gcloud services enable compute.googleapis.com logging.googleapis.com cloudresourcemanager.googleapis.com
+```
+
+### (2) 진단 실행 계정 최소 IAM 권한
+
+| 역할 (Role) | 설명 |
+| : | : |
+| `조직 뷰어(roles/resourcemanager.organizationViewer)` | 사내 조직 정책(`resourceLocations`, `allowedPolicyMemberDomains` 등) 조회 권한 |
+| `클라우드 로깅 뷰어(roles/logging.viewer)` | Cloud Audit Logs 데이터 접근 감사 로깅 활성화 상태 조회 권한 |
+| `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | 클라우드 KMS(Cloud KMS) 키링 및 CMEK 적용 상태 확인 권한 |
+
+---
+
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 보안 심의 통제 대상 GCP 리소스(Cloud Storage 버킷, BigQuery 데이터셋, Cloud KMS 키링, Cloud Run 등) 배포 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -109,15 +119,6 @@ python diagnose.py --dry-run --json
 - `created-by`: `customer-engineer`
 
 ---
+## 8. 리소스 정리 (Teardown) 안내
 
-## 7. 콘솔 링크 조치 가이드
-
-- **구글 클라우드 보안 및 컴플라이언스 포털**: ( https://cloud.google.com/security/compliance/iso-42001 )
-- **구글 클라우드 데이터 처리 추가 계약(CDPA)**: ( https://cloud.google.com/terms/data-processing-addendum )
-- **Cloud KMS 관리 콘솔**: ( https://console.cloud.google.com/security/kms )
-- **VPC Service Controls 콘솔**: ( https://console.cloud.google.com/security/service-perimeter )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
 본 도구는 순수 읽기 전용 진단 도구이므로 별도의 클라우드 인프라 자원을 생성하지 않으며, 추가 삭제 절차가 필요하지 않다.

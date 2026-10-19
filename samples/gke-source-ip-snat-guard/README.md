@@ -18,22 +18,62 @@ All contents, designs, and code examples are subject to change, modification, or
 
 GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 트래픽의 출발지 IP(Client IP) 유실(kube-proxy 2-Hop SNAT) 현상과 externalTrafficPolicy: Local 전환 시 발생하는 파드 부하 불균등(Pod Hotspotting) 위험을 1분 만에 자동 진단하고 최적 k8s 매니페스트를 처방하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#SecOps`  
-**Concern**: `#Compliance`, `#Performance`, `#Resilience`  
-**Service**: `#CloudLoadBalancing`, `#GKE`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | Passthrough NLB 경유 트래픽의 Client IP 유실(2-Hop SNAT) 및 Local 전환 시 파드 부하 불균등 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | externalTrafficPolicy: Local 전환 및 Weighted Pod Anti-Affinity 최적 k8s 매니페스트 처방 |
 
 ---
 
-## 1. 문제 증상 체크리스트
-- AWS EKS에서 GKE로 애플리케이션을 이전한 후, 동일한 인그레스(Kong, Nginx 등) 구성임에도 백엔드 Pod 로그에 클라이언트 실제 IP 대신 노드 내부 IP가 간헐적으로 기록된다.
-- 개인 정보 보호법 및 금융 보안 컴플라이언스상 로그인 접속자 IP 추적이 필수적인 환경에서 원본 Client IP가 유실되어 보안 감사 결함이 발생한다.
-- `externalTrafficPolicy: Cluster` 상태에서 파드가 없는 노드로 패킷이 유입된 후 2-Hop 전달 과정에서 kube-proxy SNAT(Source Network Address Translation)가 발생한다.
-- Client IP 보존을 위해 `externalTrafficPolicy: Local`로 변경했으나, 노드별 파드 수가 불균등하여 특정 파드로 트래픽이 쏠리는 심각한 부하 불균형(Pod Hotspotting)이 발생한다.
-- GKE Weighted Load Balancing 애너테이션 부재로 인해 파드가 없는 노드로 유입된 트래픽의 헬스체크 실패 및 드롭 현상이 일어난다.
+## 2. 발생 증상 및 진단 대상 체크리스트
+
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] AWS EKS에서 GKE로 애플리케이션을 이전한 후, 동일한 인그레스(Kong, Nginx 등) 구성임에도 백엔드 Pod 로그에 클라이언트 실제 IP 대신 노드 내부 IP가 간헐적으로 기록된다.
+- [ ] 개인 정보 보호법 및 금융 보안 컴플라이언스상 로그인 접속자 IP 추적이 필수적인 환경에서 원본 Client IP가 유실되어 보안 감사 결함이 발생한다.
+- [ ] `externalTrafficPolicy: Cluster` 상태에서 파드가 없는 노드로 패킷이 유입된 후 2-Hop 전달 과정에서 kube-proxy SNAT(Source Network Address Translation)가 발생한다.
+- [ ] Client IP 보존을 위해 `externalTrafficPolicy: Local`로 변경했으나, 노드별 파드 수가 불균등하여 특정 파드로 트래픽이 쏠리는 심각한 부하 불균형(Pod Hotspotting)이 발생한다.
+- [ ] GKE Weighted Load Balancing 애너테이션 부재로 인해 파드가 없는 노드로 유입된 트래픽의 헬스체크 실패 및 드롭 현상이 일어난다.
 
 ---
 
-## 2. 처리 흐름도
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+GKE 소스 IP(Client IP) 보존 및 SNAT 상태 진단 시작 (프로젝트: sample-project-id, 클러스터: prod-core-cluster)
+--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 클러스터 및 인그레스 데이터를 분석한다.
+=========================================================================================================
+네임스페이스/서비스                         LB 유형                    extPolicy    노드/파드          심각도       
+---------------------------------------------------------------------------------------------------------
+ingress-gateway/kong-proxy-internal Internal Passthrough NLB Cluster      3노드/2파드        CRITICAL  
+ingress-nginx/nginx-ingress-external External Passthrough NLB Local        3노드/4파드        WARNING   
+billing/payment-api-service        Internal Passthrough NLB Local        3노드/6파드        HEALTHY   
+=========================================================================================================
+[발견된 주요 네트워크 결함 및 권고 조치]
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -59,43 +99,8 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 필요 IAM 권한
-- `roles/container.viewer` (GKE 클러스터 및 워크로드 읽기 권한)
-- 세부 권한:
-  - `container.services.get`
-  - `container.services.list`
-  - `container.pods.list`
-
----
-
-## 4. 원클릭 실행법
-
-### 가상 검증 실행 (--dry-run)
-실제 클러스터 API 호출 없이 시뮬레이션 데이터를 바탕으로 SNAT 및 부하 불균형 위험을 즉시 진단한다.
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 진단
-기본 활성 프로젝트의 지정 클러스터 내 모든 LoadBalancer 서비스를 진단한다.
-```bash
-python diagnose.py --project="your-project-id" --cluster="prod-core-cluster" --location="asia-northeast3"
-```
-
-특정 네임스페이스만 필터링하여 진단할 경우:
-```bash
-python diagnose.py --namespace="ingress-gateway"
-```
-
-결과를 JSON 포맷으로 수집하여 CI/CD 파이프라인과 연동할 경우:
-```bash
-python diagnose.py --dry-run --json
-```
-
----
-
-## 5. 결과 확인 후 즉각 조치 가이드
 - GKE 내부 부하 분산기 소스 IP 보존 가이드 ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing )
 - GKE 가중치 로드 밸런싱 구성 안내 ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress )
 - Kubernetes Service 소스 IP 보존 개념 ( https://kubernetes.io/docs/tutorials/services/source-ip/ )
@@ -134,8 +139,19 @@ spec:
 ```
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+- `roles/container.viewer` (GKE 클러스터 및 워크로드 읽기 권한)
+- 세부 권한:
+  - `container.services.get`
+  - `container.services.list`
+  - `container.pods.list`
+
+---
+
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 GKE 클러스터, LoadBalancer 서비스 및 연관 인프라 자원 배포 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -144,18 +160,7 @@ GKE 클러스터, LoadBalancer 서비스 및 연관 인프라 자원 배포 시 
 - `created-by`: `customer-engineer`
 
 ---
-
-## 7. 콘솔 링크 조치 가이드
-
-- **GKE 클러스터 콘솔**: ( https://console.cloud.google.com/kubernetes )
-- **Cloud Load Balancing 콘솔**: ( https://console.cloud.google.com/net-services/loadbalancing )
-- **GKE 내부 부하 분산기 소스 IP 보존 가이드**: ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing )
-- **GKE 가중치 로드 밸런싱 구성 안내**: ( https://docs.cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress )
-- **Kubernetes Service 소스 IP 보존 개념**: ( https://kubernetes.io/docs/tutorials/services/source-ip/ )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하거나 과금을 유발하지 않는다. 테스트 목적으로 생성한 LoadBalancer 서비스가 있다면 다음 명령어로 삭제한다:
 ```bash

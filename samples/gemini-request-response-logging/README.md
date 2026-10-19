@@ -18,21 +18,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 별도의 복잡한 엔드포인트 프록시 서버 구축 없이, 제미나이(Gemini) 파운데이션 모델 자체의 설정을 통해 **모든 프롬프트 요청 및 응답 데이터를 빅쿼리(BigQuery)로 자동 내보내고 사용자별 토큰 소비량을 1분 만에 분석**하는 가이드다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#FinOps`  
-**Concern**: `#Billing`, `#Compliance`, `#Security`  
-**Service**: `#BigQuery`, `#GeminiAPI`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 별도 프록시 없이 파운데이션 모델 설정을 통한 프롬프트/응답 빅쿼리 자동 내보내기 상태 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | BigQuery 감사 로그 싱크 구성 및 사용자별/모델별 토큰 소비량 실시간 분석 쿼리 도출 |
 
 ---
 
-## 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- **AI 프롬프트 감사 및 규제 준수**: 엔터프라이즈 환경에서 어떤 사내 사용자가 어떤 질문과 답변을 모델과 주고받았는지 규제 컴플라이언스 차원에서 영구 보관해야 할 때
-- **부서별/사용자별 토큰 과금 분필**: 전체 프로젝트 비용 청구서로는 확인하기 어려운 사용자 계정 및 API 키 단위의 상세 입력/출력 토큰 소모량을 BigQuery SQL로 정확히 정산하고자 할 때
-- **프록시 없는 무중단 로깅**: 애플리케이션 코드를 크게 변경하거나 별도의 로깅 미들웨어 서버를 운영하지 않고 GCP 관리형 파이프라인으로 처리하고자 할 때
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] **AI 프롬프트 감사 및 규제 준수**: 엔터프라이즈 환경에서 어떤 사내 사용자가 어떤 질문과 답변을 모델과 주고받았는지 규제 컴플라이언스 차원에서 영구 보관해야 할 때
+- [ ] **부서별/사용자별 토큰 과금 분필**: 전체 프로젝트 비용 청구서로는 확인하기 어려운 사용자 계정 및 API 키 단위의 상세 입력/출력 토큰 소모량을 BigQuery SQL로 정확히 정산하고자 할 때
+- [ ] **프록시 없는 무중단 로깅**: 애플리케이션 코드를 크게 변경하거나 별도의 로깅 미들웨어 서버를 운영하지 않고 GCP 관리형 파이프라인으로 처리하고자 할 때
 
 ---
 
-## 로깅 및 분석 흐름 (Activity Diagram)
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+[데모 실행] --dry-run 모드가 활성화되어 가상 BigQuery 로깅 분석을 시뮬레이션한다.
+========================================================================
+[시뮬레이션] BigQuery 자동 로깅 및 토큰 사용량 집계 리포트
+  - 대상 프로젝트: sample-project-id
+  - BigQuery 대상 데이터세트: gcp_logs
+========================================================================
+[가상 쿼리 실행 결과: 사용자/서비스 계정별 토큰 소모량]
+┌───────────────────────────────────────────┬────────────┬──────────────────┬─────────────────┬────────────────┐
+│ 사용자 계정 (Principal Email)            │ 호출 횟수  │ 입력 토큰 (Prompt)│ 출력 토큰 (Cand)│ 총 토큰 (Total)│
+├───────────────────────────────────────────┼────────────┼──────────────────┼─────────────────┼────────────────┤
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -56,50 +95,27 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 사전 준비 사항 (필요 권한 - IAM)
+- **BigQuery 콘솔**: ( https://console.cloud.google.com/bigquery )
+- **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
+- **Vertex AI 요청 및 응답 로깅 공식 가이드**: ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/request-response-logging )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 BigQuery 데이터세트 생성 및 제미나이 모델 호출을 위한 IAM 권한 목록이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| :--- | :--- | :--- |
+| : | : | : |
 | **빅쿼리 데이터 편집자 (권장)** | `roles/bigquery.dataEditor` | 로그 저장용 데이터세트 및 테이블 생성 |
 | **버텍스 AI 사용자** | `roles/aiplatform.user` | 제미나이 모델 호출 및 로깅 파라미터 설정 |
 
 ---
 
-## 1분 퀵스타트 (실행 방법)
-
-### 방법 1: 구글 클라우드 쉘 (Google Cloud Shell) - *가장 권장*
-
-```bash
-# 1. 저장소 클론 및 폴더 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/gemini-request-response-logging
-
-# 2. 사전 가상 체험 또는 데모 모드 (BigQuery 호출 없이 시뮬레이션 및 표준 SQL 확인)
-python diagnose.py --dry-run
-
-# 3. 실제 프로젝트 대상 로깅 설정 및 테스트 호출 실행
-python diagnose.py -p your-project-id -d gcp_logs
-```
-
-### 방법 2: 로컬 환경 (Local Python)
-
-```bash
-# 의존성 설치
-pip install -r requirements.txt
-
-# 가상 실행
-python diagnose.py --dry-run
-
-# 실제 실행
-python diagnose.py --project your-project-id --dataset gcp_logs
-```
-
----
-
-## 결과 출력 및 쿼리 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **사용자별 토큰 집계 결과와 실행 가능한 표준 SQL 쿼리**가 출력된다:
 
@@ -134,26 +150,7 @@ ORDER BY total_tokens DESC;
 ```
 
 ---
-
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
-
-빅쿼리(BigQuery) 데이터세트 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `gemini-request-response-logging`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 7. 콘솔 링크 조치 가이드
-
-- **BigQuery 콘솔**: ( https://console.cloud.google.com/bigquery )
-- **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
-- **Vertex AI 요청 및 응답 로깅 공식 가이드**: ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/request-response-logging )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 테스트 및 실습 완료 후 불필요한 BigQuery 스토리지 과금을 방지하기 위해 데이터세트를 삭제한다:
 

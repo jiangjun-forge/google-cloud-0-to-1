@@ -18,22 +18,61 @@ All contents, designs, and code examples are subject to change, modification, or
 
 유출된 서비스 계정 키의 악용 이력을 Cloud Audit Logs로 전수 추적하고, 위험 키 비활성화 및 Workload Identity Federation 전환을 지원하는 보안 긴급 대응 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#SecOps`  
-**Concern**: `#Compliance`, `#IAM`, `#Security`  
-**Service**: `#BigQuery`, `#CloudAuditLogs`, `#CloudIAM`, `#CloudStorage`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 유출 의심 서비스 계정 키의 IP 주소, 호출 API 및 비정상 리소스 생성 이력 전수 역추적 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 위험 키 즉시 비활성화(Disable), 침해 자원 격리 및 Workload Identity Federation 전환 가이드 도출 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- 깃허브(GitHub) 공개 저장소나 외부 협업 환경에 영구 서비스 계정 키(JSON Key)가 노출된 정황을 접수한 경우
-- 사법 기관이나 보안 관제 센터로부터 자격 증명 유출 및 사이버 공격 악용 사실을 통보받은 경우
-- 유출된 서비스 계정이 `Cloud Storage`, `BigQuery`, `Cloud IAM` 등 핵심 자원에서 데이터 탈취나 권한 상승을 시도했는지 즉시 확인해야 하는 경우
-- 장기 서비스 계정 키를 전면 폐기하고 안전한 Workload Identity Federation 체계로 전환하고자 하는 경우
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 깃허브(GitHub) 공개 저장소나 외부 협업 환경에 영구 서비스 계정 키(JSON Key)가 노출된 정황을 접수한 경우
+- [ ] 사법 기관이나 보안 관제 센터로부터 자격 증명 유출 및 사이버 공격 악용 사실을 통보받은 경우
+- [ ] 유출된 서비스 계정이 `Cloud Storage`, `BigQuery`, `Cloud IAM` 등 핵심 자원에서 데이터 탈취나 권한 상승을 시도했는지 즉시 확인해야 하는 경우
+- [ ] 장기 서비스 계정 키를 전면 폐기하고 안전한 Workload Identity Federation 체계로 전환하고자 하는 경우
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+서비스 계정           키 ID               생성 일자        상태       권장 조치
+--------------------------------------------------------------------------------
+app-backend-sa   7f8b9c0d1e2f...    2025-11-10   ACTIVE   즉시 비활성화(DISABLE) 및 영구 삭제 권장
+app-backend-sa   a1b2c3d4e5f6...    2026-05-15   ACTIVE   침해 의심 시점 생성 키, 즉시 삭제 필요
+data-pipeline-sa 7f8b9c0d1e2f...    2025-11-10   ACTIVE   즉시 비활성화(DISABLE) 및 영구 삭제 권장
+data-pipeline-sa a1b2c3d4e5f6...    2026-05-15   ACTIVE   침해 의심 시점 생성 키, 즉시 삭제 필요
+--------------------------------------------------------------------------------
+[2단계] 최근 7일간 Cloud Audit Logs 위험 활동 역추적
+--------------------------------------------------------------------------------
+발생 시각                    계정              서비스        메서드             호출 IP           위험도
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -47,41 +86,38 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항
+1. **유출 키 즉시 비활성화 및 삭제**:
+   - IAM 및 관리자 > 서비스 계정 ( https://console.cloud.google.com/iam-admin/serviceaccounts )
+   - 즉시 조치 CLI:
+     ```bash
+     gcloud iam service-accounts keys disable KEY_ID --iam-account=SERVICE_ACCOUNT_EMAIL
+     gcloud iam service-accounts keys delete KEY_ID --iam-account=SERVICE_ACCOUNT_EMAIL
+     ```
+2. **Cloud Audit Logs 정밀 쿼리 확인**:
+   - 로그 탐색기 ( https://console.cloud.google.com/logs/query )
+   - Cloud Audit Logs 개요 ( https://cloud.google.com/logging/docs/audit )
+3. **Workload Identity Federation 전환**:
+   - 영구 JSON 키 발급을 전면 중단하고 임시 OIDC 토큰 기반 연동을 구성한다.
+   - Workload Identity Federation 구성 ( https://cloud.google.com/iam/docs/workload-identity-federation )
+   - 서비스 계정 키 관리 권장사항 ( https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 역할 (Role) | 최소 IAM 권한 |
-| :--- | :--- |
+| : | : |
 | 로그 뷰어(`roles/logging.viewer`) | `logging.logEntries.list` |
 | 보안 검토자(`roles/iam.securityReviewer`) | `iam.serviceAccountKeys.list`, `resourcemanager.projects.getIamPolicy` |
 
 ---
 
-## 4. 1분 퀵스타트
-
-### 가상 실행 (Dry-run)
-
-실제 GCP API 호출이나 권한 없이도 모의 침해 시나리오를 즉시 시뮬레이션할 수 있다:
-
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 실행
-
-```bash
-# 기본 활성 프로젝트 및 기본 서비스 계정 대상 실행
-python diagnose.py
-
-# 특정 프로젝트 및 특정 유출 의심 계정 지정 실행
-python diagnose.py --project=my-prod-project --service-accounts="sa1@my-prod-project.iam.gserviceaccount.com,sa2@my-prod-project.iam.gserviceaccount.com" --days=14
-```
-
----
-
-## 5. 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ================================================================================
@@ -133,37 +169,7 @@ data-pipeline-sa a1b2c3d4e5f6...    2026-05-15   ACTIVE   침해 의심 시점 �
 ```
 
 ---
-
-## 6. 결과 확인 후 즉각 조치 가이드
-
-1. **유출 키 즉시 비활성화 및 삭제**:
-   - IAM 및 관리자 > 서비스 계정 ( https://console.cloud.google.com/iam-admin/serviceaccounts )
-   - 즉시 조치 CLI:
-     ```bash
-     gcloud iam service-accounts keys disable KEY_ID --iam-account=SERVICE_ACCOUNT_EMAIL
-     gcloud iam service-accounts keys delete KEY_ID --iam-account=SERVICE_ACCOUNT_EMAIL
-     ```
-2. **Cloud Audit Logs 정밀 쿼리 확인**:
-   - 로그 탐색기 ( https://console.cloud.google.com/logs/query )
-   - Cloud Audit Logs 개요 ( https://cloud.google.com/logging/docs/audit )
-3. **Workload Identity Federation 전환**:
-   - 영구 JSON 키 발급을 전면 중단하고 임시 OIDC 토큰 기반 연동을 구성한다.
-   - Workload Identity Federation 구성 ( https://cloud.google.com/iam/docs/workload-identity-federation )
-   - 서비스 계정 키 관리 권장사항 ( https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys )
-
----
-
-## 7. 사내 거버넌스 4대 필수 표준 라벨링
-
-서비스 계정 대체 인프라 및 Workload Identity Federation 연동 리소스 생성 시 다음 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `service-account-leak-investigator`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 읽기 전용 감사 로그 및 키 상태 점검만 수행하므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 테스트용으로 비활성화하거나 생성한 서비스 계정 키가 있다면 아래 명령어로 정리한다:
 

@@ -18,21 +18,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 제미나이(Gemini) API 비용 급증 및 예산 임계치 도달 시, 클라우드 펍/섭(Cloud Pub/Sub)과 클라우드 펑션스(Cloud Functions)를 연동하여 **실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로 차단하는 안전 아키텍처**를 검증 및 시뮬레이션하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#FinOps`, `#SecOps`  
-**Concern**: `#Billing`, `#Resilience`  
-**Service**: `#CloudBilling`, `#CloudFunctions`, `#CloudPubSub`, `#GeminiAPI`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 제미나이 API 비용 급증 및 예산 임계치 도달 시 자동 차단 안전 아키텍처 구비 상태 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Cloud Pub/Sub 및 Cloud Functions 기반 실시간 알림 전송 및 쿼터 한도 0 차단 자동화 배포 |
 
 ---
 
-## 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- **비용 급증 방어**: 비인가 호출이나 잘못 작성된 루프 코드로 인해 예산 상한을 초과했을 때 자동으로 서비스를 일시 차단하고자 할 때
-- **실시간 예산 알림 연동**: 단순 이메일 알림을 넘어 Pub/Sub 메시징 큐로 실시간 예산 초과 이벤트를 수신하여 사내 슬랙이나 모니터링 시스템과 연동하고자 할 때
-- **사전 파이프라인 모의 검증**: 실제 과금이나 서비스 중단 없이 예산 초과 이벤트 페이로드와 차단 로직이 정상 작동하는지 가상 시뮬레이션으로 테스트하고자 할 때
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] **비용 급증 방어**: 비인가 호출이나 잘못 작성된 루프 코드로 인해 예산 상한을 초과했을 때 자동으로 서비스를 일시 차단하고자 할 때
+- [ ] **실시간 예산 알림 연동**: 단순 이메일 알림을 넘어 Pub/Sub 메시징 큐로 실시간 예산 초과 이벤트를 수신하여 사내 슬랙이나 모니터링 시스템과 연동하고자 할 때
+- [ ] **사전 파이프라인 모의 검증**: 실제 과금이나 서비스 중단 없이 예산 초과 이벤트 페이로드와 차단 로직이 정상 작동하는지 가상 시뮬레이션으로 테스트하고자 할 때
 
 ---
 
-## 진단 및 복구 흐름 (Activity Diagram)
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+========================================================================
+[진단 시작] 제미나이(Gemini) API 실시간 비용 및 할당량 경보 아키텍처 점검
+  - 프로젝트 ID: sample-project-id
+  - Pub/Sub 주제: gemini-cost-alerts
+  - 예산 규칙명: gemini-budget-alert
+========================================================================
+[데모 실행] --dry-run 가상 실행 모드가 활성화되었다.
+========================================================================
+[표준 처방] 비용 초과 시 자동 할당량(Quota) 차단 Cloud Functions 가이드
+========================================================================
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -60,13 +99,23 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 사전 준비 사항 (필요 권한 - IAM)
+- **Cloud Billing 콘솔**: ( https://console.cloud.google.com/billing )
+- **Cloud Pub/Sub 콘솔**: ( https://console.cloud.google.com/cloudpubsub )
+- **Cloud Functions 콘솔**: ( https://console.cloud.google.com/functions )
+- **Cloud Billing 예산 및 지출 한도 알림 생성**: ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
+- **Cloud Billing Pub/Sub 예산 알림 연동 가이드**: ( https://docs.cloud.google.com/billing/docs/how-to/notify )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 실제 리소스를 배포하거나 설정을 점검할 때 필요한 역할(Role) 목록이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| :--- | :--- | :--- |
+| : | : | : |
 | **클라우드 빌링 관리자 (또는 뷰어)** | `roles/billing.costsManager` 또는 `roles/billing.viewer` | 결제 예산 규칙 확인 및 생성 |
 | **클라우드 펍/섭 관리자** | `roles/pubsub.admin` | 알림 전달용 Cloud Pub/Sub 주제 생성 및 메시지 테스트 |
 | **클라우드 펑션스 개발자** | `roles/cloudfunctions.developer` | 자동 차단 Cloud Functions 배포 |
@@ -76,35 +125,7 @@ flowchart TD
 
 ---
 
-## 1분 퀵스타트 (실행 방법)
-
-### 방법 1: 구글 클라우드 쉘 (Google Cloud Shell) - *가장 권장*
-
-```bash
-# 1. 저장소 클론 및 폴더 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/gemini-quota-cost-alert
-
-# 2. 사전 가상 체험 또는 데모 모드 (GCP 호출 및 권한 없이 가상 시뮬레이션)
-python diagnose.py --dry-run
-
-# 3. 실제 프로젝트 점검 및 모의 이벤트 발행 테스트
-python diagnose.py -p your-project-id
-```
-
-### 방법 2: 로컬 환경 (Local Python)
-
-```bash
-# 가상 실행
-python diagnose.py --dry-run
-
-# 실제 실행
-python diagnose.py --project your-project-id --topic gemini-cost-alerts
-```
-
----
-
-## 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **파이프라인 설계 가이드 및 모의 이벤트 페이로드**가 출력된다:
 
@@ -142,28 +163,7 @@ python diagnose.py --project your-project-id --topic gemini-cost-alerts
 ```
 
 ---
-
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
-
-Cloud Pub/Sub 주제, Cloud Functions 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `gemini-quota-cost-alert`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 7. 콘솔 링크 조치 가이드
-
-- **Cloud Billing 콘솔**: ( https://console.cloud.google.com/billing )
-- **Cloud Pub/Sub 콘솔**: ( https://console.cloud.google.com/cloudpubsub )
-- **Cloud Functions 콘솔**: ( https://console.cloud.google.com/functions )
-- **Cloud Billing 예산 및 지출 한도 알림 생성**: ( https://docs.cloud.google.com/billing/docs/how-to/budgets )
-- **Cloud Billing Pub/Sub 예산 알림 연동 가이드**: ( https://docs.cloud.google.com/billing/docs/how-to/notify )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 실습 및 테스트가 끝난 후 불필요한 과금과 리소스 누수를 방지하기 위해 생성한 자원을 아래 순서로 반드시 정리한다:
 

@@ -18,14 +18,21 @@ All contents, designs, and code examples are subject to change, modification, or
 
 대규모 AI/LLM 서빙 환경에서 GPU/TPU 공급 부족으로 여러 리전과 멀티 클라우드에 분산된 수십 개 쿠버네티스 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연 시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검 및 처방하는 아키텍처 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`, `#FinOps`  
-**Concern**: `#Billing`, `#Performance`, `#Resilience`  
-**Service**: `#CloudLoadBalancing`, `#ComputeEngine`, `#GKE`  
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 다중 리전 GPU 서빙 시 계층형 Istio 풀 메시 중계로 인한 TTFT 증가 및 Fleet 라이선스 비용 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Global External ALB + Hybrid/Internet NEG 기반 1홉 플랫 직결 L7 제어 평면 YAML 도출 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 단일 리전/단일 클러스터 내 GPU 재고 부족으로 인해 여러 리전의 GKE 클러스터 및 타 클라우드(EKS, AKS 등)에 걸쳐 다수의 분산 클러스터를 운영하고 있을 때
 - [ ] 단순 라운드로빈 로드 밸런서로 인해 특정 클러스터의 VRAM / KV-cache 메모리 고갈(40%+ 포화) 시 동적 오버플로 분배가 이루어지지 않고 인퍼런스 지연이 급증할 때
 - [ ] 다계층 Istio 서비스 메시 중계 구조(허브 클러스터 $\rightarrow$ 중간 프록시 $\rightarrow$ 백엔드 파드)로 인해 헤어피닝 지연 시간(TTFT)이 증가하고 불필요한 크로스 리전 Egress 비용이 발생할 때
@@ -34,7 +41,39 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+종합 진단 결과      : 총 8개 항목 중 PASS: 6건, WARN: 2건, FAIL: 0건
+--------------------------------------------------------------------------------------------------------
+[항목별 기술적 통제 및 아키텍처 점검 현황]
+--------------------------------------------------------------------------------------------------------
+ID       | 분류             | 상태       | 점검 항목 및 실측 증적
+--------------------------------------------------------------------------------------------------------
+CHK-01   | 제어 평면 구조       | [PASS]   | 다계층 메시 중계 배제 및 Anycast 1홉 직결 아키텍처
+         * 상세 설명   : 최상위 라우팅 허브를 거치는 다계층 프록시 중계 없이 Global External ALB에서 개별 클러스터 백엔드로 1홉 플랫 직결되는가?
+         * 실측 증적   : Global External ALB URL Map(ai-inference-gw)에서 분산 클러스터 백엔드 서비스로 Anycast 1홉 플랫 직결 확인
+         * 권장 조치   : 추가 조치 불필요 (현재 아키텍처 양호)
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -50,8 +89,17 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항 및 필요 권한
+- **Cloud Load Balancing 콘솔**: ( https://console.cloud.google.com/net-services/loadbalancing )
+- **GKE 클러스터 콘솔**: ( https://console.cloud.google.com/kubernetes )
+- **GKE Multi-Cluster Inference Gateway 공식 가이드**: ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway )
+- **Google Cloud Anthos / GKE Enterprise 요금 안내**: ( https://cloud.google.com/anthos/pricing )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 ### (1) 필수 API 활성화 (실측 감사 시)
 ```bash
@@ -63,61 +111,11 @@ gcloud services enable compute.googleapis.com container.googleapis.com
 
 ---
 
-## 4. 원클릭 실행 가이드
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
-### 단계 1: 가상 실행 모드로 1초 만에 사전 검증 (Dry-run)
-실제 GCP 호출 없이 다수 분산 GPU 클러스터 환경을 가정한 모의 실행 결과를 즉시 확인한다:
-```bash
-python3 diagnose.py --dry-run
-```
-
-### 단계 2: 사내 실제 GCP 프로젝트 실측 진단
-```bash
-python3 diagnose.py -p <PROJECT_ID>
-```
-
----
-
-## 5. 생성 산출물 (report.md)
 진단 완료 시 As-Is(다계층 메시) 대비 To-Be(Anycast 1홉 직결) 아키텍처 비교표와 즉시 실행 가능한 `gcloud` 최적화 명령어가 포함된 완제품 [report.md](report.md)가 자동 생성(덮어쓰기)된다.
 
 ---
-
-## 6. 공식 제약 사항 및 아키텍처 트레이드오프 (Limitations)
-
-구글 클라우드 공식 문서 ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway#limitations )에 명시된 3대 공식 제약 사항과 사내 대응 아키텍처는 다음과 같다:
-
-1. **단일 VPC 제약 (Same VPC Network)**:
-   - 관리형 GKE Inference Gateway는 모든 타깃 클러스터가 동일 VPC에 속해야 하며 Cross-VPC를 직접 지원하지 않는다.
-   - 타사 클라우드(EKS/AKS) 및 독립 VPC 클러스터는 관리형 Gateway 컨트롤러 대신 **Global External ALB의 Internet NEG / Hybrid NEG**로 직접 연동하여 제약을 완벽히 우회한다.
-2. **백엔드 서비스당 최대 50개 NEG 제한 (50 NEGs per Backend Service)**:
-   - 멀티포트 InferencePool 사용 시 3개 존 클러스터 2개만으로도 48개 NEG가 생성되어 50개 한도에 도달한다.
-   - 클러스터 확장 시 단일 백엔드 서비스 집계를 피하고, **모델 포트별/경로별 백엔드 서비스 분할(URL Map 분기)** 구조를 적용한다.
-3. **Model Armor 연동 미지원**:
-   - 현재 GKE Inference Gateway 계층에서는 Model Armor 자동 연동이 지원되지 않는다.
-   - 글로벌 진입점에 **Google Cloud Armor L7 WAF 정책(DDoS 방어, Rate Limiting, IP 평판)**을 결합하여 보안을 보완한다.
-
----
-
-## 7. 사내 거버넌스 4대 필수 표준 라벨링
-
-GKE 클러스터, Global ALB 백엔드 서비스, NEG 및 관련 인프라 자원 배포 시 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `gke-multi-cluster-inference-gateway`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 8. 콘솔 링크 조치 가이드
-
-- **Cloud Load Balancing 콘솔**: ( https://console.cloud.google.com/net-services/loadbalancing )
-- **GKE 클러스터 콘솔**: ( https://console.cloud.google.com/kubernetes )
-- **GKE Multi-Cluster Inference Gateway 공식 가이드**: ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway )
-- **Google Cloud Anthos / GKE Enterprise 요금 안내**: ( https://cloud.google.com/anthos/pricing )
-
----
-
-## 9. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 도구는 읽기 전용 진단 스크립트로 클라우드 리소스를 생성하거나 변경하지 않으므로 별도의 자원 정리가 필요하지 않다.

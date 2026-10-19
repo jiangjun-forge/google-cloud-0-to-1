@@ -18,21 +18,61 @@ All contents, designs, and code examples are subject to change, modification, or
 
 대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전 규제 위반 위험을 1분 만에 자동 진단하고, 한국형 개인 정보(Korea-specific InfoTypes) 및 로컬 하이브리드 가드레일 파이프라인 처방을 제공하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Compliance`, `#SecOps`  
-**Concern**: `#Compliance`, `#Resilience`, `#Security`  
-**Service**: `#GeminiAPI`, `#ModelArmor`, `#SensitiveDataProtection`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 서울 리전(asia-northeast3) 환경에서 Model Armor 미지원 필터로 인한 보안 사각지대와 데이터 국외 이전 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 국내 규제 충족 온소일(On-soil) 텍스트 살균 필터링 아키텍처 및 프록시 설정 처방 |
 
 ---
 
-## 1. 문제 증상 체크리스트
-- 금융감독원 '혁신 금융 서비스 지정' 또는 국내 개인 정보 보호법 준수를 위해 생성형 AI 데이터 처리를 서울 리전(`asia-northeast3`) 내에서만 완결해야 한다.
-- Model Armor 콘솔에서 프롬프트 인젝션(Prompt Injection) 및 악성 URL 차단 필터를 활성화했으나, 서울 리전 로컬 엔진 부재로 인해 실제 검사가 바이패스되거나 해외 리전으로 데이터가 유출될 위험이 존재한다.
-- 서울 리전에서 Model Armor가 Sensitive Data Protection(SDP)만 정식 지원하므로, 인젝션 방어 및 안전성 필터 동작을 위해 별도의 로컬 가드레일 계층을 수립하여 보완해야 하는 경우다.
-- SDP 템플릿 설정 시 주민등록번호(`KOREA_RRN`), 여권번호(`KOREA_PASSPORT`), 운전면허번호, 외국인등록번호, 사업자등록번호 등 한국 전용 민감 정보(Korea-specific InfoTypes)가 누락되어 비식별화 처리가 누락된다.
+## 2. 발생 증상 및 진단 대상 체크리스트
+
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 금융감독원 '혁신 금융 서비스 지정' 또는 국내 개인 정보 보호법 준수를 위해 생성형 AI 데이터 처리를 서울 리전(`asia-northeast3`) 내에서만 완결해야 한다.
+- [ ] Model Armor 콘솔에서 프롬프트 인젝션(Prompt Injection) 및 악성 URL 차단 필터를 활성화했으나, 서울 리전 로컬 엔진 부재로 인해 실제 검사가 바이패스되거나 해외 리전으로 데이터가 유출될 위험이 존재한다.
+- [ ] 서울 리전에서 Model Armor가 Sensitive Data Protection(SDP)만 정식 지원하므로, 인젝션 방어 및 안전성 필터 동작을 위해 별도의 로컬 가드레일 계층을 수립하여 보완해야 하는 경우다.
+- [ ] SDP 템플릿 설정 시 주민등록번호(`KOREA_RRN`), 여권번호(`KOREA_PASSPORT`), 운전면허번호, 외국인등록번호, 사업자등록번호 등 한국 전용 민감 정보(Korea-specific InfoTypes)가 누락되어 비식별화 처리가 누락된다.
 
 ---
 
-## 2. 처리 흐름도
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+Model Armor 서울 리전 규제 준수 정합성 진단 시작 (프로젝트: sample-project-id, 리전: asia-northeast3)
+--> 가상 실행 모드 (--dry-run) 활성화: 사전 시뮬레이션 Model Armor 템플릿 데이터를 분석한다.
+=========================================================================================================
+템플릿 이름                           리전                 인포타입 수       프롬프트인젝션            심각도       
+---------------------------------------------------------------------------------------------------------
+ma-template-seoul-finance        asia-northeast3    3            ENABLED (지원불가)     CRITICAL  
+ma-template-global-uncompliant   us-central1        6            ENABLED            CRITICAL  
+ma-template-hybrid-hardened      asia-northeast3    6            DISABLED           HEALTHY   
+=========================================================================================================
+[발견된 주요 컴플라이언스 결함 및 처방 조치]
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -57,43 +97,8 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 필요 IAM 권한
-
-| 역할 (Role) | 설명 |
-| :--- | :--- |
-| `Model Armor 뷰어(roles/modelarmor.viewer)` | Model Armor 템플릿 읽기 권한 (`modelarmor.templates.get`, `modelarmor.templates.list`) |
-| `DLP 리더(roles/dlp.reader)` | Sensitive Data Protection 검사 템플릿 조회 권한 (`dlp.inspectTemplates.get`) |
-
----
-
-## 4. 원클릭 실행법
-
-### 가상 검증 실행 (--dry-run)
-실제 GCP API 호출 없이 사전 정의된 시뮬레이션 데이터를 바탕으로 리전 제약 결함을 즉시 진단한다.
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 진단
-기본 활성 프로젝트의 서울 리전 Model Armor 템플릿을 점검한다.
-```bash
-python diagnose.py --location="asia-northeast3"
-```
-
-특정 템플릿을 지정하여 진단할 경우:
-```bash
-python diagnose.py --template="ma-template-seoul-finance"
-```
-
-결과를 JSON 포맷으로 수집하여 컴플라이언스 감사 시스템과 연동할 경우:
-```bash
-python diagnose.py --dry-run --json
-```
-
----
-
-## 5. 결과 확인 후 즉각 조치 가이드
 - Model Armor 제품 개요 및 리전 가용성 안내 ( https://cloud.google.com/security/products/model-armor )
 - Model Armor 템플릿 구성 공식 가이드 ( https://docs.cloud.google.com/model-armor/overview )
 - Sensitive Data Protection 글로벌 및 로컬 리전 위치 ( https://cloud.google.com/sensitive-data-protection/docs/locations )
@@ -140,8 +145,18 @@ def sanitize_on_soil(prompt: str) -> tuple[str, bool]:
 ```
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+| 역할 (Role) | 설명 |
+| : | : |
+| `Model Armor 뷰어(roles/modelarmor.viewer)` | Model Armor 템플릿 읽기 권한 (`modelarmor.templates.get`, `modelarmor.templates.list`) |
+| `DLP 리더(roles/dlp.reader)` | Sensitive Data Protection 검사 템플릿 조회 권한 (`dlp.inspectTemplates.get`) |
+
+---
+
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 Model Armor 템플릿 및 Sensitive Data Protection 템플릿 배포 시 다음 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -150,8 +165,8 @@ Model Armor 템플릿 및 Sensitive Data Protection 템플릿 배포 시 다음 
 - `created-by`: `customer-engineer`
 
 ---
+## 8. 리소스 정리 (Teardown) 안내
 
-## 7. 자원 정리 안내 (Teardown)
 본 도구는 읽기 전용 진단 스크립트이므로 자체적으로 리소스를 생성하지 않는다. 테스트 목적으로 생성한 Model Armor 템플릿이나 DLP 템플릿은 다음 명령어로 삭제한다:
 ```bash
 gcloud beta model-armor templates delete [TEMPLATE_NAME] --location=asia-northeast3 --quiet

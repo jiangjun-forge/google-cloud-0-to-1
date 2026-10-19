@@ -18,16 +18,22 @@ All contents, designs, and code examples are subject to change, modification, or
 
 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 구글 시트(Google Sheets), 슬랙(Slack), 지라(Jira), ERP 등 사내 시스템을 제어할 수 있는 도구 및 맞춤 업무 스킬(Open Skills / SKILL.md)을 비개발자가 대화형으로 자율 생성하고, Gemini Enterprise app Skills 목록에 원클릭으로 직접 자동 프로비저닝 및 전사 배포할 수 있도록 지원하는 사내 스킬 팩토리 솔루션이다. (As of 2026-10-19)
 
-**Audience**: `#Architect`, `#Developer`, `#SecOps`  
-**Concern**: `#Architecture`, `#Compliance`, `#Security`  
-**Service**: `#AgentPlatform`, `#CloudFunctions`, `#GeminiAPI`  
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 사내 시스템(Google Sheets, Slack, Jira 등) 호출 도구의 Open Skills(SKILL.md) 규격 정합성 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 표준 SKILL.md 매니페스트 생성, Secret Manager 보안 볼트 연동 및 갤러리 프로비저닝 |
 
 ---
 
-## 1. 문제 증상 및 도입 배경 체크리스트
+## 2. 발생 증상 및 진단 대상 체크리스트
 
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 사내 엔터프라이즈 에이전트 도입 후 다음과 같은 실무적 한계나 고민이 발생하고 있다면 본 솔루션 도입이 필요하다:
-
 - [ ] **에이전트의 단순 대화 한계**: 텍스트 질의응답을 넘어 구글 시트 행 추가, 슬랙 장애 알림 발송, 지라 티켓 발행 등 사내 시스템을 직접 조작하는 실무 액션(Action)이 필요한 경우
 - [ ] **비개발자 임직원의 OpenAPI 작성 불가**: 일반 직원이 사내 API를 에이전트 도구로 붙이고 싶어도 OpenAPI 3.0 스키마(JSON/YAML) 및 파라미터 규격을 작성할 줄 몰라 확장이 중단된 경우
 - [ ] **API 토큰 및 자격 증명 평문 노출 위험**: 임직원이 시스템 연동을 위해 웹훅 URL이나 API 키를 프롬프트에 평문으로 하드코딩하여 보안 사고 위험이 발생하는 경우
@@ -35,110 +41,69 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 처리 아키텍처 (Activity Diagram)
+## 3. 빠른 시작 (Quickstart)
 
-본 솔루션은 현업 임직원의 요구사항이나 시스템 칩을 받아 OpenAPI 3.0 및 SKILL.md 지침을 합성하고, 에이전트 내장 실행 도구(`deploy_enterprise_skill_tool`)를 통해 Gemini Enterprise app Skills 목록에 원클릭으로 직접 자동 프로비저닝 및 전사 배포하는 3단계 파이프라인으로 동작한다.
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+===========================================================================
+  Gemini Enterprise 자율형 사내 스킬 팩토리 (gemini-enterprise-copilot-skill)
+===========================================================================
+[*] 활성 프로젝트    : sample-project-id
+[*] 대상 리전        : global
+[*] 대상 Gemini Enterprise App ID   : sample-ge-app-id
+[*] 실행 서비스 계정 : ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com
+[*] 실행 모드        : 가상 실행 (--dry-run)
+[단계 1/3] 도구 칩 스펙 컴파일 중...
+  - 도구 명칭    : Google Sheets 사내 실적 및 명단 행 조회 스킬
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
-flowchart TD
-    subgraph Selection ["1. 도구 칩 선택 및 파라미터 정의"]
-        S1["스킬 팩토리 CLI 실행<br/>(python diagnose.py)"]
-        S2["8대 시스템 도구 칩 선택<br/>(Sheets, Slack, Jira, ERP 등)"]
-        S1 --> S2
-    end
-
-    subgraph Governance ["2. OpenAPI 합성 및 거버넌스 판정"]
-        G1["OpenAPI 3.0 정량 스키마 생성<br/>(Function Calling 호환 JSON)"]
-        G2["시크릿 매니저 보안 볼트 연동<br/>(gcp_secret_manager URI)"]
-        G3{"작업 유형 판별<br/>(READ vs WRITE)"}
-        G4["ACTIVE 즉시 활성화<br/>(단순 조회 허용)"]
-        G5["PENDING ADMIN APPROVAL<br/>(수정/결재 관리자 승인 대기)"]
-        S2 --> G1 --> G2 --> G3
-        G3 -->|조회 작업 / GET| G4
-        G3 -->|변경/결재 / POST| G5
-    end
-
-    subgraph Registry ["3. Gemini Enterprise app Skills 자동 프로비저닝"]
-        R1["Discovery Engine skillAgentDefinition API 호출<br/>(전용 GCS 아티팩트 자동 생성)"]
-        R2["GE App Skills 갤러리 즉시 노출<br/>(임직원 및 전사 공용 스킬 장착 완료)"]
-        G4 --> R1
-        G5 -.->|관리자 승인 후| R1
-        R1 --> R2
-    end
+graph TD
+    A[진단 시작] --> B[분석 완료]
 ```
 
 ---
 
-## 3. 필요 IAM 역할 및 권한
+## 5. 조치 가이드 및 권장 설정
+
+- **Agent 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
+- **IAM 및 관리자 콘솔**: 스킬 대행 서비스 계정(`ge-skill-invoker-sa`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 스킬 매니페스트 배포 및 에이전트 런타임 보안을 위해 필요한 최소 권한(Least Privilege) 구성은 다음과 같다:
 
 | 역할 (Role) | 부여 대상 | 용도 및 최소 권한 세부 사항 |
-| :--- | :--- | :--- |
+| : | : | : |
 | `roles/secretmanager.secretAccessor` | 스킬 실행 대행 SA (`ge-skill-invoker-sa`) | 런타임 시 사내 API 토큰 및 웹훅 URL 복호화 권한 |
 | `roles/discoveryengine.editor` | 관리자 실행 계정 | Gemini Enterprise app 도구 레지스트리에 신규 Tool 등록 및 메타데이터 관리 |
 | 권한 불필요 (Zero IAM) | 일반 현업 임직원 | Gemini Enterprise app 웹 포털 로그인 계정 외에 GCP 콘솔 권한 일절 불필요 |
 
 ---
 
-## 4. 원클릭 스킬 생성 및 진단 가이드
-
-### 4.1. 환경 변수 준비 (선택 사항)
-본 도구는 `gcloud` 활성 설정 및 사내 리소스를 자동으로 탐지하므로 설정 파일 없이도 즉시 실행할 수 있다. 필요시 `.env.example`을 복사하여 `.env`를 생성한다:
-```bash
-cp .env.example .env
-```
-
-### 4.2. 가상 실행 및 스모크 테스트 (--dry-run)
-실제 GCP API 호출 없이, 8대 시스템 도구 칩에 대한 OpenAPI 3.0 스키마 정합성, Secret Manager 보안 볼트 연동, 거버넌스 승인 상태를 0.5초 만에 안전하게 검증한다:
-```bash
-python diagnose.py --dry-run
-```
-
-특정 도구 칩(예: 3번 Slack 웹훅 발송 스킬) 또는 커스텀 API를 지정하여 가상 실행할 수 있다:
-```bash
-# 3번 Slack 웹훅 발송 스킬 (WRITE 작업, 승인 대기 플래그 검증)
-python diagnose.py --dry-run --chip 3
-
-# 4번 Jira 버그 티켓 자동 발행 스킬 검증
-python diagnose.py --dry-run --chip 4
-
-# 사용자 직접 정의 시스템 연동 요구사항 검증
-python diagnose.py --dry-run --prompt "사내 사원증 발급 승인 시스템 REST API"
-```
-
-### 4.3. 사내 GE App에 스킬 팩토리 1클릭 프로비저닝 (--deploy-engine)
-본 미니 프로젝트의 스킬 팩토리 에이전트를 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
-
-```bash
-# 1. 가상 실행으로 배포 명세 사전 검증
-python diagnose.py --dry-run --deploy-engine
-
-# 2. 실제 사내 환경 원클릭 배포 집행
-python diagnose.py --deploy-engine
-```
-
-성공 시 사내 임직원이 GE app 챗창에서 `GE Skill Factory`와 대화하며 Google Sheets, Slack, Jira 등 기간계 도구 연동 스킬을 자율 생성하고, 에이전트 내장 실행 도구(`deploy_enterprise_skill_tool`)를 통해 본인 및 전사 **`Skills`** 메뉴에 원클릭으로 즉시 자동 프로비저닝할 수 있다.
-
-### 4.4. 실제 사내 Gemini Enterprise app 도구 등록 (--publish)
-사내 Gemini Enterprise app 도구 레지스트리에 개별 시스템 스킬을 공식 배포하여 사내 에이전트들이 장착할 수 있도록 등록한다:
-```bash
-python diagnose.py --publish --chip 1
-```
-
-### 4.4. 최신 Model Context Protocol (MCP) 및 Agents CLI 연동 (대안)
-최신 구글 공식 **Agents CLI (`google-agents-cli`)** 및 ADK 2.11+의 `McpToolset`을 활용하여 사내 엔터프라이즈 도구를 현대적 표준 프로토콜로 직접 연동할 수 있다:
-```bash
-# Agent Runtime 환경 변수에 최신 MCP 프로토콜 활성화
-ADK_ENABLE_MCP_MODERN_PROTOCOL=1
-
-# Agents CLI를 통한 도구 바인딩 배포
-agents-cli deploy --project=${PROJECT_ID} --region=us-central1
-```
-
----
-
-## 5. 사내 거버넌스 4대 필수 표준 라벨링
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 사내 스킬 인프라 및 보안 볼트 리소스(Secret Manager 시크릿, 대행 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -147,16 +112,7 @@ agents-cli deploy --project=${PROJECT_ID} --region=us-central1
 - `created-by`: `customer-engineer`
 
 ---
-
-## 6. 콘솔 링크 조치 가이드
-
-- **Agent 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
-- **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
-- **IAM 및 관리자 콘솔**: 스킬 대행 서비스 계정(`ge-skill-invoker-sa`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
-
----
-
-## 7. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 솔루션 검증 후 테스트용으로 등록된 도구 매니페스트나 서비스 계정을 정리하고자 할 경우 아래 절차를 수행한다:
 

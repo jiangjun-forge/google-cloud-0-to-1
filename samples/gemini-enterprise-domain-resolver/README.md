@@ -18,21 +18,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의해 선점되어 발생하는 도메인 충돌(domain_in_use)을 진단하고, Google Workspace 라이선스 구매 없이 Cloud Identity Free를 활용하여 독립적인 엔터프라이즈 AI 환경을 배포하도록 지원하는 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#SecOps`  
-**Concern**: `#Compliance`, `#IAM`  
-**Service**: `#CloudIdentity`, `#GeminiEnterprise`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 사내 도메인이 타 계정에 선점된 domain_in_use 충돌 및 테넌트 온보딩 차단 요인 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Cloud Identity Free 테넌트 배포, DNS TXT 검증 및 관리자 계정 생성 절차 도출 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- 그룹사 산하 계열사에 Gemini Enterprise를 전사 공급하려 할 때, 사내 도메인이 이미 사용 중이라는 에러(`domain_in_use`)로 인해 신규 테넌트 개설이 차단된 경우
-- Gemini Enterprise는 Google Workspace(Gmail, 구글 드라이브(Google Drive), 구글 독스(Google Docs))와는 완전히 별개의 독립 제품이므로, 고가의 Workspace 라이선스 없이 무료 `Cloud Identity Free` 계정만으로 전사 배포하고자 하는 경우
-- 과거 임직원이 회사 이메일 주소로 구글 무료 서비스(Google Workspace Essentials Starter 등)에 개별 가입하여 도메인이 비관리(Unmanaged) 상태로 선점되어 이를 중앙 거버넌스로 편입해야 하는 경우
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 그룹사 산하 계열사에 Gemini Enterprise를 전사 공급하려 할 때, 사내 도메인이 이미 사용 중이라는 에러(`domain_in_use`)로 인해 신규 테넌트 개설이 차단된 경우
+- [ ] Gemini Enterprise는 Google Workspace(Gmail, 구글 드라이브(Google Drive), 구글 독스(Google Docs))와는 완전히 별개의 독립 제품이므로, 고가의 Workspace 라이선스 없이 무료 `Cloud Identity Free` 계정만으로 전사 배포하고자 하는 경우
+- [ ] 과거 임직원이 회사 이메일 주소로 구글 무료 서비스(Google Workspace Essentials Starter 등)에 개별 가입하여 도메인이 비관리(Unmanaged) 상태로 선점되어 이를 중앙 거버넌스로 편입해야 하는 경우
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+=====================================================================================
+Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Identity 진단 리포트
+진단 모드: 가상 실행 (Dry-run)
+점검 대상 도메인: example.com
+=====================================================================================
+[1단계] 도메인 충돌 상태 및 원인 분석
+-------------------------------------------------------------------------------------
+* 충돌 증상 코드: domain_in_use
+* 원인 분석: 임직원 개별 가입 구글 서비스(Essentials Starter 등)로 인한 비관리(Unmanaged) 테넌트 선점
+* 식별된 미관리 사용자 계정 수: 8명
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -45,41 +84,34 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항
+1. **도메인 소유권 확인 및 인수(Takeover)**:
+   - Google Admin Console > 계정 > 도메인 > 도메인 관리 ( https://admin.google.com/ac/domains/manage )
+   - 도메인 소유권 확인 ( https://support.google.com/a/answer/7126229 )
+   - 도메인 충돌(domain_in_use) 해결 가이드 ( https://support.google.com/a/answer/11112794 )
+2. **미관리 사용자 계정 통합 및 관리**:
+   - 디렉터리 > 사용자 ( https://admin.google.com/ac/users )
+3. **Cloud Identity Free 라이선스 발급**:
+   - 결제 > 구독 ( https://admin.google.com/ac/billing/subscriptions )
+   - Cloud Identity 개요 ( https://cloud.google.com/identity/docs/overview )
+   - Cloud Identity 에디션 비교 ( https://cloud.google.com/identity/docs/editions )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 본 조치를 완료하려면 아래의 권한 및 관리 접근 권한이 필요하다:
 
 | 서비스 / 영역 | 필요 역할 또는 권한 | 목적 |
-| :--- | :--- | :--- |
+| : | : | : |
 | `사내 DNS 관리자` | DNS 레코드(TXT) 추가 및 갱신 권한 | Google 도메인 소유권 확인 토큰 등록 |
 | `Google Admin Console` | `슈퍼 관리자(Super Admin)` | 도메인 관리, 소유권 인수, 미관리 사용자 초대 및 라이선스 할당 |
 
 ---
 
-## 4. 1분 퀵스타트
-
-### 가상 실행 (Dry-run)
-
-실제 DNS 조회나 API 권한 없이도 모의 도메인 충돌 및 라이선스 최적화 시나리오를 즉시 시뮬레이션할 수 있다:
-
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 실행
-
-```bash
-# 기본 환경 변수 도메인 기준 진단
-python diagnose.py
-
-# 특정 기업 도메인 지정 실행
-python diagnose.py --domain=example-corp.com
-```
-
----
-
-## 5. 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 =====================================================================================
@@ -123,32 +155,6 @@ Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Ide
 ```
 
 ---
-
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
-
-클라우드 리소스 및 도메인 바인딩 설정 시 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `gemini-enterprise-domain-resolver`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 7. 결과 확인 후 즉각 조치 가이드
-
-1. **도메인 소유권 확인 및 인수(Takeover)**:
-   - Google Admin Console > 계정 > 도메인 > 도메인 관리 ( https://admin.google.com/ac/domains/manage )
-   - 도메인 소유권 확인 ( https://support.google.com/a/answer/7126229 )
-   - 도메인 충돌(domain_in_use) 해결 가이드 ( https://support.google.com/a/answer/11112794 )
-2. **미관리 사용자 계정 통합 및 관리**:
-   - 디렉터리 > 사용자 ( https://admin.google.com/ac/users )
-3. **Cloud Identity Free 라이선스 발급**:
-   - 결제 > 구독 ( https://admin.google.com/ac/billing/subscriptions )
-   - Cloud Identity 개요 ( https://cloud.google.com/identity/docs/overview )
-   - Cloud Identity 에디션 비교 ( https://cloud.google.com/identity/docs/editions )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 도메인 충돌 여부 및 DNS 상태를 조회하는 진단기이므로 별도의 클라우드 인프라 자원을 생성하지 않는다. 테스트 완료 후 불필요한 DNS TXT 레코드는 DNS 공급자 관리 화면에서 삭제한다.

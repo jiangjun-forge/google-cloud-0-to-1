@@ -18,21 +18,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 제미나이(Gemini) 및 버텍스 AI(Vertex AI) API 호출 시 발생하는 VPC 서비스 컨트롤(VPC Service Controls, VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#SecOps`  
-**Concern**: `#Compliance`, `#Security`  
-**Service**: `#CloudLogging`, `#GeminiAPI`, `#VPCServiceControls`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 제미나이 호출 시 발생하는 VPC-SC 보안 경계 차단(Perimeter Denial) 거부 사유 코드 감사 로그 역추적 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | VPC-SC 보안 경계 인그레스/이그레스 허용 규칙 및 액세스 레벨(Access Level) 복구 명세 도출 |
 
 ---
 
-## 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- **VPC-SC 경계 차단 장애**: 온프레미스 사설망, 하이브리드 클라우드 또는 특정 서브넷에서 Gemini 호출 시 알 수 없는 보안 정책 거부(Denial)가 발생할 때
-- **거부 원인 규명 곤란**: 일반적인 클라이언트 에러 메시지만으로는 수신 규칙(Ingress Rule) 누락인지, 상이한 경계 분리인지 판단하기 어려울 때
-- **VPC-SC 감사 추적 및 즉각 해결**: Cloud Logging의 보안 정책 감사 로그(`cloudaudit.googleapis.com/policy`)를 역추적하여 고유 거부 ID(UUID)와 원인별 해결책을 즉시 확보하고자 할 때
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] **VPC-SC 경계 차단 장애**: 온프레미스 사설망, 하이브리드 클라우드 또는 특정 서브넷에서 Gemini 호출 시 알 수 없는 보안 정책 거부(Denial)가 발생할 때
+- [ ] **거부 원인 규명 곤란**: 일반적인 클라이언트 에러 메시지만으로는 수신 규칙(Ingress Rule) 누락인지, 상이한 경계 분리인지 판단하기 어려울 때
+- [ ] **VPC-SC 감사 추적 및 즉각 해결**: Cloud Logging의 보안 정책 감사 로그(`cloudaudit.googleapis.com/policy`)를 역추적하여 고유 거부 ID(UUID)와 원인별 해결책을 즉시 확보하고자 할 때
 
 ---
 
-## 진단 및 복구 흐름 (Activity Diagram)
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+[진단 결과] 제미나이(Gemini) VPC Service Controls 경계 차단 진단 리포트
+  - 대상 프로젝트: sample-project-id
+  - 조회 기간: 최근 7일
+========================================================================
+발견된 VPC-SC 경계 거부 사례: 2건
+[거부 사례 #1]
+  - 호출 주체 계정: developer-workstation@company.com
+  - 대상 서비스   : aiplatform.googleapis.com
+  - 호출 메서드   : google.cloud.aiplatform.v1beta1.PredictionService.GenerateContent
+  - 거부 사유 코드: NO_MATCHING_INGRESS_POLICY
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -63,13 +102,22 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 사전 준비 사항 (필요 권한 - IAM)
+- **VPC-SC 문제 해결사 콘솔**: ( https://console.cloud.google.com/security/vpc-service-controls/troubleshooter )
+- **서비스 경계 관리 콘솔**: ( https://console.cloud.google.com/security/vpc-service-controls )
+- **VPC Service Controls 문제 해결 공식 가이드**: ( https://cloud.google.com/vpc-service-controls/docs/troubleshooting )
+- **VPC Service Controls 수신 및 송신 규칙 공식 가이드**: ( https://cloud.google.com/vpc-service-controls/docs/ingress-egress-rules )
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 Cloud Logging 감사 로그를 조회하기 위해 필요한 IAM 역할이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
-| :--- | :--- | :--- |
+| : | : | : |
 | **클라우드 로깅 뷰어 (권장)** | `roles/logging.viewer` | Cloud Logging 정책 감사 로그 읽기 |
 | **보안 뷰어 (선택)** | `roles/iam.securityViewer` | 보안 정책 및 거부 감사 로그 통합 조회 |
 
@@ -78,35 +126,7 @@ Cloud Logging 감사 로그를 조회하기 위해 필요한 IAM 역할이다:
 
 ---
 
-## 1분 퀵스타트 (실행 방법)
-
-### 방법 1: 구글 클라우드 쉘 (Google Cloud Shell) - *가장 권장*
-
-```bash
-# 1. 저장소 클론 및 폴더 이동
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/gemini-vpc-sc-denial-resolver
-
-# 2. 사전 가상 체험 또는 데모 모드 (권한 없이 가상 시뮬레이션)
-python diagnose.py --dry-run
-
-# 3. 실제 프로젝트 대상 최근 14일 감사 로그 추적 실행
-python diagnose.py -p your-project-id -d 14
-```
-
-### 방법 2: 로컬 환경 (Local Python)
-
-```bash
-# 가상 실행
-python diagnose.py --dry-run
-
-# 실제 실행
-python diagnose.py --project your-project-id --days 7 --limit 10
-```
-
----
-
-## 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 스크립트가 완료되면 아래와 같이 **거부된 계정, 서비스, 메서드, 고유 거부 ID 및 처방**이 출력된다:
 
@@ -133,26 +153,6 @@ python diagnose.py --project your-project-id --days 7 --limit 10
 ```
 
 ---
-
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
-
-본 도구는 Cloud Logging 정책 감사 로그 조회 도구이나, 연관된 클라우드 인프라 자원(VPC, 서비스 경계 브리지 프로젝트 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `gemini-vpc-sc-denial-resolver`
-- `env`: `sample` (또는 `poc`)
-- `created-by`: `customer-engineer`
-
----
-
-## 7. 콘솔 링크 조치 가이드
-
-- **VPC-SC 문제 해결사 콘솔**: ( https://console.cloud.google.com/security/vpc-service-controls/troubleshooter )
-- **서비스 경계 관리 콘솔**: ( https://console.cloud.google.com/security/vpc-service-controls )
-- **VPC Service Controls 문제 해결 공식 가이드**: ( https://cloud.google.com/vpc-service-controls/docs/troubleshooting )
-- **VPC Service Controls 수신 및 송신 규칙 공식 가이드**: ( https://cloud.google.com/vpc-service-controls/docs/ingress-egress-rules )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 본 도구는 순수 감사 로그 조회 도구이며 클라우드 상에 영구 자원을 생성하지 않으므로 별도의 자원 정리 작업이 필요하지 않다.

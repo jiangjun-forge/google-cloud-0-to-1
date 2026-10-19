@@ -18,16 +18,22 @@ All contents, designs, and code examples are subject to change, modification, or
 
 빅쿼리(BigQuery) Data Agent(제미나이 인 빅쿼리(Gemini in BigQuery), 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, 데이터플렉스(Dataplex) 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
-**Concern**: `#Accuracy`, `#GenAI`, `#Governance`, `#Performance`  
-**Service**: `#BigQuery`, `#Dataplex`, `#GeminiAPI`, `#KnowledgeCatalog`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | BigQuery Data Agent(자연어 SQL 생성) 도입 시 테이블 설명 누락, 프로파일링 결손 및 용어집 미바인딩 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | Dataplex 자동 프로파일링, 비즈니스 용어집(Glossary) 계산식 바인딩 및 시맨틱 보강 SQL 패치 처방 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 다음과 같은 현상이 운영 또는 개발 환경에서 발생하고 있다면 즉시 본 진단 도구를 구동해야 한다:
-
 - [ ] 자연어 질문 입력 시 Data Agent가 유사한 스키마를 가진 다른 테이블을 잘못 조인하거나 참조하는 경우
 - [ ] 컬럼 설명(Description)이 비어 있어 LLM이 축약어(예: `amt`, `diff_qty`, `stat_cd`)의 의미를 임의로 날조하여 필터링하는 경우
 - [ ] 순매출, 할인율, 결품 예상 시간 등 비즈니스 계산 공식(Formula)이 명시되지 않아 임의의 수식으로 계산 결과를 왜곡하는 경우
@@ -36,7 +42,39 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 진단 및 해결 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 결과 표
+대상 데이터셋: cymbal_gold
+==========================================================================================
+테이블 ID                              테이블 설명       컬럼 설명율         데이터 프로파일       용어집 바인딩
+------------------------------------------------------------------------------------------
+pos_transactions_gold               X (누락/부실)    2/18 (11%)     X (미수행)        X (미연동)
+gold_inventory_reconciliation_ledger X (누락/부실)    1/14 (7%)      X (미수행)        X (미연동)
+pos_anomaly_alerts                  O (적합)       3/11 (27%)     O (수집됨)        X (미연동)
+historical_transactional_data       X (누락/부실)    0/22 (0%)      X (미수행)        X (미연동)
+------------------------------------------------------------------------------------------
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -53,13 +91,44 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항 (필요 IAM 권한)
+1. **테이블 및 컬럼 설명 패치 확인**:
+   - Google Cloud 콘솔 BigQuery Studio에서 대상 테이블의 스키마 탭을 확인하여 각 필드에 구체적인 비즈니스 설명과 유효 범위가 반영되었는지 검증한다.
+   - BigQuery Studio 콘솔 ( https://console.cloud.google.com/bigquery )
+2. **Dataplex 데이터 프로파일링 실행**:
+   - 통계 지표가 없는 테이블은 Dataplex Data Profile 스캔을 등록하고 실행하여 최솟값, 최댓값, 고유값 비율을 카탈로그에 게시한다.
+   - Dataplex Data Profile 안내 ( https://cloud.google.com/dataplex/docs/data-profiling-overview )
+3. **Knowledge Catalog 비즈니스 용어집 등록**:
+   - 생성된 `dataplex_glossary_terms.yaml` 템플릿을 참조하여 Dataplex Knowledge Catalog에 비즈니스 용어와 계산 수식(`Formula`)을 등록하고 관련 테이블에 바인딩한다.
+   - Dataplex Business Glossary 콘솔 ( https://console.cloud.google.com/dataplex/business-glossaries )
+4. **Starter 키트 연계 및 완전 관리형 GDA `dataAgents` 자동 배포**:
+   - 메타데이터 보강이 완료된 데이터셋은 `bigquery-data-agent-starter` 도구를 통해 구글 관리형 런타임 GDA REST API로 1초 만에 완전 관리형 데이터 에이전트로 자동 프로비저닝된다:
+   ```bash
+   cd ../bigquery-data-agent-starter
+   python diagnose.py --deploy-agent
+   ```
+   - 보강된 컬럼 설명과 비즈니스 공식이 GDA 에이전트의 `systemInstruction` 및 `exampleQueries`로 자동 바인딩되어 환각을 0%에 가깝게 차단한다.
+5. **(선택 사항) 타 클라우드 스토리지 연동 시 Cross-Cloud Caching 활성화**:
+   - BigQuery Omni 및 보더리스 레이크하우스(Borderless Lakehouse) 환경에서 타 클라우드(AWS S3, Azure Blob)의 객체를 쿼리하는 경우, Cross-Cloud Caching을 활성화하여 전송(Egress) 비용을 줄이고 반복 NL2SQL 쿼리 지연 시간을 최대 50% 단축한다.
+   - Cross-Cloud Caching 안내 ( https://cloud.google.com/blog/products/data-analytics/borderless-lakehouse-cross-cloud-caching-and-connections )
+6. **GCP 리소스 생성 시 4대 필수 표준 라벨링 준수**:
+   - 사내 거버넌스 및 FinOps 비용 추적을 위해 데이터셋, 테이블, Dataplex 데이터 스캔 생성 시 4대 표준 라벨을 필수로 주입한다:
+     - `managed-by`: `google-cloud-0-to-1`
+     - `scenario`: `bigquery-data-agent-semantic-enricher`
+     - `env`: `sample`
+     - `created-by`: `customer-engineer`
+   - gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-semantic-enricher,env=sample`
+
+---
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 진단 및 메타데이터 보강을 실행하기 위해 사용자 계정 또는 서비스 계정에 요구되는 최소 IAM 권한은 다음과 같다:
 
 | 역할 (Role) | 권한 (Permission) | 용도 |
-| :--- | :--- | :--- |
+| : | : | : |
 | `roles/bigquery.metadataViewer` | `bigquery.tables.get`, `bigquery.tables.list` | 데이터셋 및 테이블 스키마, 기존 설명 조회 |
 | `roles/bigquery.dataEditor` | `bigquery.tables.update` | 메타데이터 보강(`--apply`) 시 스키마 설명 반영 |
 | `roles/dataplex.viewer` | `dataplex.dataScans.get`, `dataplex.dataScans.list` | 데이터 프로파일 스캔 결과 조회 |
@@ -67,47 +136,7 @@ flowchart TD
 
 ---
 
-## 4. 퀵스타트
-
-### 4.1 실습 환경 준비 (저장소 클론 및 디렉터리 이동)
-Cloud Shell 또는 로컬 터미널에서 저장소를 클론하고 실습 샘플 디렉터리로 이동한다:
-
-```bash
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/bigquery-data-agent-semantic-enricher
-```
-
-### 4.2 가상 실행 모드 (Dry-run 스모크 테스트)
-실제 GCP 인증이나 프로젝트 권한이 없는 환경에서도 모의 데이터셋을 통해 신속하게 진단 및 보강 시뮬레이션을 체험할 수 있다:
-
-```bash
-# 1. 시뮬레이션 진단 리포트 출력
-python diagnose.py --dry-run
-
-# 2. 지능형 메타데이터 보강 계획 및 용어집 YAML 생성 확인
-python diagnose.py --dry-run --enrich
-```
-
-### 4.3 실제 환경 실행 (Cloud Shell 및 로컬 터미널)
-
-```bash
-# 1. 환경 변수 파일 복사 및 설정
-cp .env.example .env
-# vi .env (PROJECT_ID, DATASET_ID 입력)
-
-# 2. 데이터셋 준비도 진단 실행 (기본 리전: asia-northeast3)
-python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID
-
-# 3. 시맨틱 메타데이터 지능형 보강 계획 수립 및 템플릿 생성 (Gemini 3.8 Flash 활용)
-python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich --model=gemini-3.8-flash
-
-# 4. 생성된 메타데이터를 실제 BigQuery 테이블 스키마에 영구 반영 (4대 표준 라벨 자동 주입)
-python diagnose.py --project=$PROJECT_ID --dataset=$DATASET_ID --enrich --apply
-```
-
----
-
-## 5. 결과 출력 예시
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ```text
 ==========================================================================================
@@ -149,39 +178,7 @@ Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (En
 ```
 
 ---
-
-## 6. 결과 확인 후 즉각 조치 가이드
-
-1. **테이블 및 컬럼 설명 패치 확인**:
-   - Google Cloud 콘솔 BigQuery Studio에서 대상 테이블의 스키마 탭을 확인하여 각 필드에 구체적인 비즈니스 설명과 유효 범위가 반영되었는지 검증한다.
-   - BigQuery Studio 콘솔 ( https://console.cloud.google.com/bigquery )
-2. **Dataplex 데이터 프로파일링 실행**:
-   - 통계 지표가 없는 테이블은 Dataplex Data Profile 스캔을 등록하고 실행하여 최솟값, 최댓값, 고유값 비율을 카탈로그에 게시한다.
-   - Dataplex Data Profile 안내 ( https://cloud.google.com/dataplex/docs/data-profiling-overview )
-3. **Knowledge Catalog 비즈니스 용어집 등록**:
-   - 생성된 `dataplex_glossary_terms.yaml` 템플릿을 참조하여 Dataplex Knowledge Catalog에 비즈니스 용어와 계산 수식(`Formula`)을 등록하고 관련 테이블에 바인딩한다.
-   - Dataplex Business Glossary 콘솔 ( https://console.cloud.google.com/dataplex/business-glossaries )
-4. **Starter 키트 연계 및 완전 관리형 GDA `dataAgents` 자동 배포**:
-   - 메타데이터 보강이 완료된 데이터셋은 `bigquery-data-agent-starter` 도구를 통해 구글 관리형 런타임 GDA REST API로 1초 만에 완전 관리형 데이터 에이전트로 자동 프로비저닝된다:
-   ```bash
-   cd ../bigquery-data-agent-starter
-   python diagnose.py --deploy-agent
-   ```
-   - 보강된 컬럼 설명과 비즈니스 공식이 GDA 에이전트의 `systemInstruction` 및 `exampleQueries`로 자동 바인딩되어 환각을 0%에 가깝게 차단한다.
-5. **(선택 사항) 타 클라우드 스토리지 연동 시 Cross-Cloud Caching 활성화**:
-   - BigQuery Omni 및 보더리스 레이크하우스(Borderless Lakehouse) 환경에서 타 클라우드(AWS S3, Azure Blob)의 객체를 쿼리하는 경우, Cross-Cloud Caching을 활성화하여 전송(Egress) 비용을 줄이고 반복 NL2SQL 쿼리 지연 시간을 최대 50% 단축한다.
-   - Cross-Cloud Caching 안내 ( https://cloud.google.com/blog/products/data-analytics/borderless-lakehouse-cross-cloud-caching-and-connections )
-6. **GCP 리소스 생성 시 4대 필수 표준 라벨링 준수**:
-   - 사내 거버넌스 및 FinOps 비용 추적을 위해 데이터셋, 테이블, Dataplex 데이터 스캔 생성 시 4대 표준 라벨을 필수로 주입한다:
-     - `managed-by`: `google-cloud-0-to-1`
-     - `scenario`: `bigquery-data-agent-semantic-enricher`
-     - `env`: `sample`
-     - `created-by`: `customer-engineer`
-   - gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-semantic-enricher,env=sample`
-
----
-
-## 7. 자원 정리 (Teardown) 가이드
+## 8. 리소스 정리 (Teardown) 안내
 
 본 진단 도구는 BigQuery 스키마 메타데이터 및 카탈로그 설명만을 점검하고 보강하므로, 별도의 컴퓨팅 인스턴스나 영구 스토리지 과금을 유발하지 않는다.
 가상 실행 과정에서 생성된 샘플 용어집 YAML 파일은 아래 명령어로 삭제한다:
@@ -191,8 +188,3 @@ rm -f dataplex_glossary_terms*.yaml
 ```
 
 ---
-
-## 8. 관련 규격 문서
-
-- [비즈니스 요구 사항 명세서 (BRD.md)](docs/BRD.md)
-- [기술 상세 설계서 (TDD.md)](docs/TDD.md)

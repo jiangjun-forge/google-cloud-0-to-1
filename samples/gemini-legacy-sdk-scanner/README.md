@@ -18,21 +18,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 **`google-genai`로의 마이그레이션 가이드를 1분 만에 제공**하는 도구다. (As of 2026-10-17)
 
-**Audience**: `#Architect`, `#Developer`  
-**Concern**: `#Compliance`, `#Performance`  
-**Service**: `#GeminiAPI`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 구형 SDK(google.generativeai, vertexai.generative_models) 호출 부위 및 레거시 문법 정적 탐색 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | 최신 공식 통일 SDK인 google-genai v1.0+ 마이그레이션 매핑 가이드 및 코드 변환 처방 |
 
 ---
 
-## 1. 문제 증상 체크리스트
+## 2. 발생 증상 및 진단 대상 체크리스트
 
-- **구형 라이브러리 지원 중단 대비**: 구형 SDK(`google-generativeai`) 지원 종료 예정에 따라 신규 라이브러리로 사전 전환이 필요한 경우
-- **통일 클라이언트 전환**: AI Studio 환경과 버텍스 AI(Vertex AI) 환경에서 각각 파편화되어 사용되던 코드를 최신 `google-genai` 단일 클라이언트로 일원화하고자 할 때
-- **레거시 코드 자가 감사**: 프로젝트 내 파이썬 스크립트, 배시 스크립트, 주피터 노트북(`.ipynb`) 전반에 걸쳐 잔존하는 구형 SDK 호출 위치를 전수 조사하고자 할 때
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] **구형 라이브러리 지원 중단 대비**: 구형 SDK(`google-generativeai`) 지원 종료 예정에 따라 신규 라이브러리로 사전 전환이 필요한 경우
+- [ ] **통일 클라이언트 전환**: AI Studio 환경과 버텍스 AI(Vertex AI) 환경에서 각각 파편화되어 사용되던 코드를 최신 `google-genai` 단일 클라이언트로 일원화하고자 할 때
+- [ ] **레거시 코드 자가 감사**: 프로젝트 내 파이썬 스크립트, 배시 스크립트, 주피터 노트북(`.ipynb`) 전반에 걸쳐 잔존하는 구형 SDK 호출 위치를 전수 조사하고자 할 때
 
 ---
 
-## 2. 처리 흐름도
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+[데모 실행] --dry-run 모드가 활성화되어 가상 분석 결과를 시뮬레이션한다.
+========================================================================
+[진단 결과] 구형 제미나이(Gemini) SDK 코드 정적 진단 리포트
+========================================================================
+검출된 구형 SDK 사용 파일: 2건 (총 5개 라인)
+[파일: app/services/chat_bot.py]
+  - [1행] 구형 AI Studio SDK 임포트 (google.generativeai)
+    코드: import google.generativeai as genai
+  - [5행] 구형 AI Studio 설정 함수 (genai.configure)
+    코드: genai.configure(api_key=os.environ['GEMINI_API_KEY'])
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -58,35 +97,7 @@ flowchart TD
 ```
 
 ---
-
-## 3. 필요 IAM 권한
-
-이 도구는 소스 코드 및 노트북 파일을 정적으로 분석하는 도구로, 별도의 클라우드 인프라 자원을 생성하거나 변경하지 않는다.
-
-| 권한 항목 | 요구 조건 | 비고 |
-| :--- | :--- | :--- |
-| **구글 클라우드 IAM 권한** | 필요 없음 | 순수 로컬 또는 Cloud Shell 환경 정적 진단 도구 |
-| **로컬 환경 권한** | 소스 코드 읽기 권한 | 스캔 대상 프로젝트 디렉터리 접근 권한 |
-
----
-
-## 4. 원클릭 실행법
-
-### 가상 검증 실행 (--dry-run)
-실제 디렉터리 스캔 없이 가상 모의 취약 코드를 기반으로 마이그레이션 리포트를 시뮬레이션한다. 실행 시 `report.md` 파일이 자동 생성된다:
-```bash
-python diagnose.py --dry-run
-```
-
-### 실제 환경 진단
-사내 애플리케이션 소스 코드 디렉터리를 대상으로 구형 SDK 호출부를 정적 스캔한다. 진단 결과는 `report.md`에 자동으로 덮어써진다:
-```bash
-python diagnose.py --path="/path/to/your/project"
-```
-
----
-
-## 5. 결과 확인 후 즉각 조치 가이드
+## 5. 조치 가이드 및 권장 설정
 
 스크립트가 완료되면 아래와 같이 **구형 SDK 호출 부위와 행 번호**가 정밀하게 출력된다:
 
@@ -139,8 +150,20 @@ pip install google-genai
 | **콘텐츠 생성** | `model = genai.GenerativeModel("...")`<br>`model.generate_content(...)` | `client.models.generate_content(`<br>`    model="gemini-3.8-flash", contents="..."`<br>`)` |
 
 ---
+## 6. 사전 준비 사항 (필요 IAM 권한)
 
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
+
+이 도구는 소스 코드 및 노트북 파일을 정적으로 분석하는 도구로, 별도의 클라우드 인프라 자원을 생성하거나 변경하지 않는다.
+
+| 권한 항목 | 요구 조건 | 비고 |
+| : | : | : |
+| **구글 클라우드 IAM 권한** | 필요 없음 | 순수 로컬 또는 Cloud Shell 환경 정적 진단 도구 |
+| **로컬 환경 권한** | 소스 코드 읽기 권한 | 스캔 대상 프로젝트 디렉터리 접근 권한 |
+
+---
+
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 신규 SDK 기반 클라우드 리소스 및 마이그레이션 파이프라인 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
@@ -149,16 +172,6 @@ pip install google-genai
 - `created-by`: `customer-engineer`
 
 ---
-
-## 7. 콘솔 링크 조치 가이드
-
-- **Google Gen AI SDK 공식 마이그레이션 가이드**: ( https://docs.cloud.google.com/gemini-enterprise-agent-platform/machine-learning/python-sdk/sdk-migration )
-- **Google AI Studio Gemini API 마이그레이션 가이드**: ( https://ai.google.dev/gemini-api/docs/migrate )
-- **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
-- **Google AI Studio 콘솔**: ( https://aistudio.google.com )
-
----
-
-## 8. 자원 정리 안내 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 이 도구는 소스 코드 정적 분석기이므로 클라우드 상에 생성된 리소스가 없으며, 별도의 자원 정리 작업이 필요하지 않다.

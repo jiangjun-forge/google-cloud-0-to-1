@@ -18,16 +18,22 @@ All contents, designs, and code examples are subject to change, modification, or
 
 45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 빅쿼리(BigQuery) 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, 구글 1P 완전 관리형 런타임(GDA `dataAgents` REST API)을 통해 CLI 원클릭(`--deploy-agent`)으로 데이터 에이전트를 프로비저닝하며, A2A 표준 규격 기반으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 직결 연동하거나 BigQuery Studio 콘솔 UI에서 단독(Standalone)으로 멀티턴 대화 질의를 완주할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-10-19)
 
-**Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
-**Concern**: `#GenAI`, `#Governance`, `#Performance`  
-**Service**: `#AgentPlatform`, `#BigQuery`, `#GeminiAPI`, `#VertexAI`
+---
+
+## 1. 3단계 핵심 요약 (Input -> Detect -> Fix)
+
+| 단계 | 실행 및 동작 | 기대 산출물 및 해결 과제 |
+| :--- | :--- | :--- |
+| **1. 실행 (Input)** | `python diagnose.py (또는 --dry-run)` | 활성 프로젝트 및 사내 리소스 자동 감지 |
+| **2. 판정 (Detect)** | 텔레메트리 실시간 분석 | 45분 워크숍 환경에서 BigQuery 샘플 데이터셋, 1P dataAgents API 및 A2A 연동 준비 상태 진단 |
+| **3. 처방 (Fix)** | 복붙용 조치 가이드 제공 | cymbal_gold 스몰셋 10초 구축, 에이전트 원클릭 프로비저닝 및 Gemini Enterprise 연동 가이드 제공 |
 
 ---
 
-## 1. 이 가이드가 필요한 상황 (증상 체크리스트)
+## 2. 발생 증상 및 진단 대상 체크리스트
 
+사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 다음과 같은 요구 사항이 워크숍이나 사내 PoC에서 발생하고 있다면 즉시 본 스타터 키트를 활용해야 한다:
-
 - [ ] 45분 내외의 짧은 핸즈온 세션 동안 참석자들이 BigQuery 데이터 준비부터 BigQuery Data Agent 생성 및 자연어 질의응답까지 막힘 없이 완주해야 하는 경우
 - [ ] 별도의 컨테이너 빌드나 유휴 VM 비용 없이, 구글 관리형 테넌트 GDA(Gemini Data Analytics) `dataAgents` REST API를 통해 CLI 한 줄로 에이전트를 자동 프로비저닝하고자 하는 경우
 - [ ] 제미나이 엔터프라이즈 앱에 올리지 않고 BigQuery Studio 내에서 단독(Standalone)으로 Data Agent를 쓰는 부서와, 제미나이 엔터프라이즈 앱에 직결 게시하려는 전사 배포 조직 모두를 하나의 워크숍 키트로 지원해야 하는 경우
@@ -35,7 +41,39 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 45분 핸즈온 실습 흐름
+## 3. 빠른 시작 (Quickstart)
+
+### 1) 모의 데이터 가상 실행 (Dry-Run)
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+```bash
+python diagnose.py --dry-run
+```
+
+**터미널 진단 출력 미리보기:**
+```text
+========================================================================================
+ [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]
+========================================================================================
+ - 대상 프로젝트 : sample-project-id (프로젝트 번호: 123456789012)
+ - 빅쿼리 리전   : asia-northeast3 (데이터셋: cymbal_gold)
+ - GDA 런타임   : global (에이전트 이름: cymbal-retail-data-agent)
+ - GE App 엔진  : omni-retail-ge-app
+ - 실행 모드     : 가상 모의 실행 (--dry-run)
+----------------------------------------------------------------------------------------
+ [45분 핸즈온 워크숍 역할 분담 타임라인 (GDA 완전 관리형 골든 아키텍처)]
+```
+
+### 2) 실제 사내 인프라 실시간 진단
+```bash
+cp .env.example .env
+python diagnose.py
+```
+> [!NOTE]
+> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+
+---
+
+## 4. 진단 및 해결 흐름
 
 ```mermaid
 flowchart TD
@@ -53,13 +91,20 @@ flowchart TD
 ```
 
 ---
+## 5. 조치 가이드 및 권장 설정
 
-## 3. 사전 준비 사항 (필요 IAM 권한)
+진단 결과 리포트(`report.md`)의 권장 조치 사항을 참조하여 설정을 반영한다.
+
+---
+
+## 6. 사전 준비 사항 (필요 IAM 권한)
+
+본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 45분 핸즈온 실습을 위해 참석자 계정 또는 서비스 계정에 요구되는 최소 IAM 권한은 다음과 같다:
 
 | 역할 (Role) | 권한 (Permission) | 용도 |
-| :--- | :--- | :--- |
+| : | : | : |
 | `roles/bigquery.dataEditor` | `bigquery.datasets.create`, `bigquery.tables.create` | `--setup-demo` 실행 시 `cymbal_gold` 4개 테이블, 실데이터, 시맨틱 뷰 생성 |
 | `roles/bigquery.jobUser` | `bigquery.jobs.create` | BigQuery 쿼리 실행 및 Data Agent 시맨틱 뷰 조회 |
 | `roles/geminidataanalytics.dataAgentCreator` | `geminidataanalytics.dataAgents.create` | 구글 1P 완전 관리형 GDA `dataAgents` REST API 호출 및 에이전트 자동 생성 |
@@ -67,77 +112,7 @@ flowchart TD
 
 ---
 
-## 4. 45분 타임어택 핸즈온 실습 단계별 가이드
-
-### 4.1 실습 환경 준비 (저장소 클론 및 디렉터리 이동)
-Cloud Shell 또는 로컬 터미널에서 저장소를 클론하고 실습 샘플 디렉터리로 이동한다:
-
-```bash
-git clone https://github.com/jiangjun-forge/google-cloud-0-to-1.git
-cd google-cloud-0-to-1/samples/bigquery-data-agent-starter
-```
-
-### 4.2 사전 가상 검증 모드 (Dry-run 스모크 테스트)
-실제 GCP API 호출 없이 45분 실습 전체 흐름과 자동 생성될 SQL, GDA REST API 페이로드, A2A Agent Card 명세를 1초 만에 미리 확인할 수 있다:
-
-```bash
-# 전체 45분 워크숍 가이드 및 골든 프롬프트 3선 시뮬레이션
-python diagnose.py --dry-run
-
-# 스몰셋 테이블 생성 DDL 및 샘플 데이터 INSERT SQL 사전 확인
-python diagnose.py --dry-run --setup-demo
-
-# GDA dataAgents 자동 배포 페이로드 및 A2A 규격 시뮬레이션
-python diagnose.py --dry-run --deploy-agent
-```
-
-### 4.3 Step 1 (00~05분, CLI 자동화): 스몰셋 데이터셋(`cymbal_gold`) 원클릭 구축
-아래 명령어를 실행하면 BigQuery 데이터셋(`cymbal_gold`), 4개 스몰셋 테이블(`pos_transactions_gold`, `gold_inventory_reconciliation_ledger`, `pos_anomaly_alerts`, `historical_transactional_data`), 실제 샘플 데이터, 시맨틱 뷰(`v_cymbal_retail_semantic`)가 10초 내에 자동으로 구축된다:
-
-```bash
-# cymbal_gold 데이터셋 + 4개 테이블 + 실데이터 + 시맨틱 뷰 원클릭 구축
-python diagnose.py --setup-demo
-```
-
-### 4.4 Step 2 (05~15분, CLI 자동화 권장): GDA `dataAgents` 원클릭 프로비저닝 (골든 경로)
-별도의 컨테이너 빌드나 유휴 비용 없이, 구글 관리형 런타임 GDA REST API를 통해 1초 만에 빅쿼리 데이터 에이전트를 자동 생성하고 A2A 표준 명세(`a2a_agent_card.json`)를 로컬에 보존한다:
-
-```bash
-# GDA dataAgents 자동 생성 및 A2A 규격 저장 (권장 골든 경로)
-python diagnose.py --deploy-agent
-```
-
-- **[보조 확인 경로] 콘솔 UI 수동 생성 (선택 사항)**:
-  사내망 정책상 REST API 직접 호출이 제한되는 환경에서는 콘솔 UI 수동 생성 지침을 출력하여 진행할 수 있다:
-  ```bash
-  python diagnose.py --agent-config
-  ```
-  1. Google Cloud 콘솔 > BigQuery 좌측 탐색 바에서 **Agents (에이전트 / Agent Catalog)** 메뉴를 클릭한다.
-  2. 상단 **[+ Create Data Agent (데이터 에이전트 만들기)]** 버튼을 클릭한다.
-  3. 에이전트 이름에 `cymbal-retail-data-agent`를 입력한다.
-  4. **[Select data sources (데이터 소스 선택)]**에서 `cymbal_gold.v_cymbal_retail_semantic` 뷰를 체크한다.
-  5. **[Instructions (지침)]** 및 **[Verified Queries]**에 터미널 출력 내용을 복사하여 붙여넣고 저장한다.
-  6. 참조 문서: BigQuery Conversational Analytics 가이드 ( https://cloud.google.com/bigquery/docs/conversational-analytics )
-
-### 4.5 Step 3 (15~25분, 선택 사항 / Optional): Gemini Enterprise App 사내 갤러리 A2A 직결 연동
-BigQuery Studio 내 단독 사용으로 충분한 경우 본 단계는 건너뛸 수 있다. 생성된 에이전트를 Gemini Enterprise 웹 앱 대화창에 직결 연동하여 전사 공유하고자 할 경우 아래 명령어를 실행한다:
-
-```bash
-# Discovery Engine REST API 기반 GE App 사내 갤러리 직결 등록
-python diagnose.py --register-ge-app
-```
-> Discovery Engine API 권한이 없거나 웹 앱이 미배포된 경우, 자동으로 콘솔 UI 수동 등록 가이드(Phase A/B)를 출력하는 안전한 Fallback이 동작한다.
-
-### 4.6 [올인원 모드]: Step 1~3 전체 일괄 자동 배포
-핸즈온 세션 시간을 극대화하기 위해 데이터셋 구축, GDA 에이전트 프로비저닝, GE App 사내 갤러리 등록을 한 번에 실행할 수 있다:
-
-```bash
-python diagnose.py --all
-```
-
----
-
-## 5. 실습 검증용 골든 프롬프트 3선
+## 7. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 - **골든 프롬프트 1 (지점 및 결제 수단별 순매출 비교)**:
   ```text
@@ -153,18 +128,7 @@ python diagnose.py --all
   ```
 
 ---
-
-## 6. GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
-
-사내 FinOps 비용 추적 및 워크숍 자원 자동 식별을 위해 본 도구가 생성하는 모든 BigQuery 데이터셋, 테이블, 시맨틱 뷰에는 다음 4대 표준 라벨이 필수로 주입된다:
-- `managed-by`: `google-cloud-0-to-1`
-- `scenario`: `bigquery-data-agent-starter`
-- `env`: `sample`
-- `created-by`: `customer-engineer`
-
----
-
-## 7. 자원 정리 (Teardown)
+## 8. 리소스 정리 (Teardown) 안내
 
 45분 핸즈온 실습이 끝난 후 불필요한 클라우드 리소스 과금을 예방하기 위해 아래 명령어로 스몰셋 데이터셋을 즉시 정리한다:
 

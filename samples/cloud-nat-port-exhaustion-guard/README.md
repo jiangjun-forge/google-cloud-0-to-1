@@ -40,10 +40,10 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 30초 빠른 시작 (Quickstart)
+## 3. 빠른 시작 (Quickstart)
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
-GCP API 호출 없이 내장된 가상 인프라 데이터로 1초 만에 정상 동작을 확인한다:
+GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
 ```bash
 python diagnose.py --dry-run
 ```
