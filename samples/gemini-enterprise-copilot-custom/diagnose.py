@@ -741,6 +741,18 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         if not targets:
             return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-factory, skill-factory 또는 GitHub 저장소 주소"
 
+        # Agent Engine 리소스 동적 탐색
+        re_res = None
+        re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
+        try:
+            re_resp = requests.get(re_list_url, headers=headers, timeout=15)
+            if re_resp.ok:
+                re_engines = re_resp.json().get("reasoningEngines", [])
+                if re_engines:
+                    re_res = re_engines[0].get("name")
+        except Exception:
+            pass
+
         reports = []
         for slug in targets:
             cfg = preset_agents_spec[slug]
@@ -750,30 +762,50 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 "sharingConfig": {"scope": "ALL_USERS"},
                 "customPlaceholderText": cfg.get("custom_placeholder_text", ""),
                 "starterPrompts": [{"text": p} for p in cfg.get("starter_prompts", [])],
-                "noCodeAgentDefinition": {
-                    "objective": cfg.get("instruction", cfg["description"])
-                },
             }
+            if re_res:
+                body["adkAgentDefinition"] = {
+                    "toolSettings": {"toolDescription": cfg["description"]},
+                    "provisionedReasoningEngine": {
+                        "reasoningEngine": re_res
+                    },
+                }
+            else:
+                body["noCodeAgentDefinition"] = {
+                    "objective": cfg.get("instruction", cfg["description"])
+                }
+
             try:
                 resp = requests.post(base_url, headers=headers, json=body, timeout=30)
                 if resp.status_code == 409 or "already exists" in resp.text.lower():
                     list_resp = requests.get(base_url, headers=headers, timeout=30)
                     agent_id = None
+                    existing_state = None
                     if list_resp.ok:
                         for a in list_resp.json().get("agents", []):
                             if a.get("displayName") == cfg["display_name"]:
                                 agent_id = a.get("name").split("/")[-1]
+                                existing_state = a.get("state")
                                 break
                     if agent_id:
-                        patch_url = f"{base_url}/{agent_id}?updateMask=displayName,description,starterPrompts,customPlaceholderText,noCodeAgentDefinition"
-                        resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
+                        if existing_state == "PRIVATE" and "adkAgentDefinition" in body:
+                            # PRIVATE 상태인 구버전 에이전트는 ENABLED 전환이 불가하므로 재등록
+                            del_resp = requests.delete(f"{base_url}/{agent_id}", headers=headers, timeout=30)
+                            if del_resp.ok:
+                                resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+                        else:
+                            mask = "displayName,description,starterPrompts,customPlaceholderText"
+                            mask += ",adkAgentDefinition" if "adkAgentDefinition" in body else ",noCodeAgentDefinition"
+                            patch_url = f"{base_url}/{agent_id}?updateMask={mask}"
+                            resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
 
                 if resp.ok:
                     res_data = resp.json()
                     agent_id = res_data.get("name", "").split("/")[-1]
+                    agent_state = res_data.get("state", "ENABLED")
                     reports.append(
                         f"- **{cfg['display_name']}**\n"
-                        f"  - 상태: 배포 및 GE App 전사 갤러리(`/r/agents`) 등록 성공\n"
+                        f"  - 상태: 배포 및 GE App 전사 갤러리(`/r/agents`) 등록 성공 (`{agent_state}`)\n"
                         f"  - Agent ID: `{agent_id}`\n"
                         f"  - 공유 범위: `ALL_USERS`\n"
                         f"  - 참조 저장소: `{github_repo_url or '내장 4대 팩토리 표준 규격'}`"
@@ -813,14 +845,15 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             lines = [
                 "### Gemini Enterprise App 등록 에이전트 현황",
                 "",
-                "| 에이전트 명칭 | Agent ID | 공유 범위 (Sharing) |",
-                "| :--- | :--- | :--- |",
+                "| 에이전트 명칭 | Agent ID | 상태 (State) | 공유 범위 (Sharing) |",
+                "| :--- | :--- | :--- | :--- |",
             ]
             for a in agents:
                 aid = a.get("name", "").split("/")[-1]
                 disp = a.get("displayName", "-")
+                state = a.get("state", "UNKNOWN")
                 scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
-                lines.append(f"| {disp} | `{aid}` | {scope} |")
+                lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` |")
             return "\n".join(lines)
         except Exception as e:
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
@@ -915,16 +948,23 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
     # 기존 에이전트 검색
     target_agent_id = None
+    existing_state = None
     list_resp = requests.get(base_url, headers=headers, timeout=30)
     if list_resp.ok:
         for a in list_resp.json().get("agents", []):
             if a.get("displayName") == display_name:
                 target_agent_id = a.get("name").split("/")[-1]
+                existing_state = a.get("state")
                 break
 
     if target_agent_id:
-        patch_url = f"{base_url}/{target_agent_id}?updateMask=displayName,description,starterPrompts,customPlaceholderText,adkAgentDefinition"
-        reg_resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
+        if existing_state == "PRIVATE":
+            # PRIVATE 상태인 구버전 에이전트는 ENABLED 전환이 불가하므로 재등록
+            requests.delete(f"{base_url}/{target_agent_id}", headers=headers, timeout=30)
+            reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+        else:
+            patch_url = f"{base_url}/{target_agent_id}?updateMask=displayName,description,starterPrompts,customPlaceholderText,adkAgentDefinition"
+            reg_resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
     else:
         reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
 
