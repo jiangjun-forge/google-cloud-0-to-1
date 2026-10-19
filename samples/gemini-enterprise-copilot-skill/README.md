@@ -68,12 +68,12 @@ python diagnose.py
 ```mermaid
 flowchart TB
     subgraph Request["1. 사내 도구 요구사항 정의"]
-        Developer["개발자 / 운영팀"] -->|자연어 도구 명세 입력| SkillFactory["GE Skill Factory<br/>(Reasoning Engine)"]
-        SkillFactory -->|Open Skills 규격 컴파일| Spec["SKILL.md & OpenAPI 3.0 스펙"]
+        Developer["개발자 / 운영팀"] -->|"자연어 도구 명세 입력"| SkillFactory["GE Skill Factory<br/>(Reasoning Engine)"]
+        SkillFactory -->|"Open Skills 규격 컴파일"| Spec["SKILL.md & OpenAPI 3.0 스펙"]
     end
 
     subgraph Auth["2. 보안 볼트 연동 & 검증"]
-        Spec -->|인증 자격 증명 바인딩| Vault["Secret Manager<br/>(Webhook URL / API Key)"]
+        Spec -->|"인증 자격 증명 바인딩"| Vault["Secret Manager<br/>(Webhook URL / API Key)"]
         Vault --> ToolFunc["실행 파이썬 Tool 함수<br/>(google-adk 호환)"]
     end
 

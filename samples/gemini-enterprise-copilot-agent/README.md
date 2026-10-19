@@ -68,18 +68,19 @@ python diagnose.py
 ```mermaid
 flowchart TB
     subgraph UserPhase["1. 비개발자 임직원 인터뷰"]
-        User["현업 실무자 / 비개발자"] -->|업무 자동화 아이디어 입력| Factory["GE Agent Factory<br/>(Reasoning Engine)"]
-        Factory -->|대화형 인터뷰 & 템플릿 검증| Spec["에이전트 명세 완성<br/>(지침, 스타터 프롬프트)"]
+        User["현업 실무자 / 비개발자"] -->|"업무 자동화 아이디어 입력"| Factory["GE Agent Factory<br/>(Reasoning Engine)"]
+        Factory -->|"대화형 인터뷰 & 템플릿 검증"| Spec["에이전트 명세 완성<br/>(지침, 스타터 프롬프트)"]
     end
 
     subgraph Governance["2. 거버넌스 & 대행 SA 바인딩"]
-        Spec -->|대행 서비스 계정 주입| SA["Factory Service Account<br/>(최소 권한 격리)"]
-        SA -->|adkAgentDefinition 매니페스트| Engine["Agent Platform<br/>(Discovery Engine)"]
+        Spec -->|"대행 서비스 계정 주입"| SA["Factory Service Account<br/>(최소 권한 격리)"]
+        SA -->|"adkAgentDefinition 매니페스트"| Engine["Agent Platform<br/>(Discovery Engine)"]
     end
 
     subgraph Distribution["3. 전사 배포 & 사내 갤러리"]
-        Engine -->|ALL_USERS 전사 공유 바인딩| Gallery["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
-        Gallery <-->|임직원 업무 즉시 활용| CorpUsers["전사 동료 임직원"]
+        Engine -->|"ALL_USERS 전사 공유 바인딩"| Gallery["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+        CorpUsers["전사 동료 임직원"] -->|"자연어 업무 질의 및 활용"| Gallery
+        Gallery -->|"에이전트 답변 제공"| CorpUsers
     end
 ```
 

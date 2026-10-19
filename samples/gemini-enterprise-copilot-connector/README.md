@@ -74,7 +74,7 @@ flowchart TB
     end
 
     subgraph Security["2. 보안 볼트 & 커넥터 팩토리"]
-        Enterprise <-->|API 토큰 / OAuth 자격 증명| SM["Secret Manager<br/>(암호화 보안 볼트)"]
+        Enterprise -->|"API 토큰 / OAuth 자격 증명"| SM["Secret Manager<br/>(암호화 보안 볼트)"]
         SM --> Connector["GE Connector Factory<br/>(diagnose.py)"]
         Connector --> Manifest["Data Store 매니페스트<br/>& ACL 동기화 스켈레톤"]
     end

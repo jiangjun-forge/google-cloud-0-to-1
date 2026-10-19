@@ -68,18 +68,20 @@ python diagnose.py
 ```mermaid
 flowchart TB
     subgraph Dev["1. 엔지니어링 & GitOps"]
-        A["개발자 / 아키텍트"] -->|GitHub 저장소 지정| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
-        B -->|Google ADK 2.11+ 패키징| C["Agent Engine 이미지 & 스펙"]
+        A["개발자 / 아키텍트"] -->|"GitHub 저장소 지정"| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
     end
 
     subgraph Runtime["2. 런타임 & 엔터프라이즈 자산"]
-        C -->|원클릭 프로비저닝| D["Agent Engine<br/>(Reasoning Engine)"]
-        D <-->|도구 호출 (Tools)| E[("사내 BigQuery / ERP<br/>Cloud Storage 자산")]
+        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+        D -->|"도구 호출"| E[("사내 BigQuery / ERP<br/>Cloud Storage 자산")]
+        E -->|"조회 결과 반환"| D
     end
 
     subgraph Portal["3. 전사 임직원 인터페이스"]
-        D -->|Discovery Engine A2A 연동| F["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
-        F <-->|자연어 업무 질의| G["사내 임직원<br/>(비즈니스 사용자)"]
+        D -->|"Discovery Engine A2A 연동"| F["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+        G["사내 임직원<br/>(비즈니스 사용자)"] -->|"자연어 업무 질의"| F
+        F -->|"에이전트 답변 제공"| G
     end
 ```
 

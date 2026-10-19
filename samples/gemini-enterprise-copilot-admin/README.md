@@ -72,13 +72,13 @@ python diagnose.py
 ```mermaid
 flowchart TB
     subgraph Admin["1. 사내 IT 어드민"]
-        A["IT 어드민 / 인프라 팀"] -->|자연어 관리 질의| B["GE Admin Copilot<br/>(Reasoning Engine)"]
+        A["IT 어드민 / 인프라 팀"] -->|"자연어 관리 질의"| B["GE Admin Copilot<br/>(Reasoning Engine)"]
     end
 
     subgraph Tools["2. 내장 실행 도구 체계"]
-        B -->|콘솔 길잡이| C["get_admin_console_deeplinks_tool<br/>(원클릭 콘솔 딥링크)"]
-        B -->|활성 상태 점검| D["list_deployed_agents_tool<br/>(Discovery Engine REST)"]
-        B -->|감사 쿼리 생성| E["get_admin_audit_queries_tool<br/>(BigQuery 감사 SQL 팩)"]
+        B -->|"콘솔 길잡이"| C["get_admin_console_deeplinks_tool<br/>(원클릭 콘솔 딥링크)"]
+        B -->|"활성 상태 점검"| D["list_deployed_agents_tool<br/>(Discovery Engine REST)"]
+        B -->|"감사 쿼리 생성"| E["get_admin_audit_queries_tool<br/>(BigQuery 감사 SQL 팩)"]
     end
 
     subgraph Target["3. 엔터프라이즈 관리 대상"]
