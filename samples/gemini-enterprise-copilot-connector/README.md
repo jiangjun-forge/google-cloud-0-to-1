@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise 데이터 커넥터 팩토리 (gemini-enterprise-copilot-connector)
+# Gemini Enterprise 데이터 커넥터 스캐폴더 (gemini-enterprise-copilot-connector)
 
-사내 클라우드 아키텍트 및 데이터 엔지니어가 지라(Jira), 컨플루언스(Confluence), 세일즈포스(Salesforce), 서비스나우(ServiceNow), 셰어포인트(SharePoint), 구글 드라이브(Google Drive), 빅쿼리(BigQuery) 등 다양한 사내 기간계 시스템의 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 데이터 저장소(Data Store) 구성 매니페스트와 시크릿 매니저(Secret Manager) 보안 볼트 연동 설정을 대화형으로 자율 생성해 주는 사내 커넥터 팩토리 엔지니어링 도구다. (As of 2026-10-17)
+사내 클라우드 아키텍트 및 데이터 엔지니어가 지라(Jira), 컨플루언스(Confluence), 세일즈포스(Salesforce), 서비스나우(ServiceNow), 셰어포인트(SharePoint), 구글 드라이브(Google Drive), 빅쿼리(BigQuery) 등 다양한 사내 기간계 시스템의 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 데이터 저장소(Data Store) 구성 매니페스트와 시크릿 매니저(Secret Manager) 보안 볼트 연동 설정을 대화형으로 자율 생성해 주는 사내 커넥터 스캐폴더 엔지니어링 도구다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Architecture`, `#Compliance`, `#Security`  
@@ -96,8 +96,8 @@ python diagnose.py --dry-run --prompt "사내 ERP 구매 발주 데이터베이�
 python diagnose.py --interactive
 ```
 
-### 4.4. 사내 GE App에 커넥터 팩토리 1클릭 프로비저닝 (--deploy-engine)
-본 미니 프로젝트의 커넥터 팩토리 에이전트를 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
+### 4.4. 사내 GE App에 커넥터 스캐폴더 1클릭 프로비저닝 (--deploy-engine)
+본 미니 프로젝트의 커넥터 스캐폴더 에이전트를 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
 
 ```bash
 # 1. 가상 실행으로 배포 명세 사전 검증
@@ -107,7 +107,7 @@ python diagnose.py --dry-run --deploy-engine
 python diagnose.py --deploy-engine
 ```
 
-성공 시 사내 아키텍트 및 데이터 엔지니어가 GE app 챗창에서 커넥터 팩토리와 대화하며 Jira, Confluence, Salesforce, Drive 등 기간계 저장소의 ACL 및 Data Store 연동 스펙을 자율 생성할 수 있다.
+성공 시 사내 아키텍트 및 데이터 엔지니어가 GE app 챗창에서 커넥터 스캐폴더와 대화하며 Jira, Confluence, Salesforce, Drive 등 기간계 저장소의 ACL 및 Data Store 연동 스펙을 자율 생성할 수 있다.
 
 ---
 

@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-copilot-custom)
+# Gemini Enterprise 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom)
 
-클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트를 Agent Engine으로 원클릭 스캐폴딩하고, GitHub 저장소 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 엔지니어링 개발 도구다. (As of 2026-10-19)
+클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트를 Agent Engine으로 원클릭 스캐폴딩하고, GitHub 저장소 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 사내 커스텀 에이전트 팩토리 도구다. (As of 2026-10-19)
 
 **Audience**: `#Architect`, `#Developer`  
 **Concern**: `#Architecture`, `#Performance`, `#Security`  
@@ -129,18 +129,32 @@ python diagnose.py --deploy-engine
 
 고객사 개발팀과 현업 실무자의 업무 효율을 극대화하기 위해 설계된 표준 도입 UX 흐름은 다음과 같다:
 
-1. **1단계: 개발팀의 깃 클론 및 최초 1회 스캐폴더 배포**:
-   - 개발팀이 저장소를 복제(`git clone`)한 후, 본 디렉터리에서 `python diagnose.py --deploy-engine` 명령을 1회 실행하여 `GE Custom Agent Scaffolder`를 사내 GE App 전사 갤러리(`/r/agents`)에 등록한다.
+1. **1단계: 개발팀의 깃 클론 및 최초 1회 팩토리 배포**:
+   - 개발팀이 저장소를 복제(`git clone`)한 후, 본 디렉터리에서 `python diagnose.py --deploy-engine` 명령을 1회 실행하여 `GE Custom Agent Factory`를 사내 GE App 전사 갤러리(`/r/agents`)에 등록한다.
 2. **2단계: GE App 챗창 진입 및 5대 칩 기반 무인 자동 배포 (ChatOps to GitOps)**:
    - 더 이상 터미널이나 로컬 개발 환경을 다룰 필요 없이, 사내 임직원이나 관리자가 웹 브라우저로 **Gemini Enterprise app**에 접속한다.
-   - 사내 갤러리에서 **`GE Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)`** 대화창을 열면 화면에 표시되는 **5대 원클릭 추천 칩**을 마우스로 클릭하거나 사내 GitHub 저장소 주소를 입력한다:
+   - 사내 갤러리에서 **`GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)`** 대화창을 열면 화면에 표시되는 **5대 원클릭 추천 칩**을 마우스로 클릭하거나 사내 GitHub 저장소 주소를 입력한다:
      - `[칩 1]` **GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘**
      - `[칩 2]` **GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘**
-     - `[칩 3]` **GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘**
+     - `[칩 3]` **GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더) 배포해 줘**
      - `[칩 4]` **GE Skill Factory (사내 스킬 팩토리) 배포해 줘**
      - `[칩 5]` **GitHub 저장소 주소(https://github.com/...) 기반 배포해 줘**
      - *(단독 배포 원칙)*: 전체 일괄 배포로 인한 부하 및 리소스 낭비를 방지하기 위해 한 번에 하나의 에이전트씩 독립적으로 의사 결정하여 배포한다.
-   - 스캐폴더 에이전트가 내장 도구(`deploy_enterprise_agent_tool`)를 즉시 실행하여, Agent Engine 프로비저닝부터 GE App 사내 갤러리 등록까지 전 과정을 100% 무인 자동 완료한다.
+   - 팩토리 에이전트가 내장 도구(`deploy_enterprise_agent_tool`)를 즉시 실행하여, 사전 프로비저닝된 전용 Agent Engine과 연동된 `adkAgentDefinition`으로 바인딩함으로써 사내 갤러리에 `ENABLED` (`ALL_USERS`) 상태로 100% 무인 자동 배포를 완결한다.
+
+### 4.6. [IT 어드민 가이드] GCP 콘솔에서 Private 에이전트 활성화 및 전사 승인 절차
+
+일반 임직원이 GE App에서 프롬프트 기반으로 직접 생성한 노코드 에이전트(`noCodeAgentDefinition`)는 구글 클라우드 보안 거버넌스 정책(Shadow AI 및 사내 스팸 방어)에 의해 최초 생성 시 기본적으로 **개인용(`Private`)** 상태로 격리된다. 만약 임직원이 제작한 에이전트를 전사 사내 갤러리에 공개하고자 할 경우, 고객사 IT 어드민이 GCP 콘솔에서 다음과 같이 직접 활성화할 수 있다:
+
+1. **Agent Platform 콘솔 에이전트 관리 페이지 접속**:
+   - 구글 클라우드 콘솔의 에이전트 관리 화면 ( https://console.cloud.google.com/gen-app-builder/engines )으로 이동한 후 대상 Gemini Enterprise app 인스턴스를 선택한다.
+2. **대상 에이전트 공유 범위(Sharing Scope) 변경**:
+   - 에이전트 목록에서 상태가 `Private`으로 표시된 대상 에이전트 우측 옵션(케밥 메뉴)을 클릭하고 **[공유 (Share)]** 또는 **[사내 갤러리에 게시 (Publish to Organization Gallery)]**를 선택한다.
+   - 공유 범위를 **[조직 내 전체 임직원 (All users in organization / ALL_USERS)]**으로 지정하고 [저장]한다.
+3. **에이전트 활성화 (Enable)**:
+   - 에이전트 상세 페이지 상단의 **[활성화 (Enable)]** 스위치를 켜면, 상태가 즉시 `Enabled`로 승격되어 전사 임직원의 사내 갤러리(`/r/agents`)에 노출된다.
+4. **무인 자동 승격 팁**:
+   - 본 미니 프로젝트의 `Custom Agent Factory`를 통해 배포되는 에이전트들은 Vertex AI Agent Engine 리소스 검증을 통과한 `adkAgentDefinition`을 사용하므로, 어드민의 콘솔 수작업 개입 없이도 등록 시점부터 즉시 `ENABLED` 및 `ALL_USERS`로 완벽 자동 배포된다.
 
 ---
 

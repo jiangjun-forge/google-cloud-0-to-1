@@ -1,7 +1,7 @@
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-copilot-custom).
+"""Gemini Enterprise 사내 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom).
 
 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery), ERP, 모니터링 시스템을
 결합한 High-code 엔터프라이즈 맞춤 에이전트를 Agent Engine으로 원클릭 스캐폴딩하고,
@@ -149,7 +149,7 @@ def select_architecture_interactive(dry_run: bool):
         return CUSTOM_ARCHITECTURE_CATALOG[1]
 
     print("\n" + "=" * 70)
-    print("  Gemini Enterprise 커스텀 에이전트 스캐폴더 (High-code Builder)")
+    print("  Gemini Enterprise 커스텀 에이전트 팩토리 (High-code Builder)")
     print("  [원하는 백엔드 아키텍처 칩을 선택하세요]")
     print("=" * 70)
     for cat_id, data in sorted(CUSTOM_ARCHITECTURE_CATALOG.items()):
@@ -504,7 +504,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
     ge_app_id = env_info["ge_app_id"]
     service_name = chip_data["id"].replace("_", "-")
 
-    return f"""# Gemini Enterprise 커스텀 에이전트 스캐폴더 보고서 (gemini-enterprise-copilot-custom)
+    return f"""# Gemini Enterprise 커스텀 에이전트 팩토리 보고서 (gemini-enterprise-copilot-custom)
 
 - **실행 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 - **대상 프로젝트**: `{project_id}`
@@ -659,7 +659,7 @@ def _get_cloud_token() -> str:
 
 
 def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> dict:
-    """커스텀 에이전트 스캐폴더를 Vertex AI Agent Engine으로 프로비저닝하고 Gemini Enterprise app에 자동 등록한다."""
+    """커스텀 에이전트 팩토리를 Vertex AI Agent Engine으로 프로비저닝하고 Gemini Enterprise app에 자동 등록한다."""
     project_id = env_info["project_id"]
     region = env_info.get("region", "us-central1")
     re_location = "us-central1"
@@ -667,8 +667,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE Custom Agent Scaffolder (커스텀 에이전트 스캐폴더)"
-    description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 스캐폴딩 및 GitHub 저장소 직결 자동 배포(GitOps) 에이전트"
+    display_name = "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)"
+    description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 스캐폴딩 및 GitHub 저장소 직결 자동 배포(GitOps) 에이전트 팩토리"
 
     labels = {
         "managed-by": "google-cloud-0-to-1",
@@ -678,7 +678,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] GE Custom Agent Scaffolder 배포 파이프라인")
+    print("  [원클릭 배포] GE Custom Agent Factory 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")
@@ -758,10 +758,10 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 - 과거 레거시 모델(Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등)은 이미 선셋되었으므로 절대로 추천하거나 언급하지 않는다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.""",
         },
-        "gemini-enterprise-connector-factory": {
-            "slug": "gemini-enterprise-connector-factory",
-            "display_name": "GE Connector Factory (사내 데이터 커넥터 팩토리)",
-            "description": "Jira, Confluence, Salesforce, Drive, SharePoint 등 기업 기간계 데이터를 GE App에 대화형으로 연동하는 커넥터 팩토리",
+        "gemini-enterprise-connector-scaffolder": {
+            "slug": "gemini-enterprise-connector-scaffolder",
+            "display_name": "GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)",
+            "description": "Jira, Confluence, Salesforce, Drive, SharePoint 등 기업 기간계 데이터를 GE App에 대화형으로 연동하는 커넥터 스캐폴더",
             "custom_placeholder_text": "연동하고 싶은 사내 기간계 저장소(Jira, Confluence, Drive, SharePoint 등)를 입력하세요...",
             "starter_prompts": [
                 "사내 Jira 데이터 저장소 연동 매니페스트 생성해 줘",
@@ -769,7 +769,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 "Google Drive 특정 폴더 전사 공유 데이터스토어로 연결해 줘",
                 "Secret Manager 보안 볼트 자격 증명 연동 가이드 줘",
             ],
-            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 '사내 데이터 커넥터 팩토리(Connector Factory)' 마스터 에이전트입니다.
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 '사내 데이터 커넥터 스캐폴더(Connector Scaffolder)' 마스터 에이전트입니다.
 기업 기간계 데이터 저장소(Data Store) 매니페스트 및 Secret Manager 보안 볼트 연동 설정을 대화형으로 생성합니다.""",
         },
         "gemini-enterprise-skill-factory": {
@@ -786,13 +786,28 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             "instruction": """당신은 Gemini Enterprise app 및 Model Context Protocol (MCP) 생태계의 '사내 스킬 팩토리(Skill Factory)' 마스터 에이전트입니다.
 에이전트가 호출할 사내 시스템 연동 도구(Tools / Extensions)를 대화형으로 자율 생성합니다.""",
         },
+        "gemini-enterprise-custom-agent-factory": {
+            "slug": "gemini-enterprise-custom-agent-factory",
+            "display_name": "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)",
+            "description": "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 스캐폴딩 및 GitHub 저장소 직결 자동 배포(GitOps) 에이전트 팩토리",
+            "custom_placeholder_text": "GitHub 저장소 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
+            "starter_prompts": [
+                "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘",
+                "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘",
+                "GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더) 배포해 줘",
+                "GE Skill Factory (사내 스킬 팩토리) 배포해 줘",
+                "GitHub 저장소 주소(https://github.com/...) 기반 배포해 줘",
+            ],
+            "instruction": """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 팩토리(Custom Agent Factory)' 에이전트입니다.
+사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭 스캐폴딩하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.""",
+        },
     }
 
     def deploy_enterprise_agent_tool(agent_name: str, github_repo_url: str = "") -> str:
         """Deploy one of the official Gemini Enterprise suite agents or a custom agent directly into Gemini Enterprise app.
         
         Args:
-            agent_name: Name or slug of the agent to deploy (e.g. 'admin-copilot', 'agent-factory', 'connector-factory', 'skill-factory', 'custom-agent').
+            agent_name: Name or slug of the agent to deploy (e.g. 'admin-copilot', 'agent-factory', 'connector-scaffolder', 'skill-factory', 'custom-agent-factory').
             github_repo_url: Optional GitHub repository URL (e.g. https://github.com/jiangjun-forge/google-cloud-0-to-1).
         """
         token = _get_cloud_token()
@@ -808,19 +823,21 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         )
 
         norm = agent_name.lower().strip()
-        if norm in ("all", "모두", "전부", "전체") or "4대" in norm:
-            return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: GE Admin Copilot, GE Agent Factory, GE Connector Factory, GE Skill Factory, GitHub 저장소 주소 기반 배포)"
+        if norm in ("all", "모두", "전부", "전체") or "4대" in norm or "5대" in norm:
+            return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: GE Admin Copilot, GE Agent Factory, GE Connector Scaffolder, GE Skill Factory, GitHub 저장소 주소 기반 배포)"
 
         targets = []
         if "admin" in norm or "어드민" in norm:
             targets = ["gemini-enterprise-admin-copilot"]
-        elif "factory" in norm or "노코드" in norm or ("agent" in norm and "custom" not in norm and "admin" not in norm):
-            targets = ["gemini-enterprise-agent-factory"]
-        elif "connector" in norm or "커넥터" in norm:
-            targets = ["gemini-enterprise-connector-factory"]
+        elif "connector" in norm or "커넥터" in norm or "scaffolder" in norm:
+            targets = ["gemini-enterprise-connector-scaffolder"]
         elif "skill" in norm or "스킬" in norm:
             targets = ["gemini-enterprise-skill-factory"]
-        elif "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm:
+        elif "custom" in norm or "커스텀" in norm:
+            targets = ["gemini-enterprise-custom-agent-factory"]
+        elif "factory" in norm or "노코드" in norm or ("agent" in norm and "admin" not in norm):
+            targets = ["gemini-enterprise-agent-factory"]
+        elif "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm:
             repo_url = github_repo_url or "https://github.com/jiangjun-forge/google-cloud-0-to-1"
             return f"[GitHub 저장소 기반 배포 파이프라인] 지정된 저장소({repo_url})의 하이코드 백엔드 에이전트 스캐폴딩 스펙 및 배포 매니페스트가 성공적으로 검증되었습니다. (참조 저장소: {repo_url})"
         else:
@@ -830,23 +847,35 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     break
 
         if not targets:
-            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-factory, skill-factory 또는 GitHub 저장소 주소"
+            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 프리셋: admin-copilot, agent-factory, connector-scaffolder, skill-factory, custom-agent-factory 또는 GitHub 저장소 주소"
 
-        # Agent Engine 리소스 동적 탐색
-        re_res = None
+        # Agent Engine 리소스 매핑 및 동적 탐색 (정밀 라우팅)
+        re_engines_map = {
+            "gemini-enterprise-admin-copilot": f"projects/{project_id}/locations/{re_location}/reasoningEngines/5240241906532745216",
+            "gemini-enterprise-agent-factory": f"projects/{project_id}/locations/{re_location}/reasoningEngines/3150571679432835072",
+            "gemini-enterprise-connector-scaffolder": f"projects/{project_id}/locations/{re_location}/reasoningEngines/5052216622090027008",
+            "gemini-enterprise-skill-factory": f"projects/{project_id}/locations/{re_location}/reasoningEngines/5419259991720722432",
+            "gemini-enterprise-custom-agent-factory": f"projects/{project_id}/locations/{re_location}/reasoningEngines/6455087906015936512",
+        }
+        dynamic_engines = {}
         re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
         try:
             re_resp = requests.get(re_list_url, headers=headers, timeout=15)
             if re_resp.ok:
-                re_engines = re_resp.json().get("reasoningEngines", [])
-                if re_engines:
-                    re_res = re_engines[0].get("name")
+                for eng in re_resp.json().get("reasoningEngines", []):
+                    eng_name = eng.get("name", "")
+                    eng_disp = eng.get("displayName", "").lower()
+                    for k in re_engines_map:
+                        short_k = k.replace("gemini-enterprise-", "").replace("-", "_")
+                        if short_k in eng_disp or short_k in eng_name:
+                            dynamic_engines[k] = eng_name
         except Exception:
             pass
 
         reports = []
         for slug in targets:
             cfg = preset_agents_spec[slug]
+            re_res = dynamic_engines.get(slug) or re_engines_map.get(slug)
             body = {
                 "displayName": cfg["display_name"],
                 "description": cfg["description"],
@@ -879,13 +908,12 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                                 existing_state = a.get("state")
                                 break
                     if agent_id:
-                        if existing_state == "PRIVATE" and "adkAgentDefinition" in body:
-                            # PRIVATE 상태인 구버전 에이전트는 ENABLED 전환이 불가하므로 재등록
-                            del_resp = requests.delete(f"{base_url}/{agent_id}", headers=headers, timeout=30)
-                            if del_resp.ok:
-                                resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+                        # PRIVATE 상태이거나 adkAgentDefinition 전환 시 불변 필드 제약 방지를 위해 클린 재등록
+                        del_resp = requests.delete(f"{base_url}/{agent_id}", headers=headers, timeout=30)
+                        if del_resp.ok:
+                            resp = requests.post(base_url, headers=headers, json=body, timeout=30)
                         else:
-                            mask = "displayName,description,starterPrompts,customPlaceholderText"
+                            mask = "displayName,description,starterPrompts,customPlaceholderText,sharingConfig"
                             mask += ",adkAgentDefinition" if "adkAgentDefinition" in body else ",noCodeAgentDefinition"
                             patch_url = f"{base_url}/{agent_id}?updateMask={mask}"
                             resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
@@ -899,7 +927,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 상태: 배포 및 GE App 전사 갤러리(`/r/agents`) 등록 성공 (`{agent_state}`)\n"
                         f"  - Agent ID: `{agent_id}`\n"
                         f"  - 공유 범위: `ALL_USERS`\n"
-                        f"  - 참조 저장소: `{github_repo_url or '내장 4대 팩토리 표준 규격'}`"
+                        f"  - 연동 에이전트 엔진: `{re_res or '노코드 런타임'}`\n"
+                        f"  - 참조 저장소: `{github_repo_url or '내장 표준 규격'}`"
                     )
                 else:
                     reports.append(f"- **{cfg['display_name']}**: 등록 실패 (HTTP {resp.status_code}: {resp.text[:200]})")
@@ -959,13 +988,13 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
-1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(어드민 코파일럿, 에이전트 팩토리, 스킬 팩토리, 커넥터 팩토리 등)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면, 망설이지 말고 즉시 이 도구를 호출하여 실제 클라우드 배포를 집행하십시오!
+1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(어드민 코파일럿, 에이전트 팩토리, 스킬 팩토리, 커넥터 스캐폴더 등)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면, 망설이지 말고 즉시 이 도구를 호출하여 실제 클라우드 배포를 집행하십시오!
 2. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 질문 칩 (Suggested Questions) 필수 출력 규약]
 모든 답변 본문의 맨 끝에 반드시 다음 마크다운 코드 블록을 정확히 1개 출력해야 합니다:
 ```suggested_questions
-{"questions": ["GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Connector Factory 배포", "GE Skill Factory 배포", "GitHub 저장소 주소 기반 배포"], "type": "followup"}
+{"questions": ["GE Admin Copilot 배포", "GE Agent Factory 배포", "GE Connector Scaffolder 배포", "GE Skill Factory 배포", "GitHub 저장소 주소 기반 배포"], "type": "followup"}
 ```
 - 주의: 언어 태그는 반드시 `suggested_questions`여야 하며 유효한 JSON 객체만 포함해야 합니다.
 
@@ -975,7 +1004,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 """
 
     adk_agent = Agent(
-        name="gemini_enterprise_custom_agent_scaffolder",
+        name="gemini_enterprise_custom_agent_factory",
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
@@ -994,7 +1023,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         agent_engine=app,
         display_name=display_name,
         description=description,
-        gcs_dir_name="ge_factory_custom_agent_scaffolder",
+        gcs_dir_name="ge_factory_custom_agent_factory",
         requirements=[
             "google-cloud-aiplatform[adk,agent_engines]==2.5.0",
             "google-adk==2.11.0",
@@ -1030,7 +1059,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "starterPrompts": [
             {"text": "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘"},
             {"text": "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘"},
-            {"text": "GE Connector Factory (사내 데이터 커넥터 팩토리) 배포해 줘"},
+            {"text": "GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더) 배포해 줘"},
             {"text": "GE Skill Factory (사내 스킬 팩토리) 배포해 줘"},
             {"text": "GitHub 저장소 주소(https://github.com/...) 기반 배포해 줘"},
         ],
@@ -1079,7 +1108,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 커스텀 에이전트 스캐폴더 및 Gemini Enterprise app 연동 도구",
+        description="Gemini Enterprise 커스텀 에이전트 팩토리 및 Gemini Enterprise app 연동 도구",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
@@ -1101,7 +1130,7 @@ def main():
         args.dry_run = True
 
     print("\n" + "=" * 75)
-    print("  Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-copilot-custom)")
+    print("  Gemini Enterprise 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom)")
     print("=" * 75)
 
     # 1. 환경 정보 해석

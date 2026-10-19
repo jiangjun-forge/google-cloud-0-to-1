@@ -1,7 +1,7 @@
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Gemini Enterprise 데이터 커넥터 팩토리 진단 및 매니페스트 생성 도구 (gemini-enterprise-copilot-connector).
+"""Gemini Enterprise 데이터 커넥터 스캐폴더 진단 및 매니페스트 생성 도구 (gemini-enterprise-copilot-connector).
 
 사내 클라우드 아키텍트 및 데이터 엔지니어가 기간계 데이터 저장소(Jira, Confluence, Salesforce,
 ServiceNow, SharePoint, Google Drive, BigQuery 등)를 Gemini Enterprise app에
@@ -312,7 +312,7 @@ def build_markdown_report(env_info: dict, connector_data: dict, artifacts: dict,
     ge_app_id = env_info["ge_app_id"]
     sa_email = env_info["service_account"]
 
-    return f"""# Gemini Enterprise 데이터 커넥터 팩토리 보고서 (gemini-enterprise-copilot-connector)
+    return f"""# Gemini Enterprise 데이터 커넥터 스캐폴더 보고서 (gemini-enterprise-copilot-connector)
 
 - **실행 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 - **대상 프로젝트**: `{project_id}`
@@ -449,15 +449,15 @@ def _get_cloud_token() -> str:
 
 
 def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
-    """Gemini Enterprise Connector Factory를 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
+    """Gemini Enterprise Connector Scaffolder를 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
     project_id = env_info["project_id"]
     re_location = "us-central1"
     ge_app_id = env_info["ge_app_id"]
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE Connector Factory (사내 데이터 커넥터 팩토리)"
-    description = "Jira, Confluence, Salesforce, Drive, SharePoint 등 기업 기간계 데이터를 GE App에 대화형으로 연동하는 커넥터 팩토리"
+    display_name = "GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)"
+    description = "Jira, Confluence, Salesforce, Drive, SharePoint 등 기업 기간계 데이터를 GE App에 대화형으로 연동하는 커넥터 스캐폴더"
 
     labels = {
         "managed-by": "google-cloud-0-to-1",
@@ -467,7 +467,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] GE Connector Factory 배포 파이프라인")
+    print("  [원클릭 배포] GE Connector Scaffolder 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")
@@ -509,7 +509,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
         credentials=creds,
     )
 
-    instruction = """당신은 Google Cloud 및 Gemini Enterprise app 환경의 '사내 데이터 커넥터 팩토리(Connector Factory)' 마스터 에이전트입니다.
+    instruction = """당신은 Google Cloud 및 Gemini Enterprise app 환경의 '사내 데이터 커넥터 스캐폴더(Connector Scaffolder)' 마스터 에이전트입니다.
 사내 다양한 기업 기간계 저장소(Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery 등)의 비정형/정형 데이터를 Gemini Enterprise app의 데이터 저장소(Data Store)로 연결하고, 문서 레벨 접근 제어(Document-level ACL) 및 Secret Manager 보안 볼트 연동 설정을 대화형으로 안내합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
@@ -536,7 +536,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
 """
 
     adk_agent = Agent(
-        name="gemini_enterprise_connector_factory",
+        name="gemini_enterprise_connector_scaffolder",
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
@@ -554,7 +554,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
         agent_engine=app,
         display_name=display_name,
         description=description,
-        gcs_dir_name="ge_factory_connector_factory",
+        gcs_dir_name="ge_factory_connector_scaffolder",
         requirements=[
             "google-cloud-aiplatform[adk,agent_engines]==2.5.0",
             "google-adk==2.11.0",
@@ -637,7 +637,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 데이터 커넥터 팩토리 진단 및 매니페스트 생성 도구",
+        description="Gemini Enterprise 데이터 커넥터 스캐폴더 진단 및 매니페스트 생성 도구",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
@@ -657,7 +657,7 @@ def main():
         args.dry_run = True
 
     print("\n" + "=" * 75)
-    print("  Gemini Enterprise 데이터 커넥터 팩토리 (gemini-enterprise-copilot-connector)")
+    print("  Gemini Enterprise 데이터 커넥터 스캐폴더 (gemini-enterprise-copilot-connector)")
     print("=" * 75)
 
     # 1. 환경 정보 해석

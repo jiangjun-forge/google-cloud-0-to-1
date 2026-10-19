@@ -10,9 +10,9 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# Gemini Enterprise 데이터 커넥터 팩토리 비즈니스 요구 사항 명세서 (BRD)
+# Gemini Enterprise 데이터 커넥터 스캐폴더 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 클라우드 아키텍트 및 데이터 엔지니어가 사내 다양한 기업 기간계 저장소(Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery 등)의 비정형/정형 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 지원하는 데이터 커넥터 팩토리 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 클라우드 아키텍트 및 데이터 엔지니어가 사내 다양한 기업 기간계 저장소(Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery 등)의 비정형/정형 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 지원하는 데이터 커넥터 스캐폴더 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 

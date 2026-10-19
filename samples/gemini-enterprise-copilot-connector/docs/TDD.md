@@ -10,9 +10,9 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# Gemini Enterprise 데이터 커넥터 팩토리 기술 상세 설계서 (TDD)
+# Gemini Enterprise 데이터 커넥터 스캐폴더 기술 상세 설계서 (TDD)
 
-본 문서는 사내 기간계 데이터 저장소를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)의 데이터 저장소(Data Store)로 연결하기 위한 데이터 커넥터 팩토리 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 규격 및 진단 로직을 정의한다.
+본 문서는 사내 기간계 데이터 저장소를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)의 데이터 저장소(Data Store)로 연결하기 위한 데이터 커넥터 스캐폴더 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 규격 및 진단 로직을 정의한다.
 
 ---
 
@@ -24,7 +24,7 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph Selection ["1. 데이터 소스 칩 선택"]
         User["아키텍트 / 데이터 엔지니어"]
-        CLI["커넥터 팩토리 CLI<br/>(diagnose.py)"]
+        CLI["커넥터 스캐폴더 CLI<br/>(diagnose.py)"]
         PresetSource["8대 기간계 데이터 소스 칩<br/>(Jira, Confluence, Salesforce, Drive 등)"]
         User --> CLI
         CLI --> PresetSource

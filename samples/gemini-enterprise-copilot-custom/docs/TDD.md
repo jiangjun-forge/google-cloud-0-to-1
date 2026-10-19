@@ -94,11 +94,11 @@ flowchart TD
 - 진단 및 스캐폴딩 실행 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, Gemini Enterprise app 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
 ### FR-06: Agent Engine 프로비저닝 및 ChatOps 실행 도구 체계
-- `python diagnose.py --deploy-engine` 단 1회 실행으로 Vertex AI Agent Engine에 ADK 기반 `GE Custom Agent Scaffolder`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
+- `python diagnose.py --deploy-engine` 단 1회 실행으로 Vertex AI Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
 - 런타임 내에 `deploy_enterprise_agent_tool`과 `list_deployed_agents_tool` 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다.
 
 ### FR-07: 알파벳순 5대 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
-- GE App 매니페스트에 5대 원클릭 추천 질문 칩을 알파벳순(`GE Admin Copilot` -> `GE Agent Factory` -> `GE Connector Factory` -> `GE Skill Factory` -> `GitHub 저장소 주소(https://github.com/...) 기반 배포`)으로 정렬 배치한다.
+- GE App 매니페스트에 5대 원클릭 추천 질문 칩을 알파벳순(`GE Admin Copilot` -> `GE Agent Factory` -> `GE Connector Scaffolder` -> `GE Skill Factory` -> `GitHub 저장소 주소(https://github.com/...) 기반 배포`)으로 정렬 배치한다.
 - 4대 전체 일괄 배포를 배제하고 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
 
 ---
