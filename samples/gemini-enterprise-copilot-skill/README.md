@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise 자율형 사내 스킬 팩토리 (gemini-enterprise-copilot-skill)
+# Gemini Enterprise 자율형 사내 스킬 스캐폴더 (gemini-enterprise-copilot-skill)
 
-제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 구글 시트(Google Sheets), 슬랙(Slack), 지라(Jira), ERP 등 사내 시스템을 제어할 수 있는 도구 및 확장 기능(Tools / Extensions / Action Skills)을 비개발자가 대화형으로 자율 생성하고, 시크릿 매니저(Secret Manager) 보안 볼트와 거버넌스 승인을 거쳐 안전하게 등록할 수 있도록 지원하는 사내 스킬 팩토리 솔루션이다. (As of 2026-10-17)
+제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 구글 시트(Google Sheets), 슬랙(Slack), 지라(Jira), ERP 등 사내 시스템을 제어할 수 있는 도구 및 확장 기능(Tools / Extensions / Action Skills)을 비개발자가 대화형으로 자율 생성하고, 시크릿 매니저(Secret Manager) 보안 볼트와 거버넌스 승인을 거쳐 안전하게 등록할 수 있도록 지원하는 사내 스킬 스캐폴더 솔루션이다. (As of 2026-10-17)
 
 **Audience**: `#Architect`, `#Developer`, `#SecOps`  
 **Concern**: `#Architecture`, `#Compliance`, `#Security`  
@@ -42,7 +42,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ```mermaid
 flowchart TD
     subgraph Selection ["1. 도구 칩 선택 및 파라미터 정의"]
-        S1["스킬 팩토리 CLI 실행<br/>(python diagnose.py)"]
+        S1["스킬 스캐폴더 CLI 실행<br/>(python diagnose.py)"]
         S2["8대 시스템 도구 칩 선택<br/>(Sheets, Slack, Jira, ERP 등)"]
         S1 --> S2
     end
@@ -107,8 +107,8 @@ python diagnose.py --dry-run --chip 4
 python diagnose.py --dry-run --prompt "사내 사원증 발급 승인 시스템 REST API"
 ```
 
-### 4.3. 사내 GE App에 스킬 팩토리 1클릭 프로비저닝 (--deploy-engine)
-본 미니 프로젝트의 스킬 팩토리 에이전트를 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
+### 4.3. 사내 GE App에 스킬 스캐폴더 1클릭 프로비저닝 (--deploy-engine)
+본 미니 프로젝트의 스킬 스캐폴더 에이전트를 사내 GCP 프로젝트의 **Agent Engine**으로 프로비저닝하고 사내 **Gemini Enterprise app(`/r/agents`)** 전사 갤러리에 직결 등록한다:
 
 ```bash
 # 1. 가상 실행으로 배포 명세 사전 검증
@@ -118,7 +118,7 @@ python diagnose.py --dry-run --deploy-engine
 python diagnose.py --deploy-engine
 ```
 
-성공 시 사내 임직원이 GE app 챗창에서 스킬 팩토리와 대화하며 Google Sheets, Slack, Jira 등 기간계 도구 연동 명세를 자율 생성할 수 있다.
+성공 시 사내 임직원이 GE app 챗창에서 스킬 스캐폴더와 대화하며 Google Sheets, Slack, Jira 등 기간계 도구 연동 명세를 자율 생성할 수 있다.
 
 ### 4.4. 실제 사내 Gemini Enterprise app 도구 등록 (--publish)
 사내 Gemini Enterprise app 도구 레지스트리에 개별 시스템 스킬을 공식 배포하여 사내 에이전트들이 장착할 수 있도록 등록한다:

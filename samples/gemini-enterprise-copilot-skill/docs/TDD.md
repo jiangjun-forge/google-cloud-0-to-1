@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# Gemini Enterprise 자율형 사내 스킬 팩토리 기술 상세 설계서 (TDD)
+# Gemini Enterprise 자율형 사내 스킬 스캐폴더 기술 상세 설계서 (TDD)
 
 본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트 확장 도구(Tools / Extensions / Action Skills)를 자율 생성하고 에이전트 런타임(Agent Runtime)에 등록하기 위한 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
@@ -24,7 +24,7 @@ All contents, designs, and code examples are subject to change, modification, or
 flowchart TD
     subgraph InputPhase ["1. 스킬 요구사항 입력 및 칩 선택"]
         User["현업 임직원 / 부서 관리자"]
-        CLI["스킬 팩토리 CLI<br/>(diagnose.py)"]
+        CLI["스킬 스캐폴더 CLI<br/>(diagnose.py)"]
         ToolCatalog["8대 핵심 시스템 도구 카탈로그<br/>(Sheets, Slack, Jira, ERP 등)"]
         User --> CLI
         CLI --> ToolCatalog

@@ -51,7 +51,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-06** | 엔터프라이즈 보안 및 격리 준수 | 서비스 계정 최소 권한 원칙(`roles/aiplatform.user`, `roles/discoveryengine.editor`), VPC 서비스 제어(VPC-SC) 보안 경계 고려사항을 설계에 강제해야 한다. |
 | **BR-07** | 표준 리소스 라벨링 적용 의무화 | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 생성되는 에이전트 서비스 및 관련 리소스에 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 필수로 주입하여야 한다. |
 | **BR-08** | 2단계 무인 고객 온보딩 여정 | 개발팀의 로컬 CLI 개입을 최초 1회(`git clone` 후 `python diagnose.py --deploy-engine`)로 종결하고, 이후 모든 에이전트 확장 및 배포는 전사 Gemini Enterprise app 웹 챗창에서 100% 무인 완결되어야 한다. |
-| **BR-09** | 알파벳순 5대 추천 칩 및 단독 배포 거버넌스 | 전체 일괄 배포로 인한 부하 및 리소스 낭비를 방지하기 위해 4대 전체 일괄 배포를 배제하고, 한 번에 하나의 에이전트씩 독립 배포하도록 유도하며, 추천 질문 칩은 알파벳순(`GE Admin Copilot`, `GE Agent Factory`, `GE Connector Scaffolder`, `GE Skill Factory`, `GitHub 저장소 주소 기반 배포`)으로 엄격히 정렬 배치하여야 한다. |
+| **BR-09** | 알파벳순 5대 추천 칩 및 단독 배포 거버넌스 | 전체 일괄 배포로 인한 부하 및 리소스 낭비를 방지하기 위해 4대 전체 일괄 배포를 배제하고, 한 번에 하나의 에이전트씩 독립 배포하도록 유도하며, 추천 질문 칩은 알파벳순(`GE Admin Copilot`, `GE Agent Factory`, `GE Connector Scaffolder`, `GE Skill Scaffolder`, `GitHub 저장소 주소 기반 배포`)으로 엄격히 정렬 배치하여야 한다. |
 
 ---
 

@@ -1,7 +1,7 @@
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 도구.
+"""Gemini Enterprise 자율형 사내 스킬 스캐폴더 진단 및 배포 도구.
 
 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 호출할 수 있는
 사내 시스템 연동 도구(Tools / Extensions / Action Skills)를 비개발자가
@@ -221,7 +221,7 @@ def select_tool_interactive(dry_run: bool):
         return SYSTEM_TOOL_CATALOG[1]
 
     print("\n" + "=" * 70)
-    print("  Gemini Enterprise 자율형 사내 스킬 팩토리 (Skill Builder)")
+    print("  Gemini Enterprise 자율형 사내 스킬 스캐폴더 (Skill Builder)")
     print("  [생성할 사내 시스템 연동 도구 칩을 선택하세요]")
     print("=" * 70)
     for cat_id, data in sorted(SYSTEM_TOOL_CATALOG.items()):
@@ -390,7 +390,7 @@ def build_markdown_report(env_info: dict, tool_data: dict, tool_manifest: dict, 
     ge_app_id = env_info["ge_app_id"]
     sa_email = env_info["service_account"]
 
-    return f"""# Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 보고서
+    return f"""# Gemini Enterprise 자율형 사내 스킬 스캐폴더 진단 및 배포 보고서
 
 - **실행 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 - **대상 프로젝트**: `{project_id}`
@@ -502,15 +502,15 @@ def _get_cloud_token() -> str:
 
 
 def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
-    """Gemini Enterprise Skill Factory를 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
+    """Gemini Enterprise Skill Scaffolder를 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
     project_id = env_info["project_id"]
     re_location = "us-central1"
     ge_app_id = env_info["ge_app_id"]
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE Skill Factory (사내 스킬 팩토리)"
-    description = "Google Workspace 및 사내 기간계 시스템 연동 도구(MCP/Tools) 대화형 자율 생성 빌더"
+    display_name = "GE Skill Scaffolder (사내 스킬 스캐폴더)"
+    description = "Google Workspace 및 사내 기간계 시스템 연동 도구(OpenAPI 3.0 / MCP Tools) 대화형 자율 생성 스캐폴더"
 
     labels = {
         "managed-by": "google-cloud-0-to-1",
@@ -520,7 +520,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     }
 
     print("\n" + "=" * 75)
-    print("  [원클릭 배포] GE Skill Factory 배포 파이프라인")
+    print("  [원클릭 배포] GE Skill Scaffolder 배포 파이프라인")
     print("=" * 75)
     print(f"[*] 대상 프로젝트 : {project_id}")
     print(f"[*] Agent Engine  : {re_location}")
@@ -562,7 +562,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         credentials=creds,
     )
 
-    instruction = """당신은 Gemini Enterprise app 및 Model Context Protocol (MCP) 생태계의 '사내 스킬 팩토리(Skill Factory)' 마스터 에이전트입니다.
+    instruction = """당신은 Gemini Enterprise app 및 Model Context Protocol (MCP) 생태계의 '사내 스킬 스캐폴더(Skill Scaffolder)' 마스터 에이전트입니다.
 사내 Google Workspace (Google Sheets, Google Docs), Slack, Jira, 사내 DB 등 기간계 시스템과 안전하게 연동할 수 있는 도구(Tools / Extensions) 및 MCP 서버 연동 명세를 대화형으로 생성하고 Secret Manager 보안 볼트 연동 아키텍처를 안내합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
@@ -589,7 +589,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 """
 
     adk_agent = Agent(
-        name="gemini_enterprise_skill_factory",
+        name="gemini_enterprise_skill_scaffolder",
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
@@ -607,7 +607,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         agent_engine=app,
         display_name=display_name,
         description=description,
-        gcs_dir_name="ge_factory_skill_factory",
+        gcs_dir_name="ge_factory_skill_scaffolder",
         requirements=[
             "google-cloud-aiplatform[adk,agent_engines]==2.5.0",
             "google-adk==2.11.0",
@@ -690,7 +690,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 도구",
+        description="Gemini Enterprise 자율형 사내 스킬 스캐폴더 진단 및 배포 도구",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
@@ -711,7 +711,7 @@ def main():
         args.dry_run = True
 
     print("\n" + "=" * 75)
-    print("  Gemini Enterprise 자율형 사내 스킬 팩토리 (gemini-enterprise-copilot-skill)")
+    print("  Gemini Enterprise 자율형 사내 스킬 스캐폴더 (gemini-enterprise-copilot-skill)")
     print("=" * 75)
 
     # 1. 환경 정보 해석
@@ -775,7 +775,7 @@ def main():
     save_markdown_report(report_content)
 
     print("\n" + "=" * 75)
-    print("  사내 스킬 팩토리 진단 및 매니페스트 생성 완료 (모든 점검 통과)")
+    print("  사내 스킬 스캐폴더 진단 및 매니페스트 생성 완료 (모든 점검 통과)")
     print("=" * 75)
     print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
     print("  - managed-by: google-cloud-0-to-1")

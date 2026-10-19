@@ -1,6 +1,6 @@
 # Gemini Enterprise 커스텀 에이전트 팩토리 보고서 (gemini-enterprise-copilot-custom)
 
-- **실행 일시**: 2026-10-19 04:48:52 UTC
+- **실행 일시**: 2026-10-19 05:17:39 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **선택 아키텍처**: `bq_analytics_agent` (사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트)

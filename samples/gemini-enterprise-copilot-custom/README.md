@@ -137,7 +137,7 @@ python diagnose.py --deploy-engine
      - `[칩 1]` **GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘**
      - `[칩 2]` **GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘**
      - `[칩 3]` **GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더) 배포해 줘**
-     - `[칩 4]` **GE Skill Factory (사내 스킬 팩토리) 배포해 줘**
+     - `[칩 4]` **GE Skill Scaffolder (사내 스킬 스캐폴더) 배포해 줘**
      - `[칩 5]` **GitHub 저장소 주소(https://github.com/...) 기반 배포해 줘**
      - *(단독 배포 원칙)*: 전체 일괄 배포로 인한 부하 및 리소스 낭비를 방지하기 위해 한 번에 하나의 에이전트씩 독립적으로 의사 결정하여 배포한다.
    - 팩토리 에이전트가 내장 도구(`deploy_enterprise_agent_tool`)를 즉시 실행하여, 사전 프로비저닝된 전용 Agent Engine과 연동된 `adkAgentDefinition`으로 바인딩함으로써 사내 갤러리에 `ENABLED` (`ALL_USERS`) 상태로 100% 무인 자동 배포를 완결한다.

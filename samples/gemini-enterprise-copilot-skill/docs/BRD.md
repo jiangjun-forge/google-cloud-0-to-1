@@ -10,9 +10,9 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# Gemini Enterprise 자율형 사내 스킬 팩토리 비즈니스 요구 사항 명세서 (BRD)
+# Gemini Enterprise 자율형 사내 스킬 스캐폴더 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 사내 시스템(구글 시트, 슬랙, 지라, ERP 등)을 직접 제어할 수 있는 도구 및 확장 기능(Tools / Extensions / Action Skills)을 비개발자 및 부서 관리자가 대화형으로 자율 생성하고 안전하게 등록할 수 있도록 지원하는 사내 스킬 팩토리 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 사내 시스템(구글 시트, 슬랙, 지라, ERP 등)을 직접 제어할 수 있는 도구 및 확장 기능(Tools / Extensions / Action Skills)을 비개발자 및 부서 관리자가 대화형으로 자율 생성하고 안전하게 등록할 수 있도록 지원하는 사내 스킬 스캐폴더 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 
