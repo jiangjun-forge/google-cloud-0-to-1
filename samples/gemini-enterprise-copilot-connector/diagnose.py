@@ -602,16 +602,23 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
     }
 
     target_agent_id = None
+    existing_state = None
     list_resp = requests.get(base_url, headers=headers, timeout=30)
     if list_resp.ok:
         for a in list_resp.json().get("agents", []):
             if a.get("displayName") == display_name:
                 target_agent_id = a.get("name").split("/")[-1]
+                existing_state = a.get("state")
                 break
 
     if target_agent_id:
-        patch_url = f"{base_url}/{target_agent_id}?updateMask=displayName,description,starterPrompts,customPlaceholderText,adkAgentDefinition"
-        reg_resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
+        if existing_state == "PRIVATE":
+            # PRIVATE 상태인 구버전 에이전트는 ENABLED 전환이 불가하므로 재등록
+            requests.delete(f"{base_url}/{target_agent_id}", headers=headers, timeout=30)
+            reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+        else:
+            patch_url = f"{base_url}/{target_agent_id}?updateMask=displayName,description,starterPrompts,customPlaceholderText,adkAgentDefinition"
+            reg_resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
     else:
         reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
 
