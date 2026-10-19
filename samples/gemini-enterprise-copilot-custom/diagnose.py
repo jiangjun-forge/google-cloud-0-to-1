@@ -4,7 +4,7 @@
 """Gemini Enterprise 커스텀 에이전트 스캐폴더 (gemini-enterprise-copilot-custom).
 
 클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery), ERP, 모니터링 시스템을
-결합한 High-code 백엔드 에이전트(Agent Runtime / Cloud Run)를 원클릭 스캐폴딩하고,
+결합한 High-code 엔터프라이즈 맞춤 에이전트를 Agent Engine으로 원클릭 스캐폴딩하고,
 GitHub 저장소 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원한다.
 """
 
@@ -22,50 +22,50 @@ CUSTOM_ARCHITECTURE_CATALOG = {
     1: {
         "id": "bq_analytics_agent",
         "title": "사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트",
-        "description": "빅쿼리(BigQuery) 데이터셋에 연결하여 자연어 질의를 SQL로 변환하고, 쿼리 실행 결과 및 이상 지표를 자동 분석하는 백엔드 에이전트",
-        "backend_tech": "FastAPI + google-genai + google-cloud-bigquery",
+        "description": "빅쿼리(BigQuery) 데이터셋에 연결하여 자연어 질의를 SQL로 변환하고, 쿼리 실행 결과 및 이상 지표를 자동 분석하는 에이전트",
+        "backend_tech": "Agent Engine (ADK 2.11+) + google-genai + google-cloud-bigquery",
         "tools_included": ["query_bigquery_sql", "get_dataset_schema", "detect_metric_anomalies"],
-        "required_roles": ["roles/bigquery.dataViewer", "roles/bigquery.jobUser", "roles/run.invoker"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/bigquery.dataViewer", "roles/bigquery.jobUser"],
     },
     2: {
         "id": "sre_incident_agent",
         "title": "Cloud Monitoring & Logging 연동 장애 역추적 및 온콜 자동화 에이전트",
         "description": "클라우드 모니터링 지표 및 감사 로그를 실시간 분석하여 서비스 장애 원인을 역추적하고 온콜 대응을 지원하는 SRE 에이전트",
-        "backend_tech": "FastAPI + google-genai + google-cloud-logging + google-cloud-monitoring",
+        "backend_tech": "Agent Engine (ADK 2.11+) + google-genai + google-cloud-logging + google-cloud-monitoring",
         "tools_included": ["query_cloud_logs", "fetch_metric_timeseries", "escalate_to_pagerduty"],
-        "required_roles": ["roles/logging.viewer", "roles/monitoring.viewer", "roles/run.invoker"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/logging.viewer", "roles/monitoring.viewer"],
     },
     3: {
         "id": "erp_approval_agent",
         "title": "사내 ERP 및 회계 시스템 연동 전표 품의 검증 에이전트",
         "description": "사내 ERP REST API와 결합하여 법인카드 지출 전표의 적격 증빙을 대조하고 자동 결재 품의를 보조하는 회계 에이전트",
-        "backend_tech": "FastAPI + google-genai + httpx (OAuth 2.0)",
+        "backend_tech": "Agent Engine (ADK 2.11+) + google-genai + httpx (OAuth 2.0)",
         "tools_included": ["verify_tax_invoice", "check_budget_limits", "submit_approval_draft"],
-        "required_roles": ["roles/secretmanager.secretAccessor", "roles/run.invoker"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/secretmanager.secretAccessor"],
     },
     4: {
         "id": "secops_triage_agent",
         "title": "Security Command Center(SCC) 취약점 자동 심사 에이전트",
         "description": "구글 클라우드 보안 관제 센터(SCC) 보안 결함을 탐색하고 최소 권한 조치 스크립트를 제안하는 SecOps 에이전트",
-        "backend_tech": "FastAPI + google-genai + google-cloud-securitycenter",
+        "backend_tech": "Agent Engine (ADK 2.11+) + google-genai + google-cloud-securitycenter",
         "tools_included": ["list_scc_findings", "inspect_iam_bindings", "generate_remediation_script"],
-        "required_roles": ["roles/securitycenter.findingsViewer", "roles/run.invoker"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/securitycenter.findingsViewer"],
     },
     5: {
         "id": "mcp_gateway_agent",
         "title": "Model Context Protocol(MCP) 기반 멀티툴 게이트웨이 에이전트",
         "description": "사내 다양한 분산 마이크로서비스 및 도구 서버들을 표준 MCP 프로토콜로 통합 중계하는 엔터프라이즈 게이트웨이 에이전트",
-        "backend_tech": "FastAPI + google-genai + mcp-sdk",
+        "backend_tech": "Agent Engine (ADK 2.11+) + google-genai + mcp-sdk",
         "tools_included": ["discover_mcp_servers", "call_remote_mcp_tool", "aggregate_tool_results"],
-        "required_roles": ["roles/run.invoker", "roles/aiplatform.user"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
     },
     6: {
         "id": "finops_recommender",
         "title": "클라우드 CUD 약정 및 유휴 리소스 비용 최적화 추천 에이전트",
         "description": "Cloud Billing 및 Recommender API를 조회하여 CUD 약정 최적화 및 유휴 VM 회수 방안을 제안하는 FinOps 에이전트",
-        "backend_tech": "FastAPI + google-genai + google-cloud-recommender",
+        "backend_tech": "Agent Engine (ADK 2.11+) + google-genai + google-cloud-recommender",
         "tools_included": ["get_cost_recommendations", "calculate_cud_coverage", "simulate_idle_savings"],
-        "required_roles": ["roles/recommender.viewer", "roles/billing.viewer", "roles/run.invoker"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/recommender.viewer", "roles/billing.viewer"],
     },
 }
 
@@ -120,7 +120,7 @@ def resolve_environment(args):
         project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
 
     # 2. Region
-    region = args.region or os.environ.get("REGION") or "asia-northeast3"
+    region = args.region or os.environ.get("REGION") or "us-central1"
 
     # 3. Gemini Enterprise App ID
     if args.dry_run and not args.ge_app_id:
@@ -169,96 +169,52 @@ def select_architecture_interactive(dry_run: bool):
         custom_desc = input("연동할 시스템 및 데이터 소스를 입력하세요: ").strip()
         return {
             "id": "custom_backend_agent",
-            "title": custom_title or "사내 시스템 연동 커스텀 백엔드 에이전트",
-            "description": custom_desc or "사내 독자 데이터베이스 및 REST API를 연동하는 백엔드 서비스",
-            "backend_tech": "FastAPI + google-genai",
+            "title": custom_title or "사내 시스템 연동 커스텀 에이전트",
+            "description": custom_desc or "사내 독자 데이터베이스 및 API를 연동하는 에이전트",
+            "backend_tech": "Agent Engine (ADK 2.11+) + google-genai",
             "tools_included": ["custom_system_query", "custom_action_trigger"],
-            "required_roles": ["roles/run.invoker"],
+            "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
         }
 
     return CUSTOM_ARCHITECTURE_CATALOG[choice]
 
 
 def generate_scaffold_artifacts(chip_data: dict, env_info: dict):
-    """선택된 아키텍처에 맞추어 agent.py, tools.py, Dockerfile, deploy.sh 코드를 생성한다."""
+    """선택된 아키텍처에 맞추어 agent.py, tools.py, requirements.txt, deploy.py 코드를 생성한다."""
     project_id = env_info["project_id"]
     region = env_info["region"]
+    ge_app_id = env_info["ge_app_id"]
     title = chip_data["title"]
     tools_list = chip_data["tools_included"]
 
-    # 1. agent.py
+    # 1. agent.py (Google ADK 기반 Agent Engine 앱)
     agent_code = f"""# Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-\"\"\"{title} 코어 서빙 애플리케이션.\"\"\"
+\"\"\"{title} 코어 에이전트 정의 (Agent Engine ADK).\"\"\"
 
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from google import genai
-from tools import get_custom_tools, execute_custom_tool
+from google.adk.agents import Agent
+from vertexai import agent_engines
+from tools import {', '.join(tools_list)}
 
-app = FastAPI(title="{title}", version="1.0.0")
-
-class AgentQueryRequest(BaseModel):
-    prompt: str
-    session_id: str | None = None
-
-class AgentQueryResponse(BaseModel):
-    response: str
-    tools_called: list[str]
-    session_id: str
-
-# Google GenAI 최신 SDK 클라이언트 초기화 (글로벌 리전 권장)
-PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "{project_id}")
-LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "global")
-client = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
-
-SYSTEM_INSTRUCTION = \"\"\"너는 사내 엔터프라이즈 환경에서 구동하는 백엔드 커스텀 에이전트인 '{title}'이다.
+SYSTEM_INSTRUCTION = \"\"\"너는 사내 엔터프라이즈 환경에서 구동하는 {title}이다.
 임직원의 요청을 분석하여 필요한 경우 제공된 도구({', '.join(tools_list)})를 적극적으로 호출하여
 정확한 데이터 기반의 전문 답변을 제공하라.
 보안 수칙: 개인 식별 정보(PII)는 마스킹 처리하고, 데이터베이스 변경 작업은 신중하게 안내하라.\"\"\"
 
-@app.get("/healthz")
-def healthz():
-    return {{"status": "ok", "agent": "{chip_data['id']}"}}
+agent = Agent(
+    name="{chip_data['id']}",
+    description="{chip_data['description']}",
+    model="gemini-3.8-flash",
+    instruction=SYSTEM_INSTRUCTION,
+    tools=[{', '.join(tools_list)}],
+)
 
-@app.post("/v1/chat", response_model=AgentQueryResponse)
-async def chat_endpoint(request: AgentQueryRequest):
-    try:
-        tools = get_custom_tools()
-        # 다단계 추론 및 함수 호출 실행 (2026년 10월 기준 최신 플래시 모델 사용)
-        response = client.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=request.prompt,
-            config={{"system_instruction": SYSTEM_INSTRUCTION, "tools": tools}},
-        )
-        
-        # 함수 호출 결과 처리
-        tools_called = []
-        final_text = response.text or ""
-        
-        if response.function_calls:
-            for call in response.function_calls:
-                tools_called.append(call.name)
-                tool_result = execute_custom_tool(call.name, call.args)
-                # 도구 실행 결과를 모델에 재주입하여 최종 답변 합성 가능
-                final_text += f"\\n\\n[도구 {{call.name}} 실행 결과]: {{tool_result}}"
-
-        return AgentQueryResponse(
-            response=final_text or "요청이 성공적으로 처리되었습니다.",
-            tools_called=tools_called,
-            session_id=request.session_id or "default_session"
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"에이전트 실행 실패: {{str(e)}}")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("agent:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+app = agent_engines.AdkApp(agent=agent, enable_tracing=True)
 """
 
-    # 2. tools.py
+    # 2. tools.py (파이썬 함수 도구 정의)
     tools_code = f"""# Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -267,12 +223,12 @@ if __name__ == "__main__":
 import os
 from typing import Any
 
-def get_custom_tools() -> list[Any]:
-    \"\"\"Gemini 모델에 주입할 파이썬 함수 도구 목록을 반환한다.\"\"\"
-    return [{', '.join(tools_list)}]
-
 def query_bigquery_sql(sql_query: str) -> dict[str, Any]:
-    \"\"\"빅쿼리(BigQuery) 데이터셋에 SQL 질의를 수행하고 결과를 반환한다.\"\"\"
+    \"\"\"빅쿼리(BigQuery) 데이터셋에 SQL 질의를 수행하고 결과를 반환한다.
+
+    Args:
+        sql_query: 실행할 표준 SQL 쿼리문.
+    \"\"\"
     try:
         from google.cloud import bigquery
         client = bigquery.Client()
@@ -283,103 +239,227 @@ def query_bigquery_sql(sql_query: str) -> dict[str, Any]:
         return {{"status": "ERROR", "message": str(e)}}
 
 def get_dataset_schema(dataset_id: str, table_id: str) -> dict[str, Any]:
-    \"\"\"빅쿼리 테이블의 스키마 및 컬럼 정보를 조회한다.\"\"\"
+    \"\"\"빅쿼리 테이블의 스키마 및 컬럼 정보를 조회한다.
+
+    Args:
+        dataset_id: 데이터셋 ID.
+        table_id: 테이블 ID.
+    \"\"\"
     return {{"dataset": dataset_id, "table": table_id, "status": "SCHEMA_RETRIEVED"}}
 
 def detect_metric_anomalies(metric_name: str, lookback_days: int = 7) -> dict[str, Any]:
-    \"\"\"시계열 데이터에서 통계적 이상 징후를 탐지한다.\"\"\"
+    \"\"\"시계열 데이터에서 통계적 이상 징후를 탐지한다.
+
+    Args:
+        metric_name: 분석 대상 메트릭 이름.
+        lookback_days: 조회 기간(일).
+    \"\"\"
     return {{"metric": metric_name, "lookback_days": lookback_days, "anomaly_detected": False}}
 
-def execute_custom_tool(tool_name: str, tool_args: dict[str, Any]) -> Any:
-    \"\"\"호출된 함수명에 맞추어 도구를 안전하게 디스패치한다.\"\"\"
-    tool_map = {{
-        "query_bigquery_sql": lambda: query_bigquery_sql(**tool_args),
-        "get_dataset_schema": lambda: get_dataset_schema(**tool_args),
-        "detect_metric_anomalies": lambda: detect_metric_anomalies(**tool_args),
+def query_cloud_logs(filter_str: str) -> dict[str, Any]:
+    \"\"\"Cloud Logging에서 대상 오류 로그를 조회한다.\"\"\"
+    return {{"filter": filter_str, "status": "LOGS_RETRIEVED", "count": 0}}
+
+def fetch_metric_timeseries(metric_type: str) -> dict[str, Any]:
+    \"\"\"Cloud Monitoring 시계열 지표를 조회한다.\"\"\"
+    return {{"metric": metric_type, "status": "METRIC_RETRIEVED"}}
+
+def escalate_to_pagerduty(summary: str, severity: str = "ERROR") -> dict[str, Any]:
+    \"\"\"온콜 당번에게 장애 인시던트를 발송한다.\"\"\"
+    return {{"summary": summary, "severity": severity, "status": "ALERT_SENT"}}
+
+def verify_tax_invoice(invoice_id: str) -> dict[str, Any]:
+    \"\"\"ERP 세금계산서 진위 여부를 대조한다.\"\"\"
+    return {{"invoice_id": invoice_id, "status": "VERIFIED"}}
+
+def check_budget_limits(department_id: str) -> dict[str, Any]:
+    \"\"\"부서 예산 한도 잔여액을 확인한다.\"\"\"
+    return {{"department": department_id, "budget_remaining": 10000000}}
+
+def submit_approval_draft(title: str, amount: int) -> dict[str, Any]:
+    \"\"\"전자결재 기안 초안을 생성한다.\"\"\"
+    return {{"draft_title": title, "amount": amount, "status": "DRAFT_CREATED"}}
+
+def list_scc_findings(severity: str = "HIGH") -> dict[str, Any]:
+    \"\"\"Security Command Center 취약점 목록을 조회한다.\"\"\"
+    return {{"severity": severity, "findings": []}}
+
+def inspect_iam_bindings(resource_name: str) -> dict[str, Any]:
+    \"\"\"자원의 IAM 정책 바인딩 현황을 점검한다.\"\"\"
+    return {{"resource": resource_name, "status": "INSPECTED"}}
+
+def generate_remediation_script(finding_id: str) -> dict[str, Any]:
+    \"\"\"보안 취약점 조치 스크립트를 생성한다.\"\"\"
+    return {{"finding_id": finding_id, "script": "gcloud iam ... --quiet"}}
+
+def discover_mcp_servers() -> dict[str, Any]:
+    \"\"\"사내 연결 가능한 MCP 서버 목록을 조회한다.\"\"\"
+    return {{"servers": ["mcp-sheets", "mcp-jira", "mcp-slack"]}}
+
+def call_remote_mcp_tool(server_name: str, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    \"\"\"원격 MCP 서버의 특정 도구를 호출한다.\"\"\"
+    return {{"server": server_name, "tool": tool_name, "result": "MCP_OK"}}
+
+def aggregate_tool_results(results: list[dict[str, Any]]) -> dict[str, Any]:
+    \"\"\"복수 도구 실행 결과를 종합한다.\"\"\"
+    return {{"total": len(results), "status": "AGGREGATED"}}
+
+def get_cost_recommendations() -> dict[str, Any]:
+    \"\"\"Cloud Billing Recommender 비용 최적화 추천을 조회한다.\"\"\"
+    return {{"recommendations": []}}
+
+def calculate_cud_coverage() -> dict[str, Any]:
+    \"\"\"현재 CUD 약정 커버리지 비율을 산출한다.\"\"\"
+    return {{"coverage_percent": 85.0}}
+
+def simulate_idle_savings() -> dict[str, Any]:
+    \"\"\"유휴 리소스 정리 시 예상 절감액을 시뮬레이션한다.\"\"\"
+    return {{"estimated_monthly_savings_usd": 1200}}
+
+def custom_system_query(query: str) -> dict[str, Any]:
+    \"\"\"사내 기간계 시스템에 질의를 전송한다.\"\"\"
+    return {{"query": query, "status": "SUCCESS", "result": "모의 응답 데이터"}}
+
+def custom_action_trigger(action_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    \"\"\"사내 기간계 액션을 트리거한다.\"\"\"
+    return {{"action": action_name, "status": "TRIGGERED", "payload": payload}}
+"""
+
+    # 3. requirements.txt (Agent Engine 최소 의존성)
+    requirements_txt = """google-cloud-aiplatform[adk,agent_engines]==2.5.0
+google-adk==2.11.0
+google-genai==2.31.0
+pydantic==2.13.5
+requests
+cloudpickle==3.1.2
+google-auth
+google-cloud-bigquery
+"""
+
+    # 4. deploy.py (순수 파이썬 Agent Engine 원클릭 배포 스크립트)
+    deploy_script = f"""# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+\"\"\"{title} Agent Engine 원클릭 프로비저닝 및 Gemini Enterprise app 사내 갤러리 등록 스크립트.\"\"\"
+
+import os
+import requests
+import vertexai
+from vertexai import agent_engines
+from agent import app
+import google.auth
+import google.auth.transport.requests
+
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "{project_id}")
+LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "{region}")
+GE_APP_ID = os.environ.get("GE_APP_ID", "{ge_app_id}")
+GE_LOCATION = "global"
+STAGING_BUCKET = f"gs://{{PROJECT_ID}}-agent-engine-staging"
+
+def deploy():
+    print("=" * 70)
+    print("1. Agent Engine 프로비저닝 시작: {title}")
+    print(f"   - 프로젝트: {{PROJECT_ID}}, 리전: {{LOCATION}}")
+    print("=" * 70)
+
+    creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    auth_req = google.auth.transport.requests.Request()
+    creds.refresh(auth_req)
+
+    vertexai.init(
+        project=PROJECT_ID,
+        location=LOCATION,
+        staging_bucket=STAGING_BUCKET,
+        credentials=creds,
+    )
+
+    remote = agent_engines.create(
+        agent_engine=app,
+        display_name="{title}",
+        description="{chip_data['description']}",
+        gcs_dir_name="{chip_data['id']}",
+        requirements=[
+            "google-cloud-aiplatform[adk,agent_engines]==2.5.0",
+            "google-adk==2.11.0",
+            "google-genai==2.31.0",
+            "pydantic==2.13.5",
+            "requests",
+            "cloudpickle==3.1.2",
+            "google-auth",
+            "google-cloud-bigquery",
+        ],
+        env_vars={{
+            "GOOGLE_GENAI_USE_VERTEXAI": "1",
+            "GOOGLE_CLOUD_LOCATION": "global",
+            "ADK_ENABLE_MCP_MODERN_PROTOCOL": "1",
+        }},
+    )
+
+    re_res = remote.resource_name
+    print(f"\\n[성공] Agent Engine 배포 완료: {{re_res}}")
+
+    print("\\n" + "=" * 70)
+    print("2. Gemini Enterprise app 사내 갤러리(/r/agents) 자동 바인딩 중...")
+    print("=" * 70)
+
+    headers = {{
+        "Authorization": f"Bearer {{creds.token}}",
+        "Content-Type": "application/json",
+        "X-Goog-User-Project": PROJECT_ID,
     }}
-    handler = tool_map.get(tool_name)
-    if handler:
-        return handler()
-    return {{"status": "UNKNOWN_TOOL", "tool_name": tool_name}}
+    base_url = (
+        f"https://discoveryengine.googleapis.com/v1alpha/projects/{{PROJECT_ID}}"
+        f"/locations/{{GE_LOCATION}}/collections/default_collection"
+        f"/engines/{{GE_APP_ID}}/assistants/default_assistant/agents"
+    )
+
+    body = {{
+        "displayName": "{title}",
+        "description": "{chip_data['description']}",
+        "sharingConfig": {{"scope": "ALL_USERS"}},
+        "adkAgentDefinition": {{
+            "toolSettings": {{"toolDescription": "{chip_data['description']}"}},
+            "provisionedReasoningEngine": {{
+                "reasoningEngine": re_res,
+            }},
+        }},
+    }}
+
+    resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+    if resp.status_code == 409:
+        print("[안내] 이미 등록된 에이전트가 존재하여 설정을 갱신합니다.")
+        list_resp = requests.get(base_url, headers=headers, timeout=30)
+        if list_resp.ok:
+            for a in list_resp.json().get("agents", []):
+                if a.get("displayName") == "{title}":
+                    agent_id = a.get("name").split("/")[-1]
+                    patch_url = f"{{base_url}}/{{agent_id}}?updateMask=displayName,description,adkAgentDefinition"
+                    resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
+                    break
+
+    if resp.ok:
+        res_data = resp.json()
+        agent_id = res_data.get("name", "").split("/")[-1]
+        print(f"[성공] Gemini Enterprise app 등록 완료! (Agent ID: {{agent_id}}, 공유 범위: ALL_USERS)")
+        print(f"      사내 포털: https://gemini.google.com/app/{{GE_APP_ID}}")
+    else:
+        print(f"[경고] 등록 실패 (HTTP {{resp.status_code}}): {{resp.text}}")
+
+if __name__ == "__main__":
+    deploy()
 """
 
-    # 3. Dockerfile
-    dockerfile_code = f"""# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-FROM python:3.11-slim
-
-WORKDIR /app
-
-ENV PYTHONUNBUFFERED=1 \\
-    PYTHONDONTWRITEBYTECODE=1 \\
-    PORT=8080
-
-RUN apt-get update && apt-get install -y --no-install-recommends \\
-    curl \\
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY agent.py tools.py ./
-
-# 보안을 위해 비루트(Non-root) 사용자로 구동한다
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
-
-EXPOSE 8080
-
-CMD ["uvicorn", "agent:app", "--host", "0.0.0.0", "--port", "8080"]
-"""
-
-    # 4. deploy.sh
-    service_name = chip_data["id"].replace("_", "-")
-    sa_email = env_info["service_account"]
-    deploy_script = f"""#!/usr/bin/env bash
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-set -euo pipefail
-
-PROJECT_ID="{project_id}"
-REGION="{region}"
-SERVICE_NAME="{service_name}"
-SERVICE_ACCOUNT="{sa_email}"
-
-echo "=================================================="
-echo "1. Cloud Run 서버리스 배포 시작: ${{SERVICE_NAME}}"
-echo "=================================================="
-
-gcloud run deploy "${{SERVICE_NAME}}" \\
-    --source=. \\
-    --project="${{PROJECT_ID}}" \\
-    --region="${{REGION}}" \\
-    --service-account="${{SERVICE_ACCOUNT}}" \\
-    --labels="managed-by=google-cloud-0-to-1,scenario=gemini-enterprise-copilot-custom,env=sample,created-by=customer-engineer" \\
-    --no-allow-unauthenticated \\
-    --set-env-vars="GOOGLE_CLOUD_PROJECT=${{PROJECT_ID}},GOOGLE_CLOUD_LOCATION=global"
-
-SERVICE_URL=$(gcloud run services describe "${{SERVICE_NAME}}" \\
-    --project="${{PROJECT_ID}}" \\
-    --region="${{REGION}}" \\
-    --format="value(status.url)")
-
-echo "=================================================="
-echo "2. 배포 완료 엔드포인트 URL: ${{SERVICE_URL}}"
-echo "3. Gemini Enterprise app 외부 에이전트 바인딩 등록을 진행하십시오."
-echo "=================================================="
-"""
-
-    # 5. Gemini Enterprise app 외부 에이전트 연동 매니페스트 (JSON)
+    # 5. Gemini Enterprise app ADK 에이전트 연동 매니페스트 (JSON)
     ge_manifest = {
         "displayName": title,
         "description": chip_data["description"],
-        "externalEngine": {
-            "endpointUri": f"https://{service_name}-xyz-an.a.run.app/v1/chat",
-            "serviceAccount": sa_email,
-            "authType": "OIDC_TOKEN",
+        "sharingConfig": {"scope": "ALL_USERS"},
+        "adkAgentDefinition": {
+            "toolSettings": {"toolDescription": chip_data["description"]},
+            "provisionedReasoningEngine": {
+                "reasoningEngine": f"projects/{project_id}/locations/{region}/reasoningEngines/1673971543794778112",
+            },
         },
-        "visibility": "ORGANIZATION",
         "labels": {
             "managed-by": "google-cloud-0-to-1",
             "scenario": "gemini-enterprise-copilot-custom",
@@ -391,7 +471,7 @@ echo "=================================================="
     return {
         "agent_code": agent_code,
         "tools_code": tools_code,
-        "dockerfile_code": dockerfile_code,
+        "requirements_txt": requirements_txt,
         "deploy_script": deploy_script,
         "ge_manifest": ge_manifest,
     }
@@ -400,7 +480,7 @@ echo "=================================================="
 def diagnose_iam_and_connectivity(chip_data: dict, env_info: dict, dry_run: bool):
     """커스텀 에이전트 구동 및 Gemini Enterprise app 연동에 필요한 IAM 권한을 사전 진단한다."""
     sa_email = env_info["service_account"]
-    required_roles = chip_data.get("required_roles", ["roles/run.invoker"])
+    required_roles = chip_data.get("required_roles", ["roles/aiplatform.user", "roles/discoveryengine.editor"])
 
     if dry_run:
         return {
@@ -441,24 +521,25 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 | **백엔드 기술 스택** | `READY` | `{chip_data['backend_tech']}` |
 | **내장 도구 셋** | `3종 완비` | `{', '.join(chip_data['tools_included'])}` |
 | **IAM 권한 진단** | `{iam_diag['status']}` | `{iam_diag['detail']}` |
-| **Gemini Enterprise app 외부 연동** | `READY` | OIDC 토큰 기반 Cloud Run 엔드포인트 바인딩 매니페스트 도출 |
+| **Agent Engine 호스팅 연동** | `READY` | Google ADK 기반 Agent Engine 프로비저닝 및 사내 갤러리 등록 매니페스트 도출 |
 
 ---
 
 ## 2. 생성된 하이코드 산출물 목록 (Scaffolded Artifacts)
 
-본 도구를 통해 다음 4대 핵심 백엔드 소스 코드가 완벽하게 스캐폴딩되었다:
+본 도구를 통해 다음 5대 핵심 Agent Engine 소스 코드가 완벽하게 스캐폴딩되었다:
 
-1. **`agent.py`**: 버텍스 AI `google-genai` 통일 SDK 및 FastAPI 기반 추론/서빙 엔드포인트
-2. **`tools.py`**: 사내 시스템/BigQuery 직접 연동 도구 함수 및 Pydantic 스키마
-3. **`Dockerfile`**: Python 3.11-slim 기반 경량 비루트 보안 컨테이너 이미지 빌드 파일
-4. **`deploy.sh`**: Cloud Run 배포 및 서비스 계정 권한 바인딩 자동화 스크립트
+1. **`agent.py`**: Google ADK 및 `agent_engines.AdkApp` 기반 에이전트 정의 코드
+2. **`tools.py`**: 사내 시스템/BigQuery 직접 연동 도구 함수 모음
+3. **`requirements.txt`**: Agent Engine 런타임 최소 의존성 정의
+4. **`deploy.py`**: Agent Engine 프로비저닝 및 Gemini Enterprise app 전사 갤러리 자동 등록 스크립트
+5. **`ge_agent_manifest.json`**: Gemini Enterprise app ADK 에이전트 연동 등록 JSON
 
 ---
 
-## 3. Gemini Enterprise app 외부 에이전트 바인딩 매니페스트 (External Agent Manifest)
+## 3. Gemini Enterprise app ADK 에이전트 바인딩 매니페스트 (ADK Agent Manifest)
 
-배포 완료 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 카탈로그에 본 백엔드를 '외부 에이전트'로 등록하기 위한 JSON 페이로드다:
+배포 완료 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 사내 갤러리에 본 에이전트를 등록하기 위한 JSON 페이로드다:
 
 ```json
 {json.dumps(artifacts['ge_manifest'], indent=2, ensure_ascii=False)}
@@ -470,7 +551,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ```python
 {artifacts['agent_code'][:900]}
-... [이하 생략: tools.py 및 deploy.sh 완비] ...
+... [이하 생략: tools.py 및 deploy.py 완비] ...
 ```
 
 ---
@@ -481,18 +562,19 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
    ```bash
    python diagnose.py --write-files
    ```
-2. **Cloud Run 서비스 배포**:
+2. **Agent Engine 및 Gemini Enterprise app 원클릭 배포**:
    ```bash
-   bash deploy.sh
+   cd scaffold
+   python deploy.py
    ```
-3. **Gemini Enterprise app 카탈로그 외부 에이전트 등록**:
-   - Agent 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에서 'External Agent' 추가 후 상기 매니페스트 입력.
+3. **Gemini Enterprise app 웹 대화 포털 확인**:
+   - 사내 포털 ( https://gemini.google.com/app/{ge_app_id} ) 접속 후 사내 갤러리(`/r/agents`)에서 에이전트 확인.
 
 ---
 
 ## 6. 사내 거버넌스 4대 필수 표준 라벨링
 
-커스텀 에이전트 인프라 및 관리 리소스(Cloud Run 서비스, 서비스 계정, Artifact Registry 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+커스텀 에이전트 인프라 및 관리 리소스(Agent Engine, 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-copilot-custom`
 - `env`: `sample` (또는 `poc`)
@@ -502,19 +584,23 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ## 7. 콘솔 링크 조치 가이드
 
-- **Cloud Run 콘솔**: 배포된 백엔드 컨테이너 서비스 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/run )
-- **Agent 콘솔**: 사내 등록된 외부 에이전트(External Agents) 및 Agent Engine 바인딩 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
-- **IAM 및 관리자 콘솔**: 서비스 계정(`{env_info['service_account']}`) 권한 및 인보커 바인딩 확인 ( https://console.cloud.google.com/iam-admin/iam )
+- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
+- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **IAM 및 관리자 콘솔**: 서비스 계정(`{env_info['service_account']}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
 
 ---
 
 ## 8. 자원 정리 안내 (Teardown)
 
-본 솔루션 검증 후 테스트용으로 생성된 Cloud Run 서비스 및 서비스 계정을 정리하고자 할 경우 아래 명령을 수행한다:
+본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
 
-1. **Cloud Run 서비스 삭제**:
-   ```bash
-   gcloud run services delete {service_name} --region={env_info['region']} --quiet
+1. **Agent Engine 삭제**:
+   ```python
+   import vertexai
+   from vertexai import agent_engines
+
+   vertexai.init(project="{project_id}", location="{env_info['region']}")
+   # agent_engines.delete(resource_name="projects/{project_id}/locations/{env_info['region']}/reasoningEngines/<ENGINE_ID>")
    ```
 2. **서비스 계정 삭제**:
    ```bash
@@ -539,8 +625,8 @@ def write_scaffold_files(artifacts: dict, base_dir: str):
     files = {
         "agent.py": artifacts["agent_code"],
         "tools.py": artifacts["tools_code"],
-        "Dockerfile": artifacts["dockerfile_code"],
-        "deploy.sh": artifacts["deploy_script"],
+        "requirements.txt": artifacts["requirements_txt"],
+        "deploy.py": artifacts["deploy_script"],
         "ge_agent_manifest.json": json.dumps(artifacts["ge_manifest"], indent=2, ensure_ascii=False),
     }
 
@@ -549,7 +635,7 @@ def write_scaffold_files(artifacts: dict, base_dir: str):
         with open(fpath, "w", encoding="utf-8") as f:
             f.write(content)
 
-    print(f"[성공] 스캐폴딩 소스 파일 5종이 생성되었습니다: {scaffold_dir}/")
+    print(f"[성공] Agent Engine 스캐폴딩 소스 파일 5종이 생성되었습니다: {scaffold_dir}/")
 
 
 def _get_cloud_token() -> str:
@@ -864,7 +950,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
 
     instruction = """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 스캐폴더(Custom Agent Scaffolder)' 에이전트입니다.
-사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring, Cloud Run 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭 스캐폴딩하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.
+사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭 스캐폴딩하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
@@ -997,7 +1083,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
-    parser.add_argument("--region", help="Vertex AI / Cloud Run 리전 (기본: asia-northeast3)")
+    parser.add_argument("--region", help="Agent Engine 리전 (기본: us-central1)")
     parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
     parser.add_argument("--custom-sa", help="커스텀 에이전트 서비스 계정 이메일")
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
@@ -1041,18 +1127,18 @@ def main():
             "id": "gitops_custom_agent",
             "title": f"GitOps 에이전트 ({args.repo.split('/')[-1].replace('.git', '')})",
             "description": f"GitHub 저장소({args.repo}) 기반 자동 빌드 및 배포 에이전트",
-            "backend_tech": "Agent Engine / Cloud Run GitOps",
+            "backend_tech": "Agent Engine GitOps",
             "tools_included": ["git_clone_repo", "validate_manifest", "deploy_runtime", "publish_ge_gallery"],
-            "required_roles": ["roles/run.invoker", "roles/aiplatform.user"],
+            "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
         }
     elif args.prompt:
         chip_data = {
             "id": "custom_agent",
             "title": args.prompt,
             "description": "사용자 맞춤형 시스템 연동 백엔드 에이전트",
-            "backend_tech": "FastAPI + google-genai",
+            "backend_tech": "Agent Engine (ADK 2.11+) + google-genai",
             "tools_included": ["custom_data_query", "custom_action_trigger"],
-            "required_roles": ["roles/run.invoker"],
+            "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
         }
     elif args.chip and args.chip in CUSTOM_ARCHITECTURE_CATALOG:
         chip_data = CUSTOM_ARCHITECTURE_CATALOG[args.chip]
@@ -1065,7 +1151,7 @@ def main():
     print(f"  - 내장 도구 : {', '.join(chip_data['tools_included'])}")
 
     # 3. 소스 코드 및 매니페스트 합성
-    print("\n[단계 2/3] 하이코드 산출물(agent.py, tools.py, Dockerfile, deploy.sh) 합성 중...")
+    print("\n[단계 2/3] 하이코드 산출물(agent.py, tools.py, requirements.txt, deploy.py) 합성 중...")
     artifacts = generate_scaffold_artifacts(chip_data, env_info)
     print("  - 소스 코드 및 Gemini Enterprise app 외부 연동 매니페스트 합성 완료")
 
@@ -1073,7 +1159,7 @@ def main():
         write_scaffold_files(artifacts, os.path.dirname(__file__))
 
     # 4. IAM 권한 및 연결성 진단
-    print("\n[단계 3/3] 서비스 계정 IAM 권한 및 Gemini Enterprise app 외부 연동 진단 중...")
+    print("\n[단계 3/3] 서비스 계정 IAM 권한 및 Agent Engine 연동 진단 중...")
     iam_diag = diagnose_iam_and_connectivity(chip_data, env_info, args.dry_run)
     print(f"  - 상태: {iam_diag['status']} | {iam_diag['detail']}")
 
