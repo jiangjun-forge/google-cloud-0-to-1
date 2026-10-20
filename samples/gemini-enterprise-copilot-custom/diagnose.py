@@ -13,6 +13,7 @@ import json
 import os
 import subprocess
 import sys
+import urllib.request
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import requests
@@ -109,24 +110,110 @@ def get_gcloud_config(key: str) -> str:
     return ""
 
 
+def _get_cloud_token() -> str:
+    """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
+    try:
+        out = subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True, timeout=10).strip()
+        tok = out.split()[-1]
+        if tok.startswith("ya29."):
+            return tok
+    except Exception:
+        pass
+    try:
+        import google.auth
+        import google.auth.transport.requests
+        creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        auth_req = google.auth.transport.requests.Request()
+        creds.refresh(auth_req)
+        return creds.token
+    except Exception:
+        return ""
+
+
+def discover_ge_app_engines(project_id: str) -> list:
+    """현재 프로젝트에 프로비저닝된 Gemini Enterprise App (Discovery Engine) 목록을 실시간 조회한다."""
+    if not project_id or project_id == "sample-project-id":
+        return []
+
+    token = _get_cloud_token()
+    if not token:
+        return []
+
+    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            engines = data.get("engines", [])
+            result = []
+            for e in engines:
+                eng_id = e.get("name", "").split("/")[-1]
+                disp_name = e.get("displayName", eng_id)
+                result.append({"id": eng_id, "displayName": disp_name})
+            return result
+    except Exception:
+        return []
+
+
+def select_ge_app_id(project_id: str, candidate_apps: list, dry_run: bool = False) -> str:
+    """사내에 발견된 복수 GE App 중 하나를 대화형 번호로 선택하거나 기본값을 채택한다."""
+    if not candidate_apps:
+        return os.environ.get("GE_APP_ID") or ("sample-ge-app-id" if dry_run else "default_app")
+
+    if len(candidate_apps) == 1:
+        chosen = candidate_apps[0]["id"]
+        print(f"[*] 사내 활성 Gemini Enterprise App 자동 감지: {chosen} ({candidate_apps[0]['displayName']})")
+        return chosen
+
+    print(f"\n[*] 사내 발견된 Gemini Enterprise App 목록 ({len(candidate_apps)}개):")
+    for idx, app in enumerate(candidate_apps, 1):
+        print(f"  [{idx}] {app['id']} ({app['displayName']})")
+
+    # dry-run 모드에서는 프로세스 멈춤 방지를 위해 1번 자동 시뮬레이션
+    if dry_run:
+        selected = candidate_apps[0]["id"]
+        print(f"  -> [가상 실행] 1번 GE App 자동 채택: {selected}")
+        return selected
+
+    # 실제 실행 모드 + 대화형 TTY 환경인 경우 번호 선택 요청
+    if sys.stdin.isatty():
+        try:
+            choice = input(f"\n선택할 Gemini Enterprise App 번호를 입력하세요 [1-{len(candidate_apps)}, 기본값 1]: ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(candidate_apps):
+                selected = candidate_apps[int(choice) - 1]["id"]
+                print(f"  -> 선택된 GE App: {selected}")
+                return selected
+        except (EOFError, KeyboardInterrupt):
+            pass
+
+    selected = candidate_apps[0]["id"]
+    print(f"  -> 기본 1번 GE App 자동 채택: {selected}")
+    return selected
+
+
 def resolve_environment(args):
-    """실행 환경을 계층형으로 확정한다 (가상 실행 시 사내 정보 마스킹)."""
+    """실행 환경을 계층형으로 확정한다 (실시간 GE App 감지 및 대화형 번호 선택 지원)."""
     load_env_file()
 
-    # 1. Project ID
-    if args.dry_run and not args.project:
-        project_id = "sample-project-id"
-    else:
-        project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
+    # 1. Project ID (CLI > .env > gcloud 활성 설정 > sample-project-id)
+    project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
 
     # 2. Region
     region = args.region or os.environ.get("REGION") or "us-central1"
 
     # 3. Gemini Enterprise App ID
-    if args.dry_run and not args.ge_app_id:
-        ge_app_id = "sample-ge-app-id"
-    else:
-        ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID") or "default_app"
+    ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
+    if not ge_app_id:
+        # 실시간 사내 GE App 목록 포착
+        candidates = discover_ge_app_engines(project_id)
+        ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
 
     # 4. Service Account
     sa = args.custom_sa or os.environ.get("CUSTOM_AGENT_SERVICE_ACCOUNT")
@@ -638,26 +725,6 @@ def write_scaffold_files(artifacts: dict, base_dir: str):
     print(f"[성공] Agent Engine 소스 파일 5종이 생성되었습니다: {scaffold_dir}/")
 
 
-def _get_cloud_token() -> str:
-    """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
-    try:
-        out = subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True, timeout=10).strip()
-        tok = out.split()[-1]
-        if tok.startswith("ya29."):
-            return tok
-    except Exception:
-        pass
-    try:
-        import google.auth
-        import google.auth.transport.requests
-        creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
-        auth_req = google.auth.transport.requests.Request()
-        creds.refresh(auth_req)
-        return creds.token
-    except Exception as e:
-        raise RuntimeError(f"GCP 인증 토큰을 획득할 수 없습니다: {e}")
-
-
 def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> dict:
     """커스텀 에이전트 팩토리를 Agent Engine으로 프로비저닝하고 Gemini Enterprise app에 자동 등록한다."""
     project_id = env_info["project_id"]
@@ -1108,12 +1175,20 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     }
 
 
-def build_factory_markdown_report(env_info: dict, deploy_res: dict) -> str:
-    """GE Custom Agent Factory(붕어빵 틀 에이전트) 배포 결과를 표준 report.md 양식으로 조립한다."""
-    project_id = env_info["project_id"]
-    ge_app_id = env_info["ge_app_id"]
+def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: bool = False) -> str:
+    """GE Custom Agent Factory(붕어빵 틀 에이전트) 배포 결과를 표준 report.md 양식으로 조립한다 (가상 실행 시 사내 식별 정보 마스킹)."""
+    if dry_run:
+        project_id = "sample-project-id"
+        ge_app_id = "sample-ge-app-id"
+        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/1673971543794778112"
+        sa_email = f"custom-agent-sa@{project_id}.iam.gserviceaccount.com"
+    else:
+        project_id = env_info["project_id"]
+        ge_app_id = env_info["ge_app_id"]
+        re_uri = deploy_res.get("reasoning_engine", "N/A")
+        sa_email = env_info["service_account"]
+
     status = deploy_res.get("status", "UNKNOWN")
-    re_uri = deploy_res.get("reasoning_engine", "N/A")
     display_name = deploy_res.get("display_name", "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)")
     portal_url = f"https://gemini.google.com/app/{ge_app_id}"
 
@@ -1197,7 +1272,7 @@ flowchart TB
 
 - **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
 - **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
-- **IAM 및 관리자 콘솔**: 서비스 계정(`{env_info['service_account']}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
+- **IAM 및 관리자 콘솔**: 서비스 계정(`{sa_email}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
 
 ---
 
@@ -1313,7 +1388,7 @@ def main():
     deploy_res = deploy_custom_scaffolder_engine(env_info, dry_run=args.dry_run)
 
     # 팩토리 리포트 생성 및 저장
-    report_content = build_factory_markdown_report(env_info, deploy_res)
+    report_content = build_factory_markdown_report(env_info, deploy_res, dry_run=args.dry_run)
     save_markdown_report(report_content)
 
     print("\n" + "=" * 75)
