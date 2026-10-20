@@ -16,15 +16,14 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom)
 
-클라우드 아키텍트 및 백엔드 엔지니어가 사내 빅쿼리(BigQuery), ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트를 Agent Engine으로 원클릭 구축하고, GitHub 저장소 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 사내 커스텀 에이전트 팩토리 도구다. (As of 2026-10-19)
+클라우드 아키텍트 및 백엔드 엔지니어가 사내 데이터베이스(BigQuery) 및 클라우드 자산 등 엔터프라이즈 환경을 결합한 High-code 커스텀 에이전트를 Agent Engine으로 원클릭 구축하고, GitHub 저장소 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 사내 커스텀 에이전트 팩토리 도구다. (As of 2026-10-19)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 사내 엔터프라이즈 환경에서 커스텀 에이전트 개발 및 배포 시 다음과 같은 어려움이 발생하고 있다면 본 솔루션 도입이 필요하다:
-- [ ] **단순 프롬프트 에이전트의 한계**: 노코드 에이전트로는 사내 BigQuery 대용량 쿼리 실행, ERP 결재 승인, MCP 멀티툴 호출 등 복잡한 비즈니스 로직 처리가 불가능한 경우
+- [ ] **단순 프롬프트 에이전트의 한계**: 노코드 에이전트로는 사내 BigQuery 대용량 쿼리 실행, 복합 비즈니스 로직 처리, MCP 멀티툴 호출 등 엔터프라이즈 기능 구현이 불가능한 경우
 - [ ] **반복적인 에이전트 런타임 보일러플레이트 작성 부담**: 에이전트를 하나 만들 때마다 Google ADK 연동, Agent Engine 패키징 코드, 도구 함수, 배포 스크립트를 수작업 코딩하는 경우
 - [ ] **Gemini Enterprise app 사내 갤러리 등록 병목**: 배포된 에이전트를 전사 임직원이 쓰는 Gemini Enterprise app 카탈로그에 등록하는 매니페스트 구성 및 IAM 권한 검증에 실패하는 경우
 - [ ] **보안 및 서비스 계정 최소 권한 통제 부재**: 에이전트 실행 환경에 과도한 관리자 권한을 부여하여 보안 감사에 지적받거나 VPC-SC 경계 격리에 실패하는 경우
@@ -99,13 +98,11 @@ python diagnose.py
 flowchart TB
     subgraph Dev["1. 엔지니어링 & GitOps"]
         A["개발자 / 아키텍트"] -->|"GitHub 저장소 지정"| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
-        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 패키지 & 스펙"]
     end
 
-    subgraph Runtime["2. 런타임 & 엔터프라이즈 자산"]
+    subgraph Runtime["2. 런타임 호스팅"]
         C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
-        D -->|"도구 호출"| E[("사내 BigQuery / ERP<br/>Cloud Storage 자산")]
-        E -->|"조회 결과 반환"| D
     end
 
     subgraph Portal["3. 전사 임직원 인터페이스"]

@@ -101,7 +101,7 @@ flowchart TB
 
     subgraph Governance["2. 거버넌스 & 대행 SA 바인딩"]
         Spec -->|"대행 서비스 계정 주입"| SA["Factory Service Account<br/>(최소 권한 격리)"]
-        SA -->|"adkAgentDefinition 매니페스트"| Engine["Agent Platform<br/>(Discovery Engine)"]
+        SA -->|"noCodeAgentDefinition 매니페스트"| Engine["Agent Platform<br/>(Discovery Engine)"]
     end
 
     subgraph Distribution["3. 전사 배포 & 사내 갤러리"]

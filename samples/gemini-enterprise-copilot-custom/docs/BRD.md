@@ -19,7 +19,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 1. 추진 배경 및 비즈니스 동기
 
 1. **단순 프롬프트 에이전트의 기술적 한계**:
-   - 노코드(No-code) 에이전트는 일반 질의응답이나 검색 그라운딩에 적합하지만, 사내 빅쿼리(BigQuery), 클라우드 SQL(Cloud SQL) 데이터베이스 질의, ERP 결재 승인, MCP(Model Context Protocol) 기반 시스템 연동 등 복잡한 비즈니스 로직을 수행하기에는 기술적 한계가 존재한다.
+   - 노코드(No-code) 에이전트는 일반 질의응답이나 검색 그라운딩에 적합하지만, 사내 빅쿼리(BigQuery), 클라우드 SQL(Cloud SQL) 데이터베이스 질의, 사내 기간계 API 호출, MCP(Model Context Protocol) 기반 시스템 연동 등 복잡한 비즈니스 로직을 수행하기에는 기술적 한계가 존재한다.
    - 전문 개발팀이 파이썬(Python) SDK 기반으로 상태 머신, 다단계 추론(Reasoning), 커스텀 툴체인을 직접 코딩할 수 있는 하이코드(High-code) 개발 표준이 필수적이다.
 
 2. **반복적인 인프라 보일러플레이트 작성 부담**:
@@ -60,6 +60,6 @@ All contents, designs, and code examples are subject to change, modification, or
 1. **커스텀 에이전트 개발 및 배포 주기 80% 단축**:
    - 인프라 및 SDK 연동 보일러플레이트 작성 소요 시간(평균 2~3일)을 10분 이내 코드 생성으로 단축한다.
 2. **사내 레거시 및 데이터베이스 AI 연결 가속**:
-   - 표준화된 도구 템플릿을 통해 빅쿼리 및 ERP 등 핵심 기업 자산을 에이전트 도구로 즉시 결합할 수 있다.
+   - 표준화된 도구 템플릿을 통해 빅쿼리 및 사내 기간계 API 등 핵심 기업 자산을 에이전트 도구로 즉시 결합할 수 있다.
 3. **개발팀과 현업 사용자의 단일 포털 통합**:
    - 전문 개발팀이 만든 고도화된 백엔드 에이전트를 비개발자 임직원이 매일 쓰는 Gemini Enterprise app 웹 화면에서 바로 호출하여 전사 업무 혁신을 달성한다.

@@ -3,7 +3,7 @@
 
 """Gemini Enterprise 사내 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom).
 
-클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery), ERP, 모니터링 시스템을
+클라우드 아키텍트 및 백엔드 개발자가 사내 데이터베이스(BigQuery) 및 클라우드 자산을
 결합한 High-code 엔터프라이즈 맞춤 에이전트를 Agent Engine으로 원클릭 구축하고,
 GitHub 저장소 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원한다.
 """
@@ -489,92 +489,6 @@ def query_bigquery_sql(sql_query: str) -> dict[str, Any]:
         return {{"status": "SUCCESS", "row_count": len(results), "data": results}}
     except Exception as e:
         return {{"status": "ERROR", "message": str(e)}}
-
-def get_dataset_schema(dataset_id: str, table_id: str) -> dict[str, Any]:
-    \"\"\"빅쿼리 테이블의 스키마 및 컬럼 정보를 조회한다.
-
-    Args:
-        dataset_id: 데이터셋 ID.
-        table_id: 테이블 ID.
-    \"\"\"
-    return {{"dataset": dataset_id, "table": table_id, "status": "SCHEMA_RETRIEVED"}}
-
-def detect_metric_anomalies(metric_name: str, lookback_days: int = 7) -> dict[str, Any]:
-    \"\"\"시계열 데이터에서 통계적 이상 징후를 탐지한다.
-
-    Args:
-        metric_name: 분석 대상 메트릭 이름.
-        lookback_days: 조회 기간(일).
-    \"\"\"
-    return {{"metric": metric_name, "lookback_days": lookback_days, "anomaly_detected": False}}
-
-def query_cloud_logs(filter_str: str) -> dict[str, Any]:
-    \"\"\"Cloud Logging에서 대상 오류 로그를 조회한다.\"\"\"
-    return {{"filter": filter_str, "status": "LOGS_RETRIEVED", "count": 0}}
-
-def fetch_metric_timeseries(metric_type: str) -> dict[str, Any]:
-    \"\"\"Cloud Monitoring 시계열 지표를 조회한다.\"\"\"
-    return {{"metric": metric_type, "status": "METRIC_RETRIEVED"}}
-
-def escalate_to_pagerduty(summary: str, severity: str = "ERROR") -> dict[str, Any]:
-    \"\"\"온콜 당번에게 장애 인시던트를 발송한다.\"\"\"
-    return {{"summary": summary, "severity": severity, "status": "ALERT_SENT"}}
-
-def verify_tax_invoice(invoice_id: str) -> dict[str, Any]:
-    \"\"\"ERP 세금계산서 진위 여부를 대조한다.\"\"\"
-    return {{"invoice_id": invoice_id, "status": "VERIFIED"}}
-
-def check_budget_limits(department_id: str) -> dict[str, Any]:
-    \"\"\"부서 예산 한도 잔여액을 확인한다.\"\"\"
-    return {{"department": department_id, "budget_remaining": 10000000}}
-
-def submit_approval_draft(title: str, amount: int) -> dict[str, Any]:
-    \"\"\"전자결재 기안 초안을 생성한다.\"\"\"
-    return {{"draft_title": title, "amount": amount, "status": "DRAFT_CREATED"}}
-
-def list_scc_findings(severity: str = "HIGH") -> dict[str, Any]:
-    \"\"\"Security Command Center 취약점 목록을 조회한다.\"\"\"
-    return {{"severity": severity, "findings": []}}
-
-def inspect_iam_bindings(resource_name: str) -> dict[str, Any]:
-    \"\"\"자원의 IAM 정책 바인딩 현황을 점검한다.\"\"\"
-    return {{"resource": resource_name, "status": "INSPECTED"}}
-
-def generate_remediation_script(finding_id: str) -> dict[str, Any]:
-    \"\"\"보안 취약점 조치 스크립트를 생성한다.\"\"\"
-    return {{"finding_id": finding_id, "script": "gcloud iam ... --quiet"}}
-
-def discover_mcp_servers() -> dict[str, Any]:
-    \"\"\"사내 연결 가능한 MCP 서버 목록을 조회한다.\"\"\"
-    return {{"servers": ["mcp-sheets", "mcp-jira", "mcp-slack"]}}
-
-def call_remote_mcp_tool(server_name: str, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    \"\"\"원격 MCP 서버의 특정 도구를 호출한다.\"\"\"
-    return {{"server": server_name, "tool": tool_name, "result": "MCP_OK"}}
-
-def aggregate_tool_results(results: list[dict[str, Any]]) -> dict[str, Any]:
-    \"\"\"복수 도구 실행 결과를 종합한다.\"\"\"
-    return {{"total": len(results), "status": "AGGREGATED"}}
-
-def get_cost_recommendations() -> dict[str, Any]:
-    \"\"\"Cloud Billing Recommender 비용 최적화 추천을 조회한다.\"\"\"
-    return {{"recommendations": []}}
-
-def calculate_cud_coverage() -> dict[str, Any]:
-    \"\"\"현재 CUD 약정 커버리지 비율을 산출한다.\"\"\"
-    return {{"coverage_percent": 85.0}}
-
-def simulate_idle_savings() -> dict[str, Any]:
-    \"\"\"유휴 리소스 정리 시 예상 절감액을 시뮬레이션한다.\"\"\"
-    return {{"estimated_monthly_savings_usd": 1200}}
-
-def custom_system_query(query: str) -> dict[str, Any]:
-    \"\"\"사내 기간계 시스템에 질의를 전송한다.\"\"\"
-    return {{"query": query, "status": "SUCCESS", "result": "모의 응답 데이터"}}
-
-def custom_action_trigger(action_name: str, payload: dict[str, Any]) -> dict[str, Any]:
-    \"\"\"사내 기간계 액션을 트리거한다.\"\"\"
-    return {{"action": action_name, "status": "TRIGGERED", "payload": payload}}
 """
 
     # 3. requirements.txt (Agent Engine 최소 의존성)
@@ -759,9 +673,13 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
     if dry_run:
         project_id = "sample-project-id"
         ge_app_id = "sample-ge-app-id"
+        region = "us-central1"
+        service_account = "custom-agent-sa@sample-project-id.iam.gserviceaccount.com"
     else:
         project_id = env_info["project_id"]
         ge_app_id = env_info["ge_app_id"]
+        region = env_info.get("region", "us-central1")
+        service_account = env_info.get("service_account", f"custom-agent-sa@{project_id}.iam.gserviceaccount.com")
     service_name = chip_data["id"].replace("_", "-")
 
     return f"""# Gemini Enterprise 커스텀 에이전트 팩토리 보고서 (gemini-enterprise-copilot-custom)
@@ -846,7 +764,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 - **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
 - **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
-- **IAM 및 관리자 콘솔**: 서비스 계정(`{env_info['service_account']}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
+- **IAM 및 관리자 콘솔**: 서비스 계정(`{service_account}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
 
 ---
 
@@ -858,17 +776,17 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
    ```bash
    # Agent Engine 인스턴스 삭제 (force=true)
    curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
-     "https://{env_info['region']}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{env_info['region']}/reasoningEngines/<ENGINE_ID>?force=true"
+     "https://{region}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{region}/reasoningEngines/<ENGINE_ID>?force=true"
    ```
 2. **GE App 사내 갤러리 등록 해제**:
    ```bash
    # GE App 에이전트 삭제
    curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
-     "https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{env_info['ge_app_id']}/assistants/default_assistant/agents/<AGENT_ID>"
+     "https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{ge_app_id}/assistants/default_assistant/agents/<AGENT_ID>"
    ```
 3. **서비스 계정 삭제**:
    ```bash
-   gcloud iam service-accounts delete {env_info['service_account']} --quiet
+   gcloud iam service-accounts delete {service_account} --quiet
    ```
 """
 
@@ -1254,7 +1172,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
 
     instruction = """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 팩토리(Custom Agent Factory)' 에이전트입니다.
-사내 기간계 시스템(BigQuery, Cloud Storage, ERP, Cloud Monitoring 등)과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭으로 구축하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.
+사내 데이터베이스(BigQuery) 및 클라우드 자산과 결합한 High-code 엔터프라이즈 맞춤 에이전트를 원클릭으로 구축하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 GitOps 자동화를 안내하고 실행합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
@@ -1428,13 +1346,11 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 flowchart TB
     subgraph Dev["1. 엔지니어링 & GitOps"]
         A["개발자 / 아키텍트"] -->|"GitHub 저장소 지정"| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
-        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 패키지 & 스펙"]
     end
 
-    subgraph Runtime["2. 런타임 & 엔터프라이즈 자산"]
+    subgraph Runtime["2. 런타임 호스팅"]
         C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
-        D -->|"도구 호출"| E[("사내 BigQuery / ERP<br/>Cloud Storage 자산")]
-        E -->|"조회 결과 반환"| D
     end
 
     subgraph Portal["3. 전사 임직원 인터페이스"]
