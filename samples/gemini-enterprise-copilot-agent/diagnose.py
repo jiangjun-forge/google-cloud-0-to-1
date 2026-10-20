@@ -446,7 +446,7 @@ def run_config_mode(args):
     else:
         print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
         print("  [*] 신규 App 생성이 필요한 경우 공식 콘솔 경로를 참고하십시오:")
-        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
+        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )")
         current_app = os.environ.get("GE_APP_ID") or ""
         app_prompt = f"\n3. Gemini Enterprise App 인스턴스 ID [Enter 시 기본값({current_app or 'default'}) 자동 채택]: "
         if sys.stdin.isatty():
@@ -829,7 +829,8 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
 ## 6. 콘솔 링크 조치 가이드
 
 - **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 확인 ( https://gemini.google.com )
-- **GE Admin 관리자 콘솔**: 사내 등록된 에이전트 목록 조회 및 관리 ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes )
+- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 목록 조회 및 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - **IAM 및 관리자 콘솔**: 대행 서비스 계정(`{sa_email}`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---
@@ -843,7 +844,7 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
    gcloud iam service-accounts delete {sa_email} --quiet
    ```
 2. **Gemini Enterprise app 등록 에이전트 삭제**:
-   - GE Admin 관리자 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에 접속하여 대상 앱의 `Assistants > default_assistant > Agents` 목록에서 생성된 에이전트를 선택 후 삭제한다.
+   - Gemini Enterprise 에이전트 목록 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )에 접속하여 대상 앱의 `Agents` 목록에서 생성된 에이전트를 선택 후 삭제한다.
 """
 
 
@@ -943,8 +944,8 @@ flowchart TB
 
 ## 5. 콘솔 링크 조치 가이드
 
-- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
-- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
+- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`{sa_email}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
 
 ---
@@ -1154,11 +1155,17 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                 res_data = resp.json()
                 agent_id = res_data.get("name", "").split("/")[-1]
                 agent_state = res_data.get("state", "PRIVATE")
-                admin_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"
+                runtimes_url = f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"
+                admin_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
                 activation_guide = (
                     "이제 사내 모든 임직원이 에이전트 목록 및 검색창에서 즉시 해당 에이전트를 호출하여 사용할 수 있습니다."
                     if agent_state == "ENABLED"
-                    else f"사내 거버넌스 규정에 따라 신규 에이전트는 초기 비공개(Private) 상태로 대기합니다. 전사 사내 갤러리(/r/agents)에 노출하려면 아래 GE Admin 콘솔에서 상태를 **Enable (활성화)**로 변경해 주십시오:\n- GE Admin 관리자 콘솔 ( {admin_url} )"
+                    else (
+                        "사내 거버넌스 규정에 따라 신규 에이전트는 초기 비공개(Private) 상태로 대기합니다.\n"
+                        "전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 Agent Platform Runtimes 콘솔에서 상태를 **Enable (활성화)**로 변경해 주십시오:\n"
+                        f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
+                        f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
+                    )
                 )
                 return (
                     f"### 사내 노코드 에이전트 등록 완료\n\n"

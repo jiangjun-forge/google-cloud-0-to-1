@@ -286,7 +286,7 @@ def build_markdown_report(results: list[dict], ge_prj: str, agent_prj: str, is_d
       "```",
       "",
       "### 다. 공식 문서 및 콘솔 경로",
-      f"- Google Cloud Console Agent Engine ( https://console.cloud.google.com/gen-app-builder/engines?project={agent_prj} )",
+      f"- Google Cloud Console Agent Engine ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines?project={agent_prj} )",
       f"- Google Cloud Console IAM & Admin ( https://console.cloud.google.com/iam-admin/iam?project={agent_prj} )",
       f"- Google Cloud Console Organization Policies ( https://console.cloud.google.com/iam-admin/orgpolicies?project={agent_prj} )",
       "- Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )",

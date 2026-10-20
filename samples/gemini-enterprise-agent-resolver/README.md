@@ -122,7 +122,7 @@ gcloud resource-manager org-policies allow constraints/iam.allowedPolicyMemberDo
 ```
 
 ### 다. 공식 문서 및 콘솔 경로
-- Google Cloud Console Agent Engine ( https://console.cloud.google.com/gen-app-builder/engines )
+- Google Cloud Console Agent Engine ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - Google Cloud Console IAM & Admin ( https://console.cloud.google.com/iam-admin/iam )
 - Google Cloud Console Organization Policies ( https://console.cloud.google.com/iam-admin/orgpolicies )
 - Agent Engine 개요 ( https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview )

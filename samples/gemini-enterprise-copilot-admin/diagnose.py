@@ -332,7 +332,7 @@ def run_config_mode(args):
     else:
         print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
         print("  [*] 신규 App 생성이 필요한 경우 공식 콘솔 경로를 참고하십시오:")
-        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
+        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )")
         current_app = os.environ.get("GE_APP_ID") or ""
         app_prompt = f"\n3. Gemini Enterprise App 인스턴스 ID [Enter 시 기본값({current_app or 'default'}) 자동 채택]: "
         if sys.stdin.isatty():
@@ -669,7 +669,7 @@ echo "==========================================================================
             "sinkName": "ge-audit-log-sink",
             "destinationDataset": f"{project_id}:gemini_logging",
             "filterExpression": 'protoPayload.serviceName="discoveryengine.googleapis.com"',
-            "consoleDirectDeeplink": f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}",
+            "consoleDirectDeeplink": f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}",
         }
 
     return {
@@ -781,7 +781,7 @@ flowchart TD
 ## 6. 콘솔 링크 조치 가이드
 
 - **Google Admin 관리 콘솔**: ( https://admin.google.com/ )
-- **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - **Google Cloud 결제(Billing) 콘솔**: ( https://console.cloud.google.com/billing )
 - **Cloud DNS 및 도메인 콘솔**: ( https://console.cloud.google.com/net-services/dns/zones )
 
@@ -897,8 +897,8 @@ flowchart TB
 
 ## 5. 콘솔 링크 조치 가이드
 
-- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
-- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
+- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
 - **Cloud Logging 로그 싱크 콘솔**: BigQuery 로그 라우터 싱크 관리 ( https://console.cloud.google.com/logs/router?project={project_id} )
 - **조직 정책 콘솔**: 에이전트 도메인 제한 공유 조직 정책 관리 ( https://console.cloud.google.com/iam-admin/orgpolicies?project={project_id} )
 
@@ -1003,9 +1003,9 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
 [GCP 콘솔 직접 딥링크(Deep Link) 안내 의무화 규약]
 - 관리자가 콘솔 위치나 설정을 물어보거나 관련 과제를 안내할 때, 복잡한 메뉴 경로 설명에 그치지 않고 반드시 실제 클릭 가능한 완결형 딥링크(Deep Link) URL을 괄호 병기 표준 `명칭 ( https://... )` 형식으로 즉시 제공해야 한다.
 - 주요 콘솔 딥링크:
-  * Agent Platform 에이전트 관리 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
-  * Agent Platform 전체 엔진 목록 ( https://console.cloud.google.com/gen-app-builder/engines?project={project_id} )
-  * Agent Engine 런타임 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
+  * Agent Platform Runtimes 콘솔 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
+  * Gemini Enterprise 에이전트 목록 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
+  * Gemini Enterprise 전체 엔진 목록 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines?project={project_id} )
   * BigQuery Studio SQL 콘솔 ( https://console.cloud.google.com/bigquery?project={project_id} )
   * Cloud Logging 로그 라우터 콘솔 ( https://console.cloud.google.com/logs/router?project={project_id} )
   * IAM 및 서비스 계정 관리 콘솔 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
@@ -1041,9 +1041,9 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
             category: Optional filter (e.g. 'agent', 'logging', 'iam', 'billing', 'all').
         """
         links = [
-            ("Agent Platform 에이전트 관리 콘솔", f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"),
-            ("Agent Platform 전체 엔진 목록", f"https://console.cloud.google.com/gen-app-builder/engines?project={project_id}"),
-            ("Agent Engine (Reasoning Engine) 런타임 콘솔", f"https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id}"),
+            ("Agent Platform Runtimes 콘솔", f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"),
+            ("Gemini Enterprise 에이전트 목록 콘솔", f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"),
+            ("Gemini Enterprise 전체 엔진 목록", f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines?project={project_id}"),
             ("BigQuery Studio 감사 로그 데이터셋", f"https://console.cloud.google.com/bigquery?project={project_id}"),
             ("Cloud Logging 로그 라우터 (Sink) 콘솔", f"https://console.cloud.google.com/logs/router?project={project_id}"),
             ("IAM 및 관리자 권한 콘솔", f"https://console.cloud.google.com/iam-admin/iam?project={project_id}"),
@@ -1101,7 +1101,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
                 disp = a.get("displayName", "-")
                 state = a.get("state", "UNKNOWN")
                 scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
-                agent_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents/{aid}?project={project_id}"
+                agent_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
                 lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` | ( {agent_url} ) |")
             return "\n".join(lines)
         except Exception as e:

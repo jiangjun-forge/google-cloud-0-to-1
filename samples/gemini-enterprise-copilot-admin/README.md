@@ -112,7 +112,8 @@ flowchart TB
 
 ## 4. 조치 가이드 및 권장 설정
 
-- **Gemini Enterprise 에이전트 목록 직결 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Agent Platform Runtimes 콘솔**: ( https://console.cloud.google.com/agent-platform/runtimes )
+- **Gemini Enterprise 에이전트 목록 콘솔**: ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - **Cloud Logging 로그 라우터 콘솔**: ( https://console.cloud.google.com/logs/router )
 - **BigQuery 감사 로그 분석 콘솔**: ( https://console.cloud.google.com/bigquery )
 - **Google Admin 관리 콘솔**: ( https://admin.google.com/ )

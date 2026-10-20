@@ -379,7 +379,7 @@ def run_config_mode(args):
     else:
         print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
         print("  [*] 신규 App 생성이 필요한 경우 공식 콘솔 경로를 참고하십시오:")
-        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
+        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )")
         current_app = os.environ.get("GE_APP_ID") or ""
         app_prompt = f"\n3. Gemini Enterprise App 인스턴스 ID [Enter 시 기본값({current_app or 'default'}) 자동 채택]: "
         if sys.stdin.isatty():
@@ -656,7 +656,7 @@ Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 �
 ## 4. 권장 후속 조치 및 에이전트 바인딩 가이드
 
 1. **Gemini Enterprise app 도구 레지스트리 확인**:
-   - GE Admin 관리자 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에 접속하여 'Tools' 메뉴에서 등록된 `{tool_data['id']}`를 확인한다.
+   - Gemini Enterprise 관리자 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )에 접속하여 'Tools' 메뉴에서 등록된 `{tool_data['id']}`를 확인한다.
 2. **사내 에이전트에 스킬 장착**:
    - `gemini-enterprise-copilot-agent`로 제작된 기존 노코드 에이전트 또는 커스텀 에이전트의 설정 화면에서 본 스킬을 활성화(Toggle ON)하여 즉시 실무에 투입한다.
 
@@ -674,7 +674,8 @@ Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 �
 
 ## 6. 콘솔 링크 조치 가이드
 
-- **GE Admin 관리자 콘솔**: 사내 등록된 도구(Tools) 및 에이전트 관리 ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes )
+- **Gemini Enterprise 관리자 콘솔**: 사내 등록된 도구(Tools) 및 에이전트 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
 - **IAM 및 관리자 콘솔**: 스킬 대행 서비스 계정(`{sa_email}`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
@@ -792,8 +793,8 @@ flowchart TB
 
 ## 5. 콘솔 링크 조치 가이드
 
-- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
-- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
+- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
 - **Secret Manager 콘솔**: 사내 시스템 API 키 및 보안 토큰 볼트 관리 ( https://console.cloud.google.com/security/secret-manager?project={project_id} )
 
 ---

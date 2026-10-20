@@ -109,7 +109,7 @@ flowchart TB
 ## 4. 조치 가이드 및 권장 설정
 
 - **Discovery Engine 데이터 저장소 콘솔**: ( https://console.cloud.google.com/gen-app-builder/data-stores )
-- **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - **Secret Manager 보안 볼트 콘솔**: ( https://console.cloud.google.com/security/secret-manager )
 - **IAM 및 서비스 계정 콘솔**: ( https://console.cloud.google.com/iam-admin/iam )
 

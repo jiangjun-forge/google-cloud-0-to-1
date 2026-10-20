@@ -1291,7 +1291,7 @@ def run_config_mode(scenario_name: str = "") -> None:
                 else:
                     print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
                     print("  [*] BigQuery Data Agent를 Gemini Enterprise App에 직결 연동하려면 공식 콘솔 경로를 참고하십시오:")
-                    print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
+                    print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )")
                     print("  [*] 단독(Standalone, BigQuery Studio 전용)으로 사용할 경우 Enter를 눌러 비워둘 수 있습니다.")
                     prompt_str = f"  입력 [기본값: {default_val}]: " if default_val else f"  입력 [Enter 시 비워둠]: "
                     try:

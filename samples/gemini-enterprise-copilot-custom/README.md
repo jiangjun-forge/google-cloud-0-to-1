@@ -131,11 +131,12 @@ flowchart TB
 
 ### 사내 갤러리 2단계 활성화 거버넌스 가이드 (Private -> Enabled)
 - **임직원 생성 에이전트 기본 상태**: 사내 보안 규정 및 품질 거버넌스상, 팩토리 에이전트를 통해 생성된 신규 에이전트는 사내 난립을 방지하기 위해 초기 `Private` (Employee-made) 상태로 대기한다.
-- **전사 사내 갤러리 활성화(Enable)**: 배포 완료 후 전사 임직원에게 에이전트를 노출하려면, **GE Admin 관리자 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )** 접속 후 대상 에이전트의 상태를 **`Enable (활성화)`**로 전환한다.
+- **전사 사내 갤러리 활성화(Enable)**: 배포 완료 후 전사 임직원에게 에이전트를 노출하려면, **Agent Platform Runtimes 콘솔 ( https://console.cloud.google.com/agent-platform/runtimes )** 접속 후 대상 에이전트 런타임의 상태를 **`Enable (활성화)`**로 전환한다.
+- **등록된 에이전트 목록 확인**: 특정 Gemini Enterprise app에 등록된 에이전트 목록 및 상세 설정은 **Gemini Enterprise 에이전트 목록 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )**에서 확인한다.
 
 ### 주요 콘솔 링크
-- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines )
-- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines )
+- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes )
+- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`custom-agent-sa`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---

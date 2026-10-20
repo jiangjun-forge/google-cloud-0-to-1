@@ -405,7 +405,7 @@ def run_config_mode(scenario_name: str = "") -> None:
                 else:
                     print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
                     print("  [*] 신규 App 생성이 필요한 경우 공식 콘솔 경로를 참고하십시오:")
-                    print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
+                    print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )")
                     fallback_app = default_val or "default-enterprise-agent-app"
                     prompt_str = f"  입력 [Enter 시 기본값({fallback_app}) 자동 채택]: "
                     try:

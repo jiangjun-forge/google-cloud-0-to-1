@@ -286,7 +286,7 @@ def run_config_mode(args):
     else:
         print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
         print("  [*] 신규 App 생성이 필요한 경우 공식 콘솔 경로를 참고하십시오:")
-        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
+        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )")
         current_app = os.environ.get("GE_APP_ID") or ""
         app_prompt = f"\n3. Gemini Enterprise App 인스턴스 ID [Enter 시 기본값({current_app or 'default'}) 자동 채택]: "
         if sys.stdin.isatty():
@@ -810,8 +810,8 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ## 7. 콘솔 링크 조치 가이드
 
-- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
-- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
+- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`{service_account}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
 
 ---
@@ -1016,7 +1016,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
             disp_name = f"사내 커스텀 에이전트 ({repo_name})"
 
-            admin_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"
+            runtimes_url = f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"
+            admin_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
 
             if disp_name in existing_agents_map:
                 existing_info = existing_agents_map[disp_name]
@@ -1039,8 +1040,9 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 참조 저장소: `{repo_url}`\n\n"
                         f"[사내 갤러리 활성화 안내]\n"
                         f"사내 거버넌스 규정상 신규 등록 에이전트는 초기 비공개(Private) 상태로 대기합니다.\n"
-                        f"전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 관리 콘솔에서 상태를 **Enable (활성화)**로 변경해 주십시오:\n"
-                        f"- GE Admin 관리자 콘솔 ( {admin_url} )"
+                        f"전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 Agent Platform Runtimes 콘솔에서 상태를 **Enable (활성화)**로 변경해 주십시오:\n"
+                        f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
+                        f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
                     )
 
             # 신규 등록 (ENABLED 상태 및 ALL_USERS 공유 활성화 요청)
@@ -1072,8 +1074,9 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 참조 저장소: `{repo_url}`\n\n"
                         f"[사내 갤러리 활성화 안내]\n"
                         f"사내 거버넌스 규정상 신규 등록 에이전트는 초기 비공개(Private) 상태로 대기합니다.\n"
-                        f"전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 관리 콘솔에서 해당 에이전트를 **Enable (활성화)**로 변경해 주십시오:\n"
-                        f"- GE Admin 관리자 콘솔 ( {admin_url} )"
+                        f"전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 Agent Platform Runtimes 콘솔에서 해당 에이전트를 **Enable (활성화)**로 변경해 주십시오:\n"
+                        f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
+                        f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
                     )
                 else:
                     return f"[오류] 커스텀 에이전트 등록 실패 (HTTP {reg_resp.status_code}): {reg_resp.text[:200]}"
@@ -1117,7 +1120,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             disp_name = cfg["display_name"]
 
             # 사전 점검: 이미 사내에 배포되어 있는 경우
-            admin_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"
+            runtimes_url = f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"
+            admin_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
             if disp_name in existing_agents_map:
                 existing_info = existing_agents_map[disp_name]
                 if existing_info["state"] == "ENABLED":
@@ -1132,7 +1136,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"- **{disp_name}**\n"
                         f"  - 상태: 등록 완료 (`{existing_info['state']}` / 활성화 대기 중)\n"
                         f"  - Agent ID: `{existing_info['id']}`\n"
-                        f"  - 사내 갤러리 활성화: 전사 사내 갤러리(/r/agents)에 노출하려면 GE Admin 관리자 콘솔 ( {admin_url} )에서 상태를 **Enable (활성화)**로 변경해 주십시오."
+                        f"  - 사내 갤러리 활성화: 전사 사내 갤러리(/r/agents)에 노출하려면 Agent Platform Runtimes 콘솔 ( {runtimes_url} )에서 상태를 **Enable (활성화)**로 변경해 주십시오.\n"
+                        f"  - 에이전트 목록 확인: Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
                     )
                 continue
 
@@ -1184,11 +1189,15 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     res_data = resp.json()
                     agent_id = res_data.get("name", "").split("/")[-1]
                     agent_state = res_data.get("state", "PRIVATE")
-                    admin_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"
+                    runtimes_url = f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"
+                    admin_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
                     activation_guide = (
                         f"  - 안내: 추가 조치 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                         if agent_state == "ENABLED"
-                        else f"  - 사내 갤러리 활성화: 사내 거버넌스 규정에 따라 초기 비공개(Private) 상태로 대기합니다. 전사 사내 갤러리(/r/agents)에 노출하려면 GE Admin 관리자 콘솔 ( {admin_url} )에서 상태를 **Enable (활성화)**로 변경해 주십시오."
+                        else (
+                            f"  - 사내 갤러리 활성화: 사내 거버넌스 규정에 따라 초기 비공개(Private) 상태로 대기합니다. 전사 사내 갤러리(/r/agents)에 노출하려면 Agent Platform Runtimes 콘솔 ( {runtimes_url} )에서 상태를 **Enable (활성화)**로 변경해 주십시오.\n"
+                            f"  - 에이전트 목록 확인: Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
+                        )
                     )
                     reports.append(
                         f"- **{cfg['display_name']}**\n"
@@ -1514,8 +1523,8 @@ flowchart TB
 
 ## 5. 콘솔 링크 조치 가이드
 
-- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
-- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
+- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`{sa_email}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
 
 ---
