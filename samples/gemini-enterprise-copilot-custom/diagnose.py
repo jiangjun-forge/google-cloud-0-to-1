@@ -709,14 +709,18 @@ if __name__ == "__main__":
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": chip_data["description"]},
             "provisionedReasoningEngine": {
-                "reasoningEngine": f"projects/{project_id}/locations/{region}/reasoningEngines/1673971543794778112",
+                "reasoningEngine": (
+                    f"projects/{project_id}/locations/{region}/reasoningEngines/simulated-reasoning-engine"
+                    if dry_run
+                    else f"projects/{project_id}/locations/{region}/reasoningEngines/<REASONING_ENGINE_ID>"
+                ),
             },
         },
         "labels": {
             "managed-by": "google-cloud-0-to-1",
             "scenario": "gemini-enterprise-copilot-custom",
             "env": "sample",
-            "created-by": get_resource_creator(False),
+            "created-by": get_resource_creator(dry_run),
         },
     }
 
@@ -927,7 +931,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
     if dry_run:
         print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
-        simulated_re_id = "1673971543794778112"
+        simulated_re_id = "simulated-custom-factory-engine"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
         print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
         print(f"  [2] 장착 도구: deploy_enterprise_agent_tool, list_deployed_agents_tool")
@@ -1034,11 +1038,72 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         if norm in ("all", "모두", "전부", "전체") or "3대" in norm:
             return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: 1. GitHub 저장소 주소 기반 커스텀 에이전트 배포, 2. GE Admin Copilot, 3. GE Agent Factory)"
 
-        targets = []
+        # 1. 대상 GE App 내 기존 등록 에이전트 실시간 사전 스캔 (Pre-flight check)
+        existing_agents_map = {}
+        try:
+            list_resp = requests.get(base_url, headers=headers, timeout=15)
+            if list_resp.ok:
+                for a in list_resp.json().get("agents", []):
+                    disp = a.get("displayName", "")
+                    aid = a.get("name", "").split("/")[-1]
+                    astate = a.get("state", "UNKNOWN")
+                    existing_agents_map[disp] = {"id": aid, "state": astate, "raw": a}
+        except Exception:
+            pass
+
+        # 2. GitHub 저장소 URL 기반 커스텀 에이전트 배포 분기
         if "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm or github_repo_url:
             repo_url = github_repo_url or "https://github.com/jiangjun-forge/google-cloud-0-to-1"
-            return f"[GitHub 저장소 기반 GitOps 배포 완료] 지정된 저장소({repo_url})의 하이코드 백엔드 에이전트 아키텍처 스펙 및 배포 매니페스트가 성공적으로 검증되었으며, Agent Engine 프로비저닝 및 Gemini Enterprise app 사내 갤러리(/r/agents) 직결 등록이 완료되었습니다. (참조 저장소: {repo_url})"
-        elif "admin" in norm or "어드민" in norm:
+            repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
+            disp_name = f"사내 커스텀 GitOps 에이전트 ({repo_name})"
+
+            if disp_name in existing_agents_map:
+                existing_info = existing_agents_map[disp_name]
+                if existing_info["state"] == "ENABLED":
+                    return (
+                        f"### 사내 GitOps 에이전트 배포 현황\n\n"
+                        f"- **{disp_name}**\n"
+                        f"  - 상태: 이미 사내에 정상 배포되어 활성화(ENABLED)되어 있습니다.\n"
+                        f"  - Agent ID: `{existing_info['id']}`\n"
+                        f"  - 참조 저장소: `{repo_url}`\n"
+                        f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
+                    )
+
+            # 신규 등록
+            body = {
+                "displayName": disp_name,
+                "description": f"GitHub 저장소({repo_url}) 기반 자동 빌드 및 배포된 사내 커스텀 에이전트",
+                "sharingConfig": {"scope": "ALL_USERS"},
+                "customPlaceholderText": f"{disp_name}에게 업무 질의를 입력하세요...",
+                "starterPrompts": [
+                    {"text": f"{repo_name} 저장소 주요 기능 요약해 줘"},
+                    {"text": f"{repo_name} 연동 도구 목록 보여줘"},
+                ],
+                "noCodeAgentDefinition": {
+                    "objective": f"당신은 GitHub 저장소({repo_url}) 코드를 기반으로 구동하는 사내 커스텀 에이전트입니다. 임직원의 질의에 성실히 답변하십시오."
+                },
+            }
+            try:
+                reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+                if reg_resp.ok:
+                    new_id = reg_resp.json().get("name", "").split("/")[-1]
+                    return (
+                        f"### 사내 GitOps 에이전트 배포 완료\n\n"
+                        f"- **{disp_name}**\n"
+                        f"  - 상태: 신규 배포 및 사내 갤러리 등록 완료 (`ENABLED`)\n"
+                        f"  - Agent ID: `{new_id}`\n"
+                        f"  - 참조 저장소: `{repo_url}`\n"
+                        f"  - 공유 범위: `ALL_USERS`\n"
+                        f"  - 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
+                    )
+                else:
+                    return f"[오류] GitOps 에이전트 등록 실패 (HTTP {reg_resp.status_code}): {reg_resp.text[:200]}"
+            except Exception as e:
+                return f"[예외 발생] GitOps 에이전트 등록 실패: {str(e)}"
+
+        # 3. 프리셋 에이전트 타겟팅
+        targets = []
+        if "admin" in norm or "어드민" in norm:
             targets = ["gemini-enterprise-admin-copilot"]
         elif "factory" in norm or "노코드" in norm or "agent" in norm:
             targets = ["gemini-enterprise-agent-factory"]
@@ -1051,11 +1116,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         if not targets:
             return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 대상: 1. GitHub 저장소 주소 기반 배포, 2. GE Admin Copilot, 3. GE Agent Factory"
 
-        # Agent Engine 리소스 매핑 및 동적 탐색 (정밀 라우팅)
-        re_engines_map = {
-            "gemini-enterprise-admin-copilot": f"projects/{project_id}/locations/{re_location}/reasoningEngines/5240241906532745216",
-            "gemini-enterprise-agent-factory": f"projects/{project_id}/locations/{re_location}/reasoningEngines/3150571679432835072",
-        }
+        # 4. 실시간 Reasoning Engine 동적 탐색 (하드코딩 ID 완전 배제)
         dynamic_engines = {}
         re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
         try:
@@ -1064,7 +1125,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 for eng in re_resp.json().get("reasoningEngines", []):
                     eng_name = eng.get("name", "")
                     eng_disp = eng.get("displayName", "").lower()
-                    for k in re_engines_map:
+                    for k in preset_agents_spec:
                         short_k = k.replace("gemini-enterprise-", "").replace("-", "_")
                         if short_k in eng_disp or short_k in eng_name:
                             dynamic_engines[k] = eng_name
@@ -1074,7 +1135,23 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         reports = []
         for slug in targets:
             cfg = preset_agents_spec[slug]
-            re_res = dynamic_engines.get(slug) or re_engines_map.get(slug)
+            disp_name = cfg["display_name"]
+
+            # 사전 점검: 이미 사내에 배포되어 있고 활성화되어 있는 경우
+            if disp_name in existing_agents_map:
+                existing_info = existing_agents_map[disp_name]
+                if existing_info["state"] == "ENABLED":
+                    reports.append(
+                        f"- **{disp_name}**\n"
+                        f"  - 상태: 이미 사내에 정상 배포되어 활성화(ENABLED)되어 있습니다.\n"
+                        f"  - Agent ID: `{existing_info['id']}`\n"
+                        f"  - 공유 범위: `ALL_USERS`\n"
+                        f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
+                    )
+                    continue
+
+            # 신규 배포 진행
+            re_res = dynamic_engines.get(slug)
             body = {
                 "displayName": cfg["display_name"],
                 "description": cfg["description"],
@@ -1107,7 +1184,6 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                                 existing_state = a.get("state")
                                 break
                     if agent_id:
-                        # PRIVATE 상태이거나 adkAgentDefinition 전환 시 불변 필드 제약 방지를 위해 클린 재등록
                         del_resp = requests.delete(f"{base_url}/{agent_id}", headers=headers, timeout=30)
                         if del_resp.ok:
                             resp = requests.post(base_url, headers=headers, json=body, timeout=30)
@@ -1123,11 +1199,11 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     agent_state = res_data.get("state", "ENABLED")
                     reports.append(
                         f"- **{cfg['display_name']}**\n"
-                        f"  - 상태: 배포 및 GE App 전사 갤러리(`/r/agents`) 등록 성공 (`{agent_state}`)\n"
+                        f"  - 상태: 배포 및 GE App 사내 갤러리(`/r/agents`) 등록 성공 (`{agent_state}`)\n"
                         f"  - Agent ID: `{agent_id}`\n"
                         f"  - 공유 범위: `ALL_USERS`\n"
-                        f"  - 연동 에이전트 엔진: `{re_res or '노코드 런타임'}`\n"
-                        f"  - 참조 저장소: `{github_repo_url or '내장 표준 규격'}`"
+                        f"  - 연동 에이전트 엔진: `{re_res or '사내 표준 런타임'}`\n"
+                        f"  - 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                     )
                 else:
                     reports.append(f"- **{cfg['display_name']}**: 등록 실패 (HTTP {resp.status_code}: {resp.text[:200]})")
@@ -1310,7 +1386,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
     if dry_run:
         project_id = "sample-project-id"
         ge_app_id = "sample-ge-app-id"
-        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/1673971543794778112"
+        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/simulated-custom-factory-engine"
         sa_email = f"custom-agent-sa@{project_id}.iam.gserviceaccount.com"
     else:
         project_id = env_info["project_id"]
