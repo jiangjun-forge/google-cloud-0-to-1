@@ -391,7 +391,6 @@ def main():
   )
   parser.add_argument(
       "--dry-run",
-      "--demo",
       action="store_true",
       help="실제 GCP 리소스 생성 없이 가상 데이터세트 및 쿼리 시뮬레이션을 실행한다",
   )

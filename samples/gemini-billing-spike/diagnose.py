@@ -556,9 +556,8 @@ def main():
   )
   parser.add_argument(
       "--dry-run",
-      "--demo",
       action="store_true",
-      help="실제 GCP 호출 없이 가상 샘플 데이터로 진단 리포트를 출력하는 데모 모드",
+      help="실제 GCP 호출 없이 가상 샘플 데이터로 진단 리포트를 출력하는 모의 가상 실행 모드",
   )
   parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
   args = parser.parse_args()

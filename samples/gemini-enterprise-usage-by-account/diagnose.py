@@ -321,7 +321,6 @@ def main():
     )
     parser.add_argument(
         "--dry-run",
-        "--demo",
         action="store_true",
         help="실제 쿼리 없이 가상 분석 리포트를 시뮬레이션한다",
     )

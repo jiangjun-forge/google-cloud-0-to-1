@@ -354,7 +354,6 @@ def main():
   )
   parser.add_argument(
       "--dry-run",
-      "--demo",
       action="store_true",
       help="실제 스캔 없이 가상 모의 취약 코드를 기반으로 리포트를 시뮬레이션한다",
   )

@@ -407,7 +407,6 @@ def main():
   )
   parser.add_argument(
       "--dry-run",
-      "--demo",
       action="store_true",
       help="실제 Cloud Logging 호출 없이 가상 권한 거부 시뮬레이션을 실행한다",
   )

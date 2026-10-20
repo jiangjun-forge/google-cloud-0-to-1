@@ -434,7 +434,6 @@ def main():
   )
   parser.add_argument(
       "--dry-run",
-      "--demo",
       action="store_true",
       help="실제 GCP 자원 생성 및 호출 없이 가상 시뮬레이션 모드로 실행한다",
   )

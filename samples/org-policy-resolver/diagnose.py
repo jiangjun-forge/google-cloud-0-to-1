@@ -418,7 +418,6 @@ def main():
   )
   parser.add_argument(
       "--dry-run",
-      "--demo",
       action="store_true",
       help="실제 Cloud Logging 호출 없이 가상 조직 정책 위반 시뮬레이션을 실행한다",
   )
