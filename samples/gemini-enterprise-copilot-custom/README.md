@@ -45,7 +45,14 @@ python diagnose.py --config
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
 ```bash
+# 기본 팩토리(붕어빵 틀) 가상 실행
 python diagnose.py --dry-run
+
+# GitHub 저장소 URL 기반 GitOps 스캐폴딩 가상 검증
+python diagnose.py --scaffold --dry-run --repo https://github.com/my-org/my-agent.git
+
+# 검증된 3대 핵심 GitOps 아키텍처 칩 가상 검증 (1: 사내 커스텀 레포, 2: 어드민 코파일럿, 3: 노코드 팩토리)
+python diagnose.py --scaffold --dry-run --chip 2
 ```
 
 **터미널 진단 출력 미리보기:**
@@ -77,7 +84,7 @@ python diagnose.py --dry-run
 [성공] 마크다운 진단 보고서가 저장되었습니다: report.md
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+### 2) 실제 사내 인프라 실시간 진단 및 배포
 ```bash
 python diagnose.py
 ```
@@ -133,6 +140,15 @@ flowchart TB
 ---
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
+
+### 3대 핵심 GitOps 아키텍처 칩 카탈로그
+본 솔루션은 비현실적인 자유 텍스트 프롬프트 대신, 실제 검증된 소스 코드가 존재하는 GitHub 저장소 URL 기반의 GitOps 자동 배포 아키텍처를 기본 표준으로 채택한다:
+
+| 번호 | 아키텍처 칩 명칭 | 대상 GitHub 저장소 | 기술 스택 및 도구 체계 |
+| :---: | :--- | :--- | :--- |
+| **1** | **사내 커스텀 GitHub 저장소 직접 입력 (Custom GitOps) [기본값]** | 사용자 직접 입력 (`--repo <URL>`) | Agent Engine (ADK 2.11+) + GitHub GitOps CI/CD |
+| **2** | **GE Admin Copilot (사내 어드민 코파일럿) 실물 레포** | [어드민 코파일럿 저장소 ( https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin )] | Agent Engine (ADK 2.11+) + BigQuery + Cloud Logging |
+| **3** | **GE Agent Factory (사내 노코드 에이전트 팩토리) 실물 레포** | [에이전트 팩토리 저장소 ( https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent )] | Agent Engine (ADK 2.11+) + Gemini 3.8 Flash |
 
 ### 관련 상세 설계 및 요구 사항 명세
 - [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세

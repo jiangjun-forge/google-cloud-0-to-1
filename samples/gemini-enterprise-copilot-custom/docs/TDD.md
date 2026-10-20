@@ -25,7 +25,7 @@ flowchart TD
     subgraph InputPhase ["1. 아키텍처 요구사항 입력"]
         Dev["개발자 / 클라우드 아키텍트"]
         CLI["에이전트 팩토리 CLI<br/>(diagnose.py)"]
-        PresetEngine["6대 도메인 아키텍처 칩<br/>(DB, ERP, SRE, API 등)"]
+        PresetEngine["3대 핵심 GitOps 아키텍처 칩<br/>(커스텀 레포, 어드민, 노코드)"]
         Dev --> CLI
         CLI --> PresetEngine
     end
@@ -68,7 +68,7 @@ flowchart TD
 | **BR-06** (엔터프라이즈 보안 및 격리 준수) | **FR-06** (IAM 권한 진단 및 마크다운 리포트) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
 | **BR-07** (표준 리소스 라벨링) | **FR-03**, **FR-06** (라벨링 자동 주입) | **NFR-04** (4대 표준 라벨링 준수) | `diagnose.py`, `deploy.py` |
 | **BR-08** (2단계 무인 고객 온보딩 여정) | **FR-06** (Agent Engine ChatOps 런타임) | **NFR-05** (단독 배포 및 자원 격리성) | `diagnose.py` |
-| **BR-09** (알파벳순 5대 추천 칩 및 단독 배포) | **FR-07** (알파벳순 5대 칩 및 단독 배포 도구) | **NFR-05** (단독 배포 및 자원 격리성) | `diagnose.py`, GE App |
+| **BR-09** (3대 핵심 GitOps 추천 칩 및 단독 배포) | **FR-07** (3대 핵심 GitOps 칩 및 단독 배포 도구) | **NFR-05** (단독 배포 및 자원 격리성) | `diagnose.py`, GE App |
 
 ---
 
@@ -94,12 +94,12 @@ flowchart TD
 - 진단 및 에이전트 생성 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, Gemini Enterprise app 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
 ### FR-06: Agent Engine 프로비저닝 및 ChatOps 실행 도구 체계
-- `python diagnose.py --deploy-engine` 단 1회 실행으로 Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
+- `python diagnose.py` 실행으로 Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
 - 런타임 내에 `deploy_enterprise_agent_tool`과 `list_deployed_agents_tool` 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다.
 
-### FR-07: 알파벳순 5대 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
-- GE App 매니페스트에 5대 원클릭 추천 질문 칩을 알파벳순(`GE Admin Copilot` -> `GE Agent Factory` -> `GE Connector Scaffolder` -> `GE Skill Factory` -> `GitHub 저장소 주소(https://github.com/...) 기반 배포`)으로 정렬 배치한다.
-- 4대 전체 일괄 배포를 배제하고 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
+### FR-07: 3대 핵심 GitOps 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
+- GE App 매니페스트에 3대 원클릭 추천 질문 칩을 순서(1: GitHub 저장소 주소 기반 커스텀 에이전트 배포 -> 2: GE Admin Copilot -> 3: GE Agent Factory) 및 에이전트 목록 조회 칩으로 정렬 배치한다.
+- 전체 일괄 배포를 배제하고 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
 
 ---
 

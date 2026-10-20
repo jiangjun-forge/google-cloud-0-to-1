@@ -1,6 +1,6 @@
 # Gemini Enterprise 커스텀 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-custom)
 
-- **배포 일시**: 2026-10-20 02:45:24 UTC
+- **배포 일시**: 2026-10-20 03:00:22 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)`
@@ -54,10 +54,11 @@ flowchart TB
    - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
    - **`GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)`** 선택.
 
-2. **자연어 붕어빵 생성 예시 프롬프트**:
-   - *"사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트 배포해 줘"*
-   - *"Cloud Monitoring 기반 SRE 실시간 인시던트 트러블슈팅 에이전트 배포해 줘"*
-   - *"GitHub 저장소 `https://github.com/my-org/custom-agent.git` 기반으로 사내 에이전트 등록해 줘"*
+2. **자연어 에이전트 배포 예시 프롬프트**:
+   - *"GitHub 저장소 `https://github.com/my-org/custom-agent.git` 기반으로 사내 커스텀 에이전트 배포해 줘"*
+   - *"GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘"*
+   - *"GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘"*
+   - *"사내 등록된 에이전트 목록 조회해 줘"*
 
 3. **팩토리 에이전트 자율 동작**:
    - 팩토리 에이전트가 내장된 `deploy_enterprise_agent_tool`을 호출하여 Agent Engine 프로비저닝 및 사내 갤러리 등록을 자동 완결한다.
