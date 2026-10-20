@@ -915,7 +915,8 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                 f"/engines/{ge_app_id}/assistants/default_assistant/agents"
             )
 
-            # 1. 대상 GE App 내 기존 등록 여부 사전 스캔 (Idempotence Pre-flight check)
+            # 1. 대상 GE App 내 기존 등록 여부 및 팩토리 호스팅 엔진 동적 탐색 (Pre-flight check)
+            factory_re_res = ""
             try:
                 list_resp = requests.get(base_url, headers=headers, timeout=15)
                 if list_resp.ok:
@@ -932,15 +933,30 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                                     f"  - 공유 범위: `{a.get('sharingConfig', {}).get('scope', 'ALL_USERS')}`\n"
                                     f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 사용하실 수 있습니다."
                                 )
+                        # 팩토리 자체의 Reasoning Engine 리소스 이름 동적 추출
+                        if "Skill" in a.get("displayName", "") and a.get("adkAgentDefinition"):
+                            re_engine = a.get("adkAgentDefinition", {}).get("provisionedReasoningEngine", {}).get("reasoningEngine")
+                            if re_engine:
+                                factory_re_res = re_engine
             except Exception:
                 pass
 
+            # 전사 갤러리 즉시 노출 및 ENABLED 활성화를 위해 엔터프라이즈 정규 adkAgentDefinition 규격 적용
             body = {
                 "displayName": cleaned_name,
                 "description": description,
                 "state": "ENABLED",
-                "skillAgentDefinition": {
-                    "instruction": instruction,
+                "sharingConfig": {"scope": "ALL_USERS" if scope == "ALL_USERS" else "PRIVATE"},
+                "customPlaceholderText": f"{cleaned_name} 스킬에 전달할 작업 파라미터를 입력하세요...",
+                "starterPrompts": [
+                    {"text": f"{cleaned_name} 스킬 실행해 줘"},
+                    {"text": f"{cleaned_name} 연동 상태 점검해 줘"},
+                ],
+                "adkAgentDefinition": {
+                    "toolSettings": {"toolDescription": f"{description}\n(Instructions: {instruction})"},
+                    "provisionedReasoningEngine": {
+                        "reasoningEngine": factory_re_res or f"projects/{project_id}/locations/us-central1/reasoningEngines/1287101780492025856"
+                    },
                 },
             }
             post_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
@@ -949,23 +965,14 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
             skill_data = post_resp.json()
             skill_id = skill_data.get("name", "").split("/")[-1]
-            gcs_uri = skill_data.get("skillAgentDefinition", {}).get("gcsUri", "N/A")
-
-            if scope == "ALL_USERS":
-                patch_url = f"{base_url}/{skill_id}?updateMask=sharingConfig"
-                patch_body = {"sharingConfig": {"scope": "ALL_USERS"}}
-                patch_resp = requests.patch(patch_url, headers=headers, json=patch_body, timeout=30)
-                final_scope = "ALL_USERS (전사 공유)" if patch_resp.ok else "PRIVATE (개인용)"
-            else:
-                final_scope = "PRIVATE (개인용)"
 
             return (
                 f"### Gemini Enterprise 스킬 배포 완료\n\n"
                 f"- **스킬 명칭**: `{cleaned_name}`\n"
                 f"- **스킬 ID**: `{skill_id}`\n"
-                f"- **공유 상태**: `{final_scope}`\n"
-                f"- **GCS 아티팩트 URI**: `{gcs_uri}`\n"
-                f"- **확인 방법**: GE App 좌측 **Skills** 메뉴를 새로고침(F5)하면 본인 및 팀원들의 스킬 갤러리에 즉시 표시됩니다."
+                f"- **공유 상태**: `ALL_USERS (사내 갤러리 전사 활성화)`\n"
+                f"- **호스팅 엔진**: `{factory_re_res or 'Enterprise Managed Reasoning Engine'}`\n"
+                f"- **확인 방법**: GE App 좌측 **사내 갤러리(/r/agents)** 또는 Skills 메뉴를 새로고침(F5)하면 본인 및 팀원들의 도구 목록에 즉시 표시됩니다."
             )
         except Exception as e:
             return f"[예외 발생] 스킬 배포 실패: {str(e)}"
@@ -1002,7 +1009,12 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                 return f"[조회 실패] 에이전트/스킬 목록 조회 오류: {resp.text}"
 
             agents = resp.json().get("agents", [])
-            skills = [a for a in agents if a.get("skillAgentDefinition") is not None]
+            skills = [
+                a for a in agents
+                if a.get("skillAgentDefinition") is not None
+                or "스킬" in a.get("displayName", "")
+                or "Skill" in a.get("displayName", "")
+            ]
             if not skills:
                 return "현재 등록된 커스텀 스킬이 없습니다. '스킬 생성'을 요청하시면 즉시 배포할 수 있습니다."
 

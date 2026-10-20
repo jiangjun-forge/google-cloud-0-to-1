@@ -67,20 +67,42 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (diagnose.py)"] --> B["1. 서울 리전 Data Boundary 조직 정책 점검 (법 제11조)"]
-    B --> C["2. RAG 벡터 인덱스 사외 적재 차단 IAM Deny 검사 (법 제10조)"]
-    C --> D["3. Cloud KMS CMEK 이중 암호화 상태 조회 (안내서 암호화 의무)"]
-    D --> E["4. Vertex AI 서울 리전 엔드포인트 격리 검증 (안내서 국내 위치)"]
-    E --> F["5. Cloud Audit Logs 데이터 접근 로깅 확인 (법 제10조)"]
-    F --> G["6. 사외/외국 계정 공유 차단 조직 정책 점검 (안내서 외국 기업 배제)"]
-    G --> H["7. 클라우드 사업자 임의 접근 차단 Access Approval 검사 (안내서 사전 승인 의무)"]
-    H --> I{"컴플라이언스 미준수 항목 존재 여부"}
-    I -- "결함 식별 (FAIL)" --> J["보안 정책 배포 및 CMEK 연동 처방 제시"]
-    I -- "전체 적합 (PASS)" --> K["국가 핵심 기술 기술 통제 풀셋 인증 리포트 출력"]
+    subgraph Layer1 ["Layer 1: User & Interface Layer"]
+        Auditor["정보보안팀 / CISO / 컴플라이언스 감사관"]
+        CLI["NCT 진단 컨트롤러<br/>(diagnose.py)"]
+        Auditor --> CLI
+    end
+
+    subgraph Layer2 ["Layer 2: Security & Governance Boundary"]
+        OrgLoc["리소스 위치 조직 정책<br/>(gcp.resourceLocations: asia-northeast3)"]
+        OrgDomain["사외/외국 계정 공유 차단<br/>(iam.allowedPolicyMemberDomains)"]
+        IAMDeny["사외 RAG 유출 차단<br/>(IAM Deny: aiplatform.indexes)"]
+        AccessAppr["클라우드 사업자 접근 통제<br/>(Access Approval 사전 승인)"]
+        CLI --> OrgLoc
+        CLI --> OrgDomain
+        CLI --> IAMDeny
+        CLI --> AccessAppr
+    end
+
+    subgraph Layer3 ["Layer 3: Diagnostic & Evaluation Runtime"]
+        AuditEngine["7대 핵심 기술 통제 평가기<br/>(산업기술보호법 및 산자부 기준 판정)"]
+        Remediator["선언적 복구 스크립트 도출기<br/>(gcloud 정규 복구 명령어 합성)"]
+        CLI --> AuditEngine
+        AuditEngine --> Remediator
+    end
+
+    subgraph Layer4 ["Layer 4: Target Backend & Sovereign Fabric"]
+        SeoulVertex["Vertex AI 서울 엔드포인트<br/>(asia-northeast3 온소일 격리)"]
+        SeoulKMS["Cloud KMS CMEK 키링<br/>(국내 보관 암호화 키)"]
+        AuditLogs["Cloud Logging 데이터 접근 감사 로그<br/>(7대 감사 추적 싱크)"]
+        AuditEngine --> SeoulVertex
+        AuditEngine --> SeoulKMS
+        AuditEngine --> AuditLogs
+    end
 ```
 
 ---

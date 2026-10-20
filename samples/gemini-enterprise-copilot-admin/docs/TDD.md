@@ -23,38 +23,37 @@ All contents, designs, and code examples are subject to change, modification, or
 ```mermaid
 sequenceDiagram
     actor Admin as IT / 클라우드 어드민
-    participant Portal as Gemini Enterprise (웹 포털)
+    participant Portal as Gemini Enterprise (웹 포털 /r/agents)
     participant Engine as Agent Engine (AdkApp 샌드박스)
-    participant Tool as admin_governance_diagnostic_tool
+    participant Tools as 내장 거버넌스 7종 도구 세트
     participant Auth as Google ADC (어드민 인가 토큰)
-    participant OrgAPI as Cloud Resource Manager & IAM API
-    participant MetricAPI as Cloud Monitoring & BigQuery
+    participant DiscAPI as Discovery Engine (에이전트 레지스트리)
+    participant MetricAPI as Cloud Logging & BigQuery
 
-    Admin->>Portal: "5대 관리 과제 점검: 외부 마켓플레이스 차단 상태 확인해 줘"
+    Admin->>Portal: "사내 테스트 에이전트 스캔하고 일괄 비활성화(DISABLED)해 줘"
     Portal->>Engine: 세션 쿼리 전달 (Streaming)
-    Engine->>Tool: execute(scenario="marketplace_governance")
-
+    
     rect rgb(240, 245, 255)
-    note right of Tool: 인프라 정책 및 메트릭 교차 진단 단계
-    Tool->>Auth: default_credentials.with_scopes()
-    Auth-->>Tool: Bearer Access Token 반환
-    par 조직 정책 및 IAM 점검
-        Tool->>OrgAPI: GET /v1/organizations/{org_id}/policies/constraints
-        OrgAPI-->>Tool: 조직 정책 제약 조건 상태 반환
-    and 메트릭 및 감사 로그 점검
-        Tool->>MetricAPI: GET /v3/projects/{project_id}/timeSeries
-        MetricAPI-->>Tool: 활성 사용자 및 호출 메트릭 반환
-    end
+    note right of Engine: 1단계: 난립한 에이전트(Sprawl) 스캔 및 식별
+    Engine->>Tools: filter_and_inspect_sprawl_agents_tool(keyword="테스트")
+    Tools->>Auth: Bearer Access Token 획득
+    Tools->>DiscAPI: GET .../assistants/default_assistant/agents
+    DiscAPI-->>Tools: 등록 에이전트 목록 JSON 반환
+    Tools-->>Engine: 3개 테스트 에이전트 식별 (IDs: aid-1, aid-2, aid-3)
     end
 
     rect rgb(245, 240, 255)
-    note right of Tool: 판정 및 복구 처방 합성
-    Tool->>Tool: 거버넌스 갭(Gap) 분석 및 4대 필수 라벨 스크립트 도출
-    Tool-->>Engine: ToolResult("진단 결과, 위험 식별, 즉시 복구 gcloud 명령어")
+    note right of Engine: 2단계: 배치 상태 변경 (Lifecycle Batch Control)
+    Engine->>Tools: batch_update_agents_state_tool(agent_ids="aid-1,aid-2,aid-3", target_state="DISABLED")
+    loop 각 대상 에이전트 순회
+        Tools->>DiscAPI: PATCH .../agents/{aid}?updateMask=state {"state": "DISABLED"}
+        DiscAPI-->>Tools: 200 OK (상태 비활성화 완료)
+    end
+    Tools-->>Engine: 배치 변경 결과 표 반환 (3건 성공)
     end
 
-    Engine-->>Portal: 진단 매트릭스 카드 및 원클릭 복구 스크립트 출력
-    Portal-->>Admin: "점검 완료: 외부 마켓플레이스 차단 미흡 (즉시 복구 gcloud 안내)"
+    Engine-->>Portal: 일괄 비활성화 결과 카드 및 감사 리포트 출력
+    Portal-->>Admin: "조치 완료: 3개 에이전트 비활성화 완료 (복구 방법 안내)"
 ```
 
 ---
@@ -96,7 +95,13 @@ sequenceDiagram
 - 와일드카드 도메인(`*.google.com`)이 불가한 폐쇄망 프록시 환경에서 GE 정상 구동에 필요한 15대 필수 FQDN 목록을 산출한다.
 - 아웃바운드 443 포트 TCP/TLS 연결성을 사전 검증하는 테스트 명령어를 도출한다.
 
-### FR-06: 마크다운 추천 후속 질문 및 표준 리포트 생성
+### FR-06: 에이전트 확산(Sprawl) 선별 및 배치 라이프사이클 거버넌스
+- 사내에 난립하거나 방치된 에이전트 및 스킬을 키워드, 상태(`ENABLED`/`DISABLED`/`PRIVATE`), 공유 범위(`ALL_USERS`/`PRIVATE`)로 필터링하여 식별한다 (`filter_and_inspect_sprawl_agents_tool`).
+- 식별된 에이전트 ID 목록에 대해 상태를 일괄 비활성화하거나 활성화하는 배치 도구를 제공한다 (`batch_update_agents_state_tool`).
+- 전사 공유 권한을 일괄 승인하거나 비공개로 회수하는 배치 도구 및 영구 삭제 도구를 제공한다 (`batch_update_agents_sharing_tool`, `batch_delete_agents_tool`).
+- 최근 60일간 미사용 좀비 에이전트, 토큰 과소비 톱 10 에이전트를 적발하는 BigQuery 3대 어드민 감사 SQL 팩을 제공한다 (`get_admin_audit_queries_tool`).
+
+### FR-07: 마크다운 추천 후속 질문 및 표준 리포트 생성
 - 사용자의 다음 조치를 돕기 위한 마크다운 추천 후속 질문 리스트를 출력한다.
 - 실행 완료 시 진단 결과, 복구 스크립트, 콘솔 조치 가이드를 담은 `report.md`를 덮어쓴다.
 

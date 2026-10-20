@@ -27,48 +27,52 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 시스템 아키텍처 및 데이터 흐름도
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 금융보안팀 또는 CISO가 CLI를 실행하면 VPC-SC, Cloud Storage Bucket Lock, Cloud KMS CMEK, IAM 감사 로깅, SA 키 발급 차단, SSL/TLS 정책, Model Armor/SDP 가명화 설정을 교차 감사하여 9대 금융 기술 통제 준수 여부를 판정하고 정규 gcloud 복구 처방을 도출한다.
 
 ```mermaid
-flowchart TD
-    subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
-        User["사용자 / 아키텍트 / 감사관"]
-        DiagnosePy["diagnose.py (진단 메인 컨트롤러)"]
+sequenceDiagram
+    actor Auditor as 금융보안팀 / CISO / 감사관
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant VPCSC as Access Context Manager API
+    participant Storage as Cloud Storage API
+    participant KMS as Cloud KMS API
+    participant IAM as Cloud Resource Manager API
+    participant Compute as Compute Engine API
+    participant Security as Model Armor & SDP API
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 9대 핵심 금융 규제 전수 비파괴 실사
+    Auditor->>CLI: python diagnose.py --project $PROJECT_ID
+    par 1. 논리적 망 분리 & RAG 격리
+        CLI->>VPCSC: getServicePerimeter(perimeter_name)
+        VPCSC-->>CLI: 서비스 경계 및 보호 리소스 상태
+    and 2. 스토리지 5년 불변 보존
+        CLI->>Storage: getBucket(audit_bucket)
+        Storage-->>CLI: retentionPolicy (157,680,000s) 및 locked 여부
+    and 3. CMEK 전면 적용
+        CLI->>KMS: getCryptoKey(asia-northeast3)
+        KMS-->>CLI: 키 알고리즘 및 자동 순환 상태
+    and 4. Vertex AI 데이터 접근 감사
+        CLI->>IAM: getIamPolicy(auditConfigs)
+        IAM-->>CLI: DATA_READ, DATA_WRITE 전체 활성화 여부
+    and 5. SA 키 발급 차단 & SSL 정책
+        CLI->>Compute: getSslPolicy(ssl_policy_name)
+        Compute-->>CLI: minTlsVersion: TLS_1_2 확인
+    and 6. AI 가명화 및 프롬프트 살균
+        CLI->>Security: getTemplate(model_armor_template)
+        Security-->>CLI: PII 마스킹 및 인젝션 필터 활성화 여부
+    end
     end
 
-    subgraph Core_Engine["진단 엔진 (Core Diagnostic Engine)"]
-        ArgParser["명령줄 인자 파서 (--dry-run, --project, --location)"]
-        MockProvider["Mock Data Provider (가상 모의 결과 생성)"]
-        LiveScanner["Live Inspection Engine (gcloud JSON 파서)"]
-        Reporter["Reporting & Formatter Engine (9대 기둥 리포트 생성)"]
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 갭 분석 및 선언적 복구 처방 도출
+    CLI->>CLI: 9대 기둥별 PASS/FAIL 판정 및 FSI 준수 종합 매트릭스 산출
+    CLI->>CLI: 결격 항목별 표준 gcloud 복구 명령어 합성
+    CLI-->>Auditor: FSI 소명 리포트 (report.md) 생성 및 화면 브리핑
+    Auditor-->>Auditor: 금융감독원/금융보안원 보안성 심의 증적 확보
     end
-
-    subgraph GCP_Cloud_APIs["Google Cloud 제어 평면 (Control Plane)"]
-        VPC_SC["Access Context Manager API (VPC-SC 경계)"]
-        Storage["Cloud Storage API (보존 기간 & Bucket Lock)"]
-        KMS["Cloud KMS API (CMEK 키링 및 키 상태)"]
-        IAM_Audit["Cloud Resource Manager API (IAM auditConfigs)"]
-        Org_Policy["Org Policy API (SA Key 발급 차단)"]
-        Compute_SSL["Compute Engine API (SSL/TLS 정책)"]
-        Model_Armor["Model Armor API (프롬프트 가드레일)"]
-        DLP["Cloud DLP / SDP API (가명 처리 템플릿)"]
-    end
-
-    User -->|"명령 실행 (python diagnose.py)"| DiagnosePy
-    DiagnosePy --> ArgParser
-    ArgParser -->|dry-run 플래그| MockProvider
-    ArgParser -->|실제 프로젝트| LiveScanner
-    LiveScanner -.->|조회| VPC_SC
-    LiveScanner -.->|조회| Storage
-    LiveScanner -.->|조회| KMS
-    LiveScanner -.->|조회| IAM_Audit
-    LiveScanner -.->|조회| Org_Policy
-    LiveScanner -.->|조회| Compute_SSL
-    LiveScanner -.->|조회| Model_Armor
-    LiveScanner -.->|조회| DLP
-    MockProvider --> Reporter
-    LiveScanner --> Reporter
-    Reporter -->|포맷된 텍스트 리포트| User
 ```
 
 ---

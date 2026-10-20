@@ -1102,7 +1102,8 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             f"/engines/{ge_app_id}/assistants/default_assistant/agents"
         )
 
-        # 1. 대상 GE App 내 기존 등록 여부 사전 스캔 (Idempotence Pre-flight check)
+        # 1. 대상 GE App 내 기존 등록 여부 및 팩토리 호스팅 엔진 동적 탐색 (Pre-flight check)
+        factory_re_res = ""
         try:
             list_resp = requests.get(base_url, headers=headers, timeout=15)
             if list_resp.ok:
@@ -1119,6 +1120,11 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                                 f"  - 공유 범위: `ALL_USERS`\n"
                                 f"  - 안내: 추가 등록 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                             )
+                    # 팩토리 자체의 Reasoning Engine 리소스 이름 동적 추출
+                    if "Agent Factory" in a.get("displayName", "") and a.get("adkAgentDefinition"):
+                        re_engine = a.get("adkAgentDefinition", {}).get("provisionedReasoningEngine", {}).get("reasoningEngine")
+                        if re_engine:
+                            factory_re_res = re_engine
         except Exception:
             pass
 
@@ -1129,6 +1135,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             "자주 묻는 질문(FAQ) 정리해 줘",
         ]
 
+        # 전사 갤러리 즉시 노출 및 ENABLED 활성화를 위해 엔터프라이즈 정규 adkAgentDefinition 규격 적용
         body = {
             "displayName": display_name,
             "description": description,
@@ -1136,8 +1143,11 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             "sharingConfig": {"scope": "ALL_USERS"},
             "customPlaceholderText": f"{display_name}에게 업무 질문이나 요청을 입력하세요...",
             "starterPrompts": [{"text": p} for p in prompts_list],
-            "noCodeAgentDefinition": {
-                "objective": instructions
+            "adkAgentDefinition": {
+                "toolSettings": {"toolDescription": description},
+                "provisionedReasoningEngine": {
+                    "reasoningEngine": factory_re_res or f"projects/{project_id}/locations/us-central1/reasoningEngines/1287101780492025856"
+                },
             },
         }
 

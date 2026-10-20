@@ -72,20 +72,41 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (python diagnose.py)"] --> B["1. BigQuery 스키마 및 테이블/컬럼 설명 조회"]
-    B --> C["2. Dataplex 데이터 프로파일 통계 수집 여부 점검"]
-    C --> D["3. Knowledge Catalog 비즈니스 용어집(Glossary) 연동 확인"]
-    D --> E["4. Data Agent NL2SQL 준비도 점수 산출 (0~100점)"]
-    E --> F{"준비도 점수 합격 여부 (80점 기준)"}
-    F -- "미달 (FAIL/WARN)" --> G["--enrich 옵션 활성화: Gemini 기반 메타데이터 생성"]
-    G --> H["실데이터 프로파일 통계 기반 표준 컬럼 설명 도출"]
-    H --> I["비즈니스 계산 공식(Formula) 용어집 템플릿 YAML 생성"]
-    I --> J["--apply 옵션 지정 시 BigQuery 스키마 패치 반영"]
-    F -- "합격 (PASS)" --> K["Data Agent NL2SQL 고정확도 운영 보장 리포트 출력"]
+    subgraph Layer1 ["Layer 1: User & Interface Layer"]
+        User["데이터 엔지니어 / AI 아키텍트"]
+        CLI["진단 및 보강 컨트롤러<br/>(diagnose.py)"]
+        User --> CLI
+    end
+
+    subgraph Layer2 ["Layer 2: Security & Governance Boundary"]
+        IAMBoundary["IAM 최소 권한 경계<br/>(bigquery.metadataViewer, dataplex.viewer)"]
+        NonDestructive["비파괴 읽기 전용 가드<br/>(기본 조회 모드, --apply 명시 시에만 패치)"]
+        CLI --> IAMBoundary
+        IAMBoundary --> NonDestructive
+    end
+
+    subgraph Layer3 ["Layer 3: Diagnostic & Semantic Engine"]
+        ScoreEngine["NL2SQL 준비도 점수 산출기<br/>(설명율, 프로파일, 용어집 0~100점)"]
+        EnrichEngine["Gemini 지능형 보강기<br/>(시맨틱 설명 추론 및 공식 도출)"]
+        YamlGen["용어집 매니페스트 생성기<br/>(dataplex_glossary_terms.yaml)"]
+        NonDestructive --> ScoreEngine
+        ScoreEngine --> EnrichEngine
+        EnrichEngine --> YamlGen
+    end
+
+    subgraph Layer4 ["Layer 4: Target Backend & Metadata Fabric"]
+        BQMeta["BigQuery 스키마 메타데이터<br/>(테이블 및 컬럼 Description)"]
+        DataplexProfile["Dataplex 데이터 프로파일<br/>(고유값, Null 비율, 통계치)"]
+        KnowledgeCatalog["Knowledge Catalog<br/>(비즈니스 용어집 및 Formula)"]
+        ScoreEngine --> BQMeta
+        ScoreEngine --> DataplexProfile
+        ScoreEngine --> KnowledgeCatalog
+        EnrichEngine -.->|"선택적 패치 반영 (--apply)"| BQMeta
+    end
 ```
 
 ---

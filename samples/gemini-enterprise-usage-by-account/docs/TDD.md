@@ -16,16 +16,35 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 시스템 아키텍처 및 처리 흐름
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구는 Gemini Enterprise app 관리형 엔진이 BigQuery로 스트리밍 적재한 테이블을 순수 파이썬 단일 스크립트(`diagnose.py`)로 분석 및 리포팅하는 아키텍처다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사내 임직원이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 웹 대화창에서 질의를 수행하면 관리형 엔진이 감사 로그를 BigQuery로 스트리밍하고, 관리자가 CLI를 실행하여 BigQuery REST API로 계정별 토큰 사용량 및 지연 시간을 즉시 집계 분석한다.
 
 ```mermaid
-flowchart TD
-    GE["Gemini Enterprise app 웹 포털 대화"] --> Engine["Gemini Enterprise app 관리형 로깅 엔진"]
-    Engine --> BQ[("BigQuery 파티션 테이블<br/>(gemini_enterprise_prompt_logs_*)")]
-    CLI["진단 스크립트<br/>(python diagnose.py)"] --> BQ
-    CLI --> Report["마크다운 분석 보고서<br/>(report.md)"]
+sequenceDiagram
+    actor Emp as 사내 임직원
+    participant Portal as Gemini Enterprise (웹 포털)
+    participant LogEngine as 공식 내장 로깅 엔진
+    participant BQ as BigQuery 감사 데이터셋
+    actor Admin as IT / 클라우드 관리자
+    participant CLI as CLI 진단기 (diagnose.py)
+
+    rect rgb(240, 245, 255)
+    note right of LogEngine: 1단계: 임직원 프롬프트 질의 및 자동 로깅
+    Emp->>Portal: 프롬프트 입력 및 에이전트 대화 질의
+    Portal->>LogEngine: Prompt & Response 텍스트 전달
+    LogEngine->>BQ: 스트리밍 적재 (user_email, promptToken, latencyMs)
+    Portal-->>Emp: 모델 응답 답변 출력
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 계정별 토큰 집계 및 감사 분석
+    Admin->>CLI: python diagnose.py --dataset gemini_logging
+    CLI->>BQ: POST /jobs/query (파티션 필터 기반 표준 집계 SQL)
+    BQ-->>CLI: 사용자별 호출 수, 토큰 소비량, 평균 지연시간 반환
+    CLI->>CLI: 순위 테이블 렌더링 및 report.md 자동 생성
+    CLI-->>Admin: 터미널 랭킹 브리핑 및 마크다운 리포트 제공
+    end
 ```
 
 ---

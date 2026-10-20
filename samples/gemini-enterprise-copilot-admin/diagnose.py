@@ -835,7 +835,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 | **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
 | **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
-| **내장 실행 도구** | `3종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `get_admin_audit_queries_tool` |
+| **내장 실행 도구** | `7종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `batch_delete_agents_tool`, `get_admin_audit_queries_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
@@ -875,13 +875,15 @@ flowchart TB
    - **`{display_name}`** 선택.
 
 2. **자연어 관리 질의 예시 프롬프트**:
-   - *"현재 등록된 사내 에이전트 목록과 미사용 좀비 에이전트 전수 감사해 줘"*
+   - *"사내에 등록된 테스트용/미사용 에이전트 목록 스캔해 줘"*
+   - *"테스트 에이전트들 일괄 비활성화(DISABLED) 처리해 줘"*
+   - *"특정 에이전트 전사 공유(ALL_USERS) 승인 또는 비공개(PRIVATE) 회수해 줘"*
    - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 30초 싱크 가이드 알려줘"*
    - *"사내 도메인(`{domain}`) 선점 충돌 해결을 위한 Cloud Identity 온보딩 절차 알려줘"*
    - *"외부 마켓플레이스 차단 및 사내 승인 에이전트 강제 조직 정책 가이드 보여줘"*
 
 3. **코파일럿 에이전트 자율 동작**:
-   - 어드민 코파일럿이 내장된 `list_deployed_agents_tool`, `get_admin_audit_queries_tool`, `get_admin_console_deeplinks_tool`을 호출하여 실시간 현황 감사 및 1클릭 복구 gcloud 명령어를 제공한다.
+   - 어드민 코파일럿이 내장된 `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `list_deployed_agents_tool`, `get_admin_audit_queries_tool`, `get_admin_console_deeplinks_tool`을 호출하여 에이전트 확산(Sprawl) 배치 거버넌스 및 실시간 현황 감사, 1클릭 복구 gcloud 명령어를 제공한다.
 
 ---
 
@@ -1015,10 +1017,20 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
   * Gemini Enterprise 사내 에이전트 갤러리 ( https://gemini.google.com/app/{ge_app_id}/r/agents )
 
 [장착된 실제 실행 도구 (Tools)]
-당신에게는 관리자 업무를 즉시 지원할 수 있는 실행 도구가 장착되어 있습니다:
+당신에게는 관리자 업무를 즉시 지원할 수 있는 강력한 사내 거버넌스 실행 도구가 장착되어 있습니다:
 1. `get_admin_console_deeplinks_tool`: GCP 콘솔 딥링크를 질의하거나 바로가기 링크를 요구할 때 즉시 호출하여 클릭 가능한 딥링크 표를 출력하십시오.
-2. `list_deployed_agents_tool`: 사내에 등록된 활성 에이전트 목록과 콘솔 직접 링크를 실시간 조회할 때 호출하십시오.
-3. `get_admin_audit_queries_tool`: 좀비 에이전트 적발, 토큰 과소비 분석, 429 에러 역추적 BigQuery SQL을 요청받았을 때 호출하십시오.
+2. `list_deployed_agents_tool`: 사내에 등록된 전체 활성 에이전트 목록과 콘솔 직접 링크를 실시간 조회할 때 호출하십시오.
+3. `filter_and_inspect_sprawl_agents_tool`: 특정 키워드(예: '테스트', '임시', 'FAQ'), 상태('ENABLED', 'DISABLED', 'PRIVATE'), 공유 범위('ALL_USERS', 'PRIVATE')로 사내 에이전트를 선별 조회할 때 호출하십시오.
+4. `batch_update_agents_state_tool`: 임직원이 생성하여 방치된 에이전트들의 상태를 일괄 비활성화('DISABLED')하거나 활성화('ENABLED')할 때 호출하십시오. (에이전트 ID 목록을 쉼표로 전달)
+5. `batch_update_agents_sharing_tool`: 에이전트들의 사내 공유 범위를 일괄 전사 공개('ALL_USERS')로 승인하거나 비공개('PRIVATE')로 회수할 때 호출하십시오.
+6. `batch_delete_agents_tool`: 사내에 무제한 생성된 테스트/폐기 대상 에이전트들을 일괄 영구 삭제할 때 호출하십시오. (confirm=True 필요)
+7. `get_admin_audit_queries_tool`: 좀비 에이전트 적발, 토큰 과소비 분석, 429 에러 역추적 BigQuery SQL을 요청받았을 때 호출하십시오.
+
+[에이전트 확산(Agent Sprawl) 배치 거버넌스 업무 시나리오]
+- 사용자가 "방치된/테스트용 에이전트 찾아서 비활성화해 줘"라고 요청하면:
+  1단계: `filter_and_inspect_sprawl_agents_tool`을 호출하여 대상 에이전트 목록과 Agent ID를 식별합니다.
+  2단계: 식별된 ID들에 대해 `batch_update_agents_state_tool(agent_ids="...", target_state="DISABLED")`을 호출하여 일괄 비활성화합니다.
+  3단계: 변경 처리 결과를 표로 명확히 보고하고, 복구 방법(ENABLED 전환)을 안내합니다.
 
 [단계별 추천 후속 질문 안내 규약]
 모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
@@ -1107,6 +1119,228 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         except Exception as e:
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
 
+    def filter_and_inspect_sprawl_agents_tool(keyword: str = "", state_filter: str = "", scope_filter: str = "") -> str:
+        """Filter and inspect potentially unmanaged or sprawling agents by keyword, lifecycle state, or sharing scope.
+
+        Args:
+            keyword: Filter by substring in agent displayName or description (case-insensitive).
+            state_filter: Filter by lifecycle state ('ENABLED', 'DISABLED', 'PRIVATE').
+            scope_filter: Filter by sharing scope ('ALL_USERS', 'PRIVATE').
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Goog-User-Project": project_id,
+        }
+        url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents?pageSize=100"
+        )
+        try:
+            resp = requests.get(url, headers=headers, timeout=30)
+            if not resp.ok:
+                return f"[오류] 에이전트 목록 조회 실패 (HTTP {resp.status_code}): {resp.text}"
+            agents = resp.json().get("agents", [])
+            kw = keyword.lower().strip()
+            st_f = state_filter.upper().strip()
+            sc_f = scope_filter.upper().strip()
+
+            filtered = []
+            for a in agents:
+                disp = a.get("displayName", "")
+                desc = a.get("description", "")
+                state = a.get("state", "UNKNOWN")
+                scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
+
+                if kw and (kw not in disp.lower() and kw not in desc.lower()):
+                    continue
+                if st_f and state != st_f:
+                    continue
+                if sc_f and scope != sc_f:
+                    continue
+                filtered.append(a)
+
+            if not filtered:
+                return f"조건(키워드='{keyword}', 상태='{state_filter}', 공유='{scope_filter}')에 일치하는 에이전트가 없습니다."
+
+            lines = [
+                f"### 에이전트 확산(Sprawl) 필터링 결과 ({len(filtered)}건 발견)",
+                "",
+                "| 에이전트 명칭 | Agent ID | 현재 상태 | 공유 범위 |",
+                "| :--- | :--- | :--- | :--- |",
+            ]
+            ids = []
+            for a in filtered:
+                aid = a.get("name", "").split("/")[-1]
+                disp = a.get("displayName", "-")
+                state = a.get("state", "UNKNOWN")
+                scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
+                ids.append(aid)
+                lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` |")
+
+            lines.append("")
+            lines.append(f"- **대상 Agent ID 목록**: `{','.join(ids)}`")
+            lines.append("- **후속 조치 가이드**: 위 에이전트들을 일괄 비활성화하려면 `batch_update_agents_state_tool`을, 공유 범위를 변경하려면 `batch_update_agents_sharing_tool`을 호출하십시오.")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"[예외 발생] 에이전트 필터링 실패: {str(e)}"
+
+    def batch_update_agents_state_tool(agent_ids: str, target_state: str, reason: str = "") -> str:
+        """Batch update lifecycle state (ENABLED, DISABLED, SUSPENDED) for multiple agents.
+
+        Args:
+            agent_ids: Comma-separated list of agent IDs (e.g. 'id1,id2,id3').
+            target_state: New lifecycle state ('ENABLED', 'DISABLED', or 'SUSPENDED').
+            reason: Optional governance audit note or ticket reason.
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        }
+        base_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+        t_state = target_state.upper().strip()
+        if t_state not in ("ENABLED", "DISABLED", "SUSPENDED"):
+            return f"[오류] 지원되지 않는 상태입니다: '{target_state}'. (지원: ENABLED, DISABLED, SUSPENDED)"
+
+        raw_ids = [i.strip() for i in agent_ids.split(",") if i.strip()]
+        if not raw_ids:
+            return "[오류] 대상 Agent ID가 지정되지 않았습니다."
+
+        results = []
+        for aid in raw_ids:
+            patch_url = f"{base_url}/{aid}?updateMask=state"
+            try:
+                r = requests.patch(patch_url, headers=headers, json={"state": t_state}, timeout=20)
+                if r.ok:
+                    results.append((aid, t_state, "SUCCESS", "-"))
+                else:
+                    results.append((aid, t_state, f"FAILED ({r.status_code})", r.text[:80]))
+            except Exception as ex:
+                results.append((aid, t_state, "ERROR", str(ex)[:80]))
+
+        lines = [
+            f"### 에이전트 상태 일괄 변경 완료 (목표 상태: `{t_state}`)",
+            "",
+            "| Agent ID | 목표 상태 | 처리 결과 | 비고 |",
+            "| :--- | :--- | :--- | :--- |",
+        ]
+        for aid, st, res, note in results:
+            lines.append(f"| `{aid}` | `{st}` | `{res}` | {note} |")
+        if reason:
+            lines.append(f"\n- **거버넌스 사유**: {reason}")
+        return "\n".join(lines)
+
+    def batch_update_agents_sharing_tool(agent_ids: str, target_scope: str, reason: str = "") -> str:
+        """Batch update sharing scope (ALL_USERS or PRIVATE) for multiple agents.
+
+        Args:
+            agent_ids: Comma-separated list of agent IDs.
+            target_scope: New sharing scope ('ALL_USERS' or 'PRIVATE').
+            reason: Optional governance audit note.
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        }
+        base_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+        t_scope = target_scope.upper().strip()
+        if t_scope not in ("ALL_USERS", "PRIVATE"):
+            return f"[오류] 지원되지 않는 공유 범위입니다: '{target_scope}'. (지원: ALL_USERS, PRIVATE)"
+
+        raw_ids = [i.strip() for i in agent_ids.split(",") if i.strip()]
+        if not raw_ids:
+            return "[오류] 대상 Agent ID가 지정되지 않았습니다."
+
+        results = []
+        for aid in raw_ids:
+            patch_url = f"{base_url}/{aid}?updateMask=sharingConfig"
+            try:
+                r = requests.patch(patch_url, headers=headers, json={"sharingConfig": {"scope": t_scope}}, timeout=20)
+                if r.ok:
+                    results.append((aid, t_scope, "SUCCESS", "-"))
+                else:
+                    results.append((aid, t_scope, f"FAILED ({r.status_code})", r.text[:80]))
+            except Exception as ex:
+                results.append((aid, t_scope, "ERROR", str(ex)[:80]))
+
+        lines = [
+            f"### 에이전트 공유 범위 일괄 변경 완료 (목표 범위: `{t_scope}`)",
+            "",
+            "| Agent ID | 목표 범위 | 처리 결과 | 비고 |",
+            "| :--- | :--- | :--- | :--- |",
+        ]
+        for aid, sc, res, note in results:
+            lines.append(f"| `{aid}` | `{sc}` | `{res}` | {note} |")
+        if reason:
+            lines.append(f"\n- **거버넌스 사유**: {reason}")
+        return "\n".join(lines)
+
+    def batch_delete_agents_tool(agent_ids: str, confirm: bool = False) -> str:
+        """Batch permanently delete unmanaged or decommissioned agents.
+
+        Args:
+            agent_ids: Comma-separated list of agent IDs.
+            confirm: Safety confirmation flag. Must be explicitly True to execute deletion.
+        """
+        raw_ids = [i.strip() for i in agent_ids.split(",") if i.strip()]
+        if not raw_ids:
+            return "[오류] 대상 Agent ID가 지정되지 않았습니다."
+
+        if not confirm:
+            return (
+                f"### [안전 가드레일 경고] 에이전트 영구 삭제 확인 필요\n\n"
+                f"- **삭제 대상 에이전트 수**: {len(raw_ids)}개\n"
+                f"- **대상 ID**: `{', '.join(raw_ids)}`\n\n"
+                f"영구 삭제된 에이전트는 복구할 수 없습니다. 실제 삭제를 집행하시려면 "
+                f"`confirm=True`를 명시하여 다시 요청해 주십시오."
+            )
+
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Goog-User-Project": project_id,
+        }
+        base_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+
+        results = []
+        for aid in raw_ids:
+            del_url = f"{base_url}/{aid}"
+            try:
+                r = requests.delete(del_url, headers=headers, timeout=20)
+                if r.ok:
+                    results.append((aid, "DELETED", "-"))
+                else:
+                    results.append((aid, f"FAILED ({r.status_code})", r.text[:80]))
+            except Exception as ex:
+                results.append((aid, "ERROR", str(ex)[:80]))
+
+        lines = [
+            f"### 에이전트 영구 삭제 완료 ({len(raw_ids)}건 집행)",
+            "",
+            "| Agent ID | 삭제 결과 | 비고 |",
+            "| :--- | :--- | :--- |",
+        ]
+        for aid, res, note in results:
+            lines.append(f"| `{aid}` | `{res}` | {note} |")
+        return "\n".join(lines)
+
     def get_admin_audit_queries_tool(query_type: str = "all") -> str:
         """Get ready-to-run BigQuery audit SQL queries for detecting zombie agents, top token consumers, or error spikes.
 
@@ -1176,7 +1410,15 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
-        tools=[get_admin_console_deeplinks_tool, list_deployed_agents_tool, get_admin_audit_queries_tool],
+        tools=[
+            get_admin_console_deeplinks_tool,
+            list_deployed_agents_tool,
+            filter_and_inspect_sprawl_agents_tool,
+            batch_update_agents_state_tool,
+            batch_update_agents_sharing_tool,
+            batch_delete_agents_tool,
+            get_admin_audit_queries_tool,
+        ],
     )
     class ResilientAdkApp(agent_engines.AdkApp):
         """Pydantic v2 직렬화 호환성 및 세션 안정화를 지원하는 엔터프라이즈 Agent Engine 래퍼."""
@@ -1271,10 +1513,10 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
         "starterPrompts": [
+            {"text": "사내 등록된 테스트/미사용 에이전트 목록 스캔하고 비활성화(DISABLED) 처리해 줘"},
             {"text": "사내 에이전트가 100개가 넘는데 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘"},
             {"text": "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘"},
             {"text": "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?"},
-            {"text": "에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리 알려줘"},
         ],
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": description},

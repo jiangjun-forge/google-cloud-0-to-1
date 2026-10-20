@@ -28,46 +28,56 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 시스템 아키텍처 및 데이터 흐름도
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사용자가 CLI를 구동하면 BigQuery, Dataplex, Knowledge Catalog API를 순차 또는 병렬 조회하여 준비도 점수를 산출하고, 필요 시 Gemini API를 통해 시맨틱 설명을 자동 생성하여 스키마에 패치 반영한다.
 
 ```mermaid
-flowchart TD
-    subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
-        User["데이터 엔지니어 / AI 아키텍트"]
-        DiagnosePy["diagnose.py (진단/보강 메인 컨트롤러)"]
+sequenceDiagram
+    actor User as 데이터 엔지니어 / AI 아키텍트
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant BQ as BigQuery API (스키마 메타데이터)
+    participant Dataplex as Dataplex API (데이터 프로파일링)
+    participant Catalog as Knowledge Catalog API (비즈니스 용어집)
+    participant Gemini as Gemini API (시맨틱 추론 엔진)
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 비파괴 메타데이터 전수 진단
+    User->>CLI: python diagnose.py --dataset cymbal_gold
+    par 스키마 메타데이터 조회
+        CLI->>BQ: get_dataset() & get_table() (테이블/컬럼 Description 확인)
+        BQ-->>CLI: 스키마 및 설명율 반환
+    and 데이터 프로파일 통계 조회
+        CLI->>Dataplex: getDataProfileScan() (최솟값, 고유값, Null 비율)
+        Dataplex-->>CLI: 프로파일 통계 유무 반환
+    and 비즈니스 용어집 연동 조회
+        CLI->>Catalog: searchEntries() (용어집 및 계산 공식 바인딩)
+        Catalog-->>CLI: 용어집 엔트리 반환
+    end
+    CLI->>CLI: 준비도 점수 산출 (가중치: 설명율 40% + 프로파일 30% + 용어집 30%)
+    CLI-->>User: 준비도 점수 표 출력 및 report.md 생성
     end
 
-    subgraph Core_Engine["핵심 진단 및 보강 엔진 (Core Engine)"]
-        ArgParser["인자 파서 (--dry-run, --enrich, --apply)"]
-        ScoreEngine["준비도 점수 산출기 (Readiness Score Engine)"]
-        MockProvider["Mock Data Provider (모의 시뮬레이션)"]
-        LiveScanner["Live BigQuery & Dataplex Scanner"]
-        Enricher["Semantic Enricher (설명 및 공식 도출)"]
-        YamlGen["Glossary YAML Generator"]
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 지능형 시맨틱 보강 (--enrich)
+    opt --enrich 플래그 지정 시
+        User->>CLI: python diagnose.py --dataset cymbal_gold --enrich
+        CLI->>Gemini: generate_content(스키마, 프로파일 통계, 도메인 맥락)
+        Gemini-->>CLI: 축약어 해소 설명문 및 표준 계산 공식(Formula) 반환
+        CLI->>CLI: dataplex_glossary_terms.yaml 매니페스트 파일 저장
+        CLI-->>User: 보강된 설명 미리보기 및 YAML 산출물 안내
+    end
     end
 
-    subgraph GCP_Services["Google Cloud 서비스 계층"]
-        BQ_Schema["BigQuery API (테이블 및 스키마 메타데이터)"]
-        Dataplex_Profile["Dataplex API (데이터 프로파일링 통계)"]
-        Knowledge_Catalog["Knowledge Catalog API (비즈니스 용어집)"]
-        Gemini_AI["Gemini API (시맨틱 설명 자동 생성)"]
+    rect rgb(240, 255, 245)
+    note right of CLI: 3단계: 스키마 패치 반영 (--apply)
+    opt --apply 플래그 지정 시
+        User->>CLI: python diagnose.py --dataset cymbal_gold --enrich --apply
+        CLI->>BQ: update_table(patch_schema_descriptions)
+        BQ-->>CLI: 200 OK (BigQuery 테이블 스키마 업데이트 완료)
+        CLI-->>User: "BigQuery 스키마 메타데이터 패치 완료 (Data Agent 환각 방어)"
     end
-
-    User -->|스크립트 구동| DiagnosePy
-    DiagnosePy --> ArgParser
-    ArgParser -->|dry-run 플래그| MockProvider
-    ArgParser -->|실제 프로젝트/데이터셋| LiveScanner
-    LiveScanner -.->|조회| BQ_Schema
-    LiveScanner -.->|통계 확인| Dataplex_Profile
-    LiveScanner -.->|엔트리 확인| Knowledge_Catalog
-    MockProvider --> ScoreEngine
-    LiveScanner --> ScoreEngine
-    ScoreEngine -->|진단 결과 표 출력 및 report.md 생성| User
-    ArgParser -->|enrich 플래그| Enricher
-    Enricher -.->|설명 추론| Gemini_AI
-    Enricher --> YamlGen
-    YamlGen -->|용어집 YAML 파일 생성| User
-    ArgParser -->|apply 플래그| BQ_Schema
+    end
 ```
 
 ---

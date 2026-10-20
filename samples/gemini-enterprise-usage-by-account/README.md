@@ -71,22 +71,35 @@ python diagnose.py
 
 ---
 
-## 3. 내장 로깅 파이프라인 및 BigQuery 분석 아키텍처
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TB
-    subgraph UserLayer["1. 사내 임직원 질의"]
-        Emp["사내 임직원 (전사 사용자)"] -->|프롬프트 질의 및 에이전트 대화| Portal["Gemini Enterprise app<br/>(웹 포털 /r/agents)"]
+flowchart TD
+    subgraph Layer1 ["Layer 1: User & Interaction Layer"]
+        Emp["사내 임직원 (전사 사용자)"]
+        Portal["Gemini Enterprise app<br/>(웹 대화창 /r/agents)"]
+        Emp --> Portal
     end
 
-    subgraph NativeLogging["2. 공식 내장 로깅 파이프라인"]
-        Portal -->|공식 내장 Prompt/Response Logging| Sink["Cloud Logging Router<br/>(자동 필터링)"]
-        Sink -->|실시간 스트리밍 적재| BQ[("BigQuery 감사 데이터셋<br/>gemini_logging.cloudaudit")]
+    subgraph Layer2 ["Layer 2: Security & Logging Boundary"]
+        AuditPolicy["공식 내장 로깅 정책<br/>(Settings > Audit & Compliance 활성화)"]
+        LogRouter["Cloud Logging Router<br/>(프롬프트 및 모델 응답 스트리밍 싱크)"]
+        Portal --> AuditPolicy
+        AuditPolicy --> LogRouter
     end
 
-    subgraph Analytics["3. 관리자 분석 및 거버넌스"]
-        BQ --> Tool["진단 분석기 (diagnose.py)"]
-        Tool --> Dashboard["계정별 토큰 소비 랭킹<br/>모델별 지연 시간(Latency) 분석"]
+    subgraph Layer3 ["Layer 3: Analytics Runtime & Tooling"]
+        CLI["진단 분석기<br/>(diagnose.py)"]
+        Admin["IT / 클라우드 관리자"]
+        Admin --> CLI
+    end
+
+    subgraph Layer4 ["Layer 4: Target Backend & Storage"]
+        Dataset["BigQuery 감사 데이터셋<br/>(gemini_logging)"]
+        LogTable["파티션 감사 테이블<br/>(cloudaudit.googleapis.com/activity)"]
+        LogRouter --> Dataset
+        Dataset --> LogTable
+        CLI --> Dataset
     end
 ```
 

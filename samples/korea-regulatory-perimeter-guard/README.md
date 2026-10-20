@@ -67,19 +67,42 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (diagnose.py)"] --> B["1. 논리적 망 분리 & 웹 검색 격리 검사 (감독규정 제15조)"]
-    B --> C["2. 접근 통제: 서비스 계정 키 발급 차단 검사 (감독규정 제13조)"]
-    C --> D["3. 스토리지 5년 불변 보존 & CMEK 검사 (법 제22조, 감독규정 제14조)"]
-    D --> E["4. Vertex AI 데이터 접근 감사 로그 검사 (법 제22조, 감독규정 제63조)"]
-    E --> F["5. Model Armor & SDP 가명 처리 가드레일 (신용정보법 제20조의2)"]
-    F --> G["6. 전송 구간 TLS 1.2+ 고강도 암호화 검사 (감독규정 제14조)"]
-    G --> H{"규제 결격 항목 발견 여부"}
-    H -- "결격 발견 (FAIL/WARN)" --> I["항목별 조치 명령어 및 콘솔 가이드 출력"]
-    H -- "전 항목 충족 (PASS)" --> J["FSI 기술 통제 풀셋 소명 완료 리포트 확정"]
+    subgraph Layer1 ["Layer 1: User & Interface Layer"]
+        Auditor["금융보안팀 / CISO / 금융감독원 감사관"]
+        CLI["FSI 규제 진단 컨트롤러<br/>(diagnose.py)"]
+        Auditor --> CLI
+    end
+
+    subgraph Layer2 ["Layer 2: Security & Regulatory Boundary"]
+        VPCSC["VPC Service Controls 경계<br/>(논리적 망 분리 및 RAG 격리)"]
+        OrgPolicy["서비스 계정 키 발급 차단<br/>(constraints/iam.disableServiceAccountKeyCreation)"]
+        SSLPolicy["전송 구간 암호화 정책<br/>(TLS 1.2+ Restricted 프로필)"]
+        CLI --> VPCSC
+        CLI --> OrgPolicy
+        CLI --> SSLPolicy
+    end
+
+    subgraph Layer3 ["Layer 3: Diagnostic & Guardrail Engine"]
+        FSIEngine["9대 금융 규제 평가기<br/>(전자금융감독규정 및 신용정보법 판정)"]
+        ModelArmor["AI 안전 가드레일<br/>(Model Armor 및 SDP 가명 처리)"]
+        Remediator["선언적 복구 스크립트 도출기<br/>(gcloud 정규 복구 명령어 합성)"]
+        CLI --> FSIEngine
+        FSIEngine --> ModelArmor
+        FSIEngine --> Remediator
+    end
+
+    subgraph Layer4 ["Layer 4: Target Backend & FSI Storage Fabric"]
+        GCSLock["Cloud Storage 불변 보존<br/>(5년 보존 정책 및 Bucket Lock)"]
+        KMSCMEK["Cloud KMS 금융 CMEK<br/>(서울 리전 HSM 암호화 키)"]
+        VertexAudit["Vertex AI 감사 추적<br/>(DATA_READ, DATA_WRITE 전체 수집)"]
+        FSIEngine --> GCSLock
+        FSIEngine --> KMSCMEK
+        FSIEngine --> VertexAudit
+    end
 ```
 
 ---

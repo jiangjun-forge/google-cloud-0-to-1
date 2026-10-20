@@ -27,46 +27,52 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 시스템 아키텍처 및 데이터 흐름도
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 정보보안 담당자 또는 감사관이 CLI를 실행하면 조직 정책, IAM Deny, Cloud KMS, Vertex AI, 감사 로깅, Access Approval API를 교차 감사하여 7대 기술적 통제 준수 여부를 판정하고 즉시 조치 처방을 도출한다.
 
 ```mermaid
-flowchart TD
-    subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
-        User["사용자 / 보안 관리자 / 감사관"]
-        DiagnosePy["diagnose.py (진단 메인 컨트롤러)"]
+sequenceDiagram
+    actor Auditor as 정보보안팀 / CISO / 감사관
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant OrgAPI as Org Policy API (위치/도메인)
+    participant IAMAPI as Cloud IAM API (Deny 정책)
+    participant KMSAPI as Cloud KMS API (CMEK 서울)
+    participant VertexAPI as Vertex AI API (온소일 격리)
+    participant LogAPI as Cloud Logging API (감사 싱크)
+    participant ApprAPI as Access Approval API (CSP 통제)
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 7대 핵심 통제 전수 비파괴 실사
+    Auditor->>CLI: python diagnose.py --project $PROJECT_ID
+    par 1. 리소스 위치 및 사외 도메인 통제
+        CLI->>OrgAPI: getEffectivePolicy(gcp.resourceLocations & allowedPolicyMemberDomains)
+        OrgAPI-->>CLI: 서울 리전 강제 및 도메인 바운딩 상태
+    and 2. 사외 RAG 유출 차단
+        CLI->>IAMAPI: listDenyPolicies(aiplatform.googleapis.com)
+        IAMAPI-->>CLI: IAM Deny 규칙 존재 여부
+    and 3. CMEK 암호화 키 주권
+        CLI->>KMSAPI: listCryptoKeys(asia-northeast3)
+        KMSAPI-->>CLI: 키 순환 및 암호화 알고리즘
+    and 4. Vertex AI 엔드포인트 격리
+        CLI->>VertexAPI: getEndpoint(asia-northeast3)
+        VertexAPI-->>CLI: 서울 리전 서빙 상태
+    and 5. 데이터 접근 감사 추적
+        CLI->>LogAPI: listSinks & getServiceConfig()
+        LogAPI-->>CLI: DATA_READ / DATA_WRITE 로깅 상태
+    and 6. 사업자 임의 접근 통제
+        CLI->>ApprAPI: getAccessApprovalSettings()
+        ApprAPI-->>CLI: 사전 승인 강제 등록 여부
+    end
     end
 
-    subgraph Core_Engine["진단 엔진 (Core Diagnostic Engine)"]
-        ArgParser["명령줄 인자 파서 (--dry-run, --project, --region)"]
-        MockProvider["Mock Data Provider (가상 모의 결과 생성)"]
-        LiveScanner["Live Inspection Engine (실사 진단 엔진)"]
-        Reporter["Reporting Engine (7대 기둥 리포트 생성)"]
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 갭 분석 및 선언적 복구 처방 도출
+    CLI->>CLI: 7대 기둥별 PASS/FAIL 판정 및 컴플라이언스 종합 점수 산출
+    CLI->>CLI: 결격 항목 대상 정규 gcloud 복구 명령어 합성
+    CLI-->>Auditor: 7대 기둥 인증 매트릭스 표 및 report.md 생성
+    Auditor-->>Auditor: 즉시 복구 처방 반영 및 산자부 소명 자료 확보
     end
-
-    subgraph GCP_Control_Plane["Google Cloud 제어 평면 (Control Plane)"]
-        Org_Location["Org Policy (constraints/gcp.resourceLocations)"]
-        IAM_Deny["Cloud IAM (Deny Policies - aiplatform.indexes)"]
-        Cloud_KMS["Cloud KMS (서울 리전 키링 및 암호화 키)"]
-        Vertex_Endpoint["Vertex AI (서울 리전 엔드포인트 격리)"]
-        Audit_Logs["Cloud Logging (데이터 접근 감사 로그 싱크)"]
-        Org_Domains["Org Policy (constraints/iam.allowedPolicyMemberDomains)"]
-        Access_Approval["Access Approval (CSP 접근 사전 승인 설정)"]
-    end
-
-    User -->|"스크립트 구동 (python diagnose.py)"| DiagnosePy
-    DiagnosePy --> ArgParser
-    ArgParser -->|dry-run 플래그| MockProvider
-    ArgParser -->|실제 프로젝트| LiveScanner
-    LiveScanner -.->|조회| Org_Location
-    LiveScanner -.->|조회| IAM_Deny
-    LiveScanner -.->|조회| Cloud_KMS
-    LiveScanner -.->|조회| Vertex_Endpoint
-    LiveScanner -.->|조회| Audit_Logs
-    LiveScanner -.->|조회| Org_Domains
-    LiveScanner -.->|조회| Access_Approval
-    MockProvider --> Reporter
-    LiveScanner --> Reporter
-    Reporter -->|포맷된 감사 결과 표 및 처방| User
 ```
 
 ---

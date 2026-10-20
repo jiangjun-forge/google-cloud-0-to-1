@@ -96,7 +96,7 @@ flowchart TB
     end
 
     subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
-        SA["전용 어드민 서비스 계정<br/>(ge-admin-sa)<br/>- roles/discoveryengine.viewer<br/>- roles/logging.viewer<br/>- roles/bigquery.user"]
+        SA["전용 어드민 서비스 계정<br/>(ge-admin-sa)<br/>- roles/discoveryengine.editor<br/>- roles/logging.viewer<br/>- roles/bigquery.user"]
     end
 
     subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
@@ -105,7 +105,7 @@ flowchart TB
         subgraph InsideEngine["런타임 내부 구조"]
             Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
             ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
-            Tools["내장 관리 도구 세트<br/>- get_admin_console_deeplinks_tool<br/>- list_deployed_agents_tool<br/>- get_admin_audit_queries_tool"]
+            Tools["내장 관리 도구 7종<br/>- filter_and_inspect_sprawl_agents_tool<br/>- batch_update_agents_state_tool<br/>- batch_update_agents_sharing_tool<br/>- batch_delete_agents_tool<br/>- list_deployed_agents_tool<br/>- get_admin_audit_queries_tool<br/>- get_admin_console_deeplinks_tool"]
             Wrapper --> ADK --> Tools
         end
         Engine --- InsideEngine

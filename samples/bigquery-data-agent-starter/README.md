@@ -71,21 +71,44 @@ python diagnose.py
 
 ---
 
-## 3. 45분 핸즈온 실습 및 프로비저닝 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["실습 시작 (python diagnose.py)"] --> B["Step 1 [CLI 자동화]: cymbal_gold 4개 테이블 및 실데이터 구축 (--setup-demo)"]
-    B --> C["pos_transactions_gold, gold_inventory_reconciliation_ledger 등 4개 테이블 + 실데이터 적재"]
-    C --> D["v_cymbal_retail_semantic 시맨틱 뷰 생성 (순매출, 결품 커버 시간 공식 내장)"]
-    D --> E["Step 2 [CLI 자동 배포 - 권장 골든 경로]: GDA dataAgents 원클릭 프로비저닝 (--deploy-agent)"]
-    E --> F["A2A Agent Card 표준 규격 자동 생성 (a2a_agent_card.json)"]
-    D -.-> G["Step 2 [보조 확인 경로]: BigQuery Studio 콘솔 UI 수동 생성 지침 출력 (--agent-config)"]
-    F --> H{"선택 사항: Gemini Enterprise App 사내 갤러리 직결 연동 (--register-ge-app)"}
-    H -- "예 (Discovery Engine API 직결)" --> I["A2A Agent Card 규격으로 GE App 사내 갤러리 자동 등록"]
-    H -- "아니오 (Standalone 완주)" --> J["Data Agent 대화창에서 골든 프롬프트 3선 자연어 질의 실습"]
-    I --> J
-    J --> K["실습 종료 후 리소스 원클릭 정리 (--teardown)"]
+    subgraph Layer1 ["Layer 1: User & Interface Layer"]
+        User["워크숍 참석자 / 데이터 분석가"]
+        CLI["CLI 컨트롤러<br/>(diagnose.py)"]
+        BQStudio["BigQuery Studio 대화형 콘솔<br/>(Standalone NL2SQL 질의)"]
+        GEPortal["Gemini Enterprise 웹 대화창<br/>(사내 포털 직결 연동)"]
+        User --> CLI
+        User --> BQStudio
+        User --> GEPortal
+    end
+
+    subgraph Layer2 ["Layer 2: Security & Governance Boundary"]
+        IAMPolicy["IAM 최소 권한 경계<br/>(dataAgentCreator, bigquery.dataEditor)"]
+        A2ACard["A2A Agent Card 표준 규격<br/>(a2a_agent_card.json)"]
+        CLI --> IAMPolicy
+        IAMPolicy --> A2ACard
+    end
+
+    subgraph Layer3 ["Layer 3: Hosting Runtime & Managed Fabric"]
+        GDATenant["구글 1P 완전 관리형 런타임<br/>(Gemini Data Analytics dataAgents REST API)"]
+        DiscEngine["Discovery Engine 사내 갤러리<br/>(assistants/default_assistant/agents)"]
+        A2ACard --> GDATenant
+        A2ACard -.->|"선택적 직결 바인딩"| DiscEngine
+        BQStudio -.-> GDATenant
+        GEPortal -.-> DiscEngine
+    end
+
+    subgraph Layer4 ["Layer 4: Target Backend & Data Fabric"]
+        Dataset["BigQuery 데이터셋<br/>(cymbal_gold)"]
+        RawTables["4개 원천 테이블<br/>(pos_transactions_gold, inventory 등)"]
+        SemanticView["시맨틱 비즈니스 뷰<br/>(v_cymbal_retail_semantic)"]
+        GDATenant --> Dataset
+        Dataset --> RawTables
+        Dataset --> SemanticView
+    end
 ```
 
 ---

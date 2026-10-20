@@ -29,38 +29,54 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 시스템 아키텍처 및 데이터 흐름도
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 참석자가 CLI를 통해 데이터셋 구축, 구글 1P 완전 관리형 Data Agent 프로비저닝, A2A Agent Card 생성 및 사내 갤러리 연동을 트리거하면, BigQuery 및 Discovery Engine API와 상호작용하여 무인 프로비저닝과 실시간 질의응답을 완주한다.
 
 ```mermaid
-flowchart TD
-    subgraph CLI_Entry["진입점 (CLI Entrypoint)"]
-        User["워크숍 참석자 / 데이터 아키텍트"]
-        DiagnosePy["diagnose.py (워크숍 프로비저닝 컨트롤러)"]
+sequenceDiagram
+    actor User as 워크숍 참석자 / 아키텍트
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant BQ as BigQuery REST API (asia-northeast3)
+    participant GDA as GDA dataAgents API (global)
+    participant DiscEng as Discovery Engine REST API
+    participant Chat as BigQuery Studio / GE Web Chat
+
+    rect rgb(240, 245, 255)
+    note right of CLI: Step 1: cymbal_gold 데이터 패브릭 구축 (--setup-demo)
+    User->>CLI: python diagnose.py --setup-demo
+    CLI->>BQ: POST /datasets (cymbal_gold 생성)
+    CLI->>BQ: POST /jobs (4개 원천 테이블 DDL/DML 및 실데이터 적재)
+    CLI->>BQ: POST /jobs (v_cymbal_retail_semantic 시맨틱 뷰 생성)
+    BQ-->>CLI: 200 OK (데이터셋 및 시맨틱 뷰 준비 완료)
     end
 
-    subgraph BigQuery_Fabric["Step 1: BigQuery 데이터 패브릭 (cymbal_gold)"]
-        RawTables["4개 원천 테이블 (pos_transactions_gold 등)"]
-        SemanticView["v_cymbal_retail_semantic (순매출, 결품 커버 시간 뷰)"]
+    rect rgb(245, 240, 255)
+    note right of CLI: Step 2: 1P 관리형 Data Agent 프로비저닝 (--deploy-agent)
+    User->>CLI: python diagnose.py --deploy-agent
+    CLI->>GDA: POST /projects/.../locations/global/dataAgents (schema, semantic_view)
+    GDA-->>CLI: 200 OK (dataAgent Resource Name 생성 완료)
+    CLI->>CLI: A2A Agent Card (a2a_agent_card.json) 자동 합성
     end
 
-    subgraph GDA_Tenant["Step 2: 구글 관리형 런타임 (Gemini Data Analytics)"]
-        GDAResource["GDA dataAgents REST API (projects/.../locations/global/dataAgents/...)"]
-        A2ACard["A2A Agent Card JSON (a2a_agent_card.json)"]
+    rect rgb(240, 255, 245)
+    note right of CLI: Step 3: 선택적 사내 갤러리 바인딩 (--register-ge-app)
+    opt Gemini Enterprise app 직결 연동 시
+        User->>CLI: python diagnose.py --register-ge-app
+        CLI->>DiscEng: POST /assistants/default_assistant/agents (a2aAgentDefinition)
+        DiscEng-->>CLI: 200 OK (사내 갤러리 등록 완료)
+    end
     end
 
-    subgraph GE_App_Gallery["Step 3: Gemini Enterprise App 사내 갤러리"]
-        GEApp["Discovery Engine API (a2aAgentDefinition 직결 등록)"]
+    rect rgb(255, 250, 240)
+    note right of Chat: Step 4: 멀티턴 자연어 데이터 질의 (NL2SQL)
+    User->>Chat: "지난 분기 카테고리별 순매출과 결품률 분석해 줘"
+    Chat->>GDA: Stream Query (Session State)
+    GDA->>BQ: 시맨틱 뷰 대상 정밀 SQL 컴파일 및 실행
+    BQ-->>GDA: 데이터셋 쿼리 결과 반환
+    GDA-->>Chat: 자연어 답변, 수치 요약 테이블, 추천 후속 질의 칩 출력
+    Chat-->>User: 결과 브리핑 및 시각화 완료
     end
-
-    User -->|1. --setup-demo| DiagnosePy
-    DiagnosePy -->|DDL / DML 실행| RawTables
-    RawTables --> SemanticView
-    User -->|2. --deploy-agent| DiagnosePy
-    DiagnosePy -->|POST /dataAgents| GDAResource
-    GDAResource -->|표준 카드 빌드| A2ACard
-    User -->|3. --register-ge-app| DiagnosePy
-    A2ACard -->|POST assistants/.../agents| GEApp
-    User -->|4. --all| DiagnosePy
 ```
 
 ---

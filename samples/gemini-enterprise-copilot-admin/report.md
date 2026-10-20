@@ -1,6 +1,6 @@
 # Gemini Enterprise 어드민 코파일럿 배포 보고서 (gemini-enterprise-copilot-admin)
 
-- **배포 일시**: 2026-10-20 06:21:17 UTC
+- **배포 일시**: 2026-10-20 12:39:45 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE Admin Copilot (사내 어드민 코파일럿)`
@@ -15,7 +15,7 @@
 | **에이전트 명칭** | `PROVISIONED` | `GE Admin Copilot (사내 어드민 코파일럿)` |
 | **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-admin-copilot-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
-| **내장 실행 도구** | `3종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `get_admin_audit_queries_tool` |
+| **내장 실행 도구** | `7종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `batch_delete_agents_tool`, `get_admin_audit_queries_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
@@ -55,13 +55,15 @@ flowchart TB
    - **`GE Admin Copilot (사내 어드민 코파일럿)`** 선택.
 
 2. **자연어 관리 질의 예시 프롬프트**:
-   - *"현재 등록된 사내 에이전트 목록과 미사용 좀비 에이전트 전수 감사해 줘"*
+   - *"사내에 등록된 테스트용/미사용 에이전트 목록 스캔해 줘"*
+   - *"테스트 에이전트들 일괄 비활성화(DISABLED) 처리해 줘"*
+   - *"특정 에이전트 전사 공유(ALL_USERS) 승인 또는 비공개(PRIVATE) 회수해 줘"*
    - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 30초 싱크 가이드 알려줘"*
    - *"사내 도메인(`example-corp.com`) 선점 충돌 해결을 위한 Cloud Identity 온보딩 절차 알려줘"*
    - *"외부 마켓플레이스 차단 및 사내 승인 에이전트 강제 조직 정책 가이드 보여줘"*
 
 3. **코파일럿 에이전트 자율 동작**:
-   - 어드민 코파일럿이 내장된 `list_deployed_agents_tool`, `get_admin_audit_queries_tool`, `get_admin_console_deeplinks_tool`을 호출하여 실시간 현황 감사 및 1클릭 복구 gcloud 명령어를 제공한다.
+   - 어드민 코파일럿이 내장된 `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `list_deployed_agents_tool`, `get_admin_audit_queries_tool`, `get_admin_console_deeplinks_tool`을 호출하여 에이전트 확산(Sprawl) 배치 거버넌스 및 실시간 현황 감사, 1클릭 복구 gcloud 명령어를 제공한다.
 
 ---
 
