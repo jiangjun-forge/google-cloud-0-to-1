@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gemini-enterprise-copilot-admin/        # 사내 IT 어드민 전담 코파일럿 및 7대 핵심 운영 과제 진단
     ├── gemini-enterprise-copilot-agent/        # 자율형 사내 노코드 에이전트 팩토리 및 Gemini Enterprise app 대행 등록
     ├── gemini-enterprise-copilot-connector/    # 사내 기간계 데이터 커넥터 팩토리 및 Data Store 바인딩
-    ├── gemini-enterprise-copilot-custom/       # 하이코드 커스텀 에이전트 스캐폴더 및 GitOps 배포 도구
+    ├── gemini-enterprise-copilot-custom/       # 하이코드 커스텀 에이전트 스캐폴더 및 저장소 연동 자동 배포 도구
     ├── gemini-enterprise-copilot-skill/        # 자율형 사내 스킬 팩토리 및 OpenAPI 도구 레지스트리 배포
     ├── gemini-enterprise-domain-resolver/      # 사내 도메인 선점 충돌 진단 및 Cloud Identity 배포
     ├── gemini-enterprise-fqdn-checker/         # 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
