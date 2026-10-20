@@ -1088,6 +1088,18 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         def _provision_reasoning_engine(target_display_name: str, target_desc: str, gcs_prefix: str) -> str:
             """Vertex AI Reasoning Engine을 REST API로 직접 프로비저닝한다 (High-code 전용)."""
             import time
+            re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
+
+            # [사전 조회] 이미 동일한 이름의 Reasoning Engine이 존재하는지 실시간 확인 (멱등성 보장 및 중복 생성 방지)
+            try:
+                list_resp = requests.get(re_list_url, headers=headers, timeout=15)
+                if list_resp.ok:
+                    for re_item in list_resp.json().get("reasoningEngines", []):
+                        if re_item.get("displayName") == target_display_name:
+                            return re_item.get("name")
+            except Exception:
+                pass
+
             re_create_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
             pkl_uri = f"gs://{project_id}-agent-engine-staging/{gcs_prefix}/agent_engine.pkl"
             req_uri = f"gs://{project_id}-agent-engine-staging/{gcs_prefix}/requirements.txt"
