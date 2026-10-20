@@ -46,11 +46,26 @@ python diagnose.py --dry-run
 ===========================================================================
 [*] 활성 프로젝트    : sample-project-id
 [*] 대상 리전        : us-central1
-[*] 대상 Gemini Enterprise App ID   : sample-ge-app-id
+[*] 대상 GE App ID   : sample-ge-app-id
 [*] 실행 서비스 계정 : custom-agent-sa@sample-project-id.iam.gserviceaccount.com
 [*] 실행 모드        : 가상 실행 (--dry-run)
-[단계 1/3] 아키텍처 칩 컴파일 중...
-  - 타이틀    : 사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트
+
+[진행] 사내 커스텀 에이전트 팩토리(붕어빵 틀) 프로비저닝 파이프라인 가동...
+
+===========================================================================
+  [원클릭 배포] GE Custom Agent Factory 배포 파이프라인
+===========================================================================
+[*] 대상 프로젝트 : sample-project-id
+[*] Agent Engine  : us-central1
+[*] GE App ID     : sample-ge-app-id (위치: global)
+[*] 필수 4대 라벨 : {'managed-by': 'google-cloud-0-to-1', 'scenario': 'gemini-enterprise-copilot-custom', 'env': 'sample', 'created-by': 'customer-engineer'}
+
+--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.
+  [1] Vertex AI Agent Engine 프로비저닝 시뮬레이션: projects/sample-project-id/locations/us-central1/reasoningEngines/1673971543794778112
+  [2] 장착 도구: deploy_enterprise_agent_tool, list_deployed_agents_tool
+  [3] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료
+
+[성공] 마크다운 진단 보고서가 저장되었습니다: report.md
 ```
 
 ### 2) 실제 사내 인프라 실시간 진단

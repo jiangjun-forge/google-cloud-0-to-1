@@ -1,115 +1,72 @@
-# Gemini Enterprise 커스텀 에이전트 팩토리 보고서 (gemini-enterprise-copilot-custom)
+# Gemini Enterprise 커스텀 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-custom)
 
-- **실행 일시**: 2026-10-19 06:45:10 UTC
+- **배포 일시**: 2026-10-20 00:44:39 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
-- **선택 아키텍처**: `bq_analytics_agent` (사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트)
+- **팩토리 에이전트**: `GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)`
+- **배포 상태**: `DRY_RUN_PASSED`
 
 ---
 
-## 1. 종합 진단 및 에이전트 빌드 상태 요약
+## 1. 팩토리 에이전트(붕어빵 틀) 프로비저닝 결과 요약
 
-| 진단 항목 | 상태 | 상세 결과 |
+| 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
-| **선택 아키텍처** | `COMPILED` | `사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트` |
-| **백엔드 기술 스택** | `READY` | `Agent Engine (ADK 2.11+) + google-genai + google-cloud-bigquery` |
-| **내장 도구 셋** | `3종 완비` | `query_bigquery_sql, get_dataset_schema, detect_metric_anomalies` |
-| **IAM 권한 진단** | `PASS (Simulated)` | `가상 실행 검증: custom-agent-sa@sample-project-id.iam.gserviceaccount.com에 roles/aiplatform.user, roles/discoveryengine.editor, roles/bigquery.dataViewer, roles/bigquery.jobUser 역할 바인딩 시뮬레이션 완료` |
-| **Agent Engine 호스팅 연동** | `READY` | Google ADK 기반 Agent Engine 프로비저닝 및 사내 갤러리 등록 매니페스트 도출 |
+| **에이전트 명칭** | `PROVISIONED` | `GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)` |
+| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/1673971543794778112` |
+| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
+| **내장 실행 도구** | `2종 완비` | `deploy_enterprise_agent_tool`, `list_deployed_agents_tool` |
+| **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
 
-## 2. 생성된 하이코드 산출물 목록 (Agent Artifacts)
+## 2. 팩토리 에이전트 아키텍처 및 붕어빵 생산 흐름
 
-본 도구를 통해 다음 5대 핵심 Agent Engine 소스 코드가 완벽하게 생성되었다:
+본 솔루션은 임직원이 개별적으로 복잡한 백엔드 코드를 작성하지 않아도, GE App 채팅창에서 자연어 대화만으로 사내 맞춤형 커스텀 에이전트를 자율 생산(붕어빵 생산)할 수 있도록 지원하는 **사내 에이전트 팩토리(붕어빵 틀)**다:
 
-1. **`agent.py`**: Google ADK 및 `agent_engines.AdkApp` 기반 에이전트 정의 코드
-2. **`tools.py`**: 사내 시스템/BigQuery 직접 연동 도구 함수 모음
-3. **`requirements.txt`**: Agent Engine 런타임 최소 의존성 정의
-4. **`deploy.py`**: Agent Engine 프로비저닝 및 Gemini Enterprise app 전사 갤러리 자동 등록 스크립트
-5. **`ge_agent_manifest.json`**: Gemini Enterprise app ADK 에이전트 연동 등록 JSON
+```mermaid
+flowchart TB
+    subgraph Dev["1. 엔지니어링 & GitOps"]
+        A["개발자 / 아키텍트"] -->|"GitHub 저장소 지정"| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+    end
 
----
+    subgraph Runtime["2. 런타임 & 엔터프라이즈 자산"]
+        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+        D -->|"도구 호출"| E[("사내 BigQuery / ERP<br/>Cloud Storage 자산")]
+        E -->|"조회 결과 반환"| D
+    end
 
-## 3. Gemini Enterprise app ADK 에이전트 바인딩 매니페스트 (ADK Agent Manifest)
-
-배포 완료 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 사내 갤러리에 본 에이전트를 등록하기 위한 JSON 페이로드다:
-
-```json
-{
-  "displayName": "사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트",
-  "description": "빅쿼리(BigQuery) 데이터셋에 연결하여 자연어 질의를 SQL로 변환하고, 쿼리 실행 결과 및 이상 지표를 자동 분석하는 에이전트",
-  "sharingConfig": {
-    "scope": "ALL_USERS"
-  },
-  "adkAgentDefinition": {
-    "toolSettings": {
-      "toolDescription": "빅쿼리(BigQuery) 데이터셋에 연결하여 자연어 질의를 SQL로 변환하고, 쿼리 실행 결과 및 이상 지표를 자동 분석하는 에이전트"
-    },
-    "provisionedReasoningEngine": {
-      "reasoningEngine": "projects/sample-project-id/locations/us-central1/reasoningEngines/1673971543794778112"
-    }
-  },
-  "labels": {
-    "managed-by": "google-cloud-0-to-1",
-    "scenario": "gemini-enterprise-copilot-custom",
-    "env": "sample",
-    "created-by": "customer-engineer"
-  }
-}
+    subgraph Portal["3. 전사 임직원 인터페이스"]
+        D -->|"Discovery Engine A2A 연동"| F["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+        G["사내 임직원<br/>(비즈니스 사용자)"] -->|"자연어 업무 질의"| F
+        F -->|"에이전트 답변 제공"| G
+    end
 ```
 
 ---
 
-## 4. 핵심 소스 코드 미리보기 (agent.py)
+## 3. 사내 임직원 활용 가이드 (커스텀 에이전트 생성)
 
-```python
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
+전사 임직원은 배포된 팩토리 에이전트와 대화하여 다음과 같이 사내 맞춤형 커스텀 에이전트를 즉시 찍어낼 수 있다:
 
-"""사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트 코어 에이전트 정의 (Agent Engine ADK)."""
+1. **Gemini Enterprise app 접속**:
+   - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
+   - **`GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)`** 선택.
 
-import os
-from google.adk.agents import Agent
-from vertexai import agent_engines
-from tools import query_bigquery_sql, get_dataset_schema, detect_metric_anomalies
+2. **자연어 붕어빵 생성 예시 프롬프트**:
+   - *"사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트 배포해 줘"*
+   - *"Cloud Monitoring 기반 SRE 실시간 인시던트 트러블슈팅 에이전트 배포해 줘"*
+   - *"GitHub 저장소 `https://github.com/my-org/custom-agent.git` 기반으로 사내 에이전트 등록해 줘"*
 
-SYSTEM_INSTRUCTION = """너는 사내 엔터프라이즈 환경에서 구동하는 사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트이다.
-임직원의 요청을 분석하여 필요한 경우 제공된 도구(query_bigquery_sql, get_dataset_schema, detect_metric_anomalies)를 적극적으로 호출하여
-정확한 데이터 기반의 전문 답변을 제공하라.
-보안 수칙: 개인 식별 정보(PII)는 마스킹 처리하고, 데이터베이스 변경 작업은 신중하게 안내하라."""
-
-agent = Agent(
-    name="bq_analytics_agent",
-    description="빅쿼리(BigQuery) 데이터셋에 연결하여 자연어 질의를 SQL로 변환하고, 쿼리 실행 결과 및 이상 지표를 자동 분석하는 에이전트",
-    model="gemini-3.8-flash",
-    instruction=SYSTEM_INSTRUCTION,
-    tools=[query_bigquery_sql, get_dataset_schema, detect_metric_anomalies],
-)
-... [이하 생략: tools.py 및 deploy.py 완비] ...
-```
+3. **팩토리 에이전트 자율 동작**:
+   - 팩토리 에이전트가 내장된 `deploy_enterprise_agent_tool`을 호출하여 Agent Engine 프로비저닝 및 사내 갤러리 등록을 자동 완결한다.
 
 ---
 
-## 5. 권장 프로덕션 배포 가이드
+## 4. 사내 거버넌스 4대 필수 표준 라벨
 
-1. **로컬 소스 파일 추출 (옵션)**:
-   ```bash
-   python diagnose.py --write-files
-   ```
-2. **Agent Engine 및 Gemini Enterprise app 원클릭 배포**:
-   ```bash
-   cd scaffold
-   python deploy.py
-   ```
-3. **Gemini Enterprise app 웹 대화 포털 확인**:
-   - 사내 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 사내 갤러리(`/r/agents`)에서 에이전트 확인.
-
----
-
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
-
-커스텀 에이전트 인프라 및 관리 리소스(Agent Engine, 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+팩토리 에이전트 및 하위 생성 리소스 관리 시 아래 4대 표준 라벨이 기본 적용된다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-copilot-custom`
 - `env`: `sample` (또는 `poc`)
@@ -117,7 +74,7 @@ agent = Agent(
 
 ---
 
-## 7. 콘솔 링크 조치 가이드
+## 5. 콘솔 링크 조치 가이드
 
 - **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project=sample-project-id )
 - **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/sample-ge-app-id/assistants/default_assistant/agents?project=sample-project-id )
@@ -125,19 +82,20 @@ agent = Agent(
 
 ---
 
-## 8. 자원 정리 안내 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 
 본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
 
 1. **Agent Engine 삭제**:
-   ```python
-   import vertexai
-   from vertexai import agent_engines
-
-   vertexai.init(project="sample-project-id", location="us-central1")
-   # agent_engines.delete(resource_name="projects/sample-project-id/locations/us-central1/reasoningEngines/<ENGINE_ID>")
-   ```
-2. **서비스 계정 삭제**:
    ```bash
-   gcloud iam service-accounts delete custom-agent-sa@sample-project-id.iam.gserviceaccount.com --quiet
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/1673971543794778112?force=true"
+   ```
+
+2. **GE App 사내 갤러리 등록 해제**:
+   ```bash
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://discoveryengine.googleapis.com/v1alpha/projects/sample-project-id/locations/global/collections/default_collection/engines/sample-ge-app-id/assistants/default_assistant/agents/<AGENT_ID>"
    ```

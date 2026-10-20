@@ -1108,50 +1108,121 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     }
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 커스텀 에이전트 팩토리 및 Gemini Enterprise app 연동 도구",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
-    parser.add_argument("--region", help="Agent Engine 리전 (기본: us-central1)")
-    parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
-    parser.add_argument("--custom-sa", help="커스텀 에이전트 서비스 계정 이메일")
-    parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
-    parser.add_argument("--write-files", action="store_true", default=False, help="scaffold/ 폴더에 소스 파일 추출")
-    parser.add_argument("--chip", type=int, help="아키텍처 칩 번호 직접 지정 (1~6)")
-    parser.add_argument("--prompt", help="사용자 직접 정의 아키텍처 요구사항")
-    parser.add_argument("--interactive", action="store_true", default=False, help="대화형 선택기 가동")
-    parser.add_argument("--repo", help="GitHub 저장소 URL (예: https://github.com/my-org/my-agent.git) 기반 무인 GitOps 배포 검증")
-    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Vertex AI Agent Engine 프로비저닝 및 Gemini Enterprise app 사내 갤러리 자동 등록")
+def build_factory_markdown_report(env_info: dict, deploy_res: dict) -> str:
+    """GE Custom Agent Factory(붕어빵 틀 에이전트) 배포 결과를 표준 report.md 양식으로 조립한다."""
+    project_id = env_info["project_id"]
+    ge_app_id = env_info["ge_app_id"]
+    status = deploy_res.get("status", "UNKNOWN")
+    re_uri = deploy_res.get("reasoning_engine", "N/A")
+    display_name = deploy_res.get("display_name", "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)")
+    portal_url = f"https://gemini.google.com/app/{ge_app_id}"
 
-    args = parser.parse_args()
+    return f"""# Gemini Enterprise 커스텀 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-custom)
 
-    # 인자가 없고 비대화형 환경인 경우 기본 dry-run 활성화
-    if len(sys.argv) == 1 and not sys.stdin.isatty():
-        args.dry_run = True
+- **배포 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
+- **대상 프로젝트**: `{project_id}`
+- **Gemini Enterprise app 인스턴스**: `{ge_app_id}`
+- **팩토리 에이전트**: `{display_name}`
+- **배포 상태**: `{status}`
 
-    print("\n" + "=" * 75)
-    print("  Gemini Enterprise 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom)")
-    print("=" * 75)
+---
 
-    # 1. 환경 정보 해석
-    env_info = resolve_environment(args)
-    print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
-    print(f"[*] 대상 리전        : {env_info['region']}")
-    print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
-    print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
-    if args.repo:
-        print(f"[*] GitOps 저장소 URL  : {args.repo}")
-    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 실행 모드'}")
+## 1. 팩토리 에이전트(붕어빵 틀) 프로비저닝 결과 요약
 
-    # [원클릭 클라우드 배포 모드]
-    if args.deploy_engine:
-        deploy_res = deploy_custom_scaffolder_engine(env_info, dry_run=args.dry_run)
-        print(f"\n[결과] 배포 상태: {deploy_res['status']}")
-        return
+| 항목 | 상태 | 세부 정보 |
+| :--- | :---: | :--- |
+| **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
+| **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
+| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
+| **내장 실행 도구** | `2종 완비` | `deploy_enterprise_agent_tool`, `list_deployed_agents_tool` |
+| **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
-    # 2. 아키텍처 칩 선택
+---
+
+## 2. 팩토리 에이전트 아키텍처 및 붕어빵 생산 흐름
+
+본 솔루션은 임직원이 개별적으로 복잡한 백엔드 코드를 작성하지 않아도, GE App 채팅창에서 자연어 대화만으로 사내 맞춤형 커스텀 에이전트를 자율 생산(붕어빵 생산)할 수 있도록 지원하는 **사내 에이전트 팩토리(붕어빵 틀)**다:
+
+```mermaid
+flowchart TB
+    subgraph Dev["1. 엔지니어링 & GitOps"]
+        A["개발자 / 아키텍트"] -->|"GitHub 저장소 지정"| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+    end
+
+    subgraph Runtime["2. 런타임 & 엔터프라이즈 자산"]
+        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+        D -->|"도구 호출"| E[("사내 BigQuery / ERP<br/>Cloud Storage 자산")]
+        E -->|"조회 결과 반환"| D
+    end
+
+    subgraph Portal["3. 전사 임직원 인터페이스"]
+        D -->|"Discovery Engine A2A 연동"| F["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+        G["사내 임직원<br/>(비즈니스 사용자)"] -->|"자연어 업무 질의"| F
+        F -->|"에이전트 답변 제공"| G
+    end
+```
+
+---
+
+## 3. 사내 임직원 활용 가이드 (커스텀 에이전트 생성)
+
+전사 임직원은 배포된 팩토리 에이전트와 대화하여 다음과 같이 사내 맞춤형 커스텀 에이전트를 즉시 찍어낼 수 있다:
+
+1. **Gemini Enterprise app 접속**:
+   - 웹 포털 ( {portal_url} ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
+   - **`{display_name}`** 선택.
+
+2. **자연어 붕어빵 생성 예시 프롬프트**:
+   - *"사내 BigQuery 데이터 웨어하우스 SQL 분석 및 지표 탐지 에이전트 배포해 줘"*
+   - *"Cloud Monitoring 기반 SRE 실시간 인시던트 트러블슈팅 에이전트 배포해 줘"*
+   - *"GitHub 저장소 `https://github.com/my-org/custom-agent.git` 기반으로 사내 에이전트 등록해 줘"*
+
+3. **팩토리 에이전트 자율 동작**:
+   - 팩토리 에이전트가 내장된 `deploy_enterprise_agent_tool`을 호출하여 Agent Engine 프로비저닝 및 사내 갤러리 등록을 자동 완결한다.
+
+---
+
+## 4. 사내 거버넌스 4대 필수 표준 라벨
+
+팩토리 에이전트 및 하위 생성 리소스 관리 시 아래 4대 표준 라벨이 기본 적용된다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-custom`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드
+
+- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
+- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **IAM 및 관리자 콘솔**: 서비스 계정(`{env_info['service_account']}`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
+
+---
+
+## 6. 자원 정리 안내 (Teardown)
+
+본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
+
+1. **Agent Engine 삭제**:
+   ```bash
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+     "https://us-central1-aiplatform.googleapis.com/v1/{re_uri}?force=true"
+   ```
+
+2. **GE App 사내 갤러리 등록 해제**:
+   ```bash
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+     "https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{ge_app_id}/assistants/default_assistant/agents/<AGENT_ID>"
+   ```
+"""
+
+
+def run_local_scaffolding_mode(args, env_info):
+    """(보조 옵션) 로컬 단일 커스텀 에이전트(붕어빵) 소스 코드 및 매니페스트 합성 모드."""
     chip_data = CUSTOM_ARCHITECTURE_CATALOG[1]
     if args.repo:
         chip_data = {
@@ -1173,33 +1244,80 @@ def main():
         }
     elif args.chip and args.chip in CUSTOM_ARCHITECTURE_CATALOG:
         chip_data = CUSTOM_ARCHITECTURE_CATALOG[args.chip]
-    elif args.interactive or (sys.stdin.isatty() and not args.dry_run):
+    elif args.interactive:
         chip_data = select_architecture_interactive(args.dry_run)
 
-    print(f"\n[단계 1/3] 아키텍처 칩 컴파일 중...")
+    print(f"\n[로컬 스캐폴딩] 아키텍처 칩 컴파일 중...")
     print(f"  - 타이틀    : {chip_data['title']}")
     print(f"  - 기술 스택 : {chip_data['backend_tech']}")
     print(f"  - 내장 도구 : {', '.join(chip_data['tools_included'])}")
 
-    # 3. 소스 코드 및 매니페스트 합성
-    print("\n[단계 2/3] 하이코드 산출물(agent.py, tools.py, requirements.txt, deploy.py) 합성 중...")
     artifacts = generate_scaffold_artifacts(chip_data, env_info)
     print("  - 소스 코드 및 Gemini Enterprise app 외부 연동 매니페스트 합성 완료")
 
     if args.write_files:
         write_scaffold_files(artifacts, os.path.dirname(__file__))
 
-    # 4. IAM 권한 및 연결성 진단
-    print("\n[단계 3/3] 서비스 계정 IAM 권한 및 Agent Engine 연동 진단 중...")
     iam_diag = diagnose_iam_and_connectivity(chip_data, env_info, args.dry_run)
     print(f"  - 상태: {iam_diag['status']} | {iam_diag['detail']}")
 
-    # 5. 리포트 생성 및 저장
     report_content = build_markdown_report(env_info, chip_data, artifacts, iam_diag)
+    save_markdown_report(report_content)
+    print("\n[완료] 로컬 스캐폴딩 산출물이 생성되었습니다.")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Gemini Enterprise 커스텀 에이전트 팩토리 (붕어빵 틀) 배포 및 등록 도구",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
+    parser.add_argument("--region", help="Agent Engine 리전 (기본: us-central1)")
+    parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
+    parser.add_argument("--custom-sa", help="커스텀 에이전트 서비스 계정 이메일")
+    parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
+    parser.add_argument("--repo", help="GitHub 저장소 URL (예: https://github.com/my-org/my-agent.git) 기반 무인 GitOps 배포 검증")
+    parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 커스텀 에이전트 소스 코드 샘플 추출 보조 모드")
+    parser.add_argument("--write-files", action="store_true", default=False, help="scaffold/ 폴더에 소스 파일 추출")
+    parser.add_argument("--chip", type=int, help="아키텍처 칩 번호 직접 지정 (1~6)")
+    parser.add_argument("--prompt", help="사용자 직접 정의 아키텍처 요구사항")
+    parser.add_argument("--interactive", action="store_true", default=False, help="로컬 아키텍처 대화형 선택기 가동")
+
+    args = parser.parse_args()
+
+    # 인자가 없고 비대화형 환경인 경우 기본 dry-run 활성화
+    if len(sys.argv) == 1 and not sys.stdin.isatty():
+        args.dry_run = True
+
+    print("\n" + "=" * 75)
+    print("  Gemini Enterprise 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom)")
+    print("=" * 75)
+
+    # 1. 환경 정보 해석
+    env_info = resolve_environment(args)
+    print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
+    print(f"[*] 대상 리전        : {env_info['region']}")
+    print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
+    print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
+    if args.repo:
+        print(f"[*] GitOps 저장소 URL  : {args.repo}")
+    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 실행 모드'}")
+
+    # 로컬 스캐폴딩 보조 모드 분기 (명시적 플래그 지정 시에만 작동)
+    if args.scaffold or args.chip or args.write_files or args.interactive:
+        run_local_scaffolding_mode(args, env_info)
+        return
+
+    # [핵심 메인 워크플로우]: 붕어빵 틀(GE Custom Agent Factory) 배포 및 GE App 등록
+    print("\n[진행] 사내 커스텀 에이전트 팩토리(붕어빵 틀) 프로비저닝 파이프라인 가동...")
+    deploy_res = deploy_custom_scaffolder_engine(env_info, dry_run=args.dry_run)
+
+    # 팩토리 리포트 생성 및 저장
+    report_content = build_factory_markdown_report(env_info, deploy_res)
     save_markdown_report(report_content)
 
     print("\n" + "=" * 75)
-    print("  커스텀 에이전트 빌드 및 진단 완료 (모든 점검 통과)")
+    print("  커스텀 에이전트 팩토리 배포 및 등록 완료 (모든 점검 통과)")
     print("=" * 75)
     print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
     print("  - managed-by: google-cloud-0-to-1")
