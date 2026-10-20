@@ -997,6 +997,55 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: 1. GitHub 저장소 주소 기반 커스텀 에이전트 배포, 2. GE Admin Copilot, 3. GE Agent Factory)"
 
         # 1. 대상 GE App 내 기존 등록 에이전트 실시간 사전 스캔 (Pre-flight check)
+        def _provision_reasoning_engine(target_display_name: str, target_desc: str, gcs_prefix: str) -> str:
+            """Vertex AI Reasoning Engine을 REST API로 직접 프로비저닝한다 (High-code 전용)."""
+            import time
+            re_create_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
+            pkl_uri = f"gs://{project_id}-agent-engine-staging/{gcs_prefix}/agent_engine.pkl"
+            req_uri = f"gs://{project_id}-agent-engine-staging/{gcs_prefix}/requirements.txt"
+
+            payload = {
+                "displayName": target_display_name,
+                "description": target_desc,
+                "spec": {
+                    "packageSpec": {
+                        "pickleObjectGcsUri": pkl_uri,
+                        "requirementsGcsUri": req_uri,
+                        "pythonVersion": "3.12",
+                    },
+                    "deploymentSpec": {
+                        "env": [
+                            {"name": "GOOGLE_GENAI_USE_VERTEXAI", "value": "1"},
+                            {"name": "GOOGLE_CLOUD_LOCATION", "value": "global"},
+                            {"name": "ADK_ENABLE_MCP_MODERN_PROTOCOL", "value": "1"},
+                            {"name": "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY", "value": "true"},
+                        ]
+                    },
+                    "agentFramework": "google-adk",
+                },
+            }
+            create_resp = requests.post(re_create_url, headers=headers, json=payload, timeout=30)
+            if not create_resp.ok:
+                raise RuntimeError(f"Reasoning Engine 생성 API 실패 (HTTP {create_resp.status_code}): {create_resp.text[:300]}")
+
+            op_data = create_resp.json()
+            op_name = op_data.get("name")
+            if not op_name:
+                return op_data.get("name") or op_data.get("response", {}).get("name", "")
+
+            # LRO 비동기 완료 대기 (최대 120초)
+            op_url = f"https://{re_location}-aiplatform.googleapis.com/v1/{op_name}"
+            for _ in range(40):
+                time.sleep(3)
+                chk_resp = requests.get(op_url, headers=headers, timeout=15)
+                if chk_resp.ok:
+                    chk_data = chk_resp.json()
+                    if chk_data.get("done"):
+                        if "error" in chk_data:
+                            raise RuntimeError(f"Reasoning Engine 프로비저닝 오류: {chk_data['error'].get('message')}")
+                        return chk_data.get("response", {}).get("name", "")
+            raise TimeoutError("Reasoning Engine 프로비저닝 시간 초과 (120초)")
+
         existing_agents_map = {}
         try:
             list_resp = requests.get(base_url, headers=headers, timeout=15)
@@ -1031,57 +1080,54 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 공유 범위: `{existing_info.get('scope', 'ALL_USERS')}`\n"
                         f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                     )
-                else:
-                    return (
-                        f"### 사내 커스텀 에이전트 등록 현황 (활성화 대기 중)\n\n"
-                        f"- **{disp_name}**\n"
-                        f"  - 상태: 등록 완료 (`{existing_info['state']}` / Employee-made)\n"
-                        f"  - Agent ID: `{existing_info['id']}`\n"
-                        f"  - 참조 저장소: `{repo_url}`\n\n"
-                        f"[사내 갤러리 활성화 안내]\n"
-                        f"사내 거버넌스 규정상 신규 등록 에이전트는 초기 비공개(Private) 상태로 대기합니다.\n"
-                        f"전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 Agent Platform Runtimes 콘솔에서 상태를 **Enable (활성화)**로 변경해 주십시오:\n"
-                        f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
-                        f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
-                    )
 
-            # 신규 등록 (ENABLED 상태 및 ALL_USERS 공유 활성화 요청)
-            body = {
-                "displayName": disp_name,
-                "description": f"GitHub 저장소({repo_url}) 기반 자동 빌드 및 배포된 사내 커스텀 에이전트",
-                "state": "ENABLED",
-                "sharingConfig": {"scope": "ALL_USERS"},
-                "customPlaceholderText": f"{disp_name}에게 업무 질의를 입력하세요...",
-                "starterPrompts": [
-                    {"text": f"{repo_name} 저장소 주요 기능 요약해 줘"},
-                    {"text": f"{repo_name} 연동 도구 목록 보여줘"},
-                ],
-                "noCodeAgentDefinition": {
-                    "objective": f"당신은 GitHub 저장소({repo_url}) 코드를 기반으로 구동하는 사내 커스텀 에이전트입니다. 임직원의 질의에 성실히 답변하십시오."
-                },
-            }
             try:
+                # 1) Vertex AI Reasoning Engine 실제 프로비저닝 (High-code 전용)
+                re_res = _provision_reasoning_engine(
+                    disp_name,
+                    f"GitHub 저장소({repo_url}) 기반 빌드 및 배포된 사내 커스텀 에이전트",
+                    "ge_factory_custom_agent_factory",
+                )
+
+                # 2) Discovery Engine에 adkAgentDefinition으로 등록
+                body = {
+                    "displayName": disp_name,
+                    "description": f"GitHub 저장소({repo_url}) 기반 자동 빌드 및 배포된 사내 커스텀 에이전트",
+                    "state": "ENABLED",
+                    "sharingConfig": {"scope": "ALL_USERS"},
+                    "customPlaceholderText": f"{disp_name}에게 업무 질의를 입력하세요...",
+                    "starterPrompts": [
+                        {"text": f"{repo_name} 저장소 주요 기능 요약해 줘"},
+                        {"text": f"{repo_name} 연동 도구 목록 보여줘"},
+                    ],
+                    "adkAgentDefinition": {
+                        "toolSettings": {"toolDescription": f"GitHub 저장소({repo_url}) 기반 사내 커스텀 에이전트"},
+                        "provisionedReasoningEngine": {
+                            "reasoningEngine": re_res
+                        },
+                    },
+                }
+
                 reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
                 if reg_resp.ok:
                     res_json = reg_resp.json()
                     new_id = res_json.get("name", "").split("/")[-1]
-                    res_state = res_json.get("state", "PRIVATE")
+                    res_state = res_json.get("state", "ENABLED")
                     return (
                         f"### 사내 커스텀 에이전트 배포 완료\n\n"
                         f"- **{disp_name}**\n"
                         f"  - 상태: 등록 완료 (`{res_state}`)\n"
                         f"  - Agent ID: `{new_id}`\n"
+                        f"  - 연동 Agent Engine: `{re_res}`\n"
                         f"  - 참조 저장소: `{repo_url}`\n\n"
-                        f"[사내 갤러리 활성화 안내]\n"
-                        f"사내 거버넌스 규정상 신규 등록 에이전트는 초기 비공개(Private) 상태로 대기합니다.\n"
-                        f"전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 Agent Platform Runtimes 콘솔에서 해당 에이전트를 **Enable (활성화)**로 변경해 주십시오:\n"
+                        f"[사내 갤러리 및 런타임 콘솔]\n"
                         f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
                         f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
                     )
                 else:
                     return f"[오류] 커스텀 에이전트 등록 실패 (HTTP {reg_resp.status_code}): {reg_resp.text[:200]}"
             except Exception as e:
-                return f"[예외 발생] 커스텀 에이전트 등록 실패: {str(e)}"
+                return f"[예외 발생] 커스텀 에이전트 프로비저닝 실패: {str(e)}"
 
         # 3. 프리셋 에이전트 타겟팅
         targets = []
@@ -1131,39 +1177,36 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - Agent ID: `{existing_info['id']}`\n"
                         f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                     )
-                else:
-                    reports.append(
-                        f"- **{disp_name}**\n"
-                        f"  - 상태: 등록 완료 (`{existing_info['state']}` / 활성화 대기 중)\n"
-                        f"  - Agent ID: `{existing_info['id']}`\n"
-                        f"  - 사내 갤러리 활성화: 전사 사내 갤러리(/r/agents)에 노출하려면 Agent Platform Runtimes 콘솔 ( {runtimes_url} )에서 상태를 **Enable (활성화)**로 변경해 주십시오.\n"
-                        f"  - 에이전트 목록 확인: Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
-                    )
-                continue
-
-            # 신규 배포 진행
-            re_res = dynamic_engines.get(slug)
-            body = {
-                "displayName": cfg["display_name"],
-                "description": cfg["description"],
-                "state": "ENABLED",
-                "sharingConfig": {"scope": "ALL_USERS"},
-                "customPlaceholderText": cfg.get("custom_placeholder_text", ""),
-                "starterPrompts": [{"text": p} for p in cfg.get("starter_prompts", [])],
-            }
-            if re_res:
-                body["adkAgentDefinition"] = {
-                    "toolSettings": {"toolDescription": cfg["description"]},
-                    "provisionedReasoningEngine": {
-                        "reasoningEngine": re_res
-                    },
-                }
-            else:
-                body["noCodeAgentDefinition"] = {
-                    "objective": cfg.get("instruction", cfg["description"])
-                }
+                    continue
 
             try:
+                # 1) 기존 프로비저닝된 Reasoning Engine 확인, 없으면 즉시 신규 프로비저닝!
+                re_res = dynamic_engines.get(slug)
+                if not re_res:
+                    gcs_prefix_map = {
+                        "gemini-enterprise-agent-factory": "ge_factory_agent_factory",
+                        "gemini-enterprise-admin-copilot": "ge_factory_admin_copilot",
+                    }
+                    target_gcs_prefix = gcs_prefix_map.get(slug, "ge_factory_custom_agent_factory")
+                    re_res = _provision_reasoning_engine(cfg["display_name"], cfg["description"], target_gcs_prefix)
+                    dynamic_engines[slug] = re_res
+
+                # 2) Discovery Engine에 adkAgentDefinition으로 등록 (noCodeAgentDefinition 전면 배제)
+                body = {
+                    "displayName": cfg["display_name"],
+                    "description": cfg["description"],
+                    "state": "ENABLED",
+                    "sharingConfig": {"scope": "ALL_USERS"},
+                    "customPlaceholderText": cfg.get("custom_placeholder_text", ""),
+                    "starterPrompts": [{"text": p} for p in cfg.get("starter_prompts", [])],
+                    "adkAgentDefinition": {
+                        "toolSettings": {"toolDescription": cfg["description"]},
+                        "provisionedReasoningEngine": {
+                            "reasoningEngine": re_res
+                        },
+                    },
+                }
+
                 resp = requests.post(base_url, headers=headers, json=body, timeout=30)
                 if resp.status_code == 409 or "already exists" in resp.text.lower():
                     list_resp = requests.get(base_url, headers=headers, timeout=30)
@@ -1180,36 +1223,26 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         if del_resp.ok:
                             resp = requests.post(base_url, headers=headers, json=body, timeout=30)
                         else:
-                            mask = "displayName,description,starterPrompts,customPlaceholderText,sharingConfig"
-                            mask += ",adkAgentDefinition" if "adkAgentDefinition" in body else ",noCodeAgentDefinition"
+                            mask = "displayName,description,starterPrompts,customPlaceholderText,sharingConfig,adkAgentDefinition"
                             patch_url = f"{base_url}/{agent_id}?updateMask={mask}"
                             resp = requests.patch(patch_url, headers=headers, json=body, timeout=30)
 
                 if resp.ok:
                     res_data = resp.json()
                     agent_id = res_data.get("name", "").split("/")[-1]
-                    agent_state = res_data.get("state", "PRIVATE")
-                    runtimes_url = f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"
-                    admin_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
-                    activation_guide = (
-                        f"  - 안내: 추가 조치 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
-                        if agent_state == "ENABLED"
-                        else (
-                            f"  - 사내 갤러리 활성화: 사내 거버넌스 규정에 따라 초기 비공개(Private) 상태로 대기합니다. 전사 사내 갤러리(/r/agents)에 노출하려면 Agent Platform Runtimes 콘솔 ( {runtimes_url} )에서 상태를 **Enable (활성화)**로 변경해 주십시오.\n"
-                            f"  - 에이전트 목록 확인: Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
-                        )
-                    )
+                    agent_state = res_data.get("state", "ENABLED")
                     reports.append(
                         f"- **{cfg['display_name']}**\n"
                         f"  - 상태: 등록 완료 (`{agent_state}`)\n"
                         f"  - Agent ID: `{agent_id}`\n"
-                        f"  - 연동 에이전트 엔진: `{re_res or '사내 표준 런타임'}`\n"
-                        f"{activation_guide}"
+                        f"  - 연동 Agent Engine: `{re_res}`\n"
+                        f"  - 런타임 콘솔: Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
+                        f"  - 에이전트 목록: Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
                     )
                 else:
                     reports.append(f"- **{cfg['display_name']}**: 등록 실패 (HTTP {resp.status_code}: {resp.text[:200]})")
             except Exception as e:
-                reports.append(f"- **{cfg['display_name']}**: 예외 발생 ({str(e)})")
+                reports.append(f"- **{cfg['display_name']}**: 프로비저닝 예외 발생 ({str(e)})")
 
         return "### Gemini Enterprise App 자동 배포 및 사내 갤러리 등록 완료\n\n" + "\n\n".join(reports)
 
