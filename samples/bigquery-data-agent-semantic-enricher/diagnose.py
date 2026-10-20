@@ -319,11 +319,8 @@ def calculate_readiness_score(tables: list[dict[str, Any]]) -> dict[str, Any]:
 
 def print_diagnostic_report(audit_data: dict[str, Any], score: dict[str, Any]) -> None:
     """진단 결과 표와 통계 요약을 출력한다."""
-    print("\n" + "=" * 90)
-    print("BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 결과 표")
-    print(f"대상 데이터셋: {audit_data['dataset']}")
-    print("=" * 90)
-
+    print(f"\n[시맨틱 메타데이터 준비도 진단 결과 표: {audit_data['dataset']}]")
+    print("-" * 90)
     print(f"{'테이블 ID':<35} {'테이블 설명':<12} {'컬럼 설명율':<14} {'데이터 프로파일':<14} {'용어집 바인딩'}")
     print("-" * 90)
 

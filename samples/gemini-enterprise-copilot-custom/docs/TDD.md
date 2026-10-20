@@ -25,7 +25,7 @@ flowchart TD
     subgraph InputPhase ["1. 아키텍처 요구사항 입력"]
         Dev["개발자 / 클라우드 아키텍트"]
         CLI["에이전트 팩토리 CLI<br/>(diagnose.py)"]
-        PresetEngine["3대 핵심 GitOps 아키텍처 칩<br/>(커스텀 레포, 어드민, 노코드)"]
+        PresetEngine["3대 핵심 커스텀 아키텍처 칩<br/>(커스텀 레포, 어드민, 노코드)"]
         Dev --> CLI
         CLI --> PresetEngine
     end
@@ -63,12 +63,12 @@ flowchart TD
 | **BR-01** (하이코드 에이전트 자동 구축 및 코드 생성) | **FR-01** (에이전트 코어 코드 생성기) | **NFR-01** (무의존성 및 단일 파이썬 실행) | `diagnose.py` |
 | **BR-02** (엔터프라이즈 데이터 및 도구 템플릿) | **FR-02** (BigQuery 및 시스템 도구 조립) | **NFR-02** (표준 소프트웨어 스택 준수) | `diagnose.py` 템플릿 모듈 |
 | **BR-03** (에이전트 엔진 런타임 배포 자동화) | **FR-03** (deploy.py 및 의존성 도출) | **NFR-01**, **NFR-02** | `diagnose.py` 배포 빌더 |
-| **BR-04** (GitHub 저장소 직결 무인 배포) | **FR-04** (GitOps 파이프라인 컴파일러) | **NFR-01**, **NFR-02** | `diagnose.py` GitOps 모듈 |
-| **BR-05** (Gemini Enterprise app 사내 갤러리 연동) | **FR-05** (ADK 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 연동 모듈 |
+| **BR-04** (GitHub 저장소 직결 무인 배포) | **FR-04** (저장소 연동 파이프라인 컴파일러) | **NFR-01**, **NFR-02** | `diagnose.py` 저장소 연동 모듈 |
+| **BR-05** (Gemini Enterprise app 사내 갤러리 연동) | **FR-05** (ADK 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 지원) | `diagnose.py` 연동 모듈 |
 | **BR-06** (엔터프라이즈 보안 및 격리 준수) | **FR-06** (IAM 권한 진단 및 마크다운 리포트) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
 | **BR-07** (표준 리소스 라벨링) | **FR-03**, **FR-06** (라벨링 자동 주입) | **NFR-04** (4대 표준 라벨링 준수) | `diagnose.py`, `deploy.py` |
 | **BR-08** (2단계 무인 고객 온보딩 여정) | **FR-06** (Agent Engine ChatOps 런타임) | **NFR-05** (단독 배포 및 자원 격리성) | `diagnose.py` |
-| **BR-09** (3대 핵심 GitOps 추천 칩 및 단독 배포) | **FR-07** (3대 핵심 GitOps 칩 및 단독 배포 도구) | **NFR-05** (단독 배포 및 자원 격리성) | `diagnose.py`, GE App |
+| **BR-09** (3대 핵심 커스텀 추천 칩 및 단독 배포) | **FR-07** (3대 핵심 커스텀 칩 및 단독 배포 도구) | **NFR-05** (단독 배포 및 자원 격리성) | `diagnose.py`, GE App |
 
 ---
 
@@ -97,7 +97,7 @@ flowchart TD
 - `python diagnose.py` 실행으로 Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
 - 런타임 내에 `deploy_enterprise_agent_tool`과 `list_deployed_agents_tool` 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다.
 
-### FR-07: 3대 핵심 GitOps 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
+### FR-07: 3대 핵심 커스텀 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
 - GE App 매니페스트에 3대 원클릭 추천 질문 칩을 순서(1: GitHub 저장소 주소 기반 커스텀 에이전트 배포 -> 2: GE Admin Copilot -> 3: GE Agent Factory) 및 에이전트 목록 조회 칩으로 정렬 배치한다.
 - 전체 일괄 배포를 배제하고 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
 

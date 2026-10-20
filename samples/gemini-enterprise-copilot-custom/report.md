@@ -1,6 +1,6 @@
 # Gemini Enterprise 커스텀 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-custom)
 
-- **배포 일시**: 2026-10-20 04:52:03 UTC
+- **배포 일시**: 2026-10-20 05:05:38 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)`
@@ -26,7 +26,7 @@
 
 ```mermaid
 flowchart TB
-    subgraph Dev["1. 엔지니어링 & GitOps"]
+    subgraph Dev["1. 엔지니어링 & 소스 저장소"]
         A["개발자 / 아키텍트"] -->|"GitHub 저장소 지정"| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
         B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 패키지 & 스펙"]
     end

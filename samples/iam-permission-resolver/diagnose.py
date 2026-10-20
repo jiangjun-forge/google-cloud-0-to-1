@@ -427,12 +427,7 @@ def main():
     print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
     return
 
-  print("=" * 72)
-  print("[스캔 시작] GCP 최근 데이터 액세스 권한 거부 감사 로그 역추적")
-  print(f"  - 프로젝트 ID: {project_id}")
-  print(f"  - 조회 기간: 최근 {args.days}일")
-  print(f"  - 최대 건수: {args.limit}건")
-  print("=" * 72)
+  print(f"\n[진행] 프로젝트 '{project_id}' 최근 {args.days}일 데이터 액세스 권한 거부 감사 로그 조회 중 (최대 {args.limit}건)...")
 
   failures = fetch_failures(project_id, args.days, args.limit)
   report_failures(failures, project_id, args.days)

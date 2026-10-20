@@ -47,10 +47,10 @@ GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여�
 # 기본 팩토리(붕어빵 틀) 가상 실행
 python diagnose.py --dry-run
 
-# GitHub 저장소 URL 기반 GitOps 스캐폴딩 가상 검증
+# GitHub 저장소 URL 기반 커스텀 스캐폴딩 가상 검증
 python diagnose.py --scaffold --dry-run --repo https://github.com/my-org/my-agent.git
 
-# 검증된 3대 핵심 GitOps 아키텍처 칩 가상 검증 (1: 사내 커스텀 레포, 2: 어드민 코파일럿, 3: 노코드 팩토리)
+# 검증된 3대 핵심 커스텀 아키텍처 칩 가상 검증 (1: 사내 커스텀 레포, 2: 어드민 코파일럿, 3: 노코드 팩토리)
 python diagnose.py --scaffold --dry-run --chip 2
 ```
 
@@ -100,7 +100,7 @@ adk web .
 adk deploy agent_engine . \
   --project="${PROJECT_ID}" \
   --region="us-central1" \
-  --display_name="사내 커스텀 GitOps 에이전트"
+  --display_name="사내 커스텀 에이전트"
 ```
 
 ---
@@ -109,7 +109,7 @@ adk deploy agent_engine . \
 
 ```mermaid
 flowchart TB
-    subgraph Dev["1. 엔지니어링 & GitOps"]
+    subgraph Dev["1. 엔지니어링 & 소스 저장소"]
         A["개발자 / 아키텍트"] -->|"GitHub 저장소 지정"| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
         B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 패키지 & 스펙"]
     end
@@ -151,12 +151,12 @@ flowchart TB
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
-### 3대 핵심 GitOps 아키텍처 칩 카탈로그
-본 솔루션은 비현실적인 자유 텍스트 프롬프트 대신, 실제 검증된 소스 코드가 존재하는 GitHub 저장소 URL 기반의 GitOps 자동 배포 아키텍처를 기본 표준으로 채택한다:
+### 3대 핵심 커스텀 아키텍처 칩 카탈로그
+본 솔루션은 비현실적인 자유 텍스트 프롬프트 대신, 실제 검증된 소스 코드가 존재하는 GitHub 저장소 URL 기반의 저장소 연동 자동 배포 아키텍처를 기본 표준으로 채택한다:
 
 | 번호 | 아키텍처 칩 명칭 | 대상 GitHub 저장소 | 기술 스택 및 도구 체계 |
 | :---: | :--- | :--- | :--- |
-| **1** | **사내 커스텀 GitHub 저장소 직접 입력 (Custom GitOps) [기본값]** | 사용자 직접 입력 (`--repo <URL>`) | Agent Engine (ADK 2.11+) + GitHub GitOps CI/CD |
+| **1** | **사내 커스텀 GitHub 저장소 직접 입력 (Custom Repo) [기본값]** | 사용자 직접 입력 (`--repo <URL>`) | Agent Engine (ADK 2.11+) + GitHub 저장소 연동 |
 | **2** | **GE Admin Copilot (사내 어드민 코파일럿) 실물 레포** | [어드민 코파일럿 저장소 ( https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin )] | Agent Engine (ADK 2.11+) + BigQuery + Cloud Logging |
 | **3** | **GE Agent Factory (사내 노코드 에이전트 팩토리) 실물 레포** | [에이전트 팩토리 저장소 ( https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent )] | Agent Engine (ADK 2.11+) + Gemini 3.8 Flash |
 

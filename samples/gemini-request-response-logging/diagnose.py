@@ -52,13 +52,18 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "demo-pro
   return fallback_demo
 
 
-def print_mock_results(project_id: str, dataset_id: str):
-  """데모 실행을 위한 모의 BigQuery 토큰 집계 쿼리 결과를 출력한다."""
-  print("=" * 72)
-  print("[시뮬레이션] BigQuery 자동 로깅 및 토큰 사용량 집계 리포트")
-  print(f"  - 대상 프로젝트: {project_id}")
-  print(f"  - BigQuery 대상 데이터세트: {dataset_id}")
-  print("=" * 72)
+def print_mock_results(project_id: str, dataset_id: str, is_dry_run: bool = True):
+  """데모 실행 또는 로깅 파이프라인 검증용 BigQuery 토큰 집계 쿼리 결과를 출력한다."""
+  if is_dry_run:
+    print("=" * 72)
+    print("[시뮬레이션] BigQuery 자동 로깅 및 토큰 사용량 집계 리포트")
+    print(f"  - 대상 프로젝트: {project_id}")
+    print(f"  - BigQuery 대상 데이터세트: {dataset_id}")
+    print("=" * 72)
+  else:
+    print("\n" + "=" * 72)
+    print("[로깅 파이프라인 분석] BigQuery 토큰 사용량 집계 예시 쿼리 및 결과")
+    print("=" * 72)
 
   print("""
 [가상 쿼리 실행 결과: 사용자/서비스 계정별 토큰 소모량]
@@ -420,7 +425,7 @@ def main():
   print("=" * 72)
 
   execute_logging(project_id, args.dataset, args.location, args.model, skip_inference=args.skip_inference)
-  print_mock_results(project_id, args.dataset)
+  print_mock_results(project_id, args.dataset, is_dry_run=False)
 
   print("=" * 72)
   print("[자원 정리 안내 (Teardown Guide)]")

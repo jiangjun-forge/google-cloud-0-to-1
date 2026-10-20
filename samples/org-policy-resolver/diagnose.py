@@ -434,12 +434,7 @@ def main():
     violations = get_mock_violations()
     report_violations(violations, reported_project, args.days)
   else:
-    print("=" * 72)
-    print("[스캔 시작] GCP 최근 조직 정책 제약 조건 위반 감사 로그 역추적")
-    print(f"  - 프로젝트 ID: {reported_project}")
-    print(f"  - 조회 기간: 최근 {args.days}일")
-    print(f"  - 최대 건수: {args.limit}건")
-    print("=" * 72)
+    print(f"\n[진행] 프로젝트 '{reported_project}' 최근 {args.days}일 조직 정책 위반 감사 로그 조회 중 (최대 {args.limit}건)...")
     violations = fetch_violations(reported_project, args.days, args.limit)
     report_violations(violations, reported_project, args.days)
     print("=" * 72)

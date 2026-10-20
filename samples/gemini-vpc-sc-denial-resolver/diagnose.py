@@ -432,12 +432,7 @@ def main():
 
   project_id = args.project or get_default_project(is_dry_run=False)
 
-  print("=" * 72)
-  print("[스캔 시작] 제미나이 API VPC-SC 경계 차단 감사 로그 역추적")
-  print(f"  - 프로젝트 ID: {project_id}")
-  print(f"  - 조회 기간: 최근 {args.days}일")
-  print(f"  - 최대 건수: {args.limit}건")
-  print("=" * 72)
+  print(f"\n[진행] 프로젝트 '{project_id}' 최근 {args.days}일 제미나이 API VPC-SC 경계 차단 감사 로그 조회 중 (최대 {args.limit}건)...")
 
   denials = fetch_denials(project_id, args.days, args.limit)
   report_denials(denials, project_id, args.days)
