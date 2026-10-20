@@ -1166,7 +1166,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         if "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm or github_repo_url:
             repo_url = github_repo_url or "https://github.com/jiangjun-forge/google-cloud-0-to-1"
             repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
-            disp_name = f"사내 커스텀 에이전트 ({repo_name})"
+            disp_name = repo_name  # 영문 슬러그 원형 유지
 
             runtimes_url = f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"
             admin_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
@@ -1175,8 +1175,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 existing_info = existing_agents_map[disp_name]
                 if existing_info["state"] == "ENABLED":
                     return (
-                        f"### 사내 커스텀 에이전트 배포 현황\n\n"
-                        f"- **{disp_name}**\n"
+                        f"### 커스텀 에이전트 배포 현황\n\n"
+                        f"- **에이전트 명칭**: `{disp_name}`\n"
                         f"  - 상태: 이미 사내에 정상 배포되어 활성화(ENABLED)되어 있습니다.\n"
                         f"  - Agent ID: `{existing_info['id']}`\n"
                         f"  - 참조 저장소: `{repo_url}`\n"
@@ -1188,7 +1188,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 # 1) Vertex AI Reasoning Engine 실제 프로비저닝 (비동기 LRO 지원)
                 re_res_info = _provision_reasoning_engine(
                     disp_name,
-                    f"GitHub 저장소({repo_url}) 기반 빌드 및 배포된 사내 커스텀 에이전트",
+                    f"GitHub 저장소({repo_url}) 기반 빌드 및 배포된 커스텀 에이전트",
                     "ge_factory_custom_agent_factory",
                 )
 
@@ -1196,7 +1196,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     op_name = re_res_info.get("operation_name", "")
                     return (
                         f"### 클라우드 인프라 배포를 시작했습니다!\n\n"
-                        f"- **배포 대상**: {disp_name}\n"
+                        f"- **배포 대상**: `{disp_name}`\n"
                         f"- **참조 저장소**: `{repo_url}`\n"
                         f"- **작업 식별자 (LRO)**: `{op_name}`\n"
                         f"- **진행 상황**: Agent Platform 환경 구성 및 Cloud Build 컨테이너 패키징이 백그라운드에서 안전하게 시작되었습니다.\n"
@@ -1214,16 +1214,16 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 # 2) Discovery Engine에 adkAgentDefinition으로 등록
                 body = {
                     "displayName": disp_name,
-                    "description": f"GitHub 저장소({repo_url}) 기반 자동 빌드 및 배포된 사내 커스텀 에이전트",
+                    "description": f"GitHub 저장소({repo_url}) 기반 자동 빌드 및 배포된 커스텀 에이전트",
                     "state": "ENABLED",
                     "sharingConfig": {"scope": "ALL_USERS"},
                     "customPlaceholderText": f"{disp_name}에게 업무 질의를 입력하세요...",
                     "starterPrompts": [
-                        {"text": f"{repo_name} 저장소 주요 기능 요약해 줘"},
-                        {"text": f"{repo_name} 연동 도구 목록 보여줘"},
+                        {"text": f"{disp_name} 주요 기능 요약해 줘"},
+                        {"text": f"{disp_name} 연동 도구 목록 보여줘"},
                     ],
                     "adkAgentDefinition": {
-                        "toolSettings": {"toolDescription": f"GitHub 저장소({repo_url}) 기반 사내 커스텀 에이전트"},
+                        "toolSettings": {"toolDescription": f"GitHub 저장소({repo_url}) 기반 커스텀 에이전트 ({disp_name})"},
                         "provisionedReasoningEngine": {
                             "reasoningEngine": re_name
                         },
@@ -1236,12 +1236,14 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     new_id = res_json.get("name", "").split("/")[-1]
                     res_state = res_json.get("state", "ENABLED")
                     return (
-                        f"### 사내 커스텀 에이전트 배포 완료\n\n"
-                        f"- **{disp_name}**\n"
-                        f"  - 상태: 등록 완료 (`{res_state}`)\n"
-                        f"  - Agent ID: `{new_id}`\n"
-                        f"  - 연동 Agent Engine: `{re_name}`\n"
-                        f"  - 참조 저장소: `{repo_url}`\n\n"
+                        f"### 커스텀 에이전트 배포 완료\n\n"
+                        f"- **에이전트 명칭**: `{disp_name}`\n"
+                        f"- **상태**: 등록 완료 (`{res_state}`)\n"
+                        f"- **Agent ID**: `{new_id}`\n"
+                        f"- **연동 Agent Engine**: `{re_name}`\n"
+                        f"- **참조 저장소**: `{repo_url}`\n\n"
+                        f"**사내 명칭 변경 안내**:\n"
+                        f"영문 저장소 슬러그 기본값(`{disp_name}`)으로 등록되었습니다. 사내 맞춤 한글 이름이나 설명으로 변경을 원하시면 언제든 Gemini Enterprise 에이전트 목록 콘솔에서 자유롭게 수정하실 수 있습니다.\n\n"
                         f"[사내 갤러리 및 런타임 콘솔]\n"
                         f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
                         f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
@@ -1455,7 +1457,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             if not re_name:
                 re_name = chk_data.get("metadata", {}).get("target", "")
 
-            disp_name = "사내 맞춤 에이전트"
+            disp_name = "custom-agent"
             if re_name:
                 try:
                     re_detail = requests.get(f"https://{re_location}-aiplatform.googleapis.com/v1/{re_name}", headers=headers, timeout=10)
@@ -1480,13 +1482,13 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         aid = a.get("name", "").split("/")[-1]
                         return (
                             f"### 사내 갤러리 배포 및 등록 완료!\n\n"
-                            f"- **에이전트 명칭**: **{disp_name}**\n"
+                            f"- **에이전트 명칭**: `{disp_name}`\n"
                             f"- **상태**: 정상 활성화 (`ENABLED`)\n"
                             f"- **Agent ID**: `{aid}`\n"
                             f"- **연동 Agent Engine**: `{re_name}`\n"
                             f"- **공유 범위**: 전사 공개 (`ALL_USERS`)\n\n"
-                            f"**안내**:\n"
-                            f"이제 사내 갤러리(/r/agents)에서 모든 임직원이 즉시 대화하실 수 있습니다!\n\n"
+                            f"**사내 명칭 변경 안내**:\n"
+                            f"영문 슬러그 기본값(`{disp_name}`)으로 등록되었습니다. 사내 맞춤 한글 이름이나 설명으로 변경을 원하시면 언제든 Gemini Enterprise 에이전트 목록 콘솔에서 자유롭게 수정하실 수 있습니다.\n\n"
                             f"[사내 갤러리 및 런타임 콘솔]\n"
                             f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
                             f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
@@ -1495,7 +1497,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             # 미등록 상태이면 즉시 자동 등록
             reg_body = {
                 "displayName": disp_name,
-                "description": f"Agent Platform 자동 빌드 및 배포된 사내 맞춤 에이전트",
+                "description": f"Agent Platform 자동 빌드 및 배포된 커스텀 에이전트 ({disp_name})",
                 "state": "ENABLED",
                 "sharingConfig": {"scope": "ALL_USERS"},
                 "customPlaceholderText": f"{disp_name}에게 업무 질의를 입력하세요...",
@@ -1504,7 +1506,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     {"text": f"{disp_name} 연동 도구 목록 보여줘"},
                 ],
                 "adkAgentDefinition": {
-                    "toolSettings": {"toolDescription": f"Agent Platform 기반 사내 에이전트: {disp_name}"},
+                    "toolSettings": {"toolDescription": f"Agent Platform 기반 커스텀 에이전트 ({disp_name})"},
                     "provisionedReasoningEngine": {
                         "reasoningEngine": re_name
                     },
@@ -1515,13 +1517,13 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 new_aid = reg_resp.json().get("name", "").split("/")[-1]
                 return (
                     f"### 사내 갤러리 배포 및 등록 완료!\n\n"
-                    f"- **에이전트 명칭**: **{disp_name}**\n"
+                    f"- **에이전트 명칭**: `{disp_name}`\n"
                     f"- **상태**: 등록 완료 (`ENABLED`)\n"
                     f"- **Agent ID**: `{new_aid}`\n"
                     f"- **연동 Agent Engine**: `{re_name}`\n"
                     f"- **공유 범위**: 전사 공개 (`ALL_USERS`)\n\n"
-                    f"**안내**:\n"
-                    f"클라우드 빌드 및 사내 갤러리 바인딩이 성공적으로 완결되었습니다. 이제 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다!\n\n"
+                    f"**사내 명칭 변경 안내**:\n"
+                    f"영문 슬러그 기본값(`{disp_name}`)으로 등록되었습니다. 사내 맞춤 한글 이름이나 설명으로 변경을 원하시면 언제든 Gemini Enterprise 에이전트 목록 콘솔에서 자유롭게 수정하실 수 있습니다.\n\n"
                     f"[사내 갤러리 및 런타임 콘솔]\n"
                     f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
                     f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
@@ -1592,12 +1594,12 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 3. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 후속 질문 안내 규약]
-모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
+모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2개의 '추천 후속 질문'을 명확히 안내한다:
 ---
 **추천 후속 질문:**
-1. 배포 상태 확인해 줘
-2. GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘
-3. 등록된 에이전트 목록 보여줘
+1. GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘
+2. 등록된 에이전트 목록 보여줘
+- 주의: 배포 진행 중인 상태일 때는 1번을 '배포 상태 확인해 줘'로 출력한다.
 - 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
 [소통 원칙]
@@ -1707,8 +1709,6 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "customPlaceholderText": "GitHub 저장소 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
         "starterPrompts": [
             {"text": "GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘"},
-            {"text": "GE Admin Copilot (사내 어드민 코파일럿) 배포해 줘"},
-            {"text": "GE Agent Factory (사내 노코드 에이전트 팩토리) 배포해 줘"},
             {"text": "사내 등록된 에이전트 목록 조회해 줘"},
         ],
         "adkAgentDefinition": {
