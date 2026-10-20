@@ -82,24 +82,55 @@ python diagnose.py
 
 ---
 
-## 3. 사내 스킬 팩토리 아키텍처 및 프로비저닝 흐름
+## 3. 솔루션 아키텍처 및 런타임 서비스 흐름
 
 ```mermaid
 flowchart TB
-    subgraph Request["1. 사내 도구 요구사항 정의"]
-        Developer["개발자 / 운영팀"] -->|"자연어 도구 명세 입력"| SkillFactory["GE Skill Factory<br/>(Reasoning Engine)"]
-        SkillFactory -->|"Open Skills 규격 컴파일"| Spec["SKILL.md & OpenAPI 3.0 스펙"]
+    subgraph Client["1. 사용자 인터랙션 계층 (User Layer)"]
+        Developer["개발자 / 사내 운영팀"] -->|"1. 사내 연동 도구 요구사항 입력"| GEApp["Gemini Enterprise app<br/>웹 대화형 포털 (/r/agents)"]
     end
 
-    subgraph Auth["2. 보안 볼트 연동 & 검증"]
-        Spec -->|"인증 자격 증명 바인딩"| Vault["Secret Manager<br/>(Webhook URL / API Key)"]
-        Vault --> ToolFunc["실행 파이썬 Tool 함수<br/>(google-adk 호환)"]
+    subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
+        SA["전용 스킬 대행 서비스 계정<br/>(ge-skill-invoker-sa)<br/>- roles/secretmanager.secretAccessor<br/>- roles/discoveryengine.editor"]
     end
 
-    subgraph Deploy["3. GE App 전사 프로비저닝"]
-        ToolFunc --> Registry["Agent Registry / Tools 갤러리"]
-        Registry --> Agents["사내 Gemini Enterprise 에이전트<br/>(Slack 알림, Sheets 데이터 갱신)"]
+    subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
+        GEApp -->|"2. 대화형 스킬 생성 세션 인입"| Engine["Agent Engine 런타임<br/>(관리형 gVisor 격리 컨테이너)"]
+        
+        subgraph InsideEngine["런타임 내부 구조"]
+            Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
+            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            Compiler["Open Skills 규격 컴파일러<br/>(SKILL.md & OpenAPI 3.0)"]
+            Tools["내장 스킬 관리 도구 세트<br/>- deploy_enterprise_skill_tool<br/>- list_enterprise_skills_tool<br/>- get_preset_skills_tool"]
+            Wrapper --> ADK --> Compiler --> Tools
+        end
+        Engine --- InsideEngine
     end
+
+    subgraph Backend["4. 구글 클라우드 백엔드 인프라 (Target Services)"]
+        Tools -->|"3. 웹훅 및 API 키 암호화 보관"| Vault["Secret Manager<br/>(보안 볼트)"]
+        Tools -->|"4. 사내 Agent Registry 등록"| Registry["Agent Registry / Tools 갤러리"]
+        Registry -->|"5. 전사 에이전트에 도구 바인딩"| TargetAgents["사내 Gemini Enterprise 에이전트"]
+    end
+
+    subgraph Systems["5. 사내 연동 시스템 (Target Systems)"]
+        ExternalSystems["Slack Webhook, Google Sheets API,<br/>사내 ERP / 모니터링 시스템"]
+        TargetAgents -.->|"실행 권한으로 API 호출"| ExternalSystems
+    end
+
+    SA -.->|"ADC 신원 주입"| Engine
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+    classDef system fill:#f3e8fd,stroke:#9c27b0,stroke-width:2px;
+
+    class Developer,GEApp portal;
+    class SA security;
+    class Engine,Wrapper,ADK,Compiler,Tools runtime;
+    class Vault,Registry,TargetAgents backend;
+    class ExternalSystems system;
 ```
 
 ---

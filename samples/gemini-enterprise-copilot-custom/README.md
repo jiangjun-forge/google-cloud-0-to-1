@@ -105,24 +105,49 @@ adk deploy agent_engine . \
 
 ---
 
-## 3. 솔루션 아키텍처 및 서비스 흐름
+## 3. 솔루션 아키텍처 및 런타임 서비스 흐름
 
 ```mermaid
 flowchart TB
-    subgraph Dev["1. 엔지니어링 & 소스 저장소"]
-        A["개발자 / 아키텍트"] -->|"GitHub 저장소 지정"| B["커스텀 에이전트 팩토리<br/>(diagnose.py)"]
-        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 패키지 & 스펙"]
+    subgraph Client["1. 사용자 인터랙션 계층 (User Layer)"]
+        User["사내 임직원 / 아키텍트<br/>(권한: Zero GCP IAM)"] -->|"1. 자연어 배포 요청<br/>('GitHub 레포 배포해 줘')"| GEApp["Gemini Enterprise app<br/>웹 대화형 포털 (/r/agents)"]
     end
 
-    subgraph Runtime["2. 런타임 호스팅"]
-        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+    subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
+        SA["전용 대행 서비스 계정<br/>(custom-agent-sa)<br/>- roles/aiplatform.admin<br/>- roles/discoveryengine.admin<br/>- roles/storage.admin"]
     end
 
-    subgraph Portal["3. 전사 임직원 인터페이스"]
-        D -->|"사내 갤러리 직결 등록 (adkAgentDefinition)"| F["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
-        G["사내 임직원<br/>(비즈니스 사용자)"] -->|"자연어 업무 질의"| F
-        F -->|"에이전트 답변 제공"| G
+    subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
+        GEApp -->|"2. SSE 스트리밍 세션 인입"| Engine["Agent Engine 런타임<br/>(관리형 gVisor 격리 컨테이너)"]
+        
+        subgraph InsideEngine["런타임 내부 구조"]
+            Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
+            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            Tools["내장 도구 세트<br/>- deploy_enterprise_agent_tool<br/>- check_deployment_status_tool<br/>- list_deployed_agents_tool"]
+            Wrapper --> ADK --> Tools
+        end
+        Engine --- InsideEngine
     end
+
+    subgraph Backend["4. 구글 클라우드 백엔드 인프라 (Target Services)"]
+        Tools -->|"3. SA 자격 증명(ADC)으로<br/>LRO 비동기 프로비저닝"| RE["Vertex AI Agent Engine<br/>(신규 붕어빵 런타임 슬롯)"]
+        Tools -->|"4. 패키지/의존성 참조"| GCS["Cloud Storage<br/>(Staging Bucket)"]
+        Tools -->|"5. adkAgentDefinition 직결 바인딩"| DiscEng["Discovery Engine<br/>(사내 에이전트 레지스트리)"]
+        Tools -.->|"소스 코드 클론/참조"| Git["사내 GitHub 저장소"]
+    end
+
+    SA -.->|"ADC 신원 주입"| Engine
+    DiscEng -->|"6. 사내 갤러리 즉시 노출"| GEApp
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class User,GEApp portal;
+    class SA security;
+    class Engine,Wrapper,ADK,Tools runtime;
+    class RE,GCS,DiscEng,Git backend;
 ```
 
 ---

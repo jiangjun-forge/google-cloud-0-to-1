@@ -82,25 +82,50 @@ python diagnose.py
 
 ---
 
-## 3. 노코드 에이전트 팩토리 아키텍처 및 등록 흐름
+## 3. 솔루션 아키텍처 및 런타임 서비스 흐름
 
 ```mermaid
 flowchart TB
-    subgraph UserPhase["1. 비개발자 임직원 인터뷰"]
-        User["현업 실무자 / 비개발자"] -->|"업무 자동화 아이디어 입력"| Factory["GE Agent Factory<br/>(Reasoning Engine)"]
-        Factory -->|"대화형 인터뷰 & 템플릿 검증"| Spec["에이전트 명세 완성<br/>(지침, 스타터 프롬프트)"]
+    subgraph Client["1. 사용자 인터랙션 계층 (User Layer)"]
+        User["현업 실무자 / 비개발자<br/>(권한: Zero GCP IAM)"] -->|"1. 업무 자동화 아이디어 입력"| GEApp["Gemini Enterprise app<br/>웹 대화형 포털 (/r/agents)"]
     end
 
-    subgraph Governance["2. 거버넌스 & 대행 SA 바인딩"]
-        Spec -->|"대행 서비스 계정 주입"| SA["Factory Service Account<br/>(최소 권한 격리)"]
-        SA -->|"noCodeAgentDefinition 매니페스트"| Engine["Agent Platform<br/>(Discovery Engine)"]
+    subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
+        SA["전용 대행 서비스 계정<br/>(ge-agent-factory-sa)<br/>- roles/discoveryengine.editor"]
     end
 
-    subgraph Distribution["3. 전사 배포 & 사내 갤러리"]
-        Engine -->|"ALL_USERS 전사 공유 바인딩"| Gallery["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
-        CorpUsers["전사 동료 임직원"] -->|"자연어 업무 질의 및 활용"| Gallery
-        Gallery -->|"에이전트 답변 제공"| CorpUsers
+    subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
+        GEApp -->|"2. 대화형 인터뷰 세션 인입"| Engine["Agent Engine 런타임<br/>(관리형 gVisor 격리 컨테이너)"]
+        
+        subgraph InsideEngine["런타임 내부 구조"]
+            Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
+            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            Catalog["10대 산업별 추천 칩 카탈로그"]
+            Tools["내장 도구 세트<br/>- register_nocode_agent_tool<br/>- list_deployed_agents_tool"]
+            Wrapper --> ADK
+            ADK --- Catalog
+            ADK --> Tools
+        end
+        Engine --- InsideEngine
     end
+
+    subgraph Backend["4. 구글 클라우드 백엔드 인프라 (Target Services)"]
+        Tools -->|"3. SA 자격 증명(ADC)으로<br/>noCodeAgentDefinition 등록"| DiscEng["Discovery Engine<br/>(사내 에이전트 레지스트리)"]
+        DiscEng -->|"4. 사내 갤러리(/r/agents) 등록 완결"| Gallery["사내 승인 노코드 에이전트"]
+    end
+
+    SA -.->|"ADC 신원 주입"| Engine
+    Gallery -->|"5. 전사 동료 임직원 업무 활용"| GEApp
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class User,GEApp portal;
+    class SA security;
+    class Engine,Wrapper,ADK,Catalog,Tools runtime;
+    class DiscEng,Gallery backend;
 ```
 
 ---

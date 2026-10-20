@@ -87,25 +87,48 @@ python diagnose.py
 
 ---
 
-## 3. 어드민 코파일럿 아키텍처 및 관리 흐름
+## 3. 솔루션 아키텍처 및 런타임 서비스 흐름
 
 ```mermaid
 flowchart TB
-    subgraph Admin["1. 사내 IT 어드민"]
-        A["IT 어드민 / 인프라 팀"] -->|"자연어 관리 질의"| B["GE Admin Copilot<br/>(Reasoning Engine)"]
+    subgraph Client["1. 사용자 인터랙션 계층 (User Layer)"]
+        AdminUser["사내 IT 어드민 / 인프라 팀"] -->|"1. 거버넌스 질의 및 관리 요청"| GEApp["Gemini Enterprise app<br/>웹 대화형 포털 (/r/agents)"]
     end
 
-    subgraph Tools["2. 내장 실행 도구 체계"]
-        B -->|"콘솔 길잡이"| C["get_admin_console_deeplinks_tool<br/>(원클릭 콘솔 딥링크)"]
-        B -->|"활성 상태 점검"| D["list_deployed_agents_tool<br/>(Discovery Engine REST)"]
-        B -->|"감사 쿼리 생성"| E["get_admin_audit_queries_tool<br/>(BigQuery 감사 SQL 팩)"]
+    subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
+        SA["전용 어드민 서비스 계정<br/>(ge-admin-sa)<br/>- roles/discoveryengine.viewer<br/>- roles/logging.viewer<br/>- roles/bigquery.user"]
     end
 
-    subgraph Target["3. 엔터프라이즈 관리 대상"]
-        C --> F["Google Cloud Console<br/>(Agent Platform / IAM / Logs)"]
-        D --> G["전사 배포 에이전트 카탈로그<br/>(좀비 에이전트 식별)"]
-        E --> H[("BigQuery 감사 로그 데이터셋<br/>(cloudaudit.googleapis.com)")]
+    subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
+        GEApp -->|"2. 대화형 관리 세션 인입"| Engine["Agent Engine 런타임<br/>(관리형 gVisor 격리 컨테이너)"]
+        
+        subgraph InsideEngine["런타임 내부 구조"]
+            Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
+            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            Tools["내장 관리 도구 세트<br/>- get_admin_console_deeplinks_tool<br/>- list_deployed_agents_tool<br/>- get_admin_audit_queries_tool"]
+            Wrapper --> ADK --> Tools
+        end
+        Engine --- InsideEngine
     end
+
+    subgraph Backend["4. 구글 클라우드 백엔드 인프라 (Target Services)"]
+        Tools -->|"3. 에이전트 카탈로그 실시간 점검"| DiscEng["Discovery Engine<br/>(사내 에이전트 레지스트리)"]
+        Tools -->|"4. 감사 로그 쿼리 및 분석 가이드"| BQ[("BigQuery 감사 데이터셋<br/>(cloudaudit_googleapis_com)")]
+        Tools -->|"5. 원클릭 운영 조치 딥링크 제공"| Consoles["GCP & Admin 콘솔<br/>(Agent Platform / IAM / Billing)"]
+    end
+
+    SA -.->|"ADC 신원 주입"| Engine
+    Tools -->|"6. 즉각 조치 가이드 및 리포트 반환"| GEApp
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class AdminUser,GEApp portal;
+    class SA security;
+    class Engine,Wrapper,ADK,Tools runtime;
+    class DiscEng,BQ,Consoles backend;
 ```
 
 ---

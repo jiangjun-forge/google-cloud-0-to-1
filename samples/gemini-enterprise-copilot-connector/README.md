@@ -82,26 +82,54 @@ python diagnose.py
 
 ---
 
-## 3. 기간계 데이터 커넥터 아키텍처 및 동기화 흐름
+## 3. 솔루션 아키텍처 및 런타임 서비스 흐름
 
 ```mermaid
 flowchart TB
-    subgraph Enterprise["1. 사내 기간계 데이터 자산"]
-        Jira["Jira / Confluence"]
-        SF["Salesforce / ServiceNow"]
-        Drive["Google Drive / SharePoint"]
+    subgraph Client["1. 사용자 인터랙션 계층 (User Layer)"]
+        DataAdmin["데이터 관리자 / 엔지니어"] -->|"1. 사내 기간계 연결 요청"| GEApp["Gemini Enterprise app<br/>웹 대화형 포털 (/r/agents)"]
     end
 
-    subgraph Security["2. 보안 볼트 & 커넥터 팩토리"]
-        Enterprise -->|"API 토큰 / OAuth 자격 증명"| SM["Secret Manager<br/>(암호화 보안 볼트)"]
-        SM --> Connector["GE Connector Factory<br/>(diagnose.py)"]
-        Connector --> Manifest["Data Store 매니페스트<br/>& ACL 동기화 스켈레톤"]
+    subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
+        SA["전용 커넥터 서비스 계정<br/>(ge-connector-sa)<br/>- roles/discoveryengine.admin<br/>- roles/secretmanager.admin"]
     end
 
-    subgraph Grounding["3. Agent Platform 검색 그라운딩"]
-        Manifest --> DS["Discovery Engine Data Store<br/>(문서 레벨 보안 ACL 동기화)"]
-        DS --> GE["Gemini Enterprise app<br/>(사내 RAG 검색 증강 답변)"]
+    subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
+        GEApp -->|"2. 대화형 스캐폴딩 세션 인입"| Engine["Agent Engine 런타임<br/>(관리형 gVisor 격리 컨테이너)"]
+        
+        subgraph InsideEngine["런타임 내부 구조"]
+            Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
+            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            Templates["6대 기간계 매니페스트 엔진<br/>(Jira/Confluence/Salesforce 등)"]
+            Wrapper --> ADK --- Templates
+        end
+        Engine --- InsideEngine
     end
+
+    subgraph Backend["4. 구글 클라우드 백엔드 인프라 (Target Services)"]
+        Engine -->|"3. 인증 토큰 암호화 격리"| SM["Secret Manager<br/>(보안 볼트)"]
+        Engine -->|"4. Data Store 매니페스트 바인딩"| DiscEng["Discovery Engine Data Store<br/>(문서 레벨 ACL 동기화)"]
+        DiscEng -->|"5. RAG 검색 색인 및 그라운딩"| GEApp
+    end
+
+    subgraph SaaS["5. 사내 기간계 자산 (Enterprise SaaS)"]
+        SaaSAssets["Jira, Confluence, Salesforce,<br/>ServiceNow, SharePoint, Google Drive"]
+        DiscEng -.->|"보안 커넥터 크롤링"| SaaSAssets
+    end
+
+    SA -.->|"ADC 신원 주입"| Engine
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+    classDef saas fill:#f3e8fd,stroke:#9c27b0,stroke-width:2px;
+
+    class DataAdmin,GEApp portal;
+    class SA security;
+    class Engine,Wrapper,ADK,Templates runtime;
+    class SM,DiscEng backend;
+    class SaaSAssets saas;
 ```
 
 ---
