@@ -995,14 +995,6 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         "created-by": get_resource_creator(dry_run),
     }
 
-    print("\n" + "=" * 75)
-    print("  [원클릭 배포] GE Agent Factory 배포 파이프라인")
-    print("=" * 75)
-    print(f"[*] 대상 프로젝트 : {project_id}")
-    print(f"[*] Agent Engine  : {re_location}")
-    print(f"[*] GE App ID     : {ge_app_id} (위치: {ge_location})")
-    print(f"[*] 필수 4대 라벨 : {labels}")
-
     if dry_run:
         print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
         simulated_re_id = "simulated-agent-factory-engine"

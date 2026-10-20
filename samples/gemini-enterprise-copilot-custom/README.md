@@ -67,14 +67,6 @@ python diagnose.py --scaffold --dry-run --chip 2
 
 [진행] 사내 커스텀 에이전트 팩토리(붕어빵 틀) 프로비저닝 파이프라인 가동...
 
-===========================================================================
-  [원클릭 배포] GE Custom Agent Factory 배포 파이프라인
-===========================================================================
-[*] 대상 프로젝트 : sample-project-id
-[*] Agent Engine  : us-central1
-[*] GE App ID     : sample-ge-app-id (위치: global)
-[*] 필수 4대 라벨 : {'managed-by': 'google-cloud-0-to-1', 'scenario': 'gemini-enterprise-copilot-custom', 'env': 'sample', 'created-by': 'customer-engineer'}
-
 --> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.
   [1] Agent Engine 프로비저닝 시뮬레이션: projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-custom-factory-engine
   [2] 장착 도구: deploy_enterprise_agent_tool, list_deployed_agents_tool
