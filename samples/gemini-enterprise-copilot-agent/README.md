@@ -132,14 +132,12 @@ flowchart TB
 
 ## 4. 조치 가이드 및 권장 설정
 
-### 사내 갤러리 2단계 활성화 거버넌스 가이드 (Private -> Enabled)
-- **임직원 생성 에이전트 기본 상태**: 사내 보안 규정 및 품질 거버넌스상, 팩토리 에이전트를 통해 생성된 신규 에이전트는 사내 난립을 방지하기 위해 초기 `Private` (Employee-made) 상태로 대기한다.
-- **전사 사내 갤러리 활성화(Enable)**: 배포 완료 후 전사 임직원에게 에이전트를 노출하려면, **Agent Platform Runtimes 콘솔 ( https://console.cloud.google.com/agent-platform/runtimes )** 접속 후 대상 에이전트 런타임의 상태를 **`Enable (활성화)`**로 전환한다.
-- **등록된 에이전트 목록 확인**: 특정 Gemini Enterprise app에 등록된 에이전트 목록 및 상세 설정은 **Gemini Enterprise 에이전트 목록 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )**에서 확인한다.
+### 사내 갤러리 전사 활성화 및 배포 확인 가이드
+- **사내 갤러리 즉시 노출**: 본 팩토리 에이전트를 통해 생성된 신규 에이전트는 엔터프라이즈 정규 규격(`adkAgentDefinition`)으로 프로비저닝되어, 별도의 수동 승인 절차 없이 **즉시 활성화(`state: ENABLED`) 및 전사 사내 갤러리(`ALL_USERS`)**에 자동 바인딩된다.
+- **등록된 에이전트 목록 확인 및 관리**: 배포된 에이전트의 상태, 프롬프트, 도구 설정은 **Gemini Enterprise 에이전트 목록 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )**에서 확인 및 관리한다.
 
 ### 주요 콘솔 링크
-- **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 확인 ( https://gemini.google.com )
-- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes )
+- **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 대화 ( https://gemini.google.com )
 - **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 목록 조회 및 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - **IAM 및 관리자 콘솔**: 대행 서비스 계정(`ge-agent-factory-sa`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
 

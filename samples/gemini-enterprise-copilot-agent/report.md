@@ -1,6 +1,6 @@
 # Gemini Enterprise 노코드 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-agent)
 
-- **배포 일시**: 2026-10-20 06:21:14 UTC
+- **배포 일시**: 2026-10-20 12:42:17 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE Agent Factory (사내 노코드 에이전트 팩토리)`
@@ -77,7 +77,7 @@ flowchart TB
 
 ## 5. 콘솔 링크 조치 가이드
 
-- **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project=sample-project-id )
+- **Gemini Enterprise 사내 갤러리**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 대화 ( https://gemini.google.com/app/sample-ge-app-id/r/agents )
 - **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/sample-ge-app-id/agentic/agents?project=sample-project-id )
 - **IAM 및 관리자 콘솔**: 서비스 계정(`ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project=sample-project-id )
 
