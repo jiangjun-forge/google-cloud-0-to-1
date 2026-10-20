@@ -829,7 +829,7 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
 ## 6. 콘솔 링크 조치 가이드
 
 - **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 확인 ( https://gemini.google.com )
-- **Agent 콘솔**: 사내 등록된 에이전트 및 데이터스토어 현황 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
+- **GE Admin 관리자 콘솔**: 사내 등록된 에이전트 목록 조회 및 관리 ( https://console.cloud.google.com/gen-app-builder/engines )
 - **IAM 및 관리자 콘솔**: 대행 서비스 계정(`{sa_email}`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
 
 ---
@@ -842,8 +842,8 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
    ```bash
    gcloud iam service-accounts delete {sa_email} --quiet
    ```
-2. **Gemini Enterprise app 카탈로그 에이전트 삭제**:
-   - Agent Platform 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 테스트용으로 생성된 에이전트를 선택 후 삭제한다.
+2. **Gemini Enterprise app 등록 에이전트 삭제**:
+   - GE Admin 관리자 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )에 접속하여 대상 앱의 `Assistants > default_assistant > Agents` 목록에서 생성된 에이전트를 선택 후 삭제한다.
 """
 
 
