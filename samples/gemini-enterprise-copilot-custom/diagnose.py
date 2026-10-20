@@ -1133,10 +1133,10 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             if not op_name:
                 return op_data.get("name") or op_data.get("response", {}).get("name", "")
 
-            # LRO 비동기 완료 대기 (최대 120초)
+            # LRO 비동기 완료 대기 (최대 300초 / 5분)
             op_url = f"https://{re_location}-aiplatform.googleapis.com/v1/{op_name}"
-            for _ in range(40):
-                time.sleep(3)
+            for _ in range(60):
+                time.sleep(5)
                 chk_resp = requests.get(op_url, headers=headers, timeout=15)
                 if chk_resp.ok:
                     chk_data = chk_resp.json()
@@ -1144,7 +1144,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         if "error" in chk_data:
                             raise RuntimeError(f"Reasoning Engine 프로비저닝 오류: {chk_data['error'].get('message')}")
                         return chk_data.get("response", {}).get("name", "")
-            raise TimeoutError("Reasoning Engine 프로비저닝 시간 초과 (120초)")
+            raise TimeoutError("Reasoning Engine 프로비저닝 시간 초과 (300초)")
 
         existing_agents_map = {}
         try:
