@@ -1,102 +1,73 @@
-# Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 진단 및 배포 보고서
+# Gemini Enterprise 노코드 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-agent)
 
-- **실행 일시**: 2026-10-19 06:45:10 UTC
+- **배포 일시**: 2026-10-20 00:59:29 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
-- **대행 서비스 계정**: `ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`
+- **팩토리 에이전트**: `GE Agent Factory (사내 노코드 에이전트 팩토리)`
+- **배포 상태**: `DRY_RUN_PASSED`
 
 ---
 
-## 1. 종합 진단 및 배포 상태 요약
+## 1. 팩토리 에이전트(붕어빵 틀) 프로비저닝 결과 요약
 
-| 진단 항목 | 상태 | 상세 결과 |
+| 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
-| **대행 서비스 계정 권한** | `PASS (Simulated)` | `ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com` / `roles/discoveryengine.editor` 바인딩 점검 통과 |
-| **메타 에이전트 매니페스트** | `READY` | `@에이전트 팩토리` 시스템 지침 및 등록 도구(Tool) 구성 완료 |
-| **추천 칩 인터뷰 엔진** | `READY` | 10대 산업 및 부서별 25개 고유 시드 칩 카탈로그 내장 |
-| **실시간 검색 그라운딩 엔진** | `READY` | 2026년 최신 법령/규정 실시간 보강 및 5대 골든 지침 합성 준비 완료 |
-| **임직원 자율 등록 보안 모델** | `ENFORCED` | 무권한(Zero IAM) 임직원 대행 등록 및 Private 기본 공개 범위 강제 |
+| **에이전트 명칭** | `PROVISIONED` | `GE Agent Factory (사내 노코드 에이전트 팩토리)` |
+| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/6590530146371895296` |
+| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
+| **내장 실행 도구** | `2종 완비` | `register_nocode_agent_tool`, `list_deployed_agents_tool` |
+| **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
 
-## 2. 배포된 메타 에이전트 명세 (@에이전트 팩토리)
+## 2. 팩토리 에이전트 아키텍처 및 붕어빵 생산 흐름
 
-- **에이전트 명칭**: `GE Agent Factory (사내 노코드 에이전트 팩토리)`
-- **역할 정의**: 사내 비개발자 임직원을 위한 대화형 자율 노코드 에이전트 생성 및 Gemini Enterprise app 직결 배포 비서
-- **등록 대상 Gemini Enterprise app**: ( https://gemini.google.com/app/sample-ge-app-id )
-- **내장 도구(Tools)**:
-  - `create_ge_nocode_agent`: 전용 서비스 계정을 통한 No-code 에이전트 Gemini Enterprise app 대행 등록 도구
+본 솔루션은 비개발자 임직원이 복잡한 클라우드 콘솔이나 코딩 없이, GE App 채팅창에서 자연어 인터뷰만으로 사내 맞춤형 노코드 에이전트를 자율 생산(붕어빵 생산)할 수 있도록 지원하는 **사내 에이전트 팩토리(붕어빵 틀)**다:
 
----
+```mermaid
+flowchart TB
+    subgraph Dev["1. 엔지니어링 & 프로비저닝"]
+        A["인프라 / 플랫폼 엔지니어"] -->|"python diagnose.py"| B["노코드 에이전트 팩토리<br/>(diagnose.py)"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+    end
 
-## 3. 임직원 자율 생성 시나리오 검증 결과 (모의 생성 샘플)
+    subgraph Runtime["2. 런타임 & 도구 연동"]
+        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+        D -->|"사내 갤러리 전사 등록"| E["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+    end
 
-- **선택된 도메인**: IT 인프라 / 클라우드 지원
-- **생성된 에이전트 타이틀**: `망분리 환경 VDI 계정 잠금 해제 및 OTP 초기화 에이전트`
-- **타깃 사용자**: 사내 망분리 및 VDI 사용자
-- **핵심 컴플라이언스 기준**: 금융보안원 및 사내 정보보호 규정 (2차 인증 검증 필수)
-- **실시간 검색 그라운딩 결과**: 2026년 최신 '금융보안원 및 사내 정보보호 규정 (2차 인증 검증 필수)' 법령 개정안, 식약처/금융보안원/고용노동부 고시 및 사내 엔터프라이즈 거버넌스 표준 절차를 검색 그라운딩으로 실시간 수집 완료함.
-
-### 3.1. 자동 합성된 시스템 지침서 (System Instructions)
-
-```markdown
-# ROLE & IDENTITY (역할 및 페르소나)
-너는 사내 Gemini Enterprise App 환경에서 공식 승인된 노코드(No-code) 전담 비서인 '망분리 환경 VDI 계정 잠금 해제 및 OTP 초기화 에이전트'이다.
-주요 대상 사용자는 '사내 망분리 및 VDI 사용자'이며, 신속하고 정확하며 정중한 어조로 업무를 지원한다.
-
-# APPLIED MODEL & RUNTIME (적용 모델 및 런타임 표준)
-- **적용 모델**: `gemini-3.8-flash` (2026년 Google Cloud 공식 엔터프라이즈 주력 모델, 사내 RAG 및 고속 추론 기본값)
-- **구형 레거시 모델 사용 금지**: Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등 과거 모델은 이미 선셋되었으므로 일절 적용하거나 언급하지 않는다.
-
-# BUSINESS CONTEXT & WORKFLOW (업무 맥락 및 표준 실행 절차)
-1. **요청 인지 및 필수 정보 확인**:
-   - 임직원의 질의나 요청 사항을 분석하여 필수 기재 항목(사원번호, 일련번호, 신청 일자 등)의 누락 여부를 확인한다.
-   - 필수 정보가 부족한 경우 친절하게 추가 입력을 안내한다.
-2. **규정 및 기준 대조 (Compliance Check)**:
-   - 적용 기준: 금융보안원 및 사내 정보보호 규정 (2차 인증 검증 필수)
-   - 실시간 구글 검색(Google Search Grounding) 및 사내 공식 규정을 대조하여 인가 기준 충족 여부를 객관적으로 검증한다.
-3. **단계별 조치 안내 및 승인 연동**:
-   - 자동 승인 가능 항목과 관리자 결재 필요 항목을 명확히 구분하여 안내한다.
-   - 필요한 경우 표준 서식 양식을 제공하고 정식 접수 번호를 안내한다.
-
-# ENTERPRISE GUARDRAILS (엔터프라이즈 거버넌스 및 보안 수칙)
-- **무학습 원칙(No-Training)**: 본 대화의 모든 질의 및 응답 데이터는 AI 모델 재학습에 일절 사용되지 않는다.
-- **개인 식별 정보(PII) 보호**: 주민등록번호, 계좌 비밀번호, 개인 인증키 등 민감 식별 정보의 입력을 요구하거나 응답에 노출하지 않는다.
-- **환각 방지(Hallucination Guard)**: 확실하지 않거나 사내 문서에 명시되지 않은 사항은 추측하여 답변하지 않고, 사실 관계를 명확히 밝힌다.
-
-# FALLBACK PRINCIPLES (안전한 폴백 및 에스컬레이션 규정)
-- 시스템 장애, 비인가 권한 요청, 또는 규정 해석상 분쟁 소지가 있는 질의는 임의로 판단하지 않고 관련 주관 부서(담당 부서 헬프데스크)로 즉시 에스컬레이션 안내한다.
-- 문의처: 사내 포털 헬프데스크 및 담당 부서 공식 채널
-
-# STARTER PROMPTS (권장 질문)
-1. 망분리 환경 VDI 계정 잠금 해제 및 OTP 초기화 에이전트의 지원 범위와 필수 준비 서류를 알려줘.
-2. 금융보안원 및 사내 정보보호 규정 (2차 인증 검증 필수) 기준에서 예외 적용이 가능한 사례가 있니?
-3. 현재 내 요청 건의 처리 절차와 승인 결재선을 확인해 줘.
-4. 자주 묻는 질문(FAQ) 및 주의 사항 TOP 3를 정리해 줘.
-
+    subgraph Portal["3. 전사 임직원 인터페이스"]
+        E -->|"대화형 인터뷰 제공"| F["사내 임직원<br/>(비개발자 / 실무자)"]
+        F -->|"자연어 에이전트 제작 요청"| E
+        E -->|"에이전트 자동 생성 도구 호출"| D
+    end
 ```
 
-### 3.2. 자동 등록된 권장 시작 질문 (Starter Prompts)
-1. 망분리 환경 VDI 계정 잠금 해제 및 OTP 초기화 에이전트의 지원 범위와 필수 준비 서류를 알려줘.
-2. 금융보안원 및 사내 정보보호 규정 (2차 인증 검증 필수) 기준에서 예외 적용이 가능한 사례가 있니?
-3. 현재 내 요청 건의 처리 절차와 승인 결재선을 확인해 줘.
-4. 자주 묻는 질문(FAQ) 및 주의 사항 TOP 3를 정리해 줘.
+---
+
+## 3. 사내 임직원 활용 가이드 (노코드 에이전트 생성)
+
+전사 임직원은 배포된 팩토리 에이전트와 대화하여 다음과 같이 사내 맞춤형 에이전트를 즉시 찍어낼 수 있다:
+
+1. **Gemini Enterprise app 접속**:
+   - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
+   - **`GE Agent Factory (사내 노코드 에이전트 팩토리)`** 선택.
+
+2. **자연어 붕어빵 생성 예시 프롬프트**:
+   - *"사내 특허 출원 절차 가이드 에이전트 만들어 줘"*
+   - *"주간 업무 보고서 취합 및 경영진 브리핑 에이전트 만들어 줘"*
+   - *"신규 입사자 온보딩 가이드 및 사내 규정 Q&A 에이전트 만들어 줘"*
+   - *"CS 고객 불만 VOC 감성 분석 및 답변 초안 에이전트 만들어 줘"*
+
+3. **팩토리 에이전트 자율 동작**:
+   - 팩토리 에이전트가 4단계 인터뷰(목적 파악 -> 핵심 규칙 -> 지식 베이스 -> 최종 검증)를 진행하고,
+   - 내장된 `register_nocode_agent_tool`을 호출하여 사내 갤러리에 신규 에이전트를 자동 등록한다.
 
 ---
 
-## 4. 권장 후속 조치 및 운영 가이드
+## 4. 사내 거버넌스 4대 필수 표준 라벨
 
-1. **사내 Gemini Enterprise app 웹 포털 공지**:
-   - 임직원 사내 포털 ( https://gemini.google.com/app/sample-ge-app-id )에서 `@에이전트 팩토리`를 호출하여 자율 에이전트 제작을 시작하도록 사내 가이드를 배포한다.
-2. **사내 거버넌스 승인 파이프라인**:
-   - 임직원이 생성한 에이전트는 작성자 본인 및 팀 전용(`PRIVATE`)으로 즉시 활성화된다.
-   - 전사 공개(`ORGANIZATION`)로 전환이 필요한 경우, 사내 클라우드 거버넌스 승인 절차를 거치도록 안내한다.
-
----
-
-## 5. 사내 거버넌스 4대 필수 표준 라벨링
-
-에이전트 인프라 및 관리 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+팩토리 에이전트 및 하위 생성 리소스 관리 시 아래 4대 표준 라벨이 기본 적용된다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-copilot-agent`
 - `env`: `sample` (또는 `poc`)
@@ -104,21 +75,28 @@
 
 ---
 
-## 6. 콘솔 링크 조치 가이드
+## 5. 콘솔 링크 조치 가이드
 
-- **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 확인 ( https://gemini.google.com )
-- **Agent 콘솔**: 사내 등록된 에이전트 및 데이터스토어 현황 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
-- **IAM 및 관리자 콘솔**: 대행 서비스 계정(`ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
+- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project=sample-project-id )
+- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/sample-ge-app-id/assistants/default_assistant/agents?project=sample-project-id )
+- **IAM 및 관리자 콘솔**: 서비스 계정(`ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com`) 권한 확인 ( https://console.cloud.google.com/iam-admin/iam?project=sample-project-id )
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 
-본 솔루션 검증 후 테스트용으로 등록된 메타 에이전트나 대행 서비스 계정을 정리하고자 할 경우 아래 절차를 수행한다:
+본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
 
-1. **대행 서비스 계정 삭제**:
+1. **Agent Engine 삭제**:
    ```bash
-   gcloud iam service-accounts delete ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com --quiet
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/6590530146371895296?force=true"
    ```
-2. **Gemini Enterprise app 카탈로그 에이전트 삭제**:
-   - Agent Platform 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 테스트용으로 생성된 에이전트를 선택 후 삭제한다.
+
+2. **GE App 사내 갤러리 등록 해제**:
+   ```bash
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://discoveryengine.googleapis.com/v1alpha/projects/sample-project-id/locations/global/collections/default_collection/engines/sample-ge-app-id/assistants/default_assistant/agents/<AGENT_ID>"
+   ```

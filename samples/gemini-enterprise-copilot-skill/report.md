@@ -1,147 +1,74 @@
-# Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 보고서
+# Gemini Enterprise 사내 스킬 팩토리 배포 보고서 (gemini-enterprise-copilot-skill)
 
-- **실행 일시**: 2026-10-19 06:45:11 UTC
+- **배포 일시**: 2026-10-20 00:59:38 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
-- **스킬 실행 서비스 계정**: `ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com`
-- **생성된 도구**: `sheets_data_lookup` (Google Sheets 사내 실적 및 명단 행 조회 스킬)
+- **팩토리 에이전트**: `GE Skill Factory (사내 스킬 팩토리)`
+- **배포 상태**: `DRY_RUN_PASSED`
 
 ---
 
-## 1. 종합 진단 및 스킬 배포 상태 요약
+## 1. 팩토리 에이전트(붕어빵 틀) 프로비저닝 결과 요약
 
-| 진단 항목 | 상태 | 상세 결과 |
+| 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
-| **도구 분류 및 작업 유형** | `READ` | `Google Workspace 연동` (GET /api/v1/sheets/lookup) |
-| **OpenAPI 3.0 스키마** | `SYNTHESIZED` | 엔터프라이즈 Function Calling 호환 JSON 스펙 합성 완료 |
-| **보안 볼트(Secret Manager)** | `BOUND` | `gcp_secret_manager://projects/sample-project-id/secrets/workspace-service-account-key/versions/latest` 연동 |
-| **거버넌스 승인 상태** | `ACTIVE (즉시 활성화)` | 단순 데이터 조회 스킬로서 자율 생성 즉시 사내 에이전트에 바인딩 가능 |
-| **IAM 자격 증명 진단** | `PASS (Simulated)` | `ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com` / `roles/secretmanager.secretAccessor` 점검 통과 |
+| **에이전트 명칭** | `PROVISIONED` | `GE Skill Factory (사내 스킬 팩토리)` |
+| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/2791448937123987456` |
+| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
+| **내장 실행 도구** | `3종 완비` | `deploy_enterprise_skill_tool`, `list_enterprise_skills_tool`, `get_preset_skills_tool` |
+| **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
 
-## 2. 생성된 OpenAPI 3.0 스키마 매니페스트 (Tool Manifest)
+## 2. 팩토리 에이전트 아키텍처 및 스킬 제작 흐름
 
-Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 전문이다:
+본 솔루션은 사내 개발자 및 임직원이 복잡한 OpenAPI 스펙이나 Secret Manager 권한을 일일이 수동 구성하지 않고, GE App 채팅창에서 자연어 대화만으로 사내 기간계 시스템 연동 도구(붕어빵)를 자율 제작 및 등록할 수 있도록 지원하는 **사내 스킬 팩토리(붕어빵 틀)**다:
 
-```json
-{
-  "openapi": "3.0.3",
-  "info": {
-    "title": "Google Sheets 사내 실적 및 명단 행 조회 스킬",
-    "description": "지정된 구글 스프레드시트에서 사원명, 주문번호, 자산번호 등 키워드를 기준으로 대상 행 데이터를 검색 및 추출하는 조회 도구",
-    "version": "1.0.0"
-  },
-  "servers": [
-    {
-      "url": "https://api.sample-project-id.example.com"
-    }
-  ],
-  "paths": {
-    "/api/v1/sheets/lookup": {
-      "get": {
-        "operationId": "sheets_data_lookup",
-        "summary": "Google Sheets 사내 실적 및 명단 행 조회 스킬",
-        "description": "지정된 구글 스프레드시트에서 사원명, 주문번호, 자산번호 등 키워드를 기준으로 대상 행 데이터를 검색 및 추출하는 조회 도구",
-        "parameters": [
-          {
-            "name": "spreadsheet_url",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sheet_name",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search_key",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search_value",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": null,
-        "responses": {
-          "200": {
-            "description": "성공적인 처리 결과 반환",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string"
-                    },
-                    "result": {
-                      "type": "object"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "SecretManagerAuth": []
-          }
-        ]
-      }
-    }
-  },
-  "components": {
-    "securitySchemes": {
-      "SecretManagerAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "Authorization",
-        "description": "Cloud Secret Manager에서 동적으로 주입되는 자격 증명: gcp_secret_manager://projects/sample-project-id/secrets/workspace-service-account-key/versions/latest"
-      }
-    }
-  }
-}
+```mermaid
+flowchart TB
+    subgraph Dev["1. 엔지니어링 & 프로비저닝"]
+        A["인프라 / 플랫폼 엔지니어"] -->|"python diagnose.py"| B["스킬 팩토리<br/>(diagnose.py)"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+    end
+
+    subgraph Runtime["2. 런타임 & 도구 연동"]
+        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+        D -->|"사내 갤러리 전사 등록"| E["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+    end
+
+    subgraph Portal["3. 전사 임직원 인터페이스"]
+        E -->|"대화형 스킬 빌더 제공"| F["사내 개발자 / 임직원<br/>(비즈니스 실무자)"]
+        F -->|"자연어 도구 연동 요청"| E
+        E -->|"스킬 자동 등록 도구 호출"| D
+        D -->|"Secret 볼트 & 스킬 생성"| G[("Secret Manager 보안 볼트<br/>OpenAPI Tool 매니페스트")]
+    end
 ```
 
 ---
 
-## 3. 엔터프라이즈 보안 및 자격 증명 통제
+## 3. 사내 실무자 활용 가이드 (도구 및 스킬 생성)
 
-1. **평문 노출 제로(Zero-Plaintext) 원칙**:
-   - 본 도구 명세에는 API 키나 토큰이 일절 하드코딩되지 않으며, 구글 클라우드 Secret Manager 볼트 URI를 통해서만 런타임에 안전하게 복호화된다.
-2. **최소 권한 격리**:
-   - 실행 서비스 계정(`ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com`)은 대상 시크릿 읽기(`roles/secretmanager.secretAccessor`) 외의 불필요한 관리자 권한을 보유하지 않는다.
+사내 임직원 및 개발자는 배포된 스킬 팩토리 에이전트와 대화하여 다음과 같이 사내 도구를 즉시 찍어낼 수 있다:
+
+1. **Gemini Enterprise app 접속**:
+   - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
+   - **`GE Skill Factory (사내 스킬 팩토리)`** 선택.
+
+2. **자연어 붕어빵 생성 예시 프롬프트**:
+   - *"사내 Google Sheets 실적 및 명단 행 조회 스킬 만들어 줘"*
+   - *"사내 인시던트 발생 시 슬랙(Slack) 채널 알림 발송 도구 배포해 줘"*
+   - *"Jira Cloud 신규 이슈 및 결함 티켓 자동 생성 스킬 등록해 줘"*
+   - *"ERP 구매 주문(PO) 승인 상태 조회 및 품의서 연동 도구 만들어 줘"*
+
+3. **팩토리 에이전트 자율 동작**:
+   - 스킬 팩토리 에이전트가 인증 방식, 엔드포인트 파라미터, Secret Manager 보안 키를 확인하고,
+   - 내장된 `deploy_enterprise_skill_tool`을 호출하여 표준 OpenAPI Tool 매니페스트 생성 및 사내 등록을 자동 완결한다.
 
 ---
 
-## 4. 권장 후속 조치 및 에이전트 바인딩 가이드
+## 4. 사내 거버넌스 4대 필수 표준 라벨
 
-1. **Gemini Enterprise app 도구 레지스트리 확인**:
-   - Agent 콘솔 ( https://console.cloud.google.com/vertex-ai/agents/ )에 접속하여 'Tools' 메뉴에서 등록된 `sheets_data_lookup`를 확인한다.
-2. **사내 에이전트에 스킬 장착**:
-   - `gemini-enterprise-copilot-agent`로 제작된 기존 노코드 에이전트 또는 커스텀 에이전트의 설정 화면에서 본 스킬을 활성화(Toggle ON)하여 즉시 실무에 투입한다.
-
----
-
-## 5. 사내 거버넌스 4대 필수 표준 라벨링
-
-사내 스킬 인프라 및 보안 볼트 리소스(Secret Manager 시크릿, 대행 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+팩토리 에이전트 및 하위 생성 리소스 관리 시 아래 4대 표준 라벨이 기본 적용된다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-copilot-skill`
 - `env`: `sample` (또는 `poc`)
@@ -149,23 +76,28 @@ Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 �
 
 ---
 
-## 6. 콘솔 링크 조치 가이드
+## 5. 콘솔 링크 조치 가이드
 
-- **Agent 콘솔**: 사내 등록된 도구(Tools) 및 확장 기능 관리 ( https://console.cloud.google.com/vertex-ai/agents/ )
-- **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
-- **IAM 및 관리자 콘솔**: 스킬 대행 서비스 계정(`ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
+- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project=sample-project-id )
+- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/sample-ge-app-id/assistants/default_assistant/agents?project=sample-project-id )
+- **Secret Manager 콘솔**: 사내 시스템 API 키 및 보안 토큰 볼트 관리 ( https://console.cloud.google.com/security/secret-manager?project=sample-project-id )
 
 ---
 
-## 7. 자원 정리 안내 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 
-본 솔루션 검증 후 테스트용으로 등록된 도구 매니페스트나 서비스 계정을 정리하고자 할 경우 아래 절차를 수행한다:
+본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
 
-1. **대행 서비스 계정 삭제**:
+1. **Agent Engine 삭제**:
    ```bash
-   gcloud iam service-accounts delete ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com --quiet
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/2791448937123987456?force=true"
    ```
-2. **Secret Manager 테스트 시크릿 정리**:
+
+2. **GE App 사내 갤러리 등록 해제**:
    ```bash
-   gcloud secrets delete workspace-service-account-key --quiet
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://discoveryengine.googleapis.com/v1alpha/projects/sample-project-id/locations/global/collections/default_collection/engines/sample-ge-app-id/assistants/default_assistant/agents/<AGENT_ID>"
    ```

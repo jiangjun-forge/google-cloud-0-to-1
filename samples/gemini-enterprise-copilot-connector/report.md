@@ -1,163 +1,74 @@
-# Gemini Enterprise 데이터 커넥터 스캐폴더 보고서 (gemini-enterprise-copilot-connector)
+# Gemini Enterprise 데이터 커넥터 스캐폴더 배포 보고서 (gemini-enterprise-copilot-connector)
 
-- **실행 일시**: 2026-10-19 06:45:10 UTC
+- **배포 일시**: 2026-10-20 00:59:32 UTC
 - **대상 프로젝트**: `sample-project-id`
-- **배포 리전**: `global`
-- **Gemini Enterprise App 인스턴스**: `sample-ge-app-id`
-- **선택 커넥터**: `jira_connector` (Jira Cloud 엔터프라이즈 커넥터)
-- **카테고리**: Atlassian SaaS
-- **진단 상태**: `PASS (Simulated)`
+- **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
+- **팩토리 에이전트**: `GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)`
+- **배포 상태**: `DRY_RUN_PASSED`
 
 ---
 
-## 1. 아키텍처 개요 및 핵심 연동 스펙
+## 1. 팩토리 에이전트(붕어빵 틀) 프로비저닝 결과 요약
+
+| 항목 | 상태 | 세부 정보 |
+| :--- | :---: | :--- |
+| **에이전트 명칭** | `PROVISIONED` | `GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)` |
+| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/1449671171728474112` |
+| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
+| **내장 실행 도구** | `2종 완비` | `deploy_enterprise_connector_tool`, `list_deployed_agents_tool` |
+| **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
+
+---
+
+## 2. 팩토리 에이전트 아키텍처 및 붕어빵 생산 흐름
+
+본 솔루션은 데이터 엔지니어가 복잡한 수동 매니페스트 작성이나 보안 볼트 바인딩 없이, GE App 채팅창에서 자연어 대화만으로 사내 기간계 데이터 커넥터를 자율 생산(붕어빵 생산)할 수 있도록 지원하는 **사내 커넥터 팩토리(붕어빵 틀)**다:
 
 ```mermaid
 flowchart TB
-    SaaS["Jira Cloud 엔터프라이즈 커넥터"] -->|"OAUTH2_CLIENT_CREDENTIALS"| Vault["Secret Manager<br/>(connector-secret-jira-connector)"]
-    Vault -->|"HOURLY_INCREMENTAL"| DS["Discovery Engine Data Store<br/>(ds-jira-connector-sample-p)"]
-    DS -->|"ACL 동기화: IDENTITY_MAPPING_OIDC"| GEApp["Gemini Enterprise App<br/>(sample-ge-app-id)"]
-```
+    subgraph Dev["1. 엔지니어링 & 프로비저닝"]
+        A["인프라 / 데이터 엔지니어"] -->|"python diagnose.py"| B["커넥터 스캐폴더 팩토리<br/>(diagnose.py)"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+    end
 
-| 항목 | 상세 설정 내용 |
-| :--- | :--- |
-| **데이터 소스 유형** | `JIRA` |
-| **인증 방식** | `OAUTH2_CLIENT_CREDENTIALS` |
-| **보안 볼트 참조** | `projects/sample-project-id/secrets/connector-secret-jira-connector` |
-| **동기화 주기** | `HOURLY_INCREMENTAL` |
-| **ACL 및 권한 모델** | `IDENTITY_MAPPING_OIDC` (문서 레벨 보안 보장) |
-| **수집 대상 콘텐츠** | `issues, comments, attachments` |
+    subgraph Runtime["2. 런타임 & 도구 연동"]
+        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+        D -->|"사내 갤러리 전사 등록"| E["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+    end
 
----
-
-## 2. Discovery Engine Data Store 구성 매니페스트 (`connector_manifest.json`)
-
-```json
-{
-  "name": "projects/sample-project-id/locations/global/collections/default_collection/dataStores/ds-jira-connector-sample-p",
-  "displayName": "Jira Cloud 엔터프라이즈 커넥터",
-  "industryVertical": "GENERIC",
-  "solutionTypes": [
-    "SOLUTION_TYPE_SEARCH",
-    "SOLUTION_TYPE_CHAT"
-  ],
-  "contentConfig": "CONTENT_REQUIRED",
-  "connectorConfig": {
-    "sourceType": "JIRA",
-    "authentication": {
-      "authType": "OAUTH2_CLIENT_CREDENTIALS",
-      "secretManagerSecretRef": "projects/sample-project-id/secrets/connector-secret-jira-connector/versions/latest",
-      "serviceAccount": "ge-connector-sa@sample-project-id.iam.gserviceaccount.com"
-    },
-    "syncSchedule": {
-      "cronSchedule": "0 * * * *",
-      "refreshInterval": "3600s"
-    },
-    "accessControl": {
-      "aclMode": "IDENTITY_MAPPING_OIDC",
-      "identityMappingEnabled": true
-    },
-    "contentFilter": {
-      "includedTypes": [
-        "issues",
-        "comments",
-        "attachments"
-      ]
-    }
-  },
-  "labels": {
-    "managed-by": "google-cloud-0-to-1",
-    "scenario": "gemini-enterprise-copilot-connector",
-    "env": "sample",
-    "created-by": "customer-engineer"
-  }
-}
+    subgraph Portal["3. 전사 실무자 인터페이스"]
+        E -->|"대화형 인터뷰 제공"| F["사내 데이터 실무자<br/>(엔지니어 / 관리자)"]
+        F -->|"자연어 기간계 연동 요청"| E
+        E -->|"커넥터 자동 생성 도구 호출"| D
+        D -->|"Data Store & Secret 생성"| G[("Discovery Engine Data Store<br/>Secret Manager 보안 볼트")]
+    end
 ```
 
 ---
 
-## 3. Gemini Enterprise app 엔진 바인딩 페이로드
+## 3. 사내 실무자 활용 가이드 (데이터 커넥터 생성)
 
-```json
-{
-  "dataStoreIds": [
-    "ds-jira-connector-sample-p"
-  ],
-  "servingConfig": {
-    "displayName": "Serving config for ds-jira-connector-sample-p",
-    "solutionType": "SOLUTION_TYPE_SEARCH"
-  }
-}
-```
+사내 데이터 실무자는 배포된 커넥터 스캐폴더 에이전트와 대화하여 다음과 같이 기간계 데이터 커넥터를 즉시 찍어낼 수 있다:
 
----
+1. **Gemini Enterprise app 접속**:
+   - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
+   - **`GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)`** 선택.
 
-## 4. 원클릭 프로비저닝 실행 가이드
+2. **자연어 붕어빵 생성 예시 프롬프트**:
+   - *"사내 Atlassian Jira Cloud 이슈 및 티켓 연동 커넥터 매니페스트 생성해 줘"*
+   - *"Confluence 사내 지식 베이스 위키 문서 동기화 커넥터 배포해 줘"*
+   - *"Salesforce CRM 영업 리드 및 기회 데이터 저장소 연결해 줘"*
+   - *"사내 구글 드라이브(Google Drive) 및 쉐어포인트(SharePoint) 전사 문서 연동해 줘"*
 
-```bash
-#!/usr/bin/env bash
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-# Jira Cloud 엔터프라이즈 커넥터 자동 프로비저닝 및 Gemini Enterprise app 바인딩 스크립트
-
-set -euo pipefail
-
-PROJECT_ID="sample-project-id"
-LOCATION="global"
-DATA_STORE_ID="ds-jira-connector-sample-p"
-GE_APP_ID="sample-ge-app-id"
-SECRET_ID="connector-secret-jira-connector"
-SA_EMAIL="ge-connector-sa@sample-project-id.iam.gserviceaccount.com"
-
-echo "[1/4] Secret Manager 보안 볼트에 커넥터 자격 증명 생성 중..."
-gcloud secrets create "${SECRET_ID}" \
-    --project="${PROJECT_ID}" \
-    --replication-policy="automatic" \
-    --labels="managed-by=google-cloud-0-to-1,scenario=gemini-enterprise-copilot-connector,env=sample,created-by=customer-engineer" || true
-
-echo "[2/4] 커넥터 서비스 계정에 최소 권한(Secret Accessor) 바인딩 중..."
-gcloud secrets add-iam-policy-binding "${SECRET_ID}" \
-    --project="${PROJECT_ID}" \
-    --member="serviceAccount:${SA_EMAIL}" \
-    --role="roles/secretmanager.secretAccessor"
-
-echo "[3/4] Discovery Engine Data Store 생성 중..."
-curl -X POST \
-    -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-    -H "Content-Type: application/json; charset=utf-8" \
-    -H "X-Goog-User-Project: ${PROJECT_ID}" \
-    -d @connector_manifest.json \
-    "https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_ID}/locations/${LOCATION}/collections/default_collection/dataStores?dataStoreId=${DATA_STORE_ID}"
-
-echo "[4/4] Gemini Enterprise app 엔진에 Data Store 바인딩 중..."
-curl -X POST \
-    -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-    -H "Content-Type: application/json; charset=utf-8" \
-    -H "X-Goog-User-Project: ${PROJECT_ID}" \
-    -d '{"dataStoreIds": ["'${DATA_STORE_ID}'"]}' \
-    "https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_ID}/locations/${LOCATION}/collections/default_collection/engines/${GE_APP_ID}:bindDataStore"
-
-echo "=================================================="
-echo "데이터 커넥터 바인딩이 성공적으로 등록되었습니다."
-echo "=================================================="
-
-```
+3. **팩토리 에이전트 자율 동작**:
+   - 커넥터 스캐폴더 에이전트가 인증 방식, 동기화 주기, 문서 레벨 ACL 요구사항을 확인하고,
+   - 내장된 `deploy_enterprise_connector_tool`을 호출하여 Discovery Engine Data Store 및 Secret Manager 보안 볼트를 자동 구성한다.
 
 ---
 
-## 5. IAM 권한 및 연결성 진단 결과
+## 4. 사내 거버넌스 4대 필수 표준 라벨
 
-- **실행 서비스 계정**: `ge-connector-sa@sample-project-id.iam.gserviceaccount.com`
-- **필수 역할 바인딩**:
-  - `roles/discoveryengine.admin`: Data Store 생성 및 동기화 제어
-  - `roles/secretmanager.secretAccessor`: 보안 볼트 토큰 복호화
-- **진단 상세**: 가상 실행 검증: ge-connector-sa@sample-project-id.iam.gserviceaccount.com에 roles/discoveryengine.admin, roles/secretmanager.secretAccessor 역할 바인딩 시뮬레이션 완료
-
----
-
-## 6. 사내 거버넌스 4대 필수 표준 라벨링
-
-데이터 커넥터 인프라 및 보안 볼트 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+팩토리 에이전트 및 하위 생성 리소스 관리 시 아래 4대 표준 라벨이 기본 적용된다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-copilot-connector`
 - `env`: `sample` (또는 `poc`)
@@ -165,32 +76,29 @@ echo "=================================================="
 
 ---
 
-## 7. 콘솔 링크 조치 가이드
+## 5. 콘솔 링크 조치 가이드
 
-- **Discovery Engine 데이터 저장소 콘솔**: ( https://console.cloud.google.com/gen-app-builder/data-stores )
-- **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gen-app-builder/engines )
-- **Secret Manager 보안 볼트 콘솔**: ( https://console.cloud.google.com/security/secret-manager )
-- **IAM 및 서비스 계정 콘솔**: ( https://console.cloud.google.com/iam-admin/iam )
+- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project=sample-project-id )
+- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/sample-ge-app-id/assistants/default_assistant/agents?project=sample-project-id )
+- **Discovery Engine 데이터 저장소 콘솔**: 생성된 Data Store 목록 및 동기화 현황 ( https://console.cloud.google.com/gen-app-builder/data-stores?project=sample-project-id )
+- **Secret Manager 콘솔**: 커넥터 보안 자격 증명 볼트 관리 ( https://console.cloud.google.com/security/secret-manager?project=sample-project-id )
 
 ---
 
-## 8. 자원 정리 안내 (Teardown)
+## 6. 자원 정리 안내 (Teardown)
 
-본 테스트 검증 완료 후 생성된 리소스를 정리하려면 아래 명령어를 수행한다:
+본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
 
-```bash
-# 1. Gemini Enterprise app에서 Data Store 바인딩 해제
-curl -X POST \
-    -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-    -H "Content-Type: application/json" \
-    "https://discoveryengine.googleapis.com/v1alpha/projects/sample-project-id/locations/global/collections/default_collection/engines/sample-ge-app-id:unbindDataStore" \
-    -d '{"dataStoreId": "ds-jira-connector-sample-p"}'
+1. **Agent Engine 삭제**:
+   ```bash
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/1449671171728474112?force=true"
+   ```
 
-# 2. Data Store 삭제
-gcloud beta discovery-engine data-stores delete "ds-jira-connector-sample-p" \
-    --project="sample-project-id" \
-    --location="global" --quiet
-
-# 3. Secret Manager 시크릿 정리
-gcloud secrets delete "connector-secret-jira-connector" --project="sample-project-id" --quiet
-```
+2. **GE App 사내 갤러리 등록 해제**:
+   ```bash
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://discoveryengine.googleapis.com/v1alpha/projects/sample-project-id/locations/global/collections/default_collection/engines/sample-ge-app-id/assistants/default_assistant/agents/<AGENT_ID>"
+   ```

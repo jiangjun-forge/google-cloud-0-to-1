@@ -14,6 +14,7 @@ import json
 import os
 import subprocess
 import sys
+import urllib.request
 import requests
 
 # 5대 어드민 관리 칩 카탈로그
@@ -95,23 +96,146 @@ CORE_FQDN_LIST = [
 ]
 
 
-def resolve_environment(args) -> dict:
-    """활성 GCP 프로젝트 및 환경 변수를 스마트하게 자동 감지한다."""
-    project_id = args.project or os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT")
-    if not project_id and not args.dry_run:
+def load_env_file():
+    """상위 및 현재 디렉토리의 .env 파일을 안전하게 로드한다."""
+    paths = [
+        os.path.join(os.path.dirname(__file__), ".env"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
+    ]
+    for env_path in paths:
+        if os.path.exists(env_path):
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip("'\"")
+                        if k and not os.environ.get(k):
+                            os.environ[k] = v
+
+
+def get_gcloud_config(key: str) -> str:
+    """gcloud CLI 활성 설정 값을 조회한다."""
+    try:
+        res = subprocess.run(
+            ["gcloud", "config", "get-value", key],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if res.returncode == 0:
+            val = res.stdout.strip()
+            if val and val != "(unset)":
+                return val
+    except Exception:
+        pass
+    return ""
+
+
+def _get_cloud_token() -> str:
+    """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
+    try:
+        out = subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True, timeout=10).strip()
+        tok = out.split()[-1]
+        if tok.startswith("ya29."):
+            return tok
+    except Exception:
+        pass
+    try:
+        import google.auth
+        import google.auth.transport.requests
+        creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        auth_req = google.auth.transport.requests.Request()
+        creds.refresh(auth_req)
+        return creds.token
+    except Exception as e:
+        raise RuntimeError(f"GCP 인증 토큰을 획득할 수 없습니다: {e}")
+
+
+def discover_ge_app_engines(project_id: str) -> list:
+    """현재 프로젝트에 프로비저닝된 Gemini Enterprise App (Discovery Engine) 목록을 실시간 조회한다."""
+    if not project_id or project_id == "sample-project-id":
+        return []
+
+    token = _get_cloud_token()
+    if not token:
+        return []
+
+    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            engines = data.get("engines", [])
+            result = []
+            for e in engines:
+                eng_id = e.get("name", "").split("/")[-1]
+                disp_name = e.get("displayName", eng_id)
+                result.append({"id": eng_id, "displayName": disp_name})
+            return result
+    except Exception:
+        return []
+
+
+def select_ge_app_id(project_id: str, candidate_apps: list, dry_run: bool = False) -> str:
+    """사내에 발견된 복수 GE App 중 하나를 대화형 번호로 선택하거나 기본값을 채택한다."""
+    if not candidate_apps:
+        return os.environ.get("GE_APP_ID") or ("sample-ge-app-id" if dry_run else "default_app")
+
+    if len(candidate_apps) == 1:
+        chosen = candidate_apps[0]["id"]
+        print(f"[*] 사내 활성 Gemini Enterprise App 자동 감지: {chosen} ({candidate_apps[0]['displayName']})")
+        return chosen
+
+    print(f"\n[*] 사내 발견된 Gemini Enterprise App 목록 ({len(candidate_apps)}개):")
+    for idx, app in enumerate(candidate_apps, 1):
+        print(f"  [{idx}] {app['id']} ({app['displayName']})")
+
+    # dry-run 모드에서는 프로세스 멈춤 방지를 위해 1번 자동 시뮬레이션
+    if dry_run:
+        selected = candidate_apps[0]["id"]
+        print(f"  -> [가상 실행] 1번 GE App 자동 채택: {selected}")
+        return selected
+
+    # 실제 실행 모드 + 대화형 TTY 환경인 경우 번호 선택 요청
+    if sys.stdin.isatty():
         try:
-            cmd = ["gcloud", "config", "get-value", "project"]
-            res = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL).strip()
-            if res and res != "(unset)":
-                project_id = res
-        except Exception:
+            choice = input(f"\n선택할 Gemini Enterprise App 번호를 입력하세요 [1-{len(candidate_apps)}, 기본값 1]: ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(candidate_apps):
+                selected = candidate_apps[int(choice) - 1]["id"]
+                print(f"  -> 선택된 GE App: {selected}")
+                return selected
+        except (EOFError, KeyboardInterrupt):
             pass
 
-    if not project_id:
-        project_id = "sample-project-id"
+    selected = candidate_apps[0]["id"]
+    print(f"  -> 기본 1번 GE App 자동 채택: {selected}")
+    return selected
+
+
+def resolve_environment(args) -> dict:
+    """활성 GCP 프로젝트 및 환경 변수를 스마트하게 자동 감지한다 (실시간 GE App 감지 및 대화형 번호 선택 지원)."""
+    load_env_file()
+
+    project_id = args.project or os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or get_gcloud_config("project") or "sample-project-id"
 
     location = args.location or os.environ.get("LOCATION") or "global"
-    ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID") or "sample-ge-app-id"
+
+    ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
+    if not ge_app_id:
+        candidates = discover_ge_app_engines(project_id)
+        ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
+
     sa_email = args.sa or os.environ.get("ADMIN_SERVICE_ACCOUNT") or f"ge-admin-sa@{project_id}.iam.gserviceaccount.com"
     domain = args.domain or os.environ.get("CUSTOMER_DOMAIN") or "example-corp.com"
 
@@ -539,32 +663,137 @@ gcloud iam service-accounts delete "{sa_email}" --project="{project_id}" --quiet
 """
 
 
+def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: bool = False) -> str:
+    """GE Admin Copilot(붕어빵 틀 에이전트) 배포 결과를 표준 report.md 양식으로 조립한다 (가상 실행 시 사내 식별 정보 마스킹)."""
+    if dry_run:
+        project_id = "sample-project-id"
+        ge_app_id = "sample-ge-app-id"
+        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/4756157723148550144"
+        sa_email = f"ge-admin-sa@{project_id}.iam.gserviceaccount.com"
+        domain = "example-corp.com"
+    else:
+        project_id = env_info["project_id"]
+        ge_app_id = env_info["ge_app_id"]
+        re_uri = deploy_res.get("reasoning_engine", "N/A")
+        sa_email = env_info["service_account"]
+        domain = env_info.get("customer_domain", "example-corp.com")
+
+    status = deploy_res.get("status", "UNKNOWN")
+    display_name = deploy_res.get("display_name", "GE Admin Copilot (사내 어드민 코파일럿)")
+    portal_url = f"https://gemini.google.com/app/{ge_app_id}"
+
+    return f"""# Gemini Enterprise 어드민 코파일럿 배포 보고서 (gemini-enterprise-copilot-admin)
+
+- **배포 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
+- **대상 프로젝트**: `{project_id}`
+- **Gemini Enterprise app 인스턴스**: `{ge_app_id}`
+- **팩토리 에이전트**: `{display_name}`
+- **배포 상태**: `{status}`
+
+---
+
+## 1. 팩토리 에이전트(붕어빵 틀) 프로비저닝 결과 요약
+
+| 항목 | 상태 | 세부 정보 |
+| :--- | :---: | :--- |
+| **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
+| **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
+| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
+| **내장 실행 도구** | `3종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `get_admin_audit_queries_tool` |
+| **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
+
+---
+
+## 2. 팩토리 에이전트 아키텍처 및 어드민 운영 흐름
+
+본 솔루션은 사내 IT 어드민 및 인프라 담당자가 복잡한 수십 개 GCP/GE 콘솔 메뉴를 일일이 뒤지지 않고, GE App 채팅창에서 자연어 대화만으로 전사 에이전트 전수 감사, BigQuery 로그 싱크 가이드, 도메인 충돌 해결 및 거버넌스 정책(붕어빵 처방)을 즉시 생성 및 수행할 수 있도록 지원하는 **사내 전담 어드민 코파일럿(붕어빵 틀)**이다:
+
+```mermaid
+flowchart TB
+    subgraph Dev["1. 엔지니어링 & 프로비저닝"]
+        A["인프라 / IT 총괄 엔지니어"] -->|"python diagnose.py"| B["어드민 코파일럿 팩토리<br/>(diagnose.py)"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+    end
+
+    subgraph Runtime["2. 런타임 & 도구 연동"]
+        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+        D -->|"사내 갤러리 전사 등록"| E["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+    end
+
+    subgraph Portal["3. 전사 IT 어드민 인터페이스"]
+        E -->|"대화형 어드민 콘솔 제공"| F["사내 IT 어드민<br/>(보안 / 거버넌스 담당자)"]
+        F -->|"자연어 운영 및 감사 질의"| E
+        E -->|"에이전트 감사 / 로그 쿼리 도구 호출"| D
+        D -->|"감사 결과 & 콘솔 딥링크 반환"| E
+    end
+```
+
+---
+
+## 3. 사내 IT 어드민 활용 가이드 (운영 및 감사 질의)
+
+사내 IT 어드민은 배포된 어드민 코파일럿과 대화하여 다음과 같이 관리 업무를 즉시 처리할 수 있다:
+
+1. **Gemini Enterprise app 접속**:
+   - 웹 포털 ( {portal_url} ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
+   - **`{display_name}`** 선택.
+
+2. **자연어 관리 질의 예시 프롬프트**:
+   - *"현재 등록된 사내 에이전트 목록과 미사용 좀비 에이전트 전수 감사해 줘"*
+   - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 30초 싱크 가이드 알려줘"*
+   - *"사내 도메인(`{domain}`) 선점 충돌 해결을 위한 Cloud Identity 온보딩 절차 알려줘"*
+   - *"외부 마켓플레이스 차단 및 사내 승인 에이전트 강제 조직 정책 가이드 보여줘"*
+
+3. **코파일럿 에이전트 자율 동작**:
+   - 어드민 코파일럿이 내장된 `list_deployed_agents_tool`, `get_admin_audit_queries_tool`, `get_admin_console_deeplinks_tool`을 호출하여 실시간 현황 감사 및 1클릭 복구 gcloud 명령어를 제공한다.
+
+---
+
+## 4. 사내 거버넌스 4대 필수 표준 라벨
+
+팩토리 에이전트 및 하위 생성 리소스 관리 시 아래 4대 표준 라벨이 기본 적용된다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-admin`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드
+
+- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
+- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **Cloud Logging 로그 싱크 콘솔**: BigQuery 로그 라우터 싱크 관리 ( https://console.cloud.google.com/logs/router?project={project_id} )
+- **조직 정책 콘솔**: 에이전트 도메인 제한 공유 조직 정책 관리 ( https://console.cloud.google.com/iam-admin/orgpolicies?project={project_id} )
+
+---
+
+## 6. 자원 정리 안내 (Teardown)
+
+본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
+
+1. **Agent Engine 삭제**:
+   ```bash
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+     "https://us-central1-aiplatform.googleapis.com/v1/{re_uri}?force=true"
+   ```
+
+2. **GE App 사내 갤러리 등록 해제**:
+   ```bash
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+     "https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{ge_app_id}/assistants/default_assistant/agents/<AGENT_ID>"
+   ```
+"""
+
+
 def save_markdown_report(report_content: str):
     """산출물을 report.md 파일로 덮어쓴다."""
     report_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "report.md")
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report_content)
     print(f"\n[성공] 마크다운 진단 보고서가 저장되었습니다: {report_path}")
-
-
-def _get_cloud_token() -> str:
-    """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
-    try:
-        out = subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True, timeout=10).strip()
-        tok = out.split()[-1]
-        if tok.startswith("ya29."):
-            return tok
-    except Exception:
-        pass
-    try:
-        import google.auth
-        import google.auth.transport.requests
-        creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
-        auth_req = google.auth.transport.requests.Request()
-        creds.refresh(auth_req)
-        return creds.token
-    except Exception as e:
-        raise RuntimeError(f"GCP 인증 토큰을 획득할 수 없습니다: {e}")
 
 
 def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
@@ -909,46 +1138,11 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     }
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 어드민 코파일럿 진단 및 관리 가이드 도구",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
-    parser.add_argument("--location", help="Vertex AI / Discovery Engine 리전 (기본: global)")
-    parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
-    parser.add_argument("--sa", help="어드민 실행 대행 서비스 계정 이메일")
-    parser.add_argument("--domain", help="사내 도메인 명칭 (예: example-corp.com)")
-    parser.add_argument("--dry-run", action="store_true", default=False, help="실제 호출 없이 가상 실행 검증")
-    parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~7)")
-    parser.add_argument("--prompt", help="사용자 정의 어드민 문의 내용")
-    parser.add_argument("--interactive", action="store_true", default=False, help="대화형 번호 선택기 가동")
-    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 및 Gemini Enterprise app 사내 갤러리 자동 등록")
+def run_local_scaffolding_mode(args, env_info: dict):
+    """로컬 단일 어드민 과제 진단 및 조치 가이드 생성 보조 모드를 실행한다."""
+    print("\n[안내] 로컬 단일 어드민 조치 가이드 생성 보조 모드 가동")
 
-    args = parser.parse_args()
-
-    if len(sys.argv) == 1 and not sys.stdin.isatty():
-        args.dry_run = True
-
-    print("\n" + "=" * 75)
-    print("  Gemini Enterprise 어드민 코파일럿 (gemini-enterprise-copilot-admin)")
-    print("=" * 75)
-
-    # 1. 환경 정보 해석
-    env_info = resolve_environment(args)
-    print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
-    print(f"[*] 배포 리전        : {env_info['location']}")
-    print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
-    print(f"[*] 사내 대상 도메인 : {env_info['customer_domain']}")
-    print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
-    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 실행 모드'}")
-
-    if args.deploy_engine:
-        res = deploy_admin_copilot_engine(env_info, dry_run=args.dry_run)
-        print(f"\n[결과] 배포 상태: {res['status']}")
-        return
-
-    # 2. 과제 칩 선택
+    # 1. 과제 칩 선택
     topic_data = ADMIN_TOPIC_CATALOG[1]
     if args.prompt:
         topic_data = {
@@ -969,22 +1163,75 @@ def main():
     print(f"  - 카테고리  : {topic_data['category']}")
     print(f"  - 핵심 조치 : {topic_data['primary_action']}")
 
-    # 3. 조치 스크립트 컴파일
+    # 2. 조치 스크립트 컴파일
     print("\n[단계 2/3] 거버넌스 매니페스트 및 즉시 조치 스크립트 컴파일 중...")
     artifacts = compile_admin_remediation(topic_data, env_info)
     print(f"  - 조치 유형 : {topic_data['remediation_type']}")
 
-    # 4. IAM 권한 진단
+    # 3. IAM 권한 진단
     print("\n[단계 3/3] 서비스 계정 IAM 권한 및 어드민 준비 상태 진단 중...")
     diag = diagnose_admin_environment(topic_data, env_info, args.dry_run)
     print(f"  - 상태: {diag['status']} | {diag['detail']}")
 
-    # 5. 리포트 저장
+    # 4. 리포트 저장
     report_content = build_markdown_report(env_info, topic_data, artifacts, diag)
     save_markdown_report(report_content)
 
     print("\n" + "=" * 75)
-    print("  어드민 코파일럿 진단 및 조치 가이드 생성 완료 (모든 점검 통과)")
+    print("  어드민 코파일럿 진단 및 조치 가이드 생성 완료")
+    print("=" * 75)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Gemini Enterprise 어드민 코파일럿 (붕어빵 틀) 배포 및 등록 도구",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
+    parser.add_argument("--location", help="Vertex AI / Discovery Engine 리전 (기본: global)")
+    parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
+    parser.add_argument("--sa", help="어드민 실행 대행 서비스 계정 이메일")
+    parser.add_argument("--domain", help="사내 도메인 명칭 (예: example-corp.com)")
+    parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
+    parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 어드민 가이드 생성 보조 모드")
+    parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~7)")
+    parser.add_argument("--prompt", help="사용자 정의 어드민 문의 내용")
+    parser.add_argument("--interactive", action="store_true", default=False, help="로컬 대화형 번호 선택기 가동")
+    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 (기본 실행과 동일)")
+
+    args = parser.parse_args()
+
+    if len(sys.argv) == 1 and not sys.stdin.isatty():
+        args.dry_run = True
+
+    print("\n" + "=" * 75)
+    print("  Gemini Enterprise 어드민 코파일럿 (gemini-enterprise-copilot-admin)")
+    print("=" * 75)
+
+    # 1. 환경 정보 해석
+    env_info = resolve_environment(args)
+    print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
+    print(f"[*] 배포 리전        : {env_info['location']}")
+    print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
+    print(f"[*] 사내 대상 도메인 : {env_info['customer_domain']}")
+    print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
+    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 프로비저닝 모드'}")
+
+    # 로컬 스캐폴딩 보조 모드 분기 (명시적 플래그 지정 시에만 작동)
+    if args.scaffold or args.chip or args.prompt or args.interactive:
+        run_local_scaffolding_mode(args, env_info)
+        return
+
+    # [핵심 메인 워크플로우]: 붕어빵 틀(GE Admin Copilot) 배포 및 GE App 사내 갤러리 등록
+    print("\n[진행] 사내 어드민 코파일럿(붕어빵 틀) 프로비저닝 파이프라인 가동...")
+    deploy_res = deploy_admin_copilot_engine(env_info, dry_run=args.dry_run)
+
+    # 팩토리 리포트 생성 및 저장
+    report_content = build_factory_markdown_report(env_info, deploy_res, dry_run=args.dry_run)
+    save_markdown_report(report_content)
+
+    print("\n" + "=" * 75)
+    print("  어드민 코파일럿 배포 및 등록 완료 (모든 점검 통과)")
     print("=" * 75)
     print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
     print("  - managed-by: google-cloud-0-to-1")

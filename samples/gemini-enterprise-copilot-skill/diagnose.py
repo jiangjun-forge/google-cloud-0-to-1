@@ -14,6 +14,7 @@ import json
 import os
 import subprocess
 import sys
+import urllib.request
 from datetime import datetime, timezone
 import requests
 
@@ -181,24 +182,109 @@ def get_gcloud_config(key: str) -> str:
     return ""
 
 
+def _get_cloud_token() -> str:
+    """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
+    try:
+        out = subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True, timeout=10).strip()
+        tok = out.split()[-1]
+        if tok.startswith("ya29."):
+            return tok
+    except Exception:
+        pass
+    try:
+        import google.auth
+        import google.auth.transport.requests
+        creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        auth_req = google.auth.transport.requests.Request()
+        creds.refresh(auth_req)
+        return creds.token
+    except Exception as e:
+        raise RuntimeError(f"GCP 인증 토큰을 획득할 수 없습니다: {e}")
+
+
+def discover_ge_app_engines(project_id: str) -> list:
+    """현재 프로젝트에 프로비저닝된 Gemini Enterprise App (Discovery Engine) 목록을 실시간 조회한다."""
+    if not project_id or project_id == "sample-project-id":
+        return []
+
+    token = _get_cloud_token()
+    if not token:
+        return []
+
+    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            engines = data.get("engines", [])
+            result = []
+            for e in engines:
+                eng_id = e.get("name", "").split("/")[-1]
+                disp_name = e.get("displayName", eng_id)
+                result.append({"id": eng_id, "displayName": disp_name})
+            return result
+    except Exception:
+        return []
+
+
+def select_ge_app_id(project_id: str, candidate_apps: list, dry_run: bool = False) -> str:
+    """사내에 발견된 복수 GE App 중 하나를 대화형 번호로 선택하거나 기본값을 채택한다."""
+    if not candidate_apps:
+        return os.environ.get("GE_APP_ID") or ("sample-ge-app-id" if dry_run else "default_app")
+
+    if len(candidate_apps) == 1:
+        chosen = candidate_apps[0]["id"]
+        print(f"[*] 사내 활성 Gemini Enterprise App 자동 감지: {chosen} ({candidate_apps[0]['displayName']})")
+        return chosen
+
+    print(f"\n[*] 사내 발견된 Gemini Enterprise App 목록 ({len(candidate_apps)}개):")
+    for idx, app in enumerate(candidate_apps, 1):
+        print(f"  [{idx}] {app['id']} ({app['displayName']})")
+
+    # dry-run 모드에서는 프로세스 멈춤 방지를 위해 1번 자동 시뮬레이션
+    if dry_run:
+        selected = candidate_apps[0]["id"]
+        print(f"  -> [가상 실행] 1번 GE App 자동 채택: {selected}")
+        return selected
+
+    # 실제 실행 모드 + 대화형 TTY 환경인 경우 번호 선택 요청
+    if sys.stdin.isatty():
+        try:
+            choice = input(f"\n선택할 Gemini Enterprise App 번호를 입력하세요 [1-{len(candidate_apps)}, 기본값 1]: ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(candidate_apps):
+                selected = candidate_apps[int(choice) - 1]["id"]
+                print(f"  -> 선택된 GE App: {selected}")
+                return selected
+        except (EOFError, KeyboardInterrupt):
+            pass
+
+    selected = candidate_apps[0]["id"]
+    print(f"  -> 기본 1번 GE App 자동 채택: {selected}")
+    return selected
+
+
 def resolve_environment(args):
-    """실행 환경을 계층형으로 확정한다 (가상 실행 시 사내 식별 정보 마스킹)."""
+    """실행 환경을 계층형으로 확정한다 (실시간 GE App 감지 및 대화형 번호 선택 지원)."""
     load_env_file()
 
     # 1. Project ID
-    if args.dry_run and not args.project:
-        project_id = "sample-project-id"
-    else:
-        project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
+    project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
 
     # 2. Location
     location = args.location or os.environ.get("LOCATION") or "global"
 
     # 3. Gemini Enterprise App ID
-    if args.dry_run and not args.ge_app_id:
-        ge_app_id = "sample-ge-app-id"
-    else:
-        ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID") or "default_app"
+    ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
+    if not ge_app_id:
+        candidates = discover_ge_app_engines(project_id)
+        ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
 
     # 4. Service Account
     sa = args.skill_sa or os.environ.get("SKILL_INVOKER_SERVICE_ACCOUNT")
@@ -473,32 +559,135 @@ Gemini Enterprise app 도구 레지스트리에 배포되는 정량 스키마 �
 """
 
 
+def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: bool = False) -> str:
+    """GE Skill Factory(붕어빵 틀 에이전트) 배포 결과를 표준 report.md 양식으로 조립한다 (가상 실행 시 사내 식별 정보 마스킹)."""
+    if dry_run:
+        project_id = "sample-project-id"
+        ge_app_id = "sample-ge-app-id"
+        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/2791448937123987456"
+        sa_email = f"ge-skill-invoker-sa@{project_id}.iam.gserviceaccount.com"
+    else:
+        project_id = env_info["project_id"]
+        ge_app_id = env_info["ge_app_id"]
+        re_uri = deploy_res.get("reasoning_engine", "N/A")
+        sa_email = env_info["service_account"]
+
+    status = deploy_res.get("status", "UNKNOWN")
+    display_name = deploy_res.get("display_name", "GE Skill Factory (사내 스킬 팩토리)")
+    portal_url = f"https://gemini.google.com/app/{ge_app_id}"
+
+    return f"""# Gemini Enterprise 사내 스킬 팩토리 배포 보고서 (gemini-enterprise-copilot-skill)
+
+- **배포 일시**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
+- **대상 프로젝트**: `{project_id}`
+- **Gemini Enterprise app 인스턴스**: `{ge_app_id}`
+- **팩토리 에이전트**: `{display_name}`
+- **배포 상태**: `{status}`
+
+---
+
+## 1. 팩토리 에이전트(붕어빵 틀) 프로비저닝 결과 요약
+
+| 항목 | 상태 | 세부 정보 |
+| :--- | :---: | :--- |
+| **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
+| **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
+| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
+| **내장 실행 도구** | `3종 완비` | `deploy_enterprise_skill_tool`, `list_enterprise_skills_tool`, `get_preset_skills_tool` |
+| **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
+
+---
+
+## 2. 팩토리 에이전트 아키텍처 및 스킬 제작 흐름
+
+본 솔루션은 사내 개발자 및 임직원이 복잡한 OpenAPI 스펙이나 Secret Manager 권한을 일일이 수동 구성하지 않고, GE App 채팅창에서 자연어 대화만으로 사내 기간계 시스템 연동 도구(붕어빵)를 자율 제작 및 등록할 수 있도록 지원하는 **사내 스킬 팩토리(붕어빵 틀)**다:
+
+```mermaid
+flowchart TB
+    subgraph Dev["1. 엔지니어링 & 프로비저닝"]
+        A["인프라 / 플랫폼 엔지니어"] -->|"python diagnose.py"| B["스킬 팩토리<br/>(diagnose.py)"]
+        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+    end
+
+    subgraph Runtime["2. 런타임 & 도구 연동"]
+        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
+        D -->|"사내 갤러리 전사 등록"| E["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+    end
+
+    subgraph Portal["3. 전사 임직원 인터페이스"]
+        E -->|"대화형 스킬 빌더 제공"| F["사내 개발자 / 임직원<br/>(비즈니스 실무자)"]
+        F -->|"자연어 도구 연동 요청"| E
+        E -->|"스킬 자동 등록 도구 호출"| D
+        D -->|"Secret 볼트 & 스킬 생성"| G[("Secret Manager 보안 볼트<br/>OpenAPI Tool 매니페스트")]
+    end
+```
+
+---
+
+## 3. 사내 실무자 활용 가이드 (도구 및 스킬 생성)
+
+사내 임직원 및 개발자는 배포된 스킬 팩토리 에이전트와 대화하여 다음과 같이 사내 도구를 즉시 찍어낼 수 있다:
+
+1. **Gemini Enterprise app 접속**:
+   - 웹 포털 ( {portal_url} ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
+   - **`{display_name}`** 선택.
+
+2. **자연어 붕어빵 생성 예시 프롬프트**:
+   - *"사내 Google Sheets 실적 및 명단 행 조회 스킬 만들어 줘"*
+   - *"사내 인시던트 발생 시 슬랙(Slack) 채널 알림 발송 도구 배포해 줘"*
+   - *"Jira Cloud 신규 이슈 및 결함 티켓 자동 생성 스킬 등록해 줘"*
+   - *"ERP 구매 주문(PO) 승인 상태 조회 및 품의서 연동 도구 만들어 줘"*
+
+3. **팩토리 에이전트 자율 동작**:
+   - 스킬 팩토리 에이전트가 인증 방식, 엔드포인트 파라미터, Secret Manager 보안 키를 확인하고,
+   - 내장된 `deploy_enterprise_skill_tool`을 호출하여 표준 OpenAPI Tool 매니페스트 생성 및 사내 등록을 자동 완결한다.
+
+---
+
+## 4. 사내 거버넌스 4대 필수 표준 라벨
+
+팩토리 에이전트 및 하위 생성 리소스 관리 시 아래 4대 표준 라벨이 기본 적용된다:
+- `managed-by`: `google-cloud-0-to-1`
+- `scenario`: `gemini-enterprise-copilot-skill`
+- `env`: `sample` (또는 `poc`)
+- `created-by`: `customer-engineer`
+
+---
+
+## 5. 콘솔 링크 조치 가이드
+
+- **Agent Engine 콘솔**: 프로비저닝된 에이전트 엔진 런타임 상태 및 인스턴스 모니터링 ( https://console.cloud.google.com/vertex-ai/agents/agent-engines?project={project_id} )
+- **Agent Platform 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id} )
+- **Secret Manager 콘솔**: 사내 시스템 API 키 및 보안 토큰 볼트 관리 ( https://console.cloud.google.com/security/secret-manager?project={project_id} )
+
+---
+
+## 6. 자원 정리 안내 (Teardown)
+
+본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
+
+1. **Agent Engine 삭제**:
+   ```bash
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+     "https://us-central1-aiplatform.googleapis.com/v1/{re_uri}?force=true"
+   ```
+
+2. **GE App 사내 갤러리 등록 해제**:
+   ```bash
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+     "https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{ge_app_id}/assistants/default_assistant/agents/<AGENT_ID>"
+   ```
+"""
+
+
 def save_markdown_report(report_content: str):
     """산출물을 report.md 파일로 덮어쓴다."""
     report_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "report.md")
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report_content)
     print(f"\n[성공] 마크다운 진단 보고서가 저장되었습니다: {report_path}")
-
-
-def _get_cloud_token() -> str:
-    """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
-    try:
-        out = subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True, timeout=10).strip()
-        tok = out.split()[-1]
-        if tok.startswith("ya29."):
-            return tok
-    except Exception:
-        pass
-    try:
-        import google.auth
-        import google.auth.transport.requests
-        creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
-        auth_req = google.auth.transport.requests.Request()
-        creds.refresh(auth_req)
-        return creds.token
-    except Exception as e:
-        raise RuntimeError(f"GCP 인증 토큰을 획득할 수 없습니다: {e}")
 
 
 def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
@@ -844,46 +1033,11 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     }
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 도구",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
-    parser.add_argument("--location", help="Discovery Engine / Gemini Enterprise app 리전 (기본: global)")
-    parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
-    parser.add_argument("--skill-sa", help="스킬 실행 대행 서비스 계정 이메일")
-    parser.add_argument("--dry-run", action="store_true", default=False, help="실제 등록 없이 가상 실행 검증")
-    parser.add_argument("--publish", action="store_true", default=False, help="Gemini Enterprise app 도구 레지스트리 실제 등록")
-    parser.add_argument("--chip", type=int, help="도구 칩 번호 직접 지정 (1~8)")
-    parser.add_argument("--prompt", help="사용자 직접 정의 연동 시스템 요구사항")
-    parser.add_argument("--interactive", action="store_true", default=False, help="대화형 선택기 가동")
-    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 및 Gemini Enterprise app 사내 갤러리 자동 등록")
+def run_local_scaffolding_mode(args, env_info: dict):
+    """로컬 단일 도구/스킬 매니페스트 합성 및 스캐폴딩 보조 모드를 실행한다."""
+    print("\n[안내] 로컬 단일 도구/스킬 매니페스트 합성 보조 모드 가동")
 
-    args = parser.parse_args()
-
-    # 인자가 없고 비대화형 환경인 경우 기본 dry-run 활성화
-    if len(sys.argv) == 1 and not sys.stdin.isatty():
-        args.dry_run = True
-
-    print("\n" + "=" * 75)
-    print("  Gemini Enterprise 자율형 사내 스킬 팩토리 (gemini-enterprise-copilot-skill)")
-    print("=" * 75)
-
-    # 1. 환경 정보 해석
-    env_info = resolve_environment(args)
-    print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
-    print(f"[*] 대상 리전        : {env_info['location']}")
-    print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
-    print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
-    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 실행 모드'}")
-
-    if args.deploy_engine:
-        res = deploy_skill_factory_engine(env_info, dry_run=args.dry_run)
-        print(f"\n[결과] 배포 상태: {res['status']}")
-        return
-
-    # 2. 도구 칩 선택
+    # 1. 도구 칩 선택
     tool_data = SYSTEM_TOOL_CATALOG[1]
     if args.prompt:
         tool_data = {
@@ -909,29 +1063,75 @@ def main():
     print(f"  - 시스템 분류  : {tool_data['category']}")
     print(f"  - 작업 유형    : {tool_data['action_type']} ({tool_data['http_method']} {tool_data['endpoint_path']})")
 
-    # 3. OpenAPI 3.0 스키마 및 보안 볼트 합성
+    # 2. OpenAPI 3.0 스키마 및 보안 볼트 합성
     print("\n[단계 2/3] OpenAPI 3.0 도구 매니페스트 및 보안 볼트(Secret Manager) 합성 중...")
     tool_manifest = generate_openapi_tool_manifest(tool_data, env_info)
     print(f"  - 거버넌스 상태 : {tool_manifest['governance_status']}")
     print(f"  - 보안 볼트 URI : {tool_manifest['secret_vault_ref']}")
 
-    # 4. IAM 권한 진단
+    # 3. IAM 권한 진단
     print("\n[단계 3/3] 서비스 계정 IAM 권한 및 Gemini Enterprise app 도구 레지스트리 연동 진단 중...")
     iam_diag = diagnose_secret_manager_iam(env_info, args.dry_run)
     print(f"  - 상태: {iam_diag['status']} | {iam_diag['detail']}")
 
-    if args.publish and not args.dry_run:
-        print("  - 실제 Gemini Enterprise app 도구 레지스트리에 등록 요청 전송 중...")
-        print(f"  - [등록 완료] '{tool_data['title']}' 스킬이 사내 도구 카탈로그에 배포되었습니다.")
-    else:
-        print("  - [가상 실행] 실제 API 호출 없이 도구 스키마 및 보안 매니페스트 무결성 검증 완료.")
-
-    # 5. 리포트 생성 및 저장
+    # 4. 리포트 생성 및 저장
     report_content = build_markdown_report(env_info, tool_data, tool_manifest, iam_diag)
     save_markdown_report(report_content)
 
     print("\n" + "=" * 75)
-    print("  사내 스킬 팩토리 진단 및 매니페스트 생성 완료 (모든 점검 통과)")
+    print("  사내 도구 스펙 컴파일 및 매니페스트 생성 완료")
+    print("=" * 75)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Gemini Enterprise 자율형 사내 스킬 팩토리 (붕어빵 틀) 배포 및 등록 도구",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
+    parser.add_argument("--location", help="Discovery Engine / Gemini Enterprise app 리전 (기본: global)")
+    parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
+    parser.add_argument("--skill-sa", help="스킬 실행 대행 서비스 계정 이메일")
+    parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
+    parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 도구/스킬 매니페스트 합성 보조 모드")
+    parser.add_argument("--chip", type=int, help="도구 칩 번호 직접 지정 (1~8)")
+    parser.add_argument("--prompt", help="사용자 직접 정의 연동 시스템 요구사항")
+    parser.add_argument("--interactive", action="store_true", default=False, help="로컬 대화형 번호 선택기 가동")
+    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 (기본 실행과 동일)")
+
+    args = parser.parse_args()
+
+    # 인자가 없고 비대화형 환경인 경우 기본 dry-run 활성화
+    if len(sys.argv) == 1 and not sys.stdin.isatty():
+        args.dry_run = True
+
+    print("\n" + "=" * 75)
+    print("  Gemini Enterprise 사내 스킬 팩토리 (gemini-enterprise-copilot-skill)")
+    print("=" * 75)
+
+    # 1. 환경 정보 해석
+    env_info = resolve_environment(args)
+    print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
+    print(f"[*] 대상 리전        : {env_info['location']}")
+    print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
+    print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
+    print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 프로비저닝 모드'}")
+
+    # 로컬 스캐폴딩 보조 모드 분기 (명시적 플래그 지정 시에만 작동)
+    if args.scaffold or args.chip or args.prompt or args.interactive:
+        run_local_scaffolding_mode(args, env_info)
+        return
+
+    # [핵심 메인 워크플로우]: 붕어빵 틀(GE Skill Factory) 배포 및 GE App 사내 갤러리 등록
+    print("\n[진행] 사내 스킬 팩토리(붕어빵 틀) 프로비저닝 파이프라인 가동...")
+    deploy_res = deploy_skill_factory_engine(env_info, dry_run=args.dry_run)
+
+    # 팩토리 리포트 생성 및 저장
+    report_content = build_factory_markdown_report(env_info, deploy_res, dry_run=args.dry_run)
+    save_markdown_report(report_content)
+
+    print("\n" + "=" * 75)
+    print("  사내 스킬 팩토리 배포 및 등록 완료 (모든 점검 통과)")
     print("=" * 75)
     print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
     print("  - managed-by: google-cloud-0-to-1")

@@ -42,15 +42,34 @@ python diagnose.py --dry-run
 **터미널 진단 출력 미리보기:**
 ```text
 ===========================================================================
-  Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 (gemini-enterprise-copilot-agent)
+  Gemini Enterprise 노코드 에이전트 팩토리 (gemini-enterprise-copilot-agent)
 ===========================================================================
+[*] 사내 활성 Gemini Enterprise App 자동 감지: sample-ge-app-id
 [*] 활성 프로젝트    : sample-project-id
 [*] 대상 리전        : global
 [*] 대상 Gemini Enterprise App ID   : sample-ge-app-id
 [*] 대행 서비스 계정 : ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com
 [*] 실행 모드        : 가상 실행 (--dry-run)
-[단계 1/4] 대행 서비스 계정(Delegated SA) IAM 권한 진단 중...
-  - 상태: PASS (Simulated) | 가상 실행 검증: ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com에 roles/discoveryengine.editor 권한이 적합하게 구성됨.
+
+[진행] 사내 노코드 에이전트 팩토리(붕어빵 틀) 프로비저닝 파이프라인 가동...
+
+===========================================================================
+  [원클릭 배포] GE Agent Factory 배포 파이프라인
+===========================================================================
+[*] 대상 프로젝트 : sample-project-id
+[*] Agent Engine  : us-central1
+[*] GE App ID     : sample-ge-app-id (위치: global)
+[*] 필수 4대 라벨 : {'managed-by': 'google-cloud-0-to-1', 'scenario': 'gemini-enterprise-copilot-agent', 'env': 'sample', 'created-by': 'customer-engineer'}
+
+--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.
+  [1] Agent Engine 프로비저닝 시뮬레이션: projects/sample-project-id/locations/us-central1/reasoningEngines/6590530146371895296
+  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료
+
+[성공] 마크다운 진단 보고서가 저장되었습니다: /path/to/samples/gemini-enterprise-copilot-agent/report.md
+
+===========================================================================
+  노코드 에이전트 팩토리 배포 및 등록 완료 (모든 점검 통과)
+===========================================================================
 ```
 
 ### 2) 실제 사내 인프라 실시간 진단
