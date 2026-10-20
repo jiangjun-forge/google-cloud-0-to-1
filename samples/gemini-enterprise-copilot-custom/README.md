@@ -102,7 +102,7 @@ flowchart TB
     end
 
     subgraph Portal["3. 전사 임직원 인터페이스"]
-        D -->|"Discovery Engine A2A 연동"| F["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+        D -->|"사내 갤러리 직결 등록 (adkAgentDefinition)"| F["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
         G["사내 임직원<br/>(비즈니스 사용자)"] -->|"자연어 업무 질의"| F
         F -->|"에이전트 답변 제공"| G
     end
