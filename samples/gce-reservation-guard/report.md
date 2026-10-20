@@ -10,8 +10,8 @@
 ## 1. 최근 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 장애 이력
 
 - **식별된 용량 고갈 실패 이벤트 수**: 2건
-- **[장애 감지]** 2026-10-17T06:45:09.736261+00:00 | 존: `asia-northeast3-a` | 머신: `n4-standard-8` | 호출자: `gke-nodepool-autoscaler@example.com`
-- **[장애 감지]** 2026-10-14T06:45:09.736261+00:00 | 존: `asia-northeast3-b` | 머신: `g2-standard-8` | 호출자: `admin-deployer@example.com`
+- **[장애 감지]** 2026-10-18T01:21:08.704620+00:00 | 존: `asia-northeast3-a` | 머신: `n4-standard-8` | 호출자: `gke-nodepool-autoscaler@example.com`
+- **[장애 감지]** 2026-10-15T01:21:08.704620+00:00 | 존: `asia-northeast3-b` | 머신: `g2-standard-8` | 호출자: `admin-deployer@example.com`
 
 ---
 

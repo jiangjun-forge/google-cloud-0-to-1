@@ -297,6 +297,121 @@ def save_markdown_report(content: str, filename: str = "report.md") -> None:
     f.write(content)
 
 
+
+def run_config_mode(scenario_name: str = "") -> None:
+    """사내 환경 대화형 설정 마법사: .env.example을 기반으로 사내 리소스를 대화형으로 탐색하여 .env에 저장한다."""
+    import subprocess
+
+    print("\n" + "=" * 75)
+    title = f"{scenario_name} - 사내 환경 대화형 설정 마법사 (--config)" if scenario_name else "사내 환경 대화형 설정 마법사 (--config)"
+    print(f"  {title}")
+    print("=" * 75)
+
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(cur_dir, ".env")
+    example_path = os.path.join(cur_dir, ".env.example")
+
+    if not os.path.exists(example_path):
+        print("[-] .env.example 템플릿 파일이 존재하지 않습니다.")
+        return
+
+    # 기존 .env 로드
+    existing_vars = {}
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    existing_vars[k.strip()] = v.strip().strip("'\"")
+
+    # gcloud 활성 설정 조회
+    gcloud_project = ""
+    try:
+        res = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True, timeout=5)
+        if res.returncode == 0:
+            val = res.stdout.strip()
+            if val and val != "(unset)":
+                gcloud_project = val
+    except Exception:
+        pass
+
+    # .env.example 파싱 및 키/설명 수집
+    new_values = {}
+    with open(example_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    keys_to_prompt = []
+    key_descriptions = {}
+    last_comment = ""
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            last_comment = stripped.lstrip("#").strip()
+        elif stripped and "=" in line:
+            key = stripped.split("=")[0].strip()
+            if key:
+                keys_to_prompt.append(key)
+                if last_comment:
+                    key_descriptions[key] = last_comment
+                last_comment = ""
+
+    is_interactive = sys.stdin.isatty()
+
+    for idx, key in enumerate(keys_to_prompt, 1):
+        default_val = existing_vars.get(key, "")
+        if not default_val:
+            if "PROJECT" in key:
+                default_val = gcloud_project or os.environ.get("PROJECT_ID", "")
+            elif key in ("REGION", "TARGET_REGION"):
+                default_val = "asia-northeast3"
+            elif key in ("LOCATION", "GDA_LOCATION", "KMS_LOCATION"):
+                default_val = "asia-northeast3" if ("korea" in (scenario_name or "").lower() or "kms" in (scenario_name or "").lower()) else "global"
+
+        desc = key_descriptions.get(key, "")
+        if desc and is_interactive:
+            print(f"\n[{idx}] {key} ({desc})")
+
+        if is_interactive:
+            prompt_str = f"  입력 [기본값: {default_val}]: " if default_val else f"  입력: "
+            try:
+                user_val = input(prompt_str).strip()
+                final_val = user_val if user_val else default_val
+            except (EOFError, KeyboardInterrupt):
+                final_val = default_val
+        else:
+            final_val = default_val
+
+        new_values[key] = final_val
+        if is_interactive:
+            print(f"  -> 설정값: {final_val or '(비워둠 - 자동 감지 유지)'}")
+
+    # .env 파일 생성/갱신
+    out_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in line:
+            k = stripped.split("=")[0].strip()
+            if k in new_values and new_values[k]:
+                out_lines.append(f"{k}={new_values[k]}\n")
+            else:
+                out_lines.append(line)
+        else:
+            out_lines.append(line)
+
+    try:
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(out_lines)
+        print("\n" + "-" * 75)
+        print("[*] 사내 환경 설정이 .env 파일에 성공적으로 저장되었습니다.")
+        print("[*] 다음 명령어로 실행을 진행하십시오:")
+        print("    - 가상 실행 검증: python diagnose.py --dry-run")
+        print("    - 실제 진단 실행: python diagnose.py")
+        print("=" * 75 + "\n")
+    except Exception as e:
+        print(f"[!] .env 파일 저장 중 오류 발생: {e}")
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 네트워크 레이턴시 프로브 및 추천기"
@@ -314,8 +429,12 @@ def main():
       help="필터링할 GPU 모델명 (예: H100, A100, L4, G4)",
   )
   parser.add_argument("--dry-run", action="store_true", help="실제 네트워크 프로브 없이 시뮬레이션 데이터로 진단")
+  parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
   args = parser.parse_args()
+  if getattr(args, "config", False):
+      run_config_mode("gce-region-latency-probe")
+      return
 
   print(f"서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시 진단 시작 (지연 기준: {args.threshold_ms} ms, 타깃 GPU: {args.gpu_type or '전체'})")
 

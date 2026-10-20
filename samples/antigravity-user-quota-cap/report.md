@@ -1,6 +1,6 @@
 # Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단 리포트
 
-- **진단 일시**: `2026-10-19 06:45:01 UTC`
+- **진단 일시**: `2026-10-20 01:20:58 UTC`
 - **대상 프로젝트**: `sample-project-id`
 - **집계 주기**: `daily` (UTC 기준)
 - **토큰 상한 임계치(Cap)**: `5,000,000 토큰`
@@ -35,14 +35,14 @@
 ## 3. 실무자 조치 가이드 및 처방전
 
 ### 1단계: 직접 통제 가능 초과자 IAM 조건부 만료 적용 (익일 자동 복구)
-기본 사용자 역할(`roles/discoveryengine.agentspaceUser`)을 해제하고, 익일 자정(`2026-10-20T00:00:00Z`) 자동 만료 조건식(`request.time < timestamp(...)`)이 결합된 차단 마커 역할을 부여하여 관리자 수동 개입 없는 무인 자율 복구를 구현한다:
+기본 사용자 역할(`roles/discoveryengine.agentspaceUser`)을 해제하고, 익일 자정(`2026-10-21T00:00:00Z`) 자동 만료 조건식(`request.time < timestamp(...)`)이 결합된 차단 마커 역할을 부여하여 관리자 수동 개입 없는 무인 자율 복구를 구현한다:
 ```bash
 # dev-lead@example.com 쿼터 캡 조건부 자동 만료 차단 조치
 gcloud projects remove-iam-policy-binding sample-project-id --member=user:dev-lead@example.com --role=roles/discoveryengine.agentspaceUser
-gcloud projects add-iam-policy-binding sample-project-id --member=user:dev-lead@example.com --role=roles/CustomAntigravityCapBlocked --condition='expression=request.time < timestamp("2026-10-20T00:00:00Z"),title=Daily_Cap_Expiry,description=Antigravity_Quota_Exceeded_Auto_Reset'
+gcloud projects add-iam-policy-binding sample-project-id --member=user:dev-lead@example.com --role=roles/CustomAntigravityCapBlocked --condition='expression=request.time < timestamp("2026-10-21T00:00:00Z"),title=Daily_Cap_Expiry,description=Antigravity_Quota_Exceeded_Auto_Reset'
 # senior-eng@example.com 쿼터 캡 조건부 자동 만료 차단 조치
 gcloud projects remove-iam-policy-binding sample-project-id --member=user:senior-eng@example.com --role=roles/discoveryengine.agentspaceUser
-gcloud projects add-iam-policy-binding sample-project-id --member=user:senior-eng@example.com --role=roles/CustomAntigravityCapBlocked --condition='expression=request.time < timestamp("2026-10-20T00:00:00Z"),title=Daily_Cap_Expiry,description=Antigravity_Quota_Exceeded_Auto_Reset'
+gcloud projects add-iam-policy-binding sample-project-id --member=user:senior-eng@example.com --role=roles/CustomAntigravityCapBlocked --condition='expression=request.time < timestamp("2026-10-21T00:00:00Z"),title=Daily_Cap_Expiry,description=Antigravity_Quota_Exceeded_Auto_Reset'
 ```
 
 ### 2단계: 그룹 및 상속 권한 보유 초과자 수동 조치

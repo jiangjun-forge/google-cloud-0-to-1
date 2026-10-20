@@ -241,9 +241,90 @@ def persist_env_value(key: str, value: str, dry_run: bool = False):
     try:
         with open(env_path, "w", encoding="utf-8") as f:
             f.writelines(new_lines)
-        print(f"[*] 로컬 .env 파일에 {key}={value} 설정 자동 저장 완료")
+        print(f"[*] 로컬 .env 파일에 {key}={value} 설정 저장 완료")
     except Exception:
         pass
+
+
+def run_config_mode(args):
+    """사내 환경 대화형 설정 마법사: gcloud 활성 설정 및 사내 리소스를 탐색하여 .env에 저장한다."""
+    print("\n" + "=" * 75)
+    print("  Gemini Enterprise 커스텀 에이전트 팩토리 - 사내 환경 설정 마법사 (--config)")
+    print("=" * 75)
+
+    load_env_file()
+
+    # 1. Project ID
+    current_proj = os.environ.get("PROJECT_ID") or get_gcloud_config("project") or ""
+    proj_prompt = f"1. 구글 클라우드 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. 구글 클라우드 프로젝트 ID 입력: "
+    if sys.stdin.isatty():
+        try:
+            val = input(proj_prompt).strip()
+            chosen_proj = val if val else current_proj
+        except (EOFError, KeyboardInterrupt):
+            chosen_proj = current_proj
+    else:
+        chosen_proj = current_proj
+
+    if not chosen_proj:
+        chosen_proj = "sample-project-id"
+    persist_env_value("PROJECT_ID", chosen_proj)
+    print(f"  -> 프로젝트 ID 설정: {chosen_proj}")
+
+    # 2. Region
+    current_region = os.environ.get("REGION") or "us-central1"
+    region_prompt = f"2. Agent Engine 배포 리전 [기본값: {current_region}]: "
+    if sys.stdin.isatty():
+        try:
+            val = input(region_prompt).strip()
+            chosen_region = val if val else current_region
+        except (EOFError, KeyboardInterrupt):
+            chosen_region = current_region
+    else:
+        chosen_region = current_region
+    persist_env_value("REGION", chosen_region)
+    print(f"  -> 배포 리전 설정: {chosen_region}")
+
+    # 3. GE App ID 탐색 및 선택
+    print("\n[*] 사내 Gemini Enterprise App (Discovery Engine) 목록 실시간 스캔 중...")
+    candidate_apps = discover_ge_app_engines(chosen_proj)
+    chosen_app = ""
+    if candidate_apps:
+        print(f"[*] {len(candidate_apps)}개의 Gemini Enterprise App 인스턴스를 발견했습니다:")
+        for idx, app in enumerate(candidate_apps, 1):
+            disp = app.get("displayName") or "무제"
+            app_id = app.get("id")
+            print(f"    [{idx}] {app_id} (표시 이름: {disp})")
+        if sys.stdin.isatty():
+            try:
+                choice = input(f"\n3. 사용할 Gemini Enterprise App 번호 [1-{len(candidate_apps)}, 기본값 1]: ").strip()
+                if choice.isdigit() and 1 <= int(choice) <= len(candidate_apps):
+                    chosen_app = candidate_apps[int(choice) - 1]["id"]
+            except (EOFError, KeyboardInterrupt):
+                pass
+        if not chosen_app:
+            chosen_app = candidate_apps[0]["id"]
+    else:
+        current_app = os.environ.get("GE_APP_ID") or ""
+        app_prompt = f"3. Gemini Enterprise App 인스턴스 ID [기본값: {current_app or 'default'}]: "
+        if sys.stdin.isatty():
+            try:
+                val = input(app_prompt).strip()
+                chosen_app = val if val else (current_app or "default")
+            except (EOFError, KeyboardInterrupt):
+                chosen_app = current_app or "default"
+        else:
+            chosen_app = current_app or "default"
+
+    persist_env_value("GE_APP_ID", chosen_app)
+    print(f"  -> GE App ID 설정: {chosen_app}")
+
+    print("\n" + "-" * 75)
+    print("[*] 사내 환경 설정이 .env 파일에 성공적으로 저장되었습니다.")
+    print("[*] 다음 명령어로 실행을 진행하십시오:")
+    print("    - 가상 실행 검증: python diagnose.py --dry-run")
+    print("    - 실제 팩토리 배포: python diagnose.py")
+    print("=" * 75 + "\n")
 
 
 def resolve_environment(args):
@@ -1401,6 +1482,7 @@ def main():
     parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
     parser.add_argument("--custom-sa", help="커스텀 에이전트 서비스 계정 이메일")
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
+    parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--repo", help="GitHub 저장소 URL (예: https://github.com/my-org/my-agent.git) 기반 무인 GitOps 배포 검증")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 커스텀 에이전트 소스 코드 샘플 추출 보조 모드")
     parser.add_argument("--write-files", action="store_true", default=False, help="scaffold/ 폴더에 소스 파일 추출")
@@ -1409,6 +1491,11 @@ def main():
     parser.add_argument("--interactive", action="store_true", default=False, help="로컬 아키텍처 대화형 선택기 가동")
 
     args = parser.parse_args()
+
+    # 사내 환경 대화형 설정 모드 분기
+    if args.config:
+        run_config_mode(args)
+        return
 
     # 인자가 없고 비대화형 환경인 경우 기본 dry-run 활성화
     if len(sys.argv) == 1 and not sys.stdin.isatty():

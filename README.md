@@ -128,7 +128,8 @@ agy
 - **1단계: 예습 (Agent Showcase / Dry-run)**
   - 에이전트가 가상 실행 모드(`--dry-run`)를 통해 1초 만에 전체 실행 흐름과 예상 진단 리포트를 화면에 출력하고 `report.md`를 자동 생성한다.
 - **2단계: 실습 (Hands-on Execution)**
-  - 예습을 마친 후 각 샘플 디렉터리의 `README.md` 가이드에 따라 터미널에서 `python diagnose.py`를 직접 실행하며 실제 리소스 진단 및 결과 검증을 수행한다.
+  - 실습에 앞서 사내 프로젝트 ID나 리전 설정을 간편하게 구성하려면 대화형 설정 마법사(`python diagnose.py --config`)를 실행하여 `.env`에 자동 저장할 수 있다.
+  - 각 샘플 디렉터리의 `README.md` 가이드에 따라 터미널에서 `python diagnose.py`를 직접 실행하며 실제 리소스 진단 및 결과 검증을 수행한다.
 - **3단계: 복습 (Deep-dive & Architecture Review)**
   - 진단 결과 자동 갱신된 `report.md`를 열람하여 근본 원인(RCA) 분석, 조치 코드 처방전 및 비즈니스/기술 설계서(`docs/BRD.md`, `docs/TDD.md`)를 복습한다.
 
