@@ -1078,7 +1078,19 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             instructions: Complete 5 golden prompt system instructions for the agent.
             starter_prompts: Comma-separated starter questions (e.g. '특허 출원 지원 범위 알려줘, 필수 서류는 뭐야').
         """
-        token = _get_cloud_token()
+        token = ""
+        try:
+            import google.auth
+            import google.auth.transport.requests
+            creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+            auth_req = google.auth.transport.requests.Request()
+            creds.refresh(auth_req)
+            token = creds.token
+        except Exception:
+            try:
+                token = _get_cloud_token()
+            except Exception:
+                token = ""
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -1188,7 +1200,19 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         Returns:
             A markdown-formatted summary table of registered agents.
         """
-        token = _get_cloud_token()
+        token = ""
+        try:
+            import google.auth
+            import google.auth.transport.requests
+            creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+            auth_req = google.auth.transport.requests.Request()
+            creds.refresh(auth_req)
+            token = creds.token
+        except Exception:
+            try:
+                token = _get_cloud_token()
+            except Exception:
+                token = ""
         headers = {
             "Authorization": f"Bearer {token}",
             "X-Goog-User-Project": project_id,
