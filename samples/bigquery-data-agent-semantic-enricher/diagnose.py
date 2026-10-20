@@ -38,7 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-d",
         "--dataset",
-        default=os.getenv("DATASET_ID") or None,
+        default=os.getenv("BQ_DATASET_ID") or None,
         help="진단 및 보강 대상 BigQuery 데이터셋 ID (미지정 시 자동 감지 또는 대화형 선택)",
     )
     parser.add_argument(
@@ -126,7 +126,7 @@ def detect_dataset_id(client: Any, project_id: str, cli_dataset: str | None = No
     """BigQuery 데이터셋 ID를 감지하거나 대화형으로 선택한다."""
     if cli_dataset:
         return cli_dataset
-    env_dataset = os.getenv("DATASET_ID")
+    env_dataset = os.getenv("BQ_DATASET_ID")
     if env_dataset:
         return env_dataset
 

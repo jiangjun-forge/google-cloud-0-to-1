@@ -1411,7 +1411,7 @@ def main():
     env_info = resolve_environment(args)
     print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
     print(f"[*] 대상 리전        : {env_info['location']}")
-    print(f"[*] 대상 Gemini Enterprise App ID   : {env_info['ge_app_id']}")
+    print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
     print(f"[*] 대행 서비스 계정 : {env_info['delegated_sa']}")
     print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 프로비저닝 모드'}")
 

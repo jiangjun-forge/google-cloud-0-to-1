@@ -536,7 +536,7 @@ def main():
   )
   parser.add_argument(
       "--dataset",
-      default=os.getenv("BQ_DATASET") or "gemini_analytics",
+      default=os.getenv("BQ_DATASET_ID") or "gemini_analytics",
       help="BigQuery 데이터세트명 (기본값: gemini_analytics)",
   )
   parser.add_argument(

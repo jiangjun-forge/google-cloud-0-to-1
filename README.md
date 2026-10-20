@@ -160,6 +160,7 @@ agy
 | **`--dry-run`** | **모의 가상 실행 (예습)** | 실제 Google Cloud API 호출이나 비용 발생 없이, 내장된 가상 인프라 데이터 및 가명(`sample-project-id`)으로 전체 진단 파이프라인 및 `report.md` 리포트 생성을 1초 만에 검증한다. |
 | **`--project <ID>`** (또는 `-p`) | **대상 프로젝트 명시** | 분석 및 진단 대상 Google Cloud 프로젝트 ID를 직접 지정한다. (미지정 시 `.env` > `gcloud config` 활성 프로젝트 > 실시간 대화형 선택기 순으로 자동 탐색) |
 | **`--region <REGION>`** / **`--location <LOC>`** | **대상 리전 명시** | 시나리오별 인프라 배포 또는 진단 리전(기본값: 일반 인프라 `asia-northeast3`, 전역 서비스 `global`)을 지정한다. |
+| **`--ge-app-id <ID>`** | **Gemini Enterprise App 지정** | Gemini Enterprise App 인스턴스 ID를 지정한다. (코파일럿 및 에이전트 연동 도구 공용) |
 
 ```bash
 # 1. 사내 환경 설정 마법사 가동 (최초 1회, .env 파일 자동 생성)

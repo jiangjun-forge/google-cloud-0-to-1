@@ -382,7 +382,7 @@ def run_config_mode(scenario_name: str = "") -> None:
         if desc and is_interactive:
             print(f"\n[{idx}] {key} ({desc})")
 
-        if key in ("APP_ID", "GE_APP_ID"):
+        if key == "GE_APP_ID":
             target_proj = new_values.get("PROJECT_ID") or gcloud_project or default_val or "sample-project-id"
             if is_interactive:
                 print("  [*] 사내 Gemini Enterprise App (Discovery Engine) 목록 실시간 스캔 중...")
@@ -462,10 +462,8 @@ def main():
   parser.add_argument("--project", help="대상 구글 클라우드(Google Cloud) 프로젝트 ID")
   parser.add_argument(
       "--ge-app-id",
-      "--app-id",
-      dest="ge_app_id",
-      default=os.getenv("GE_APP_ID") or os.getenv("APP_ID") or "default-enterprise-agent-app",
-      help="대상 Gemini Enterprise App ID",
+      default=os.getenv("GE_APP_ID") or "default-enterprise-agent-app",
+      help="Gemini Enterprise App 인스턴스 ID",
   )
   parser.add_argument("--dry-run", action="store_true", help="실제 API 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")

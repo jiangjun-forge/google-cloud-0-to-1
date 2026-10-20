@@ -369,7 +369,7 @@ def main():
   parser.add_argument(
       "-d",
       "--dataset",
-      default=os.getenv("BIGQUERY_DATASET") or "gcp_logs",
+      default=os.getenv("BQ_DATASET_ID") or "gcp_logs",
       help="BigQuery 데이터세트 ID (기본값: gcp_logs)",
   )
   parser.add_argument(

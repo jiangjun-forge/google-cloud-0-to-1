@@ -460,7 +460,7 @@ set -euo pipefail
 
 PROJECT_ID="{project_id}"
 LOCATION="{location}"
-GE_APP_ID="{ge_app_id}"
+GE_APP_ID="{env_info['ge_app_id']}"
 
 echo "[1/2] 외부 공개 에이전트 마켓플레이스 비활성화 중..."
 curl -X PATCH \\

@@ -44,19 +44,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-k",
         "--keyring",
-        default=os.getenv("KEY_RING") or "prod-keyring",
+        default=os.getenv("KMS_KEY_RING") or "prod-keyring",
         help="Cloud KMS 키 링 이름 (기본값: prod-keyring)",
     )
     parser.add_argument(
         "-n",
         "--key-name",
-        default=os.getenv("KEY_NAME") or "customer-data-key",
+        default=os.getenv("KMS_KEY_NAME") or "customer-data-key",
         help="Cloud KMS 암호화 키 이름 (기본값: customer-data-key)",
     )
     parser.add_argument(
         "-b",
         "--bucket",
-        default=os.getenv("BUCKET_NAME") or "",
+        default=os.getenv("GCS_BUCKET_NAME") or "",
         help="점검 대상 Cloud Storage 버킷 이름 (지정하지 않을 경우 KMS 연동 버킷 자동 탐색)",
     )
     parser.add_argument(
@@ -296,18 +296,18 @@ def build_report_text(project_id: str, is_dry_run: bool, data: Dict[str, Any]) -
     lines.append("[3단계] 서비스 장애 방지 긴급 처방 및 데이터 재암호화 가이드")
     lines.append("1. [긴급] 파기 예정 또는 비활성화된 구버전 키 즉각 복구 (장애 방어):")
     lines.append("   gcloud kms keys versions restore 1 \\")
-    lines.append(f"     --key={os.getenv('KEY_NAME', 'customer-data-key')} \\")
-    lines.append(f"     --keyring={os.getenv('KEY_RING', 'prod-keyring')} \\")
+    lines.append(f"     --key={os.getenv('KMS_KEY_NAME', 'customer-data-key')} \\")
+    lines.append(f"     --keyring={os.getenv('KMS_KEY_RING', 'prod-keyring')} \\")
     lines.append(f"     --location={os.getenv('KMS_LOCATION', 'asia-northeast3')}")
     lines.append("")
     lines.append("2. [필수] 구버전 키로 암호화된 객체를 최신 주 버전(Primary)으로 일괄 재암호화(Rewrite):")
     lines.append(f"   # 최신 주 키(v{data.get('primary_version', '3')})로 객체 메타데이터 및 암호화 블록 갱신:")
-    lines.append(f"   gcloud storage objects rewrite gs://{data.get('storage_bucket', 'BUCKET_NAME')}/**")
+    lines.append(f"   gcloud storage objects rewrite gs://{data.get('storage_bucket', 'GCS_BUCKET_NAME')}/**")
     lines.append("")
     lines.append("3. [검증] 모든 객체가 최신 주 버전 키로 마이그레이션 완료된 후에만 구버전 비활성화(Disable):")
     lines.append("   gcloud kms keys versions disable 1 \\")
-    lines.append(f"     --key={os.getenv('KEY_NAME', 'customer-data-key')} \\")
-    lines.append(f"     --keyring={os.getenv('KEY_RING', 'prod-keyring')} \\")
+    lines.append(f"     --key={os.getenv('KMS_KEY_NAME', 'customer-data-key')} \\")
+    lines.append(f"     --keyring={os.getenv('KMS_KEY_RING', 'prod-keyring')} \\")
     lines.append(f"     --location={os.getenv('KMS_LOCATION', 'asia-northeast3')}")
     lines.append("=" * 80)
     return "\n".join(lines)

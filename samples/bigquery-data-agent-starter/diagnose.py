@@ -143,12 +143,10 @@ def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
     if not location:
         location = "asia-northeast3"
 
-    dataset_id = cli_args.dataset or os.environ.get("DATASET_ID", "").strip() or "cymbal_gold"
-    ge_engine_id = (
-        getattr(cli_args, "ge_app_id", None)
-        or getattr(cli_args, "app_id", None)
+    dataset_id = cli_args.dataset or os.environ.get("BQ_DATASET_ID", "").strip() or "cymbal_gold"
+    ge_app_id = (
+        cli_args.ge_app_id
         or os.environ.get("GE_APP_ID", "").strip()
-        or os.environ.get("GE_ENGINE_ID", "").strip()
         or "omni-retail-ge-app"
     )
     data_agent_name = cli_args.agent_name or os.environ.get("DATA_AGENT_NAME", "").strip() or "cymbal-retail-data-agent"
@@ -172,8 +170,7 @@ def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
         "location": location,
         "gda_location": gda_location,
         "dataset_id": dataset_id,
-        "ge_app_id": ge_engine_id,
-        "ge_engine_id": ge_engine_id,
+        "ge_app_id": ge_app_id,
         "data_agent_name": data_agent_name,
         "dry_run": cli_args.dry_run,
     }
@@ -793,7 +790,7 @@ def register_agent_to_ge_app_api(
 ) -> Optional[str]:
     """Discovery Engine REST API를 호출하여 Gemini Enterprise App 엔진에 A2A 에이전트를 직결 등록한다."""
     project_number = cfg["project_number"]
-    engine_id = cfg["ge_engine_id"]
+    engine_id = cfg["ge_app_id"]
     agent_name = cfg["data_agent_name"]
     project_id = cfg["project_id"]
 
@@ -881,7 +878,7 @@ def export_data_agent_config(cfg: Dict[str, Any]) -> None:
 
 def register_agent_to_ge_app_ui_guide(cfg: Dict[str, Any]) -> None:
     """[콘솔 UI 보조 경로] BigQuery Studio Agents에서 생성한 Data Agent를 Gemini Enterprise App에 A2A 방식으로 등록하는 UI 절차를 안내한다."""
-    ge_app_id = cfg["ge_engine_id"]
+    ge_app_id = cfg["ge_app_id"]
     agent_name = cfg["data_agent_name"]
 
     print("=" * 88)
@@ -931,7 +928,7 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     print(f" - 대상 프로젝트 : {project_id} (프로젝트 번호: {cfg['project_number']})")
     print(f" - 빅쿼리 리전   : {cfg['location']} (데이터셋: {dataset_id})")
     print(f" - GDA 런타임   : {cfg['gda_location']} (에이전트 이름: {cfg['data_agent_name']})")
-    print(f" - GE App 엔진  : {cfg['ge_engine_id']}")
+    print(f" - GE App 엔진  : {cfg['ge_app_id']}")
     print(f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}")
     print("-" * 88)
 
@@ -995,7 +992,7 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         f" - 대상 프로젝트 : {project_id} (프로젝트 번호: {cfg['project_number']})",
         f" - 빅쿼리 리전   : {cfg['location']} (데이터셋: {dataset_id})",
         f" - GDA 런타임   : {cfg['gda_location']} (에이전트 이름: {cfg['data_agent_name']})",
-        f" - GE App 엔진  : {cfg['ge_engine_id']}",
+        f" - GE App 엔진  : {cfg['ge_app_id']}",
         f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}",
         "-" * 88,
         "",
@@ -1144,7 +1141,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-d", "--dataset", type=str, help="스몰셋 BigQuery 데이터셋 ID (기본값: cymbal_gold)")
     parser.add_argument("-l", "--location", type=str, help="BigQuery 리전 (기본값: asia-northeast3)")
     parser.add_argument("--gda-location", type=str, help="GDA 런타임 리전 (기본값: global)")
-    parser.add_argument("--ge-app-id", "--app-id", dest="ge_app_id", type=str, help="[선택 사항] 등록할 Gemini Enterprise App ID")
+    parser.add_argument("--ge-app-id", type=str, help="[선택 사항] 등록할 Gemini Enterprise App 인스턴스 ID")
     parser.add_argument("--agent-name", type=str, help="BigQuery Data Agent 이름 (기본값: cymbal-retail-data-agent)")
     parser.add_argument(
         "--dry-run",
@@ -1271,7 +1268,7 @@ def run_config_mode(scenario_name: str = "") -> None:
         if desc and is_interactive:
             print(f"\n[{idx}] {key} ({desc})")
 
-        if key in ("GE_ENGINE_ID", "GE_APP_ID"):
+        if key == "GE_APP_ID":
             target_proj = new_values.get("PROJECT_ID") or gcloud_project or default_val or "sample-project-id"
             if is_interactive:
                 print("  [*] 사내 Gemini Enterprise App (Discovery Engine) 목록 실시간 스캔 중...")
