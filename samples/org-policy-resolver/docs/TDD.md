@@ -17,7 +17,56 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 클라우드 관리자가 CLI를 실행하면 Cloud Logging의 Activity Audit Logs를 조회하여 최근 발생한 Code 9(Failed Precondition) 조직 정책 위반 이벤트를 파싱하고, 위반된 제약 조건 ID 추출 및 즉시 복구 가능한 gcloud 명령어를 도출한다.
+
+```mermaid
+sequenceDiagram
+    actor Admin as 클라우드 관리자 / 보안 엔지니어
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant CloudLogging as Cloud Logging API (Audit Logs)
+    participant Parser as 로그 파서 및 제약 조건 추출기
+    participant Resolver as 처방 및 gcloud 명령어 생성기
+    participant FileSys as 로컬 파일 시스템 (report.md)
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 조직 정책 위반 감사 로그 조회 및 파싱
+    Admin->>CLI: python diagnose.py -p $PROJECT_ID --days 7 --limit 5
+    CLI->>CloudLogging: gcloud logging read (logName: activity, code: 9)
+    CloudLogging-->>CLI: 실패 이벤트 JSON 응답
+    CLI->>Parser: parse_events(events)
+    Parser->>Parser: 정규표현식 기반 제약 조건 ID 추출 (constraints/...)
+    Parser-->>CLI: 구조화된 위반 내역 반환
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 복구 처방 생성 및 리포트 저장
+    CLI->>Resolver: build_remediation(violations)
+    Resolver->>Resolver: disable-enforce 및 예외 처리 gcloud 명령 합성
+    Resolver-->>CLI: 처방 가이드 반환
+    CLI->>FileSys: save_markdown_report(report.md)
+    FileSys-->>CLI: 덮어쓰기 완료
+    CLI-->>Admin: 터미널 위반 내역 출력 및 콘솔 경로 안내
+    end
+```
+
+---
+
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`get_default_project`, `parse_args`) |
+| **BR-02** (표준화된 자동 진단 체계) | **FR-02** (핵심 지표 및 설정 상태 정밀 진단) | **NFR-02** (비대화형 호환성) | `diagnose.py` (`fetch_violations`, `report_violations`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_mock_violations`) |
+| **BR-04** (실무자 조치 가이드 및 리소스 정리) | **FR-04** (직관적 콘솔 조치 가이드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`report_violations`, `build_markdown_report`) |
+| **BR-02** (자동 진단 및 리포트 영구 보존) | **FR-05** (마크다운 리포트 자동 생성/덮어쓰기) | **NFR-04** (리포트 절대 경로 저장) | `diagnose.py` (`save_markdown_report`) |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링) | **FR-06** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 및 거버넌스 규약) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +79,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 5. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

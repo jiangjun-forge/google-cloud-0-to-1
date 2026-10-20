@@ -418,6 +418,12 @@ def main():
   )
   threshold_env = os.getenv("MAX_LATENCY_THRESHOLD_MS")
   parser.add_argument(
+      "--project",
+      "-p",
+      default=os.getenv("PROJECT_ID") or None,
+      help="대상 GCP 프로젝트 ID",
+  )
+  parser.add_argument(
       "--threshold-ms",
       type=float,
       default=float(threshold_env) if threshold_env else 100.0,

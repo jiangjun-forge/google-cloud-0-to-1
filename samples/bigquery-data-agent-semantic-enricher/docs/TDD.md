@@ -82,7 +82,24 @@ sequenceDiagram
 
 ---
 
-## 3. 모듈 및 컴포넌트 설계
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (테이블 설명 감사) | **FR-01** (테이블 메타데이터 전수 검사) | **NFR-01** (비파괴적 진단 모델) | `diagnose.py` (`inspect_table_descriptions`) |
+| **BR-02** (컬럼 설명 감사) | **FR-02** (컬럼 커버리지 및 축약어 감사) | **NFR-01** (비파괴적 진단 모델) | `diagnose.py` (`inspect_column_descriptions`) |
+| **BR-03** (프로파일링 검증) | **FR-03** (Dataplex 프로파일 통계 연동) | **NFR-02** (신속한 실행 성능) | `diagnose.py` (`inspect_dataplex_profiles`) |
+| **BR-04** (용어집 공식 감사) | **FR-04** (Knowledge Catalog 비즈니스 용어집 감사) | **NFR-02** (실행 성능 보장) | `diagnose.py` (`inspect_catalog_glossary`) |
+| **BR-05** (준비도 점수화) | **FR-05** (4대 핵심 지표 기반 종합 점수 산출) | **NFR-03** (확장성) | `diagnose.py` (`calculate_readiness_score`) |
+| **BR-06** (지능형 보강 계획) | **FR-06** (Gemini 모델 기반 표준 설명 자동 생성) | **NFR-03** (확장성) | `diagnose.py` (`enrich_metadata_with_gemini`) |
+| **BR-07** (용어집 템플릿화) | **FR-07** (Dataplex 용어집 YAML 자동 생성) | **NFR-03** (확장성) | `diagnose.py` (`generate_glossary_yaml`) |
+| **BR-08** (스키마 패치 반영) | **FR-08** (BigQuery 테이블 스키마 원자적 패치) | **NFR-01** (데이터 손상 없는 안전 패치) | `diagnose.py` (`apply_schema_updates`, `--apply`) |
+| **BR-09** (가상 모의 실행) | **FR-09** (결정론적 샘플 기반 스모크 테스트) | **NFR-01** (안전한 무영향 실행) | `diagnose.py` (`run_mock_diagnosis`, `--dry-run`) |
+| **BR-10** (자원 거버넌스 라벨링) | **FR-10** (사내 4대 필수 라벨링 적용) | **NFR-01** (거버넌스 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 모듈 및 컴포넌트 설계
 
 ### 3.1 CLI 인자 파서 (`parse_args`)
 - `-p`, `--project`: 대상 GCP 프로젝트 ID (미지정 시 gcloud 기본 프로젝트 자동 감지).

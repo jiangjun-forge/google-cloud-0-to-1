@@ -69,16 +69,46 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["온프레미스 원천 디렉터리 지정"] --> B["로컬 비식별화 및 마스킹 태그 검증"]
-    B --> C["STS 온프렘 에이전트 풀 통신 상태 확인"]
-    C --> D["타깃 Cloud Storage 버킷 보안 점검 (PAP, CMEK)"]
-    D --> E{"보안 및 네트워크 요건 충족 여부"}
-    E -- "미충족 항목 감지" --> F["버킷 정책 보완 및 대역폭 제한 재설정"]
-    E -- "사전 요건 통과" --> G["안전 전송 작업 생성 및 CRC32c 무결성 검증"]
+    subgraph Layer1["Layer 1: On-Premises & Ingress (온프렘 스토리지 및 STS 에이전트)"]
+        direction TB
+        OnPremMedia["온프레미스 NAS / SAN 스토리지<br/>(400GB+ 대용량 영상 파일)"]
+        LocalDedupe["로컬 전처리 및 무결성 태깅<br/>(CRC32c 사전 체크섬 산출)"]
+        STSAgentPool["STS On-Prem Agent Pool<br/>(대역폭 제한: 100 MB/s Throttling)"]
+        OnPremMedia --> LocalDedupe
+        LocalDedupe --> STSAgentPool
+    end
+
+    subgraph Layer2["Layer 2: Security & Encryption Boundary (전송 및 암호화 경계)"]
+        direction TB
+        CloudKMS["Cloud KMS CMEK 키링<br/>(projects/.../keyRings/.../cryptoKeys/...)"]
+        BucketPolicy["버킷 보안 정책<br/>(공개 접근 차단 PAP + IAM 전용 격리)"]
+        VPCSCPerimeter["VPC Service Controls 경계 (선택)"]
+    end
+
+    subgraph Layer3["Layer 3: Control & Diagnostic Runtime (전송 제어 및 진단 엔진)"]
+        direction TB
+        STSControlPlane["Storage Transfer Service 제어 평면"]
+        TransferGuard["storage-transfer-secure-uploader<br/>(diagnose.py)"]
+        ChecksumValidator["CRC32c 전송 무결성 검증기"]
+        STSControlPlane --> TransferGuard
+        TransferGuard --> ChecksumValidator
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Downstream AI (타깃 클라우드 스토리지)"]
+        direction TB
+        SecureBucket["Cloud Storage 보안 타깃 버킷<br/>(gs://secure-media-archive)"]
+        VertexAIMultimodal["Vertex AI 멀티모달 분석 파이프라인"]
+    end
+
+    STSAgentPool ==>|"TLS 1.3 암호화 스트리밍 전송"| STSControlPlane
+    STSControlPlane --> SecureBucket
+    CloudKMS -.->|"CMEK 봉투 암호화 적용"| SecureBucket
+    BucketPolicy -.->|"공개 접근 원천 차단"| SecureBucket
+    SecureBucket --> VertexAIMultimodal
 ```
 
 ---

@@ -70,28 +70,54 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 Gemini Enterprise 환경에서 외부 마켓플레이스 차단, 스킬 거버넌스 및 Entra ID WIF SSO 연동 상태를 4계층으로 분석하고 결함을 진단한다:
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchGovernance["Gemini Enterprise 앱 및 WIF 풀 설정 조회"]
-    FetchGovernance --> CheckMarketplace{"공개 마켓플레이스 활성 여부"}
-    
-    CheckMarketplace -->|"활성화됨"| CriticalMP["[심각] 서드파티 데이터 유출 위험: 마켓플레이스 차단 처방"]
-    CheckMarketplace -->|"차단됨"| CheckSkills["활성 스킬 및 체이닝 정책 검사"]
-    
-    CheckSkills --> CheckUnapproved{"사내 미승인 외부 스킬 존재 여부"}
-    CheckUnapproved -->|"존재"| CriticalSkills["[심각] 미승인 스킬 탐지: 즉시 일시중지(Suspend) 및 승인 강제"]
-    CheckUnapproved -->|"미존재"| CheckWIF["Workforce Identity Federation 매핑 검사"]
-    
-    CheckWIF --> CheckClaims{"필수 토큰 클레임(email/name) 매핑 여부"}
-    CheckClaims -->|"누락 (400 원인)"| CriticalWIF["[심각] SSO 400 오류 위험: WIF 속성 매핑 처방"]
-    CheckClaims -->|"정상 구성"| HealthyPass["[정상] 에이전트 거버넌스 및 SSO 보안 요건 충족"]
-    
-    CriticalMP --> GenerateReport["종합 거버넌스 진단 보고서 및 조치 매뉴얼 출력"]
-    CriticalSkills --> GenerateReport
-    CriticalWIF --> GenerateReport
-    HealthyPass --> GenerateReport
+    subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
+        User["사내 임직원 (엔드유저)"] -->|"SSO 로그인 및 에이전트 접근"| GEApp["Gemini Enterprise app<br/>(웹 대화형 포털)"]
+        SecAdmin["사내 CISO / 보안 거버넌스팀"] -->|"1. 거버넌스 감사 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
+
+    subgraph Layer2["2. 보안 신원 및 정책 거버넌스 경계 (Governance Boundary)"]
+        WIFCheck{"Workforce Identity Federation<br/>(Entra ID 클레임 매핑: email/name)"}
+        MarketplacePolicy{"외부 마켓플레이스 차단 정책<br/>(allowMarketplaceAgents=false)"}
+        SkillGuard{"사내 승인 스킬 체이닝 정책<br/>(미승인 외부 웹훅 차단)"}
+    end
+
+    subgraph Layer3["3. 거버넌스 감사 런타임 계층 (Audit Runtime & Rule Engine)"]
+        Engine["에이전트 거버넌스 감사 엔진<br/>(마켓플레이스 / 스킬 / WIF 무결성 검증)"]
+        FixGen["거버넌스 복구 매니페스트 생성기<br/>(WIF attribute mapping & CLI 처방)"]
+        Engine --> FixGen
+    end
+
+    subgraph Layer4["4. 대상 백엔드 서비스 계층 (Target Backend Services)"]
+        DiscEng["Discovery Engine<br/>(사내 승인 에이전트/스킬 레지스트리)"]
+        IAMWIF["Cloud IAM Workforce Pools<br/>(IdP 토큰 교환 및 속성 매핑)"]
+        EntraID["Microsoft Entra ID<br/>(기업 외부 IdP 테넌트)"]
+    end
+
+    GEApp -->|"2. SSO 인증 요청"| WIFCheck
+    WIFCheck -->|"토큰 교환"| IAMWIF
+    IAMWIF -.->|"SAML/OIDC 연동"| EntraID
+    GEApp -->|"3. 에이전트 마켓플레이스 요청"| MarketplacePolicy
+    GEApp -->|"4. 도구 호출 검증"| SkillGuard
+
+    CLI -->|"정책 및 WIF 실시간 실사"| Layer2
+    Engine -->|"에이전트 목록 검증"| DiscEng
+    FixGen -->|"5. 복구 처방 가이드 출력"| SecAdmin
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class User,GEApp,SecAdmin,CLI portal;
+    class WIFCheck,MarketplacePolicy,SkillGuard security;
+    class Engine,FixGen runtime;
+    class DiscEng,IAMWIF,EntraID backend;
 ```
 
 ---

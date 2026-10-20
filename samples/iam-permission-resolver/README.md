@@ -69,28 +69,45 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    Start(["서비스 구동 중 403 Permission Denied 발생"]) --> RunTool["진단 도구 실행<br/><code>python diagnose.py -p my-project</code>"]
-    
-    RunTool --> QueryAudit["Cloud Logging 데이터 액세스 감사 로그 조회<br/>(cloudaudit.googleapis.com/data_access)"]
-    QueryAudit --> ParseEvents["실패 이벤트 추출<br/>- 실패 계정<br/>- 서비스명<br/>- 메서드명<br/>- 에러 메시지"]
-    
-    ParseEvents --> MatchRole["서비스별 최소 권한 역할 매핑<br/>(aiplatform.user, bigquery.dataEditor 등)"]
-    MatchRole --> GenerateCmd["원클릭 gcloud IAM 바인딩 명령어 자동 생성"]
-    
-    GenerateCmd --> ApplyCmd["프로젝트 관리자가 명령어 실행"]
-    ApplyCmd --> Retest["서비스 재시도 검증"]
-    Retest --> Done(["[복구 완료] 최소 권한 원칙 충족 및 정상 동작"])
+    subgraph Layer1["Layer 1: Identity & Caller Ingress (호출 주체 인그레스)"]
+        Developer["개발자 사용자 계정 (user:developer@company.com)"]
+        ServiceAccount["서비스 계정 (serviceAccount:app-sa@...)"]
+        SecOps["보안 관리자 / SecOps 팀"]
+    end
 
-    classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
-    classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
-    classDef action fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
-    class Start,MatchRole alert;
-    class Done success;
-    class RunTool,QueryAudit,ParseEvents,GenerateCmd,ApplyCmd,Retest action;
+    subgraph Layer2["Layer 2: Cloud IAM & Access Boundary (인가 및 권한 경계)"]
+        IAMPolicy["Cloud IAM 정책 바인딩 (Project/Resource Level)"]
+        LeastPrivilege["최소 권한 매핑 엔진 (roles/editor 남발 방지)"]
+        MarkerRoles["원클릭 gcloud add-iam-policy-binding 처방"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Audit Runtime (감사 분석 런타임)"]
+        AuditLogs["Cloud Logging (cloudaudit.googleapis.com/data_access)"]
+        ResolverCLI["diagnose.py 403 권한 거부 역추적기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Protected GCP Services (보호 대상 리소스)"]
+        VertexAI["Vertex AI API (aiplatform.endpoints.predict)"]
+        BigQuery["BigQuery 데이터셋 및 잡 실행"]
+        CloudStorage["Cloud Storage 버킷 및 객체"]
+    end
+
+    Developer -->|API 호출 시도| IAMPolicy
+    ServiceAccount -->|배치 호출 시도| IAMPolicy
+    IAMPolicy -->|권한 부족 시 403 거부| AuditLogs
+    IAMPolicy -->|인가 성공 시| VertexAI
+    IAMPolicy -->|인가 성공 시| BigQuery
+    IAMPolicy -->|인가 성공 시| CloudStorage
+    SecOps --> ResolverCLI
+    ResolverCLI --> AuditLogs
+    ResolverCLI --> LeastPrivilege
+    LeastPrivilege --> MarkerRoles
+    ResolverCLI --> ReportOutput
 ```
 
 ---

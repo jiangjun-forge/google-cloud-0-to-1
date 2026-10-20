@@ -70,24 +70,47 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    Start["프로브 실행 (diagnose.py)"] --> LoadProfiles["APAC 인접 대안 리전 프로필 로드 (도쿄, 오사카, 대만, 싱가포르)"]
-    LoadProfiles --> ParallelProbe["리전별 엔드포인트 대상 TCP 3-Way Handshake RTT 병렬 측정"]
-    
-    ParallelProbe --> FilterTargetGPU{"타깃 GPU 모델 매칭 여부 (A100/H100/L4/G4)"}
-    FilterTargetGPU --> CheckThreshold{"측정 RTT <= 100ms 임계치 검사"}
-    
-    CheckThreshold -->|"<= 60ms"| RankOptimal["[최적 적합] 도쿄/오사카/대만: 1순위/2순위 추천군 분류"]
-    CheckThreshold -->|"60ms ~ 100ms"| RankAcceptable["[허용 범위] 싱가포르: 3순위 최신 가속기 거점 분류"]
-    CheckThreshold -->|"> 100ms"| ExcludeUnsuitable["[기준 초과] SLA 초과 리전 배제 (미국 리전 등)"]
-    
-    RankOptimal --> GenerateRecommendation["최적 대체 리전 순위표 및 배포 명령 생성"]
-    RankAcceptable --> GenerateRecommendation
-    ExcludeUnsuitable --> GenerateRecommendation
-    GenerateRecommendation --> ReportSummary["최종 지연 시간 매트릭스 및 권고 리포트 출력"]
+    subgraph Layer1["Layer 1: User & Traffic Ingress (호출 계층)"]
+        SeoulUsers["국내 사용자 트래픽 (서울 기준 인그레스)"]
+        InfraOps["인프라 아키텍트 / AI 엔지니어"]
+    end
+
+    subgraph Layer2["Layer 2: Network & SLA Boundary (네트워크 경계)"]
+        LatencySLA["SLA 목표: 100ms 미만 RTT 제약"]
+        GoogleBackbone["Google Premium 글로벌 백본 네트워크"]
+        FastHandshake["병렬 TCP 3-Way Handshake 프로빙"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Profiling Runtime (진단 분석 런타임)"]
+        ProbeEngine["diagnose.py RTT 계측 및 GPU 매핑 엔진"]
+        RankingMatrix["4단계 적합도 랭킹 매트릭스"]
+        ReportOutput["최적 대안 리전 권고 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & APAC Datacenters (대체 데이터센터)"]
+        Tokyo["1순위: asia-northeast1 도쿄 (~34ms, A100/H100/L4/G4)"]
+        Osaka["2순위: asia-northeast2 오사카 (~38ms, A100/L4)"]
+        Taiwan["3순위: asia-east1 대만 (~46ms, A100/H100/L4/G4)"]
+        Singapore["4순위: asia-southeast1 싱가포르 (~76ms, APAC 허브)"]
+        Iowa["비교군: us-central1 미국 (~148ms, SLA 초과 배제)"]
+    end
+
+    SeoulUsers --> GoogleBackbone
+    InfraOps --> ProbeEngine
+    ProbeEngine --> FastHandshake
+    FastHandshake --> GoogleBackbone
+    GoogleBackbone --> Tokyo
+    GoogleBackbone --> Osaka
+    GoogleBackbone --> Taiwan
+    GoogleBackbone --> Singapore
+    GoogleBackbone --> Iowa
+    FastHandshake --> LatencySLA
+    LatencySLA --> RankingMatrix
+    RankingMatrix --> ReportOutput
 ```
 
 ---

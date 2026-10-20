@@ -69,19 +69,50 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["LRO 비동기 작업 제출 (Speech/DocAI/Video/Translate)"] --> B["Python SDK operation.result() 대기"]
-    B --> C["기본 SDK(google-api-core)가 GetOperation 수초 간격 무차별 폴링"]
-    C --> D{"operation_requests 쿼터 120~150 RPM 초과?"}
-    D -->|Yes| E["429 RESOURCE_EXHAUSTED 장애 발생 (메트릭 착시)"]
-    D -->|No| F["정상 완료 대기"]
-    E --> G["lro-polling-quota-guard 진단 실행"]
-    G --> H["1. SDK 커스텀 Polling 지수 백오프 (initial=15s, max=30s) 주입"]
-    G --> I["2. Pub/Sub / Cloud Tasks 기반 작업 제출/완료 비동기 파이프라인 분리"]
-    G --> J["3. 콘솔 operation_requests 할당량 상향 (QIR)"]
+    subgraph Layer1["Layer 1: User & Worker Ingress (동시 비동기 작업 제출)"]
+        direction TB
+        ClientApp["클라이언트 앱 / 워커 프로세스<br/>(Speech, DocAI, Video, Translate)"]
+        BatchTrigger["배치 요청 트리거<br/>(BatchRecognize / BatchProcess)"]
+        ClientApp --> BatchTrigger
+    end
+
+    subgraph Layer2["Layer 2: Quota & Rate Limit Boundary (할당량 경계)"]
+        direction TB
+        MainJobQuota["작업 제출 쿼터 (여유)<br/>(batch_recognize_requests: 300 RPM)"]
+        PollQuota["폴링 작업 쿼터 (병목 지점)<br/>(operation_requests: 150 RPM)"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Resilience Engine (진단 및 복원력 엔진)"]
+        direction TB
+        GuardEngine["lro-polling-quota-guard<br/>(diagnose.py)"]
+        CustomPoller["커스텀 지수 백오프 폴러<br/>(initial=15s, max=30s, multiplier=1.5)"]
+        TasksQueue["비동기 분리 큐<br/>(Cloud Tasks / Pub/Sub)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & GCP LRO (백엔드 서비스)"]
+        direction TB
+        SpeechService["Cloud Speech-to-Text V2"]
+        DocAIService["Document AI"]
+        VideoService["Cloud Video Intelligence"]
+        TranslateService["Cloud Translation V3"]
+    end
+
+    BatchTrigger --> MainJobQuota
+    MainJobQuota --> SpeechService
+    MainJobQuota --> DocAIService
+    MainJobQuota --> VideoService
+    MainJobQuota --> TranslateService
+
+    ClientApp -.->|"기본 폴링 (초당 반복)"| PollQuota
+    PollQuota -.->|"150 RPM 초과 시 429 에러"| GuardEngine
+    GuardEngine ==>|"처방 1: 폴링 주기 최적화 (-85%)"| CustomPoller
+    GuardEngine ==>|"처방 2: 비동기 큐 분리 아키텍처"| TasksQueue
+    CustomPoller --> SpeechService
+    TasksQueue --> SpeechService
 ```
 
 ---

@@ -71,29 +71,48 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchServices["GKE LoadBalancer 및 Ingress 서비스 매니페스트 조회"]
-    FetchServices --> CheckExtPolicy{"externalTrafficPolicy 검사"}
-    
-    CheckExtPolicy -->|"Cluster"| CriticalSNAT["[심각] 2-Hop SNAT 위험 판정: Node IP 노출 및 Client IP 유실 경고"]
-    CheckExtPolicy -->|"Local"| CheckDistribution["노드별 파드 분산 상태 검사"]
-    
-    CheckDistribution --> CheckEmptyNode{"파드 미배치 노드 존재 여부"}
-    CheckEmptyNode -->|"존재"| WarnEmpty["[주의] 노드 헬스체크 실패 및 트래픽 드롭 위험"]
-    CheckEmptyNode -->|"전 노드 배치"| CheckImbalance{"노드 간 파드 수 편차 검사"}
-    
-    CheckImbalance -->|"편차 2개 이상"| CheckWeighted{"Weighted Load Balancing 애너테이션 여부"}
-    CheckWeighted -->|"미적용"| WarnHotspot["[주의] 특정 파드 부하 집중(Hotspotting) 경고"]
-    CheckWeighted -->|"적용됨"| HealthyPass["[정상] 가중치 기반 트래픽 분산 및 IP 보존 완료"]
-    CheckImbalance -->|"균등 분산"| HealthyPass
-    
-    CriticalSNAT --> GenerateReport["종합 진단 보고서 및 패치 매니페스트 출력"]
-    WarnEmpty --> GenerateReport
-    WarnHotspot --> GenerateReport
-    HealthyPass --> GenerateReport
+    subgraph Layer1["Layer 1: Client Ingress & Raw Packets (클라이언트 인그레스)"]
+        ExternalUser["외부 사용자 / 내부 클라이언트 (원본 Client IP 보유)"]
+        SecOps["보안 감사관 / 인프라 엔지니어"]
+    end
+
+    subgraph Layer2["Layer 2: Network Load Balancing Boundary (L4 로드 밸런싱)"]
+        PassthroughNLB["Internal / External Passthrough NLB (DSR 모드)"]
+        HealthCheck["NLB 노드 헬스 체크 프로브"]
+    end
+
+    subgraph Layer3["Layer 3: GKE Node & Kube-Proxy Runtime (GKE 노드 런타임)"]
+        LocalPolicy["externalTrafficPolicy: Local (kube-proxy 2-Hop SNAT 방지)"]
+        WeightedLB["GKE Weighted Load Balancing (파드 수 비례 가중치)"]
+        ClusterPolicy["externalTrafficPolicy: Cluster (2-Hop SNAT 위험)"]
+        GuardCLI["diagnose.py 소스 IP 및 파드 편차 진단기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend Pods & Audit Logs (백엔드 파드)"]
+        BackendPod1["백엔드 파드 (원본 Client IP 정상 수신)"]
+        BackendPod2["백엔드 파드 (부하 집중 Hotspotting 방지)"]
+        AuditLog["보안 감사 로그 (로그인/결제 시 원본 IP 기록)"]
+    end
+
+    ExternalUser --> PassthroughNLB
+    PassthroughNLB --> LocalPolicy
+    PassthroughNLB -.->|"잘못된 구성 시"| ClusterPolicy
+    LocalPolicy --> WeightedLB
+    WeightedLB --> BackendPod1
+    WeightedLB --> BackendPod2
+    BackendPod1 --> AuditLog
+    BackendPod2 --> AuditLog
+    SecOps --> GuardCLI
+    GuardCLI --> PassthroughNLB
+    GuardCLI --> LocalPolicy
+    GuardCLI --> WeightedLB
+    GuardCLI --> ReportOutput
+    HealthCheck --> LocalPolicy
 ```
 
 ---

@@ -71,16 +71,43 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["사내 실데이터(CSV/JSONL/TXT) 또는 표본 1,000건 로드"] --> B["비교 차원 목록 수집 및 내림차순(큰 차원 -> 작은 차원) 정렬"]
-    B --> C["최대 차원(768d) 기준점(Baseline) 벡터 추출 및 평가"]
-    C --> D["축소 대상 차원들(512d, 256d, 128d) 일괄 추출 및 평가"]
-    D --> E["차원별 벡터당 용량 및 인덱스 총 RAM 산정"]
-    E --> F["Top-1 / Top-3 적중률 및 정확도 손실률 종합 비교표 생성"]
-    F --> G["Tier 1(초절감), Tier 2(균형), Tier 3(최고 정밀) 맞춤 처방"]
+    subgraph Layer1["Layer 1: User & Query Ingress (질의 및 데이터 인그레스)"]
+        UserQuery["검색 사용자 질의 (RAG 프런트엔드)"]
+        DataScientist["데이터 과학자 / 검색 엔지니어"]
+        SampleCorpus["사내 실데이터 (CSV/JSONL/TXT 표본)"]
+    end
+
+    subgraph Layer2["Layer 2: MRL & Vector Policy Boundary (임베딩 정책 경계)"]
+        MRLPolicy["Matryoshka Representation Learning (MRL)"]
+        DimConfig["차원 축소 정책 (768d -> 512d -> 256d -> 128d)"]
+        SafetyCap["1,000건 안전 표본 제한 (API 비용 누수 차단)"]
+    end
+
+    subgraph Layer3["Layer 3: Serving & Diagnostic Runtime (런타임 분석 엔진)"]
+        EmbeddingModel["Vertex AI text-multilingual-embedding-002 (한국어 최적화)"]
+        AnalyzerCLI["diagnose.py 정확도(Recall/MRR) 및 용량 트레이드오프 분석기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Vector Storage (벡터 저장소)"]
+        BigQueryVector["BigQuery Vector Search (테이블 스토리지)"]
+        VectorSearchIndex["Vertex AI Vector Search (메모리 인덱스 노드)"]
+    end
+
+    UserQuery --> MRLPolicy
+    SampleCorpus --> SafetyCap
+    SafetyCap --> MRLPolicy
+    MRLPolicy --> DimConfig
+    DimConfig --> EmbeddingModel
+    EmbeddingModel --> BigQueryVector
+    EmbeddingModel --> VectorSearchIndex
+    DataScientist --> AnalyzerCLI
+    AnalyzerCLI --> EmbeddingModel
+    AnalyzerCLI --> ReportOutput
 ```
 
 ---

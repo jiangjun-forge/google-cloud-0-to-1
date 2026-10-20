@@ -70,30 +70,53 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 Gemini Enterprise 웹 앱(Project A)과 타 프로젝트/조직의 커스텀 에이전트(Project B) 간 크로스 연동 토폴로지를 4계층으로 분석하고 차단 요소를 실시간 진단한다:
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchMetadata["양측 프로젝트 메타데이터 및 서비스 에이전트 식별"]
-    FetchMetadata --> CheckOrg{"동일 조직 여부 검사"}
-    
-    CheckOrg -->|"서로 다른 조직 (Cross-Org)"| CheckDomainPolicy{"도메인 제한 공유(Domain Restricted Sharing) 정책 검사"}
-    CheckDomainPolicy -->|"정책 차단 활성"| CriticalOrgPolicy["[심각] 도메인 제한 차단 판정: 조직 고객 식별자(Customer ID) 허용 예외 처방"]
-    CheckDomainPolicy -->|"예외 허용됨"| CheckIAM["IAM 권한 바인딩 검사"]
-    CheckOrg -->|"동일 조직 (Same Org)"| CheckIAM
-    
-    CheckIAM --> CheckAgentUser{"aiplatform.user 역할 부여 여부"}
-    CheckAgentUser -->|"누락"| CriticalIAM["[심각] 서비스 에이전트 권한 누락 판정: gcloud 바인딩 명령어 처방"]
-    CheckAgentUser -->|"부여됨"| CheckEngineID{"Agent Engine 식별자 검사"}
-    
-    CheckEngineID --> CheckVPCSC{"VPC-SC 서비스 경계 격리 여부"}
-    CheckVPCSC -->|"경계 위반"| WarnVPCSC["[주의] VPC-SC 차단: Ingress/Egress 규칙 처방"]
-    CheckVPCSC -->|"정상 연결"| HealthyPass["[정상] Cross-Project 에이전트 연동 정상 가동"]
-    
-    CriticalOrgPolicy --> GenerateReport["종합 진단 보고서 및 원클릭 복구 스크립트 출력"]
-    CriticalIAM --> GenerateReport
-    WarnVPCSC --> GenerateReport
-    HealthyPass --> GenerateReport
+    subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
+        User["사내 임직원 / 인프라 관리자"] -->|"1. 커스텀 에이전트 호출 / CLI 진단"| GEApp["Gemini Enterprise app<br/>(웹 대화형 포털 /r/agents)"]
+        CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
+
+    subgraph Layer2["2. 보안 및 IAM 경계 (Security & IAM Boundary)"]
+        OrgPol{"도메인 제한 공유 검사<br/>(iam.allowedPolicyMemberDomains)"}
+        SA["GE 서비스 에이전트<br/>(service-PROJECT_NUM@gcp-sa-discoveryengine.iam)"]
+        IAMCheck{"IAM 역할 바인딩<br/>(roles/aiplatform.user)"}
+        VPCSC{"VPC-SC 서비스 경계 격리"}
+    end
+
+    subgraph Layer3["3. 호스팅 런타임 계층 (Hosting Runtime & Sandbox)"]
+        RE["Agent Engine 런타임<br/>(Project B 관리형 gVisor 샌드박스)"]
+    end
+
+    subgraph Layer4["4. 대상 백엔드 서비스 계층 (Target Backend Services)"]
+        DiscEng["Discovery Engine<br/>(사내 에이전트 카탈로그)"]
+        CloudIAM["Cloud IAM & Resource Manager<br/>(조직 정책 및 접근 제어)"]
+    end
+
+    GEApp -->|"2. 에이전트 호출 트래픽 인입"| OrgPol
+    OrgPol -->|"Cross-Org 허용 검증"| IAMCheck
+    SA -.->|"신원 대행"| IAMCheck
+    IAMCheck -->|"권한 검증 통과"| VPCSC
+    VPCSC -->|"경계 인그레스 허용"| RE
+    RE -->|"에이전트 응답 반환"| GEApp
+
+    CLI -->|"정책/권한 비파괴 실시간 실사"| Layer2
+    CLI -->|"런타임 식별자 규격 검증"| Layer3
+    CLI -->|"메타데이터 상태 교차 분석"| Layer4
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class User,GEApp,CLI portal;
+    class OrgPol,SA,IAMCheck,VPCSC security;
+    class RE runtime;
+    class DiscEng,CloudIAM backend;
 ```
 
 ---

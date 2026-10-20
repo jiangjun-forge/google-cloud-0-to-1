@@ -71,19 +71,51 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (python diagnose.py)"] --> B["Global External ALB 및 URL Map 라우팅 구성 감사"]
-    B --> C["분산 GPU 클러스터 백엔드 서비스 및 NEG 토폴로지 분석"]
-    C --> D{"다계층 메시 중계 vs Anycast 1홉 플랫 직결 검사"}
-    D -->|"Istio 2~3홉 중계 병목"| E["[주의] 지연 시간(TTFT) 누적 및 Istiod OOM 위험 경고: 1홉 직결 아키텍처 권고"]
-    D -->|"Anycast 1홉 플랫 직결"| F["[적합] 글로벌 Anycast VIP 기반 1:1 직결 확인"]
-    F --> G{"부하 분산 정책 (LEAST_REQUEST & KV-Cache 실시간 신호) 검사"}
-    G --> H["서킷 브레이커(Outlier Detection) 및 Internet NEG 추가 라이선스 프리 검증"]
-    E --> I["report.md 완제품 아키텍처 비교 보고서 및 최적화 gcloud 처방 생성"]
-    H --> I
+    subgraph Layer1["Layer 1: Global Client Ingress (글로벌 인그레스)"]
+        GlobalUsers["전 세계 AI/LLM 클라이언트 트래픽"]
+        SingleVIP["단일 Anycast 글로벌 고정 IPv4/IPv6 VIP"]
+    end
+
+    subgraph Layer2["Layer 2: Global L7 Routing & Policy Boundary (L7 제어 평면)"]
+        GlobalALB["Global External Application Load Balancer"]
+        URLMap["URL Map 라우팅 규칙 (가중치 기반 분배)"]
+        TrafficPolicy["LEAST_REQUEST & 실시간 KV-Cache 신호 (40% 임계치 오버플로)"]
+        CircuitBreaker["이상치 탐지(Outlier Detection) 및 서킷 브레이커"]
+    end
+
+    subgraph Layer3["Layer 3: Serving & Endpoint Runtime (1홉 플랫 직결 런타임)"]
+        HybridNEG["Hybrid NEG (Direct Interconnect / VPN)"]
+        InternetNEG["Internet NEG (타 클라우드 EKS/AKS 라이선스 프리 직결)"]
+        ClusterNEG["Container-native NEG (동일 VPC 클러스터 직결)"]
+        AuditCLI["diagnose.py 1홉 직결 L7 제어 평면 감사기"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Hardware Zones (분산 GPU 클러스터)"]
+        GKE_Seoul["GKE 서울 클러스터 (NVIDIA L4 서빙)"]
+        GKE_Tokyo["GKE 도쿄 클러스터 (NVIDIA A100 서빙)"]
+        External_EKS["AWS EKS / 타 클라우드 GPU 클러스터"]
+        OnPrem_Farm["온프레미스 사내 AI GPU 팜"]
+    end
+
+    GlobalUsers --> SingleVIP
+    SingleVIP --> GlobalALB
+    GlobalALB --> URLMap
+    URLMap --> TrafficPolicy
+    TrafficPolicy --> CircuitBreaker
+    CircuitBreaker --> ClusterNEG
+    CircuitBreaker --> HybridNEG
+    CircuitBreaker --> InternetNEG
+    ClusterNEG --> GKE_Seoul
+    ClusterNEG --> GKE_Tokyo
+    InternetNEG --> External_EKS
+    HybridNEG --> OnPrem_Farm
+    AuditCLI --> GlobalALB
+    AuditCLI --> URLMap
+    AuditCLI --> CircuitBreaker
 ```
 
 ---

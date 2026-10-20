@@ -17,7 +17,56 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 보안 관리자가 CLI를 실행하면 사내 관문 SWG 프록시의 아웃바운드 헤더(X-GoogApps-Allowed-Domains, X-Goog-Allowed-Resources) 주입 상태와 Google Cloud Access Context Manager의 인가 단말기 접근 수준(Access Levels) 및 바인딩 상태를 교차 검증하여 리포트를 생성한다.
+
+```mermaid
+sequenceDiagram
+    actor SecAdmin as 보안 관리자 / CISO
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant SWG as 사내 관문 프록시 (SWG)
+    participant ACMAPI as Access Context Manager API
+    participant OrgAPI as Cloud Resource Manager API
+    participant FileSys as 로컬 파일 시스템 (report.md)
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: SWG 헤더 및 CAA 단말기 정책 실사
+    SecAdmin->>CLI: python diagnose.py --org-id $ORG_ID --domain example-corp.com
+    CLI->>SWG: HTTP CONNECT / GET 프로브 (헤더 주입 검사)
+    SWG-->>CLI: 아웃바운드 요청 헤더 응답 (X-GoogApps, X-Goog-Allowed-Resources)
+    CLI->>ACMAPI: gcloud access-context-manager levels list --policy $POLICY_ID
+    ACMAPI-->>CLI: 인가 단말기(OS, 디바이스 정책) 접근 수준 반환
+    CLI->>OrgAPI: gcloud organizations get-iam-policy $ORG_ID
+    OrgAPI-->>CLI: 조건부 IAM 바인딩 및 CAA 정책 적용 상태 반환
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 통제 정합성 판정 및 처방 도출
+    CLI->>CLI: 4대 핵심 통제 항목(도메인 제한, 테넌트 제한, 단말기 정책, 그룹 바인딩) 종합 판정
+    CLI->>CLI: Squid/Envoy 프록시 설정 스니펫 및 gcloud 복구 명령 합성
+    CLI->>FileSys: save_markdown_report(report.md)
+    FileSys-->>CLI: 덮어쓰기 완료
+    CLI-->>SecAdmin: 항목별 결과 브리핑 및 금융보안원 보안대책 소명 가이드 출력
+    end
+```
+
+---
+
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`parse_arguments`) |
+| **BR-02** (표준화된 자동 진단 체계) | **FR-02** (핵심 지표 및 설정 상태 정밀 진단) | **NFR-02** (비대화형 호환성) | `diagnose.py` (`diagnose_swg_headers`, `diagnose_context_aware_access`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_mock_data`) |
+| **BR-04** (실무자 조치 가이드 및 리소스 정리) | **FR-04** (직관적 콘솔 조치 가이드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`print_terminal_report`, `build_markdown_report`) |
+| **BR-02** (자동 진단 및 리포트 영구 보존) | **FR-05** (마크다운 리포트 자동 생성/덮어쓰기) | **NFR-04** (리포트 절대 경로 저장) | `diagnose.py` (`save_markdown_report`) |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링) | **FR-06** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 및 거버넌스 규약) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +79,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 5. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

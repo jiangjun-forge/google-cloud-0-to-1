@@ -71,17 +71,56 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 Gemini Enterprise 전사 환경의 숨겨진 비용 누수와 비인가 AI Studio 과금 리스크를 4계층으로 분석하고 차단한다:
 
 ```mermaid
 flowchart TD
-    A["Gemini Enterprise 전사 비용 거버넌스 진단 시작"] --> B["1. Gemini Enterprise 에디션별 일일 쿼터 및 Overage 설정 확인"]
-    B --> C["2. Google AI Studio API 키 생성 차단 조직 정책 점검 (constraints/gcp.restrictServiceUsage)"]
-    C --> D["3. Generative Language API (generativelanguage.googleapis.com) 활성화 여부 검사"]
-    D --> E["4. 계열사 위임 관리자 결제 권한(Billing RBAC) 과다 부여 점검"]
-    E --> F{"유료 과금 리스크 식별 여부"}
-    F -- "취약점 발견 (FAIL/WARN)" --> G["1단계: GE Overage Toggle OFF 유지 (정액 범위 내 사용)<br>2단계: 조직 정책으로 apikeys API 차단<br>3단계: generativelanguage API 비활성화<br>4단계: 계열사 Billing User 회수 및 OU 맞춤 역할 적용"]
-    F -- "전 항목 보호 (PASS)" --> H["전사 정액제 안전 운영 확정 (영향도: GE 웹 앱 정상 작동)"]
+    subgraph Layer1["1. 사용자 및 조직 계층 (User & Organization Layer)"]
+        User["일반 임직원 (AI Studio 접근 시도)"]
+        SubAdmin["계열사 / 부서 중간 관리자"]
+        FinOps["전사 FinOps / CISO 관리자"] -->|"1. 과금 리스크 감사 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
+
+    subgraph Layer2["2. 보안 정책 및 결제 통제 경계 (Policy & Billing Boundary)"]
+        OrgPolicy{"조직 정책 제약 조건<br/>(constraints/gcp.restrictServiceUsage)"}
+        BillingRBAC{"결제 계정 IAM 역할<br/>(Billing Account User 제한)"}
+        OverageToggle{"GE Admin 콘솔 설정<br/>(Overage Toggle OFF)"}
+    end
+
+    subgraph Layer3["3. 진단 및 처방 런타임 (Diagnostic Engine)"]
+        Engine["비용 누수 진단 엔진<br/>(쿼터 소진율 & API 활성 여부 교차 실사)"]
+        FixGen["4단계 안심 방어 처방 생성기<br/>(조직 정책 & RBAC 회수 명령어)"]
+        Engine --> FixGen
+    end
+
+    subgraph Layer4["4. 대상 클라우드 백엔드 인프라 (Target Backend Infrastructure)"]
+        BillingSvc["Cloud Billing API<br/>(결제 계정 IAM 정책)"]
+        GenLangAPI["Generative Language API<br/>(Google AI Studio 백엔드)"]
+        GEApp["Gemini Enterprise app<br/>(정액제 라이선스 풀)"]
+    end
+
+    User -.->|"유료 API 키 발급 시도"| OrgPolicy
+    OrgPolicy -->|"apikeys 차단"| GenLangAPI
+    SubAdmin -.->|"임의 프로젝트 생성 시도"| BillingRBAC
+    BillingRBAC -->|"결제 계정 연결 통제"| BillingSvc
+    GEApp -->|"풀링 쿼터 한도 통제"| OverageToggle
+
+    CLI -->|"2. 결제 RBAC 실사"| BillingSvc
+    CLI -->|"3. 조직 정책 실사"| OrgPolicy
+    CLI -->|"4. API 활성 상태 실사"| GenLangAPI
+    FixGen -->|"5. 4단계 완결 처방 출력"| FinOps
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class User,SubAdmin,FinOps,CLI portal;
+    class OrgPolicy,BillingRBAC,OverageToggle security;
+    class Engine,FixGen runtime;
+    class BillingSvc,GenLangAPI,GEApp backend;
 ```
 
 ---

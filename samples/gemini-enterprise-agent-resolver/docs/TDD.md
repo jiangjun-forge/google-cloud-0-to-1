@@ -12,12 +12,63 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 제미나이 엔터프라이즈(Gemini Enterprise) 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-agent-resolver`)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 파이썬 표준 CLI(`diagnose.py`) 기반의 자체 완결적 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 인프라 관리자 또는 플랫폼 엔지니어가 진단 명령을 실행하면 양측 프로젝트의 조직 정책, IAM 역할, Agent Engine 식별자 및 VPC-SC 경계를 실시간 교차 검증하여 결함 원인을 규명하고 복구 처방을 도출한다.
+
+```mermaid
+sequenceDiagram
+    actor Admin as 인프라 관리자 / 플랫폼 엔지니어
+    participant CLI as 진단 CLI (diagnose.py)
+    participant CRM as Cloud Resource Manager (조직 정책)
+    participant IAM as Cloud IAM API (서비스 에이전트 권한)
+    participant AgentEng as Agent Engine (런타임 슬롯)
+    participant VPCSC as VPC Service Controls (보안 경계)
+
+    Admin->>CLI: python diagnose.py --ge-project PROJ_A --agent-project PROJ_B
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 프로젝트 식별 및 크로스 조직 도메인 정책 감사
+    CLI->>CRM: getAncestry(PROJ_A) & getAncestry(PROJ_B)
+    CRM-->>CLI: 양측 부모 조직(Org ID) 반환
+    opt 서로 다른 조직(Cross-Org)인 경우
+        CLI->>CRM: getOrgPolicy(constraints/iam.allowedPolicyMemberDomains)
+        CRM-->>CLI: 도메인 제한 공유 정책 상태 반환
+    end
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 서비스 에이전트 권한 및 런타임 식별자 감사
+    CLI->>IAM: getIamPolicy(PROJ_B)
+    IAM-->>CLI: GE 서비스 에이전트(roles/aiplatform.user) 바인딩 상태 반환
+    CLI->>AgentEng: describeReasoningEngine(RESOURCE_NAME)
+    AgentEng-->>CLI: Agent Engine 런타임 상태 및 식별자 정합성 반환
+    end
+
+    rect rgb(255, 245, 240)
+    note right of CLI: 3단계: VPC-SC 서비스 경계 격리 상태 감사
+    CLI->>VPCSC: getAccessPerimeter(PROJ_B)
+    VPCSC-->>CLI: 서비스 경계 및 인그레스 규칙 반환
+    end
+
+    CLI->>CLI: 4대 핵심 기둥 진단 판정(PASS/WARN/CRITICAL) 및 원클릭 복구 명령 합성
+    CLI-->>Admin: 종합 진단 매트릭스 표 및 report.md 생성
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` |
+| **BR-02** (크로스 프로젝트 4대 핵심 정책 정밀 진단) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` |
+| **BR-03** (가상 실행 스모크 테스트 지원) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` |
+| **BR-04** (원클릭 복구 처방 및 리소스 정리 가이드) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py`, `report.md` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -28,7 +79,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

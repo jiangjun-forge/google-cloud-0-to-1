@@ -12,24 +12,71 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 제미나이(Gemini) VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 순수 파이썬 단일 실행 기반(`diagnose.py`)의 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. VPC Service Controls 경계에서 차단된 Gemini API 호출 건을 Cloud Logging 보안 정책 감사 로그(`cloudaudit.googleapis.com/policy`)에서 고유 거부 ID(UUID) 기반으로 역추적하고, 거부 사유 코드별 Ingress 규칙 및 복구 처방을 제시한다.
+
+```mermaid
+sequenceDiagram
+    actor SecOps as 보안 관리자 / 인프라 엔지니어
+    participant Client as 온프레미스 / VPC 클라이언트
+    participant VPC_SC as VPC Service Controls 보안 경계
+    participant Logging as Cloud Logging (cloudaudit.googleapis.com/policy)
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    Client->>VPC_SC: generate_content(model="gemini-3.8-flash")
+    
+    rect rgb(255, 240, 240)
+    note right of VPC_SC: 1단계: 보안 경계 차단 및 감사 이벤트 발행
+    VPC_SC->>VPC_SC: Ingress 정책 및 호출자 IP/SA 대조 (불일치 감지)
+    VPC_SC-->>Client: 403 PERMISSION_DENIED (VPC-SC 경계 차단)
+    VPC_SC->>Logging: cloudaudit.googleapis.com/policy 기록 (UUID, denialReason)
+    end
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 2단계: 감사 로그 역추적 및 위반 원인 분석
+    SecOps->>CLI: python diagnose.py --dry-run
+    CLI->>Logging: entries.list(filter='logName="cloudaudit.googleapis.com/policy"')
+    Logging-->>CLI: LogEntries(고유 거부 UUID, 호출 주체, 대상 메서드, 사유 코드)
+    CLI->>CLI: 거부 사유 분석 (NO_MATCHING_INGRESS_POLICY 등)
+    end
+
+    rect rgb(245, 255, 245)
+    note right of Report: 3단계: 맞춤 Ingress 규칙 처방 및 리포트 자동 생성
+    CLI->>Report: generate_markdown_report(DenialEvents)
+    Report->>Report: gcloud access-context-manager 수신 규칙 명령어 조립
+    Report-->>SecOps: 거부 사례 상세 표, 복구 CLI 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`fetch_vpc_sc_denials`, `parse_denial_reason`) |
+| **BR-02** (표준화된 자동 진단 체계 구축) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_default_project`, `parse_args`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`print_mock_results`, `--dry-run`) |
+| **BR-04** (실무자 조치 가이드 및 리포트 안내) | **FR-04** (직관적 콘솔 조치 가이드 및 리포트 자동 생성) | **NFR-04** (리포트 절대 경로 저장 보장) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-05** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 규약 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
-| **FR-01** | **BR-01** | **계층형 환경 설정 및 리소스 자동 탐지** | CLI 인자(`--config, --days, --dry-run, --limit, --project`) > `.env` > `gcloud config` 활성 설정 > 대화형 번호 선택기 순으로 프로젝트 및 대상 리소스를 자동 확정한다. |
-| **FR-02** | **BR-02** | **핵심 운영 지표 및 설정 상태 정밀 진단** | 대상 GCP 리소스의 메타데이터, 정책, 할당량 또는 로그 지표를 수집하여 정상(`PASS`), 주의(`WARN`), 위험(`FAIL`) 등급을 산출한다. |
+| **FR-01** | **BR-02** | **계층형 환경 설정 및 리소스 자동 탐지** | CLI 인자(`--config, --days, --dry-run, --limit, --project`) > `.env` > `gcloud config` 활성 설정 > 대화형 번호 선택기 순으로 프로젝트 및 대상 리소스를 자동 확정한다. |
+| **FR-02** | **BR-01** | **핵심 운영 지표 및 설정 상태 정밀 진단** | 대상 GCP 리소스의 메타데이터, 정책, 할당량 또는 로그 지표를 수집하여 정상(`PASS`), 주의(`WARN`), 위험(`FAIL`) 등급을 산출한다. |
 | **FR-03** | **BR-03** | **가상 실행(`--dry-run`) 스모크 테스트 모드** | `--dry-run` 플래그 입력 시 외부 GCP API 호출을 우회하고 내장된 표준 시뮬레이션 데이터를 기반으로 전체 진단 리포트를 1초 내에 출력한다. |
 | **FR-04** | **BR-04** | **직관적 콘솔 조치 가이드 및 리포트 자동 생성** | 진단 결과 하단에 Google Cloud 콘솔 조치 URL(Bare URL 표준)과 CLI 복구 명령어를 출력하고 복습용 리포트(`report.md`)를 자동으로 생성 및 갱신한다. |
 | **FR-05** | **BR-05** | **사내 거버넌스 4대 필수 라벨링 적용** | 연관 클라우드 인프라 자원 배포 시 `managed-by=google-cloud-0-to-1`, `scenario=gemini-vpc-sc-denial-resolver`, `env=sample`, `created-by=customer-engineer` 라벨을 필수로 주입한다. |
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

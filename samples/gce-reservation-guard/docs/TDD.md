@@ -12,12 +12,61 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 컴퓨트 엔진(Compute Engine) 하드웨어 예약 및 CUD 용량 보장 통합 진단기
 
-## 1. 아키텍처 개요 및 설계 원칙
-본 도구는 Cloud Logging API, Compute Engine Commitments API, Reservations API, Future Reservations API를 종합 조회하여 CUD 용량 정합성과 사전 예약 승인 상태를 원클릭으로 검증하는 순수 파이썬 단일 실행 도구(`diagnose.py`)로 구성된다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Cloud Audit Logs의 스톡아웃 이벤트를 역추적하고, CUD 약정 코어 대비 물리적 온디맨드 Reservation 확보율을 계산하며, Future Reservation(FR)의 미제출(`DRAFTING`) 상태를 검출하여 하드웨어 가용성을 보장한다.
+
+```mermaid
+sequenceDiagram
+    actor Admin as 인프라 / FinOps 관리자
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Logging as Cloud Logging (감사 로그)
+    participant CUD as Compute Engine (CUD 약정)
+    participant Res as Compute Engine (온디맨드 예약)
+    participant FR as Compute Engine (Future Reservation)
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    Admin->>CLI: python diagnose.py --dry-run
+    
+    rect rgb(240, 245, 255)
+    note right of Logging: 1단계: ZONE_RESOURCE_POOL_EXHAUSTED 역추적
+    CLI->>Logging: entries.list(filter='protoPayload.status.message:"ZONE_RESOURCE_POOL_EXHAUSTED"')
+    Logging-->>CLI: StockoutEvents (발생 존, 머신 타입, 타임스탬프)
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CUD: 2단계: CUD 약정 vs 온디맨드 예약 대조
+    CLI->>CUD: commitments.list(region="asia-northeast3")
+    CUD-->>CLI: CUDList (약정 vCPU 총량)
+    CLI->>Res: reservations.list(zone="asia-northeast3-a")
+    Res-->>CLI: ReservationList (선점된 물리적 vCPU 총량)
+    CLI->>CLI: 커버리지 산출 및 무방비 약정(Unreserved CUD) 판정
+    end
+
+    rect rgb(255, 245, 240)
+    note right of FR: 3단계: Future Reservation 미제출 검출 및 처방
+    CLI->>FR: futureReservations.list(zone="asia-northeast3-a")
+    FR-->>CLI: FRList (상태: DRAFTING, SUBMITTED, APPROVED)
+    CLI->>Report: generate_markdown_report()
+    Report-->>Admin: 종합 진단 표, submit CLI 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (스톡아웃 감사 로그 역추적) | **FR-01** (스톡아웃 감사 로그 분석) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`query_stockout_audit_logs`) |
+| **BR-02** (CUD 대조 및 무방비 약정 진단) | **FR-02** (CUD 약정 및 온디맨드 Reservation 대조) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`check_cud_reservation_coverage`) |
+| **BR-03** (Future Reservation 미제출 검출) | **FR-03** (Future Reservation 상태 파싱 및 미제출 탐지) | **NFR-02** (가상 모드 지원) | `diagnose.py` (`audit_future_reservations`) |
+| **BR-04** (자동 리포트 및 조치 처방) | **FR-04** (마크다운 리포트 자동 생성) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-05** (표준 리소스 라벨링 적용 의무화) | **FR-02, FR-04** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-04** (표준 리소스 라벨링 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능 요구 사항 (Functional Requirements)
 
 ### FR-01: 스톡아웃 감사 로그 분석
 - `jsonPayload.event_subtype="compute.instances.insert"` 및 `protoPayload.status.message:"ZONE_RESOURCE_POOL_EXHAUSTED"` 필터를 통해 최근 실패 이벤트를 추출한다.

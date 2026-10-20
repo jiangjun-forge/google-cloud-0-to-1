@@ -22,11 +22,11 @@
 
 | 발생 시각 | 계정 | 서비스 | 메서드 | 호출 IP | 위험도 | 상세 내용 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 2026-10-20 00:22:21 UTC | `app-backend-sa` | iam | `SetIamPolicy` | `198.51.100.45` | **HIGH** | 외부 미인가 계정에 roles/owner 권한 부여 시도 감지 |
-| 2026-10-19 21:22:21 UTC | `data-pipeline-sa` | storage | `get` | `203.0.113.88` | **HIGH** | 비정상 해외 IP 대역에서 sensitive-customer-pii 버킷 대량 다운로드 |
-| 2026-10-19 12:22:21 UTC | `app-backend-sa` | bigquery | `InsertJob` | `198.51.100.45` | **HIGH** | 외부 공개 스토리지 버킷으로 결제 및 사용자 테이블 추출 쿼리 실행 |
-| 2026-10-19 02:22:21 UTC | `data-pipeline-sa` | storage | `list` | `203.0.113.88` | **MEDIUM** | 사내 백업 버킷 내부 객체 목록 전수 정찰(Enumeration) |
-| 2026-10-18 02:22:21 UTC | `app-backend-sa` | storage | `get` | `192.0.2.10` | **LOW** | 정상 빌드 파이프라인 버킷 메타데이터 확인 |
+| 2026-10-20 11:24:04 UTC | `app-backend-sa` | iam | `SetIamPolicy` | `198.51.100.45` | **HIGH** | 외부 미인가 계정에 roles/owner 권한 부여 시도 감지 |
+| 2026-10-20 08:24:04 UTC | `data-pipeline-sa` | storage | `get` | `203.0.113.88` | **HIGH** | 비정상 해외 IP 대역에서 sensitive-customer-pii 버킷 대량 다운로드 |
+| 2026-10-19 23:24:04 UTC | `app-backend-sa` | bigquery | `InsertJob` | `198.51.100.45` | **HIGH** | 외부 공개 스토리지 버킷으로 결제 및 사용자 테이블 추출 쿼리 실행 |
+| 2026-10-19 13:24:04 UTC | `data-pipeline-sa` | storage | `list` | `203.0.113.88` | **MEDIUM** | 사내 백업 버킷 내부 객체 목록 전수 정찰(Enumeration) |
+| 2026-10-18 13:24:04 UTC | `app-backend-sa` | storage | `get` | `192.0.2.10` | **LOW** | 정상 빌드 파이프라인 버킷 메타데이터 확인 |
 
 **진단 요약**: 총 5건의 활동 중 고위험(HIGH) 이벤트 3건 탐지
 

@@ -68,18 +68,52 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (python diagnose.py)"] --> B["사내 GKE 노드 풀 및 MIG 단일 머신 고착 취약점 스캔"]
-    B --> C["기준 머신 타입(vCPU / Memory) 동등 사양 프로필 분석"]
-    C --> D["대체 머신 패밀리 랭킹 매핑 (N4 -> C4A Axion -> N2D -> N2 -> C3)"]
-    D --> E{"대상 플랫폼 선택"}
-    E -->|GKE 컨테이너| F["GKE Custom ComputeClass 매니페스트 생성 (Active Migration 내장)"]
-    E -->|GCE VM / MIG| G["Regional MIG instanceSelections 및 bulkInsert JSON 정책 생성"]
-    F --> H["FinOps Flex CUD(금액 기반) 결합 권고 및 report.md 자동 생성"]
-    G --> H
+    subgraph Layer1["Layer 1: Orchestration & Ingress (오케스트레이션)"]
+        KubernetesPod["GKE 워크로드 파드 (Pending 방어)"]
+        BatchJob["Compute Engine 대규모 배치/분석 작업"]
+        DevOps["인프라 아키텍트 / DevOps 팀"]
+    end
+
+    subgraph Layer2["Layer 2: Flexibility & Selection Policy (유연성 정책)"]
+        CCC_Policy["GKE Custom ComputeClass (Active Migration 내장)"]
+        MIG_Selection["Regional MIG instanceSelections 다중 랭킹 정책"]
+        FlexCUD["금액 기반 Compute Flexible CUD 약정 풀"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Autoscaling Runtime (런타임 제어)"]
+        GKEAutoscaler["GKE 노드 오토스케일러 (NAP)"]
+        MIGAutoscaler["Compute Engine Regional MIG 오토스케일러"]
+        PlannerCLI["diagnose.py 유연성 프로파일러 및 매니페스트 생성기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Hardware Zones (물리 머신 풀)"]
+        Rank1_N4["Rank 1: N4 (Emerald Rapids 최신 고성능)"]
+        Rank2_C4A["Rank 2: C4A (Google Axion ARM 고효율)"]
+        Rank3_N2D["Rank 3: N2D (AMD EPYC 범용)"]
+        Rank4_N2["Rank 4: N2 (Intel Xeon 안정 범용)"]
+        Rank5_C3["Rank 5: C3 (컴퓨팅 최적화 폴백)"]
+    end
+
+    DevOps --> PlannerCLI
+    PlannerCLI --> CCC_Policy
+    PlannerCLI --> MIG_Selection
+    PlannerCLI --> ReportOutput
+    KubernetesPod --> CCC_Policy
+    CCC_Policy --> GKEAutoscaler
+    BatchJob --> MIG_Selection
+    MIG_Selection --> MIGAutoscaler
+    GKEAutoscaler --> Rank1_N4
+    Rank1_N4 -.->|"스톡아웃 시 자동 폴백"| Rank2_C4A
+    Rank2_C4A -.-> Rank3_N2D
+    Rank3_N2D -.-> Rank4_N2
+    Rank4_N2 -.-> Rank5_C3
+    MIGAutoscaler --> Rank1_N4
+    FlexCUD -.->|"모든 머신 패밀리 할인 공통 적용"| Rank1_N4
 ```
 
 ---

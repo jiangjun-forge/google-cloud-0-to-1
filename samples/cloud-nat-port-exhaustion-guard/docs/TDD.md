@@ -12,12 +12,57 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기 (As of 2026-10-17)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 별도의 쉘 래퍼 스크립트에 의존하지 않고 크로스 플랫폼에서 호환되는 파이썬 표준 CLI(`diagnose.py`) 단일 실행 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Cloud NAT 게이트웨이의 구성과 Cloud Monitoring 텔레메트리를 교차 조회하여 동적 포트 할당(DPA) 지연과 `OUT_OF_RESOURCES` 사일런트 패킷 드롭을 역추적하고 즉시 복구 명령어를 처방한다.
+
+```mermaid
+sequenceDiagram
+    actor SRE as 네트워크 / SRE 엔지니어
+    participant Pod as GKE 파드 / Compute Engine VM
+    participant NAT as Cloud NAT 게이트웨이 (DPA)
+    participant Ext as 외부 PG사 / 인터넷 API
+    participant Monitoring as Cloud Monitoring (NAT 텔레메트리)
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    Pod->>NAT: 아웃바운드 TCP SYN (외부 API 호출)
+    alt 포트 고갈 및 DPA 확장 지연
+        NAT-->>Pod: [사일런트 드롭] SYN 패킷 폐기 (OUT_OF_RESOURCES)
+        NAT->>Monitoring: dropped_sent_packets_count 증가
+        Pod-->>Pod: Connection timed out 발생
+    else 정상 SNAT 변환
+        NAT->>Ext: 공인 IP SNAT 변환 후 전송
+        Ext-->>Pod: 200 OK 응답
+    end
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 진단 단계: Cloud NAT 사양 및 메트릭 역추적
+    SRE->>CLI: python diagnose.py --dry-run
+    CLI->>NAT: routers.get() & nats.get() (minPortsPerVm, DPA 활성화 확인)
+    CLI->>Monitoring: timeSeries.list(allocated_ports, dropped_sent_packets_count)
+    Monitoring-->>CLI: TelemetryData (인스턴스별 피크 포트 점유율, 드롭 건수)
+    CLI->>CLI: 위험도 판정 (CRITICAL: 드롭 발생, WARNING: 80% 초과)
+    CLI->>Report: generate_markdown_report()
+    Report-->>SRE: 종합 진단 표, gcloud 처방 명령 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`check_nat_telemetry`, `audit_port_exhaustion`) |
+| **BR-02** (표준화된 자동 진단 체계 구축) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_default_project`, `parse_args`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`get_mock_telemetry`, `--dry-run`) |
+| **BR-04** (실무자 조치 가이드 및 리포트 안내) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리 안내) | **NFR-04** (자원 거버넌스 및 라벨링 규약) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-05** (자원 거버넌스 라벨링 표준 준수) | **FR-04** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-04** (자원 거버넌스 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -28,7 +73,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

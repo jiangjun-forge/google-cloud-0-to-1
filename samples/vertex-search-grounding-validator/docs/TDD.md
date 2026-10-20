@@ -17,7 +17,58 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 검색/AI 엔지니어가 CLI를 실행하면 Cloud Storage 원본 문서 수와 Agent Platform Search(Discovery Engine) 데이터 저장소의 색인 완료 문서 수를 비교하여 색인 누락율을 산출하고, 파서/청킹 구성 점검 및 프로브 질의를 통한 그라운딩 신뢰도를 실측하여 리포트를 생성한다.
+
+```mermaid
+sequenceDiagram
+    actor Engineer as AI / RAG 엔지니어
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant StorageAPI as Cloud Storage API (원본 문서)
+    participant EngineAPI as Discovery Engine API (데이터 저장소)
+    participant IAMAPI as Cloud Resource Manager API (SA 권한)
+    participant GeminiAPI as Vertex AI Search API (프로브 질의)
+    participant FileSys as 로컬 파일 시스템 (report.md)
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 원본 스토리지 대비 데이터 저장소 색인 상태 실사
+    Engineer->>CLI: python diagnose.py -p $PROJECT_ID -d $DATASTORE_ID -b $BUCKET
+    CLI->>StorageAPI: gcloud storage objects list gs://$BUCKET
+    StorageAPI-->>CLI: 원본 객체 수 및 파일 포맷(PDF, HTML) 반환
+    CLI->>EngineAPI: discoveryengine dataStores get / documents list
+    EngineAPI-->>CLI: 색인 완료 문서 수, 적용 파서, 청킹 단위 반환
+    CLI->>IAMAPI: gcloud projects get-iam-policy $PROJECT_ID
+    IAMAPI-->>CLI: Discovery Engine SA의 roles/storage.objectViewer 보유 여부 반환
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 그라운딩 검색 품질 측정 및 처방 리포트 생성
+    CLI->>GeminiAPI: search probe query ("2026 클라우드 보안 정책 가이드라인")
+    GeminiAPI-->>CLI: 검색 청크 목록 및 그라운딩 신뢰도 점수 반환
+    CLI->>CLI: 색인 누락율, 파서 적합성, 그라운딩 품질 종합 판정 (PASS/WARN/FAIL)
+    CLI->>FileSys: save_markdown_report(report.md)
+    FileSys-->>CLI: 덮어쓰기 완료
+    CLI-->>Engineer: 터미널 종합 리포트 및 Layout Parser 전환/재색인 명령어 브리핑
+    end
+```
+
+---
+
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`parse_args`, `detect_project_id`) |
+| **BR-02** (표준화된 자동 진단 체계) | **FR-02** (핵심 지표 및 설정 상태 정밀 진단) | **NFR-02** (비대화형 호환성) | `diagnose.py` (`check_datastore_health`, `validate_grounding_query`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_mock_data`) |
+| **BR-04** (실무자 조치 가이드 및 리소스 정리) | **FR-04** (직관적 콘솔 조치 가이드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`print_report`, `build_markdown_report`) |
+| **BR-02** (자동 진단 및 리포트 영구 보존) | **FR-05** (마크다운 리포트 자동 생성/덮어쓰기) | **NFR-04** (리포트 절대 경로 저장) | `diagnose.py` (`save_markdown_report`) |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링) | **FR-06** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 및 거버넌스 규약) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +81,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 5. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

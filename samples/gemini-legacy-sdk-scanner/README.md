@@ -69,29 +69,48 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 사내 코드베이스의 구형 SDK 의존성을 정적 탐색하고 최신 `google-genai` 통일 SDK로 마이그레이션하는 4계층 토폴로지를 제공한다:
 
 ```mermaid
 flowchart TD
-    Start(["코드베이스 스캔 시작"]) --> RunTool["진단 도구 실행<br/><code>python diagnose.py -p ./src</code>"]
-    
-    RunTool --> ScanFiles["파일 정적 탐색<br/>(.py, .sh, .ipynb)"]
-    ScanFiles --> MatchPatterns{"구형 SDK 호출 탐색<br/>- google.generativeai<br/>- vertexai.generative_models<br/>- genai.configure"}
-    
-    MatchPatterns -- "미발견" --> Safe(["[안전] 구형 SDK 미사용 확인"])
-    MatchPatterns -- "발견" --> Report["파일별 구형 코드 행 번호 리포트 출력"]
-    
-    Report --> Guide["google-genai SDK 마이그레이션 가이드 확인"]
-    Guide --> Refactor["신규 SDK 패키지 설치 및 클라이언트 전환"]
-    Refactor --> Retest["도구 재실행 검증"]
-    Retest --> Done(["최신 google-genai 전환 완료"])
+    subgraph Layer1["1. 사용자 및 소스 코드 계층 (Workspace Layer)"]
+        Dev["사내 애플리케이션 개발자 / 엔지니어"] -->|"1. 코드베이스 정적 스캔 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+        Repo["로컬 저장소 / CI 파이프라인<br/>(*.py, *.sh, *.ipynb)"]
+    end
 
-    classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
-    classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
-    classDef action fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
-    class Start,Report alert;
-    class Safe,Done success;
-    class RunTool,ScanFiles,MatchPatterns,Guide,Refactor,Retest action;
+    subgraph Layer2["2. 정적 분석 및 패턴 탐색 경계 (Inspection Boundary)"]
+        Scanner["정규식 및 AST 패턴 매칭기<br/>- google.generativeai<br/>- vertexai.generative_models<br/>- 구형 모델명 (gemini-1.0/1.5)"]
+    end
+
+    subgraph Layer3["3. 진단 및 변환 런타임 (Migration Engine)"]
+        Parser["파일별 행 번호 정밀 분석기"]
+        GuideGen["신규 SDK 마이그레이션 코드 생성기<br/>(from google import genai 처방)"]
+        Parser --> GuideGen
+    end
+
+    subgraph Layer4["4. 대상 2026 표준 제미나이 에코시스템 (Target Modern Ecosystem)"]
+        UnifiedSDK["구글 공식 통일 SDK<br/>(google-genai 2.31+)"]
+        ModernModel["최신 표준 파운데이션 모델<br/>(gemini-3.8-flash / global)"]
+    end
+
+    CLI -->|"2. 파일 트리 순회"| Repo
+    Repo -->|"소스 스트림 주입"| Scanner
+    Scanner -->|"3. 취약 구형 코드 검출"| Parser
+    GuideGen -->|"4. 최신 SDK 변환 스니펫 도출"| UnifiedSDK
+    UnifiedSDK -.->|"5. 안정적 추론 호출"| ModernModel
+    GuideGen -->|"6. 상세 마이그레이션 리포트 출력"| Dev
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class Dev,CLI,Repo portal;
+    class Scanner security;
+    class Parser,GuideGen runtime;
+    class UnifiedSDK,ModernModel backend;
 ```
 
 ---

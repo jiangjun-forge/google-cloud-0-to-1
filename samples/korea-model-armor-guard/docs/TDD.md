@@ -12,12 +12,53 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 (korea-model-armor-guard)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 순수 파이썬 단일 실행 기반(diagnose.py)의 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터로 인한 보안 사각지대와 데이터 국외 이전 위험을 역추적하고, 한국형 6대 민감정보(InfoTypes) 및 로컬 하이브리드 가드레일 파이프라인을 처방한다.
+
+```mermaid
+sequenceDiagram
+    actor User as 금융/엔터프라이즈 사용자
+    actor SecOps as 보안 관리자 / CISO 팀
+    participant Proxy as Cloud Run 로컬 가드레일 프록시
+    participant MA as Model Armor (asia-northeast3 SDP)
+    participant VertexAI as Vertex AI 엔드포인트 (asia-northeast3)
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    User->>Proxy: 프롬프트 입력 ("주민번호 900101-1234567 분석해 줘")
+    Proxy->>MA: SDP 템플릿 검사 (KOREA_RRN 마스킹)
+    MA-->>Proxy: 비식별화 텍스트 ("주민번호 [REDACTED] 분석해 줘")
+    Proxy->>Proxy: 온소일 로컬 인젝션 살균 검증
+    Proxy->>VertexAI: generate_content(asia-northeast3 온소일 추론)
+    VertexAI-->>User: 안전한 답변 반환
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 진단 단계: Model Armor 템플릿 및 리전 정합성 감사
+    SecOps->>CLI: python diagnose.py --dry-run
+    CLI->>MA: templates.get(location="asia-northeast3")
+    MA-->>CLI: TemplateMetadata (필터 활성화 상태, 바인딩된 InfoTypes)
+    CLI->>CLI: 데이터 국외 이전 위험 및 한국형 InfoType 누락 판정
+    CLI->>Report: generate_markdown_report()
+    Report-->>SecOps: 종합 진단 표, 하이브리드 처방전 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`audit_model_armor_template`, `check_korea_infotypes`) |
+| **BR-02** (표준화된 자동 진단 체계 구축) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_default_project`, `parse_args`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`get_mock_data`, `--dry-run`) |
+| **BR-04** (실무자 조치 가이드 및 리포트 안내) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리 안내) | **NFR-04** (리포트 절대 경로 저장 보장) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-05** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 규약 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -29,7 +70,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

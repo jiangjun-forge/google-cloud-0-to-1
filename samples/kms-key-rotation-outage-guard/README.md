@@ -70,19 +70,48 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["Cloud KMS 키 메타데이터 조회"] --> B["키 버전 라이프사이클 분석"]
-    B --> C["버킷 객체별 CMEK 버전 분포 역추적"]
-    C --> D{"구버전 키 종속성 탐지"}
-    D -- "비활성화/파기 예정 키에 객체 존재" --> E["장애 위험 경보 및 키 복구(Restore) 처방"]
-    D -- "구버전 활성 키에 객체 존재" --> F["최신 주 버전으로 객체 일괄 재암호화(Rewrite) 안내"]
-    D -- "전체 객체 주 버전 마이그레이션 완료" --> G["안전한 구버전 비활성화(Disable) 승인"]
-    E --> H["안전성 확보 리포트 출력"]
-    F --> H
-    G --> H
+    subgraph Layer1["Layer 1: User & Application Ingress (호출 계층)"]
+        WorkloadApp["엔터프라이즈 애플리케이션 / 데이터 파이프라인"]
+        SecOps["보안 관리자 / CISO 거버넌스 팀"]
+    end
+
+    subgraph Layer2["Layer 2: Key Lifecycle & Encryption Boundary (암호화 정책 경계)"]
+        KeyRing["Cloud KMS 키링 (CMEK)"]
+        CryptoKey["CryptoKey (90일 자동 순환 주기)"]
+        PrimaryVer["최신 주 버전 (Primary: Version 3)"]
+        OldVerActive["구버전 활성 키 (Version 2 - ENABLED)"]
+        OldVerDisabled["[위험] 구버전 비활성/파기 키 (Version 1 - DISABLED)"]
+    end
+
+    subgraph Layer3["Layer 3: Serving & Diagnostic Runtime (런타임 분석 및 재암호화)"]
+        RewriteEngine["Cloud Storage 온라인 rewrite 재암호화 엔진"]
+        GuardCLI["diagnose.py 구버전 종속성 전수 검사기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & CMEK Data Assets (암호화 데이터셋)"]
+        BucketObjects["Cloud Storage 버킷 객체 (CMEK 바인딩)"]
+        BQDatasets["BigQuery 암호화 테이블"]
+        DecryptionFail["[장애] 400/403 KMS 복호화 거부 (Outage)"]
+    end
+
+    WorkloadApp -->|데이터 복호화 요청| CryptoKey
+    CryptoKey --> PrimaryVer
+    CryptoKey --> OldVerActive
+    CryptoKey -.->|"비활성화 시 복호화 불가"| OldVerDisabled
+    OldVerDisabled -.->|"서비스 장애 발생"| DecryptionFail
+    PrimaryVer --> BucketObjects
+    OldVerActive --> BucketObjects
+    SecOps --> GuardCLI
+    GuardCLI --> CryptoKey
+    GuardCLI --> BucketObjects
+    GuardCLI --> RewriteEngine
+    RewriteEngine -->|"객체 무중단 최신 키 갱신"| BucketObjects
+    GuardCLI --> ReportOutput
 ```
 
 ---

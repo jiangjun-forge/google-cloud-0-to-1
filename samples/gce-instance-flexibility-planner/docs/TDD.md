@@ -12,12 +12,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): Compute Engine & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기 (As of 2026-10-17)
 
-## 1. 아키텍처 개요 및 설계 원칙
-본 도구는 Compute Engine 및 GKE 환경의 단일 머신 고착 취약점을 진단하고, 동등 사양 머신 패밀리 매핑 엔진을 통해 GKE Custom ComputeClass(CCC) 매니페스트 및 GCE MIG `instanceSelections` 정책을 원클릭으로 생성하는 순수 파이썬 단일 실행 도구(`diagnose.py`)로 구성된다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. GKE 클러스터 및 Compute Engine Regional MIG의 단일 머신 고착 취약점을 진단하고, 동등 사양 프로필 엔진을 통해 5단계 대체 머신 랭킹과 GKE Custom ComputeClass(CCC) 매니페스트 및 MIG `instanceSelections` 정책을 원클릭으로 생성한다.
+
+```mermaid
+sequenceDiagram
+    actor DevOps as 인프라 아키텍트 / DevOps 엔지니어
+    participant CLI as 진단 CLI (diagnose.py)
+    participant GKE as GKE API (클러스터 및 노드 풀)
+    participant GCE as Compute Engine API (MIG 및 템플릿)
+    participant Catalog as 머신 동등 사양 카탈로그 (SHAPE_CATALOG)
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    DevOps->>CLI: python diagnose.py --dry-run
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 사내 단일 머신 고착 취약점 스캔
+    CLI->>GKE: nodePools.list(cluster="production-cluster")
+    GKE-->>CLI: NodePoolList (단일 머신 타입 고착 노드 풀 식별)
+    CLI->>GCE: instanceGroupManagers.list(region="asia-northeast3")
+    GCE-->>CLI: MIGList (instanceFlexibilityPolicy 결여 식별)
+    end
+
+    rect rgb(245, 240, 255)
+    note right of Catalog: 2단계: 동등 사양 머신 패밀리 5단계 랭킹 산출
+    CLI->>Catalog: lookup_profile(cores=8, memory_ratio="1:4")
+    Catalog-->>CLI: RankedList (N4 -> C4A Axion -> N2D -> N2 -> C3)
+    end
+
+    rect rgb(255, 245, 240)
+    note right of Report: 3단계: CCC 매니페스트 및 MIG 정책 생성
+    CLI->>Report: build_compute_class_yaml(RankedList, activeMigration=True)
+    CLI->>Report: build_mig_instance_selections(RankedList)
+    CLI->>Report: generate_markdown_report()
+    Report-->>DevOps: 취약점 표, CCC YAML, MIG CLI 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (단일 머신 고착 취약점 진단) | **FR-01** (단일 머신 의존성 및 스톡아웃 취약점 스캔) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`scan_vulnerabilities`, `diagnose_workloads`) |
+| **BR-02** (동등 사양 머신 랭킹 산출) | **FR-02** (동등 사양 프로필 탐색 및 랭킹 엔진) | **NFR-02** (순수 파이썬 단일 실행) | `diagnose.py` (`get_machine_profile`, `SHAPE_CATALOG`) |
+| **BR-03** (GKE Custom ComputeClass 자동 생성) | **FR-03** (GKE Custom ComputeClass 매니페스트 생성) | **NFR-04** (자원 거버넌스 준수) | `diagnose.py` (`generate_gke_compute_class_manifest`) |
+| **BR-04** (MIG instanceSelections 정책 생성) | **FR-04** (Compute Engine Regional MIG 정책 생성) | **NFR-04** (자원 거버넌스 준수) | `diagnose.py` (`generate_mig_policy_config`) |
+| **BR-05** (FinOps Flex CUD 결합 가이드) | **FR-05** (진단 리포트 자동 생성 및 덮어쓰기) | **NFR-03** (가상 실행 및 비식별화) | `diagnose.py` (`generate_report_markdown`), `report.md` |
+| **BR-06** (자원 거버넌스 라벨링 표준 준수) | **FR-04, FR-05** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-04** (자원 거버넌스 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능 요구 사항 (Functional Requirements)
 
 ### FR-01: 단일 머신 의존성 및 스톡아웃 취약점 스캔
 - `gcloud container node-pools list` 및 `gcloud compute instance-groups managed list` 명령을 통해 사내 클러스터와 MIG의 머신 구성을 점검한다.

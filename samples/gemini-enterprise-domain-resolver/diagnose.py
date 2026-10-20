@@ -35,6 +35,12 @@ def parse_args() -> argparse.Namespace:
         help="점검 대상 기업 도메인명 (기본값: example.com)",
     )
     parser.add_argument(
+        "-p",
+        "--project",
+        default=os.getenv("PROJECT_ID", ""),
+        help="대상 Google Cloud 프로젝트 ID",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="실제 DNS/Admin API 호출 없이 모의 도메인 충돌 데이터로 가상 실행",

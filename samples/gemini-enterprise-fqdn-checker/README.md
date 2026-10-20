@@ -71,29 +71,51 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 사내망 폐쇄 보안 환경에서 Gemini Enterprise App 연결성을 4계층으로 분석하고 차단 FQDN을 실시간 진단한다:
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (diagnose.py)"] --> LoadTargets["필수 Exact FQDN 목록 로드 (코어 API, 인증, 정적 자산, 미디어)"]
-    LoadTargets --> ConcurrentProbe["병렬 DNS 해석 및 TCP 443 TLS 핸드셰이크 수행"]
-    
-    ConcurrentProbe --> CheckDNS{"DNS 해석 성공 여부"}
-    CheckDNS -->|"실패"| FailDNS["[실패] DNS 조회 실패: 사내 DNS 전달자 또는 PSC 이름 해석 점검 처방"]
-    CheckDNS -->|"성공"| CheckTCP{"TCP 443 연결 및 TLS 핸드셰이크"}
-    
-    CheckTCP -->|"타임아웃/거부"| FailFW["[실패] 방화벽 차단 감지: TCP 443 아웃바운드 또는 프록시 허용 처방"]
-    CheckTCP -->|"핸드셰이크 성공"| PassConn["[정상] 해당 FQDN 통신 정상 판정"]
-    
-    FailDNS --> ClassifySeverity{"차단 FQDN 중요도 분류"}
-    FailFW --> ClassifySeverity
-    
-    ClassifySeverity -->|"discoveryengine.clients6 등 코어"| CriticalReport["[심각] 서비스 불가 항목: 최우선 방화벽 오픈 명세 생성"]
-    ClassifySeverity -->|"폰트, 이미지 등 부가 자산"| WarningReport["[주의] 기능 일부 제한 항목: 보조 허용 명세 생성"]
-    
-    PassConn --> ReportSummary["종합 연결성 매트릭스 및 방화벽 설정 가이드 출력"]
-    CriticalReport --> ReportSummary
-    WarningReport --> ReportSummary
+    subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
+        User["사내 임직원 업무 단말기"] -->|"웹 포털 접속 (HTTPS 443)"| GEApp["Gemini Enterprise app"]
+        NetAdmin["네트워크 / 보안 관리자"] -->|"1. FQDN 사전 프로브 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
+
+    subgraph Layer2["2. 사내 네트워크 및 보안 관문 경계 (Network Boundary)"]
+        DNSResolver["사내 내부 DNS 서버<br/>(조건부 전달자 / PSC 해석)"]
+        Firewall["사내 차세대 방화벽 / 관문 프록시<br/>(SWG / NGFW 아웃바운드 443 정책)"]
+    end
+
+    subgraph Layer3["3. 프로브 런타임 계층 (Probe Engine & Diagnostic)"]
+        Engine["병렬 소켓 및 TLS 프로브 엔진<br/>(DNS 해석 + TCP 443 핸드셰이크 계측)"]
+        Classifier["차단 FQDN 중요도 분류기<br/>(Core API vs Auth vs Static Assets)"]
+        Engine --> Classifier
+    end
+
+    subgraph Layer4["4. 대상 구글 코어 서비스 계층 (Target Google Core Services)"]
+        CoreAPI["Discovery Engine & Vertex AI 코어 API<br/>(*.clients6.google.com, discoveryengine.googleapis.com)"]
+        AuthSvc["Google 계정 인증 서비스<br/>(accounts.google.com, oauth2.googleapis.com)"]
+        StaticAssets["UI 및 정적 미디어 CDN<br/>(fonts.gstatic.com, www.gstatic.com)"]
+    end
+
+    CLI -->|"2. 병렬 프로브 인입"| Layer2
+    DNSResolver -->|"DNS 질의 해석"| Engine
+    Firewall -->|"TCP 443 검사"| Engine
+    Engine -->|"3. 코어 API 검증"| CoreAPI
+    Engine -->|"3. 인증 엔드포인트 검증"| AuthSvc
+    Engine -->|"3. 정적 에셋 검증"| StaticAssets
+    Classifier -->|"4. 방화벽 화이트리스트 명세 합성"| NetAdmin
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class User,GEApp,NetAdmin,CLI portal;
+    class DNSResolver,Firewall security;
+    class Engine,Classifier runtime;
+    class CoreAPI,AuthSvc,StaticAssets backend;
 ```
 
 ---

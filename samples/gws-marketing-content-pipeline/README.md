@@ -51,20 +51,48 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 마케팅 콘텐츠 제작 및 평가 파이프라인 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TB
-    A["사전 환경 구성<br/>(API Key & 작업 공간)"] --> B["1단계: 아이디어 메모<br/>(원천 아이디어 문서화)"]
-    B --> C["2단계: 기획서 생성<br/>(PLAN 구글 독스)"]
-    C --> D["3단계: 제작 명세서<br/>(SPEC 채널 규격)"]
-    D --> E["4단계: AI 페르소나<br/>(가상 패널 합성)"]
-    E --> F["5단계: 초판 제작<br/>(rv-00 카피/비주얼/영상)"]
-    F --> G["6단계: 다면 평가<br/>(Judge 피드백 데이터)"]
-    G --> H["7단계: 종합 보고서<br/>(Report 데이터 종합)"]
-    H --> I["8단계: 보정 지침<br/>(마케터 의사 결정)"]
-    I --> J["9단계: 개정본 제작<br/>(rv-01~rv-99 리비전)"]
-    J -.->|순환 개정 루프| G
+flowchart TD
+    subgraph Layer1["Layer 1: User & Marketer Interface (사용자 인터페이스)"]
+        Marketer["현업 마케터 / 캠페인 기획자"]
+        SidebarUI["Google Sheets 전용 사이드바 제어 패널"]
+        CustomMenu["스프레드시트 상단 커스텀 메뉴"]
+    end
+
+    subgraph Layer2["Layer 2: Security & Credentials Boundary (보안 및 자격 증명)"]
+        UserProps["Apps Script UserProperties (사용자별 격리 볼트)"]
+        APIKey["Google AI Studio API Key (Zero-GCP 인증)"]
+        FormsAccess["Google Forms / 모바일 설문 VoC 보안 수집"]
+    end
+
+    subgraph Layer3["Layer 3: Pipeline & Orchestration Runtime (런타임 오케스트레이션)"]
+        AppsScriptEngine["Google Apps Script 엔진 (bundle_apps_script.js)"]
+        PromptEngine["프롬프트 구글 독스 외부화 및 스마트 캐싱"]
+        RevisionController["무제한 리비전(rv-00~rv-99) 순환 제어기"]
+    end
+
+    subgraph Layer4["Layer 4: Foundation Models & Drive Assets (모델 및 산출물 저장소)"]
+        GeminiFlash["Gemini 3.8 Flash (기획서/명세서 컴파일, 다면 평가, VLM 분석)"]
+        VeoFast["Gemini Veo 3.1 Fast (9:16 모바일 숏폼 세로 영상 생성)"]
+        CampaignFolder["Google Drive 캠페인 폴더 (Docs/Sheets/Media 에셋)"]
+    end
+
+    Marketer --> SidebarUI
+    Marketer --> CustomMenu
+    SidebarUI --> AppsScriptEngine
+    CustomMenu --> AppsScriptEngine
+    AppsScriptEngine --> UserProps
+    UserProps --> APIKey
+    AppsScriptEngine --> PromptEngine
+    AppsScriptEngine --> RevisionController
+    AppsScriptEngine --> FormsAccess
+    AppsScriptEngine --> GeminiFlash
+    AppsScriptEngine --> VeoFast
+    GeminiFlash --> CampaignFolder
+    VeoFast --> CampaignFolder
+    AppsScriptEngine --> CampaignFolder
 ```
 
 ---

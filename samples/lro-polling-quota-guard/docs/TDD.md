@@ -21,7 +21,56 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 기능 요구 사항 (Functional Requirements)
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 운영자 또는 개발자가 CLI를 실행하면 동시 비동기 작업 수에 따른 SDK 기본 폴링 vs 권장 지수 백오프 폴링 호출량을 시뮬레이션하고, 서비스별 쿼터 소진 위험도 판정 및 커스텀 Polling 코드 스니펫과 아키텍처 개선안을 산출한다.
+
+```mermaid
+sequenceDiagram
+    actor Engineer as 클라우드 엔지니어 / 개발자
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant SimEngine as 트래픽 시뮬레이션 엔진
+    participant MatrixGen as 쿼터 매트릭스 생성기
+    participant Prescription as RCA 및 처방 합성기
+    participant FileSys as 로컬 파일 시스템 (report.md)
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 동시성 기반 LRO 폴링 트래픽 모델링
+    Engineer->>CLI: python diagnose.py --service speech-to-text --concurrency 12
+    CLI->>SimEngine: simulate_lro_polling_load(service, concurrency)
+    SimEngine->>SimEngine: 기본 SDK 폴링 호출량 계산 (17 RPM/worker)
+    SimEngine->>SimEngine: 최적화 커스텀 폴링 호출량 계산 (2.5 RPM/worker)
+    SimEngine->>SimEngine: 할당량 소진율 산출 및 위험도 판정 (SAFE/WARNING/CRITICAL)
+    SimEngine-->>CLI: 시뮬레이션 결과 데이터세트 반환
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: RCA 브리핑 및 마크다운 리포트 생성
+    CLI->>MatrixGen: render_assessment_table(res)
+    MatrixGen-->>CLI: 콘솔 지표 vs 실제 병목 지표 대조표 출력
+    CLI->>Prescription: render_rca_and_prescription(res)
+    Prescription-->>CLI: SDK 커스텀 Polling 코드 및 비동기 큐 전환 가이드 출력
+    CLI->>FileSys: save_markdown_report(report.md)
+    FileSys-->>CLI: 파일 덮어쓰기 완료
+    CLI-->>Engineer: 터미널 결과 브리핑 및 report.md 생성 완료 안내
+    end
+```
+
+---
+
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (다중 LRO 서비스 백그라운드 폴링 모델링) | **FR-01** (동시성 기반 LRO 폴링 트래픽 모델링) | **NFR-02** (가상 실행 모드) | `diagnose.py` (`simulate_lro_polling_load`) |
+| **BR-02** (대시보드 지표 착시 규명 및 RCA) | **FR-02** (진단 리포트 및 RCA 출력) | **NFR-01** (크로스 플랫폼 실행) | `diagnose.py` (`render_assessment_table`, `render_rca_and_prescription`) |
+| **BR-03** (클라이언트 SDK 즉각 조치 처방) | **FR-03** (SDK 커스텀 Polling 코드 스니펫 자동 생성) | **NFR-01** (크로스 플랫폼 실행) | `diagnose.py` (`render_rca_and_prescription`) |
+| **BR-04** (엔터프라이즈 비동기 큐 분리 가이드) | **FR-04** (마크다운 진단 리포트 자동 생성) | **NFR-04** (리포트 절대 경로 저장) | `diagnose.py` (`build_markdown_report`, `save_markdown_report`) |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링) | **FR-05** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (자동 탐지 우선) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 기능 요구 사항 (Functional Requirements)
 
 ### FR-01: 동시성 기반 LRO 폴링 트래픽 모델링
 - 동시 작업 수 $N$에 대해 기본 SDK 폴링 호출량 $R_{default} = N \times 17 \text{ RPM}$ 및 최적화 폴링 호출량 $R_{opt} = N \times 2.5 \text{ RPM}$을 계산한다.
@@ -42,7 +91,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능 요구 사항 (Non-Functional Requirements)
+## 5. 비기능 요구 사항 (Non-Functional Requirements)
 
 ### NFR-01: 크로스 플랫폼 순수 파이썬 직접 실행
 - 쉘 래퍼 종속성 없이 `python diagnose.py` 단일 명령어로 크로스 플랫폼(Linux, macOS, Windows)에서 직접 실행된다.

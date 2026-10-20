@@ -12,12 +12,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 제미나이 엔터프라이즈(Gemini Enterprise) 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 파이썬 표준 CLI(`diagnose.py`) 기반의 자체 완결적 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. FinOps 담당자 또는 IT 어드민이 진단 명령을 실행하면 Cloud Logging 및 BigQuery 감사 로그를 스캔하여 사용자별 프롬프트/세션 활동성을 측정하고, 30일 이상 미사용자를 식별하여 유휴 라이선스 회수 처방과 DDL 스키마를 도출한다.
+
+```mermaid
+sequenceDiagram
+    actor Admin as 사내 IT 어드민 / FinOps 담당자
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Logs as Cloud Logging / Audit Logs
+    participant Engine as 지표 분류 및 분석 엔진
+    participant BQ as BigQuery (gemini_analytics)
+    participant IDP as Cloud Identity / Workspace API
+
+    Admin->>CLI: python diagnose.py --project PROJ_ID --threshold-days 30
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: Gemini Enterprise 활동 로그 수집
+    CLI->>Logs: searchLogEntries(protoPayload.serviceName="discoveryengine.googleapis.com")
+    Logs-->>CLI: 사용자별 프롬프트 호출 및 타임스탬프 반환
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 사용자별 활동성 분류 및 유휴 라이선스 탐지
+    CLI->>Engine: analyze_user_activity(logs, threshold=30)
+    Engine->>Engine: 활동 등급 분류 (High, Moderate, Low, Dormant)
+    Engine->>Engine: 30일 이상 미사용(0 프롬프트) 계정 선별 및 비용 누수 산출
+    Engine-->>CLI: 부서별 채택률 통계 및 회수 대상 명단 반환
+    end
+
+    rect rgb(255, 245, 240)
+    note right of CLI: 3단계: BigQuery 파티션 테이블 DDL 합성 및 조치 가이드 생성
+    CLI->>BQ: generate_ddl(partition_by=DATE, cluster_by=department)
+    BQ-->>CLI: 표준 BigQuery DDL 및 bq mk 스크립트 도출
+    CLI->>IDP: generate_license_reclaim_commands(dormant_users)
+    IDP-->>CLI: gcloud/Admin SDK 라이선스 회수 명령어 도출
+    end
+
+    CLI-->>Admin: 전사 FinOps 종합 리포트 및 report.md 생성
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` |
+| **BR-02** (사용자별 활동 지표 및 유휴 라이선스 정밀 진단) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` |
+| **BR-03** (가상 실행 스모크 테스트 지원) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` |
+| **BR-04** (BigQuery DDL 및 라이선스 회수 조치 가이드) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py`, `report.md` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -28,7 +76,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

@@ -66,20 +66,43 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (python diagnose.py)"] --> B["Cloud Logging에서 businessaicode 인퍼런스 로그 수집"]
-    B --> C["개발자 계정별 토큰 및 요청 수 집계"]
-    C --> D{"쿼터 캡(예: 5,000,000 토큰) 초과 여부"}
-    D -->|초과 없음| E["정상 사용 (Normal Usage) 판정"]
-    D -->|초과 발견| F{"IAM 통제성 분류 (Enforceability)"}
-    F -->|직접 user: 바인딩| G["ENFORCEABLE_ALLOWED: 마커 역할(CustomAntigravityCapBlocked) 적용 처방"]
-    F -->|그룹/상속 권한| H["NOT_ENFORCEABLE: 사내 그룹 관리 콘솔 수동 조치 가이드 제시"]
-    G --> I["report.md 자동 생성 및 조치 처방 안내"]
-    H --> I
-    E --> I
+    subgraph Layer1["Layer 1: User & Developer Ingress (개발자 인그레스)"]
+        DeveloperIDE["개발자 워크스테이션 (VS Code / JetBrains IDE 확장)"]
+        DeveloperCLI["Antigravity CLI 및 데스크톱 도구"]
+        SecOps["FinOps 관리자 / 보안 운영팀"]
+    end
+
+    subgraph Layer2["Layer 2: Security & IAM Policy Boundary (거버넌스 경계)"]
+        IAMPolicy["Cloud IAM (roles/discoveryengine.agentspaceUser)"]
+        CapMarkerRole["차단 마커 역할 (CustomAntigravityCapBlocked)"]
+        ConditionalExpiry["익일 자정(00:00 UTC) 자동 만료 조건식 바인딩"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Audit Runtime (감사 분석 런타임)"]
+        InferenceLogs["Cloud Logging (businessaicode.googleapis.com/inference_response)"]
+        QuotaCapCLI["diagnose.py 사용자별 토큰 집계 및 캡 분석기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Foundation Models (대상 모델 및 백엔드)"]
+        AntigravityBackend["Google Antigravity 모델 인퍼런스 엔진"]
+        DiscoveryEngine["Discovery Engine 기업용 지식 인덱스"]
+    end
+
+    DeveloperIDE --> AntigravityBackend
+    DeveloperCLI --> AntigravityBackend
+    AntigravityBackend --> InferenceLogs
+    AntigravityBackend --> DiscoveryEngine
+    SecOps --> QuotaCapCLI
+    QuotaCapCLI --> InferenceLogs
+    QuotaCapCLI --> IAMPolicy
+    QuotaCapCLI --> CapMarkerRole
+    CapMarkerRole --> ConditionalExpiry
+    QuotaCapCLI --> ReportOutput
 ```
 
 ---

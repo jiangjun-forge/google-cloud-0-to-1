@@ -69,36 +69,52 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 감사 로그 없이도 Cloud Monitoring 시스템 메트릭을 통해 비용 급증을 유발한 자격 증명(API 키, SA, OAuth)을 4계층으로 역추적한다:
 
 ```mermaid
 flowchart TD
-    Start(["Gemini API 비용 및 호출 급증 발생"]) --> Q1{"데이터 액세스<br/>감사 로그가 켜져 있는가?"}
-    
-    Q1 -- "아니오 (대부분의 경우)" --> RunTool["진단 도구 실행 (Cloud Shell 1줄 복붙)<br/><code>python diagnose.py</code>"]
-    Q1 -- "예" --> AuditCheck["Cloud Logging 로그 탐색기 조회"]
-    
-    RunTool --> FetchMetrics["Cloud Monitoring 플랫폼 지표 조회<br/>(serviceruntime request_count)"]
-    FetchMetrics --> Aggregate["호출 주체(자격 증명)별 점유율 분석"]
-    
-    Aggregate --> Decision{"호출 주체가 무엇인가?"}
-    
-    Decision -- "apikey:AIzaSy..." --> FixApiKey["[API 키 노출]<br/>GCP 콘솔에서 해당 키 탐색 후<br/>API 제한 또는 즉시 삭제/재발급"]
-    Decision -- "serviceAccount:..." --> FixSA["[서비스 계정 오호출/유출]<br/>백엔드 배치 잡 점검 및<br/>불필요한 서비스 계정 키 삭제"]
-    Decision -- "oauth2:..." --> FixOAuth["[클라이언트 앱 호출]<br/>웹/모바일 앱 사용자 트래픽 확인"]
-    
-    FixApiKey --> Prevent["재발 방지 (예산 알림 및 할당량 상한 설정)"]
-    FixSA --> Prevent
-    FixOAuth --> Prevent
-    AuditCheck --> Prevent
-    Prevent --> Done(["비용 누수 차단 완료"])
+    subgraph Layer1["1. 클라이언트 및 인입 계층 (Traffic Ingress Layer)"]
+        Caller["외부 호출자 / 배치 잡 / 클라이언트 앱"] -->|"API 요청 (헤더에 인증 정보 포함)"| Endpoint["Google Cloud API 엔드포인트<br/>(Vertex AI / Generative Language API)"]
+        FinOps["FinOps 엔지니어 / 관리자"] -->|"1. 비용 급증 진단 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
 
-    classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
-    classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
-    classDef action fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
-    class Start,Decision alert;
-    class Done success;
-    class RunTool,FetchMetrics,Aggregate,FixApiKey,FixSA,FixOAuth,Prevent action;
+    subgraph Layer2["2. 인증 수단 및 자격 증명 경계 (Credential Boundary)"]
+        APIKey{"API 키 (apikey:AIzaSy...)"}
+        SAKey{"서비스 계정 (serviceAccount:...)"}
+        OAuth{"OAuth 클라이언트 (oauth2:...)"}
+    end
+
+    subgraph Layer3["3. 모니터링 원격 측정 런타임 (Telemetry & Analysis Runtime)"]
+        Engine["시계열 분석 및 주체별 집계 엔진<br/>(serviceruntime.googleapis.com 지표 분해)"]
+        FixGen["원클릭 차단 처방 생성기<br/>(API 키 삭제 & IAM 회수 명령어)"]
+        Engine --> FixGen
+    end
+
+    subgraph Layer4["4. 대상 클라우드 백엔드 인프라 (Target Backend Infrastructure)"]
+        Metrics[("Cloud Monitoring<br/>(플랫폼 기본 무료 메트릭)")]
+        IAMAdmin["Cloud IAM & API Keys 콘솔<br/>(자격 증명 비활성화/삭제)"]
+        BillingAlert["Cloud Billing<br/>(예산 및 쿼터 한도 가드)"]
+    end
+
+    Endpoint --> Layer2
+    Layer2 -->|"기본 플랫폼 텔레메트리 자동 기록"| Metrics
+
+    CLI -->|"2. 권한 확인 및 메트릭 쿼리"| Metrics
+    Metrics -->|"시계열 데이터 스트림"| Engine
+    FixGen -->|"3. 키 삭제 및 쿼터 차단"| IAMAdmin
+    FixGen -->|"4. 재발 방지 예산 설정"| BillingAlert
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class Caller,FinOps,CLI portal;
+    class Endpoint,APIKey,SAKey,OAuth security;
+    class Engine,FixGen runtime;
+    class Metrics,IAMAdmin,BillingAlert backend;
 ```
 
 ---

@@ -70,22 +70,49 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 Gemini Enterprise 사용자 활동 로그를 추출하여 유휴 라이선스를 식별하고 BigQuery에 정형 적재하는 4계층 시스템 토폴로지를 제공한다:
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchMetrics["사용자별 채택 지표 추출 (Agentspace User-Level Metrics)"]
-    FetchMetrics --> ClassifyUsers["활동 등급 분류 (High, Moderate, Low, Dormant)"]
-    
-    ClassifyUsers --> CheckInactivity{"30일 이상 미사용 여부"}
-    CheckInactivity -->|"미사용 (0 프롬프트)"| MarkReclaim["[회수 권고] 유휴 라이선스 분류 및 월간 비용 누수 산출"]
-    CheckInactivity -->|"활성 사용"| MarkActive["[유지 권장] 정상 사용 계정 분류"]
-    
-    MarkReclaim --> AggregateDept["부서별 실질 채택률 및 유휴 좌석 통계 집계"]
-    MarkActive --> AggregateDept
-    
-    AggregateDept --> GenerateBQ["BigQuery 파티션 및 클러스터링 최적화 DDL 스키마 생성"]
-    GenerateBQ --> ReportSummary["전사 FinOps 보고서 및 미사용자 라이선스 회수 명단 출력"]
+    subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
+        FinOpsUser["사내 IT 어드민 / FinOps 담당자"] -->|"1. 라이선스 최적화 진단 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+        Dashboard["Looker Studio / 대시보드"]
+    end
+
+    subgraph Layer2["2. 보안 및 IAM 경계 (Security & IAM Boundary)"]
+        IAMCheck["최소 권한 격리<br/>- roles/bigquery.dataEditor<br/>- roles/bigquery.jobUser<br/>- roles/logging.viewer"]
+    end
+
+    subgraph Layer3["3. 분석 런타임 계층 (Analysis Runtime & Processing)"]
+        Engine["진단 및 지표 가공 엔진<br/>(사용자별 채택률 분류 & 30일 유휴 탐지)"]
+        DDLGen["BigQuery DDL 스키마 합성기<br/>(파티션 및 클러스터링 최적화)"]
+        Engine --> DDLGen
+    end
+
+    subgraph Layer4["4. 대상 백엔드 서비스 계층 (Target Backend Services)"]
+        Logs[("Cloud Logging / Audit Logs<br/>(Discovery Engine 대화 감사 로그)")]
+        BQ[("BigQuery 웨어하우스<br/>(gemini_analytics.user_adoption_daily)")]
+        AdminAPI["Cloud Identity / Workspace<br/>(라이선스 할당/회수 콘솔)"]
+    end
+
+    CLI -->|"2. 권한 인가 확인"| IAMCheck
+    IAMCheck -->|"3. 활동 로그 추출"| Logs
+    Logs -->|"로그 스트림 주입"| Engine
+    DDLGen -->|"4. 정형 테이블 생성 및 적재"| BQ
+    Engine -->|"5. 유휴 라이선스 회수 명령 생성"| AdminAPI
+    BQ -.->|"시각화 데이터 소스"| Dashboard
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class FinOpsUser,CLI,Dashboard portal;
+    class IAMCheck security;
+    class Engine,DDLGen runtime;
+    class Logs,BQ,AdminAPI backend;
 ```
 
 ---

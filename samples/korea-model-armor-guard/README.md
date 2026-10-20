@@ -70,28 +70,44 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    Start["진단 스크립트 실행 (diagnose.py)"] --> FetchTemplate["Model Armor 템플릿 및 리전 메타데이터 조회"]
-    FetchTemplate --> CheckLocation{"템플릿 배포 리전 검사"}
-    
-    CheckLocation -->|"해외 리전 (us/eu)"| CriticalResidency["[심각] 데이터 국외 이전(Data Boundary) 규제 위반 경고: 서울 리전 이전 안내"]
-    CheckLocation -->|"서울 리전 (asia-northeast3)"| CheckFilters["활성화된 필터 항목 전수 점검"]
-    
-    CheckFilters --> CheckUnsupported{"서울 리전 미지원 필터 활성화 여부 (PI, SafeBrowsing, RAI)"}
-    CheckUnsupported -->|"활성화됨 (로컬 가드레일 미구비)"| CriticalGap["[심각] 로컬 미지원으로 인한 보안 사각지대 경고: 하이브리드 파이프라인 처방"]
-    CheckUnsupported -->|"미활성화 또는 로컬 가드레일 구비"| CheckSDP{"Sensitive Data Protection(SDP) 설정 검사"}
-    
-    CheckSDP --> CheckKoreaInfoTypes{"한국형 6대 필수 InfoType 누락 여부"}
-    CheckKoreaInfoTypes -->|"일부 누락"| WarnInfoTypes["[주의] 한국형 민감 정보 마스킹 누락 경고: 필수 InfoType 바인딩 안내"]
-    CheckKoreaInfoTypes -->|"전수 적용"| HealthyPass["[정상] 서울 리전 데이터 주권 및 보안 가드레일 요건 충족"]
-    
-    CriticalResidency --> GenerateReport["종합 진단 보고서 및 하이브리드 아키텍처 처방 출력"]
-    CriticalGap --> GenerateReport
-    WarnInfoTypes --> GenerateReport
-    HealthyPass --> GenerateReport
+    subgraph Layer1["Layer 1: User & Prompt Ingress (사용자 인그레스)"]
+        EndUser["사내 금융/엔터프라이즈 사용자 (대화형 프롬프트)"]
+        SecOps["정보보호팀 / AI 보안 관리자"]
+    end
+
+    subgraph Layer2["Layer 2: Hybrid Guardrail & Policy Boundary (가드레일 경계)"]
+        SDP_Template["서울 리전 Model Armor SDP (Sensitive Data Protection)"]
+        KoreaInfoTypes["한국형 6대 민감정보 (주민번호, 여권, 운전면허, 외국인, 사업자)"]
+        OnSoilSanitizer["로컬 온소일 프롬프트 인젝션/악성 URL 살균기"]
+    end
+
+    subgraph Layer3["Layer 3: Serving & Diagnostic Runtime (런타임 제어 평면)"]
+        LocalProxy["Cloud Run 로컬 보안 프록시 (데이터 국외 이전 차단)"]
+        GuardCLI["diagnose.py 서울 리전 Model Armor 정합성 진단기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Foundation Models (대상 모델 엔드포인트)"]
+        VertexAI_Seoul["Vertex AI 서울 리전 엔드포인트 (asia-northeast3)"]
+        GeminiFlash["Gemini 3.8 Flash (온소일 추론)"]
+        ForeignLeak["[위험] 글로벌 엔드포인트 라우팅 (데이터 국외 이전 위반)"]
+    end
+
+    EndUser --> LocalProxy
+    LocalProxy --> SDP_Template
+    SDP_Template --> KoreaInfoTypes
+    KoreaInfoTypes --> OnSoilSanitizer
+    OnSoilSanitizer --> VertexAI_Seoul
+    VertexAI_Seoul --> GeminiFlash
+    LocalProxy -.->|"미지원 필터 활성화 시 위험"| ForeignLeak
+    SecOps --> GuardCLI
+    GuardCLI --> SDP_Template
+    GuardCLI --> KoreaInfoTypes
+    GuardCLI --> ReportOutput
 ```
 
 ---

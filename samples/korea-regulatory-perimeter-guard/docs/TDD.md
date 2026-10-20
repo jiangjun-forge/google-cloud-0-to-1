@@ -77,7 +77,24 @@ sequenceDiagram
 
 ---
 
-## 3. 모듈 및 컴포넌트 설계
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (논리적 망 분리) | **FR-01** (VPC-SC 보안 경계 내 Vertex AI 보호) | **NFR-01** (비파괴성 및 안전성) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-02** (외부망 격리) | **FR-02** (VPC-SC 내부 실시간 웹 검색 격리) | **NFR-01** (비파괴성 및 안전성) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-03** (전자기록 보존) | **FR-03** (Cloud Storage 5년 Bucket Lock 및 보존) | **NFR-03** (실행 성능) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-04** (데이터 암호화) | **FR-04** (고객 관리 암호화 키 CMEK 전면 적용) | **NFR-03** (실행 성능) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-05** (감사 추적) | **FR-05** (데이터 접근 감사 로그 DATA_READ/WRITE) | **NFR-01** (비파괴 스캔) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-06** (AI 모델 안전성) | **FR-06** (Model Armor 실시간 프롬프트 인젝션 방어) | **NFR-02** (고가용성 및 복원력) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-07** (개인 신용 정보 보호) | **FR-07** (SDP 개인 신용 정보 가명 처리 템플릿) | **NFR-04** (민감 정보 비식별화) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-08** (자격 증명 유출 차단) | **FR-08** (서비스 계정 키 발급 차단 및 WIF 강제) | **NFR-01** (안전성 보장) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-09** (전송 구간 암호화) | **FR-09** (전송 구간 고강도 암호화 TLS 1.2+ 강제) | **NFR-02** (보안 통제) | `diagnose.py` (`diagnose_live`, `get_mock_findings`) |
+| **BR-10** (사내 거버넌스 4대 필수 라벨링) | **FR-10** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-04** (거버넌스 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 모듈 및 컴포넌트 설계
 
 ### 3.1 CLI 인자 파서 (`parse_args`)
 - `-p`, `--project`: 대상 GCP 프로젝트 ID (미지정 시 활성 gcloud 프로젝트 자동 감지).

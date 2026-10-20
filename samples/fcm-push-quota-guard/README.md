@@ -70,20 +70,43 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["푸시 발송 피크 시도량 및 FCM 프로젝트 할당량 수집"] --> B{"분당 다운스트림 쿼터 초과 여부 평가"}
-    B -- "피크량 > 기본 할당량" --> C["429 쓰로틀링 및 메시지 유실 위험 판정"]
-    B -- "피크량 <= 기본 할당량" --> D["할당량 안전 구간 판정"]
-    C --> E["콘솔 할당량 상향(Quota Increase) 필요 수치 계산"]
-    D --> F{"발송 백엔드 복원력 패턴 점검"}
-    E --> F
-    F -- "속도 제한(Rate Limiter) 누락" --> G["토큰 버킷 기반 초당 송신 제어 처방"]
-    F -- "재시도 지터 부재" --> H["Full Jitter 지수 백오프 템플릿 처방"]
-    G --> I["종합 복원력 가이드라인 및 모니터링 대시보드 리포트"]
-    H --> I
+    subgraph Layer1["Layer 1: Client & Campaign Ingress (마케팅 및 발송 요청)"]
+        MarketingCampaign["대규모 마케팅 / 긴급 공지 발송 시스템"]
+        PushOperator["모바일 서비스 운영자 / 인프라 엔지니어"]
+    end
+
+    subgraph Layer2["Layer 2: Rate Limiting & Resilience Boundary (복원력 경계)"]
+        TokenBucket["토큰 버킷 속도 제한기 (초당 송신 상한 억제)"]
+        ExponentialJitter["Full Jitter 지수 백오프 (429 재시도 폭풍 방지)"]
+        TopicFanout["FCM 토픽 기반 브로드캐스트 팬아웃"]
+    end
+
+    subgraph Layer3["Layer 3: Serving & Diagnostic Runtime (런타임 제어 평면)"]
+        PushWorkers["Cloud Run / GKE 푸시 발송 워커"]
+        QuotaGuardCLI["diagnose.py 다운스트림 쿼터 및 복원력 분석기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Mobile Endpoints (대상 모바일 백엔드)"]
+        FCMBackend["Firebase Cloud Messaging HTTP v1 API (fcm.googleapis.com)"]
+        MobileClients["안드로이드 / iOS 단말 기기"]
+        QuotaExhaustSink["[위험] 429 RESOURCE_EXHAUSTED 쓰로틀링 드롭"]
+    end
+
+    MarketingCampaign --> TokenBucket
+    TokenBucket --> PushWorkers
+    PushWorkers --> ExponentialJitter
+    ExponentialJitter --> FCMBackend
+    TopicFanout --> FCMBackend
+    FCMBackend --> MobileClients
+    FCMBackend -.->|"쿼터 초과 시 발생"| QuotaExhaustSink
+    PushOperator --> QuotaGuardCLI
+    QuotaGuardCLI --> FCMBackend
+    QuotaGuardCLI --> ReportOutput
 ```
 
 ---

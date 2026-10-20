@@ -69,27 +69,50 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 별도 프록시 없이 파운데이션 모델 자체 설정을 통해 BigQuery로 요청/응답을 스트리밍 내보내는 4계층 토폴로지를 제공한다:
 
 ```mermaid
 flowchart TD
-    Start(["Gemini API 호출 발생"]) --> Model["Vertex AI 파운데이션 모델"]
-    
-    Model --> RouteResponse["사용자에게 모델 응답 반환"]
-    Model --> AutoStream["BigQuery 자동 내보내기 스트리밍<br/>(Request-Response Logging)"]
-    
-    AutoStream --> BigQueryTable[("BigQuery 로그 테이블 적재<br/>(gcp_logs.model_request_response_logs)")]
-    
-    BigQueryTable --> SQLAnalysis["토큰 분석 표준 SQL 쿼리 실행"]
-    SQLAnalysis --> Metrics["사용자별/서비스 계정별 토큰 소모량 도출"]
-    Metrics --> Done(["[완료] 부서별 정산 및 컴플라이언스 감사"])
+    subgraph Layer1["1. 트래픽 및 클라이언트 계층 (Traffic & Client Layer)"]
+        ClientApp["사내 애플리케이션 / 챗봇 클라이언트"] -->|"1. Gemini API 추론 호출"| ModelEndpoint["Vertex AI 모델 엔드포인트"]
+        Auditor["데이터 보안팀 / 감사관"] -->|"진단 및 토큰 분석 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
 
-    classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
-    classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
-    classDef action fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
-    class Start action;
-    class Done success;
-    class Model,RouteResponse,AutoStream,BigQueryTable,SQLAnalysis,Metrics action;
+    subgraph Layer2["2. 로깅 구성 및 IAM 권한 경계 (Logging & IAM Boundary)"]
+        LogConfig{"파운데이션 모델 로깅 설정<br/>(request_response_logging_config)"}
+        ServiceAgent["Vertex AI 서비스 에이전트<br/>- roles/bigquery.dataEditor"]
+    end
+
+    subgraph Layer3["3. 분석 및 모니터링 런타임 (Analysis Runtime)"]
+        Engine["토큰 및 호출 분석 엔진<br/>(사용자별/서비스 계정별 토큰 소모량 집계)"]
+    end
+
+    subgraph Layer4["4. 대상 백엔드 서비스 계층 (Target Backend Services)"]
+        Model["Vertex AI 파운데이션 모델<br/>(gemini-3.8-flash)"]
+        BQTable[("BigQuery 파티션 로그 테이블<br/>(gcp_logs.model_request_response_logs)")]
+    end
+
+    ModelEndpoint --> LogConfig
+    LogConfig --> Model
+    Model -->|"사용자 즉각 응답"| ClientApp
+    Model -->|"2. 완전 관리형 백엔드 스트리밍"| ServiceAgent
+    ServiceAgent -->|"3. 비동기 로그 적재"| BQTable
+
+    CLI -->|"4. 표준 분석 SQL 실행"| BQTable
+    BQTable -->|"로그 데이터 반환"| Engine
+    Engine -->|"5. 부서별 토큰 정산 리포트 출력"| Auditor
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class ClientApp,Auditor,CLI,ModelEndpoint portal;
+    class LogConfig,ServiceAgent security;
+    class Engine runtime;
+    class Model,BQTable backend;
 ```
 
 ---

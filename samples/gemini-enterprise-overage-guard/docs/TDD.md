@@ -12,12 +12,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 제미나이 엔터프라이즈(Gemini Enterprise) 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 파이썬 표준 CLI(`diagnose.py`) 단일 실행 아키텍처로 구성되며, 화면 출력과 함께 마크다운 리포트(`report.md`)를 자동 생성/덮어쓴다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. FinOps 담당자 또는 CISO가 진단 명령을 실행하면 Cloud Billing IAM, 조직 정책(`restrictServiceUsage`), Generative Language API 활성 여부를 실시간 교차 검증하여 섀도우 과금 리스크를 판정하고 4단계 안심 방어 처방을 도출한다.
+
+```mermaid
+sequenceDiagram
+    actor FinOps as CISO / FinOps 관리자
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Billing as Cloud Billing API (RBAC)
+    participant OrgPol as Cloud Resource Manager (조직 정책)
+    participant SvcUsage as Service Usage API (API 활성)
+    participant GEEngine as Discovery Engine (GE App 설정)
+
+    FinOps->>CLI: python diagnose.py --project PROJ_ID
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: Gemini Enterprise 일일 풀링 쿼터 및 Overage 설정 실사
+    CLI->>GEEngine: getEngine(PROJ_ID)
+    GEEngine-->>CLI: overageSettings (Toggle ON/OFF 상태) 반환
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 조직 정책 기반 API 키 및 비인가 서비스 차단 검증
+    CLI->>OrgPol: getEffectiveOrgPolicy(constraints/gcp.restrictServiceUsage)
+    OrgPol-->>CLI: apikeys.googleapis.com 제한 상태 반환
+    CLI->>SvcUsage: getService(generativelanguage.googleapis.com)
+    SvcUsage-->>CLI: Google AI Studio 백엔드 활성화 여부 반환
+    end
+
+    rect rgb(255, 245, 240)
+    note right of CLI: 3단계: 계열사 위임 관리자 결제 권한(Billing RBAC) 실사
+    CLI->>Billing: getIamPolicy(billingAccounts/ACCOUNT_ID)
+    Billing-->>CLI: roles/billing.admin 및 roles/billing.user 바인딩 명단 반환
+    end
+
+    CLI->>CLI: 4대 핵심 기둥 판정(PASS/WARN/FAIL) 및 4단계 안심 방어 처방 합성
+    CLI-->>FinOps: 종합 과금 방어 매트릭스 표 및 report.md 생성
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (GE Overage 및 일일 쿼터 분석) | **FR-01** (Gemini Enterprise Overage 및 일일 쿼터 분석) | **NFR-02** (크로스 플랫폼 단일 실행) | `diagnose.py` |
+| **BR-02** (Google AI Studio API 키 발급 차단) | **FR-02** (Google AI Studio API 키 발급 차단 점검) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` |
+| **BR-03** (Generative Language API 비활성화) | **FR-03** (Generative Language API 비활성화 점검) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` |
+| **BR-04** (계열사 Billing RBAC 권한 통제) | **FR-04** (계열사 IT 관리자 결제 권한 검증) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-05** (사내 거버넌스 4대 필수 표준 라벨링 주입) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py`, `report.md` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -29,7 +77,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

@@ -64,15 +64,47 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (python diagnose.py)"] --> B["사내 GCP 프로젝트의 실제 보안 인프라 감사 (VPC-SC, CMEK, 로깅, 정책)"]
-    B --> C["구글 공식 보안 약관(CDPA), 무학습(No-Training) 및 공인 인증(ISO 42001) 결합"]
-    C --> D["20대 핵심 보안 심의 체크리스트 항목별 PASS / PARTIAL / WARN 판정 및 실측 증적 매핑"]
-    D --> E["report.md 완제품 'AI 보안성 심의 소명서' 자동 생성"]
-    E --> F["사내 정보보호팀 / CISO 및 금융당국 심의 서류로 즉시 제출"]
+    subgraph Layer1["Layer 1: Regulatory & Compliance Ingress (심의 주체)"]
+        CISO["사내 정보보호팀 / CISO 보안성 심의"]
+        Auditor["금융감독원 / 금융보안원 심의관"]
+        ProjectLead["생성형 AI 도입 추진 엔지니어"]
+    end
+
+    subgraph Layer2["Layer 2: Policy & Certification Boundary (법적 보안 경계)"]
+        NoTraining["구글 공식 CDPA 고객 데이터 비학습 (No-Training)"]
+        NoHumanReview["비인가 인적 검토 배제 (No Human Review)"]
+        ISO42001["ISO/IEC 42001 & ISO 27001 국제 공인 인증"]
+        PerimeterPolicy["VPC-SC 보안 경계 및 서울 리전 엔드포인트 격리"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Assessment Runtime (실사 분석 런타임)"]
+        ChecklistEngine["diagnose.py 20대 핵심 보안 체크리스트 실사기"]
+        LiveScanner["사내 GCP 프로젝트 실제 기술적 통제 스캐너"]
+        ReportOutput["완제품 AI 보안성 심의 소명서 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Enterprise AI Workloads (대상 인프라)"]
+        VertexAI["Vertex AI Gemini API 엔드포인트"]
+        GeminiEnterpriseApp["Gemini Enterprise 웹 대화형 포털"]
+        CMEK_Audit["Cloud KMS CMEK 키링 및 Cloud Audit Logs"]
+    end
+
+    ProjectLead --> ChecklistEngine
+    ChecklistEngine --> NoTraining
+    ChecklistEngine --> NoHumanReview
+    ChecklistEngine --> ISO42001
+    ChecklistEngine --> PerimeterPolicy
+    ChecklistEngine --> LiveScanner
+    LiveScanner --> VertexAI
+    LiveScanner --> GeminiEnterpriseApp
+    LiveScanner --> CMEK_Audit
+    ChecklistEngine --> ReportOutput
+    ReportOutput --> CISO
+    ReportOutput --> Auditor
 ```
 
 ---

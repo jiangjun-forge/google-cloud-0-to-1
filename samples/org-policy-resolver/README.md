@@ -69,30 +69,46 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    Start(["자원 생성 또는 변경 시 조직 정책 위반 발생"]) --> RunTool["진단 도구 실행<br/><code>python diagnose.py -p my-project</code>"]
-    
-    RunTool --> QueryAudit["Cloud Logging 활동 감사 로그 조회<br/>(cloudaudit.googleapis.com/activity, code 9)"]
-    QueryAudit --> ParseEvents["위반 이벤트 및 메시지 파싱"]
-    
-    ParseEvents --> ExtractConstraint["제약 조건 ID 정밀 추출<br/>(constraints/iam.disableServiceAccountKeyCreation 등)"]
-    ExtractConstraint --> AnalyzeImpact["제약 조건 목적 분석 및 보안 대안 검토"]
-    
-    AnalyzeImpact --> GenerateCmd["원클릭 gcloud 조직 정책 비활성화 명령어 자동 생성"]
-    GenerateCmd --> ApplyCmd["프로젝트/조직 관리자가 명령어 실행"]
-    
-    ApplyCmd --> Retest["자원 생성 재시도 검증"]
-    Retest --> Done(["[복구 완료] 제약 조건 예외 처리 및 작업 완료"])
+    subgraph Layer1["Layer 1: User & Admin Interaction (자원 생성 및 정책 변경 요청)"]
+        direction TB
+        AdminUser["클라우드 관리자 / 배포 파이프라인<br/>(terraform, gcloud, console)"]
+        ResourceRequest["자원 생성/변경 시도<br/>(VM External IP, SA Key, Public Bucket)"]
+        AdminUser --> ResourceRequest
+    end
 
-    classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
-    classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
-    classDef action fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
-    class Start,ExtractConstraint alert;
-    class Done success;
-    class RunTool,QueryAudit,ParseEvents,AnalyzeImpact,GenerateCmd,ApplyCmd,Retest action;
+    subgraph Layer2["Layer 2: Policy & Security Boundary (조직 정책 제약 조건 통제)"]
+        direction TB
+        OrgPolicyEngine["GCP Organization Policy Engine"]
+        ConstraintsList["핵심 제약 조건 규칙<br/>(constraints/iam.disableServiceAccountKeyCreation<br/>constraints/compute.vmExternalIpAccess<br/>constraints/storage.publicAccessPrevention)"]
+        OrgPolicyEngine --- ConstraintsList
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Audit Runtime (감사 로그 역추적 엔진)"]
+        direction TB
+        CloudAuditLogs["Cloud Logging (Activity Audit Logs)<br/>(cloudaudit.googleapis.com/activity, code 9)"]
+        ResolverEngine["org-policy-resolver<br/>(diagnose.py)"]
+        RemediationGen["원클릭 gcloud 복구/우회 명령어 생성기"]
+        CloudAuditLogs --> ResolverEngine
+        ResolverEngine --> RemediationGen
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & GCP Resources (대상 클라우드 인프라)"]
+        direction TB
+        ComputeEngine["Compute Engine (VMs)"]
+        IAMEngine["Cloud IAM (Service Accounts)"]
+        StorageEngine["Cloud Storage (Buckets)"]
+    end
+
+    ResourceRequest --> OrgPolicyEngine
+    OrgPolicyEngine -.->|"정책 위반 차단 (Code 9)"| CloudAuditLogs
+    OrgPolicyEngine -->|승인 시| ComputeEngine
+    OrgPolicyEngine -->|승인 시| IAMEngine
+    OrgPolicyEngine -->|승인 시| StorageEngine
+    RemediationGen ==>|"예외 적용/정책 조정"| OrgPolicyEngine
 ```
 
 ---

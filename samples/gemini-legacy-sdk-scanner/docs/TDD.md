@@ -12,12 +12,58 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 진단기 (`gemini-legacy-sdk-scanner`)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 순수 파이썬 단일 실행 기반(`diagnose.py`)의 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 개발자가 소스 디렉터리 경로를 전달하여 스캐너를 실행하면 대상 파일들을 재귀 탐색하고 AST/정규식 매칭을 통해 구형 SDK 임포트 및 메서드 호출을 특정하여 행 번호 및 신규 `google-genai` 전환 코드를 도출한다.
+
+```mermaid
+sequenceDiagram
+    actor Dev as 애플리케이션 개발자
+    participant CLI as 스캐너 CLI (diagnose.py)
+    participant FileSys as 로컬 파일 시스템 (*.py, *.sh, *.ipynb)
+    participant Pattern as 구형 SDK 패턴 매칭 엔진
+    participant Guide as 코드 변환 및 리포트 엔진
+
+    Dev->>CLI: python diagnose.py -p ./src
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 대상 디렉터리 재귀 탐색 및 파일 수집
+    CLI->>FileSys: os.walk(path, extensions=[.py, .sh, .ipynb])
+    FileSys-->>CLI: 검사 대상 소스 파일 목록 반환
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 정적 패턴 매칭 및 취약점 검출
+    loop 각 파일 순회
+        CLI->>Pattern: match(google.generativeai, vertexai.generative_models, genai.configure)
+        Pattern-->>CLI: 검출된 구형 SDK 호출 및 행 번호 반환
+    end
+    end
+
+    rect rgb(255, 245, 240)
+    note right of CLI: 3단계: 신규 google-genai 마이그레이션 처방 합성
+    CLI->>Guide: build_replacement_snippet(findings)
+    Guide-->>CLI: 통일 SDK 클라이언트 초기화 및 generate_content 예제 생성
+    end
+
+    CLI-->>Dev: 파일별 검출 상세 표 및 report.md 생성
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` |
+| **BR-02** (구형 SDK 및 모델명 정적 탐색) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` |
+| **BR-03** (가상 실행 스모크 테스트 지원) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` |
+| **BR-04** (신규 google-genai 마이그레이션 가이드) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py`, `report.md` |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-05** (사내 거버넌스 4대 필수 표준 라벨링 주입) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -29,7 +75,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

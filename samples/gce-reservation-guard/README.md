@@ -68,20 +68,45 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["진단 시작 (python diagnose.py)"] --> B["클라우드 감사 로그(Cloud Audit Logs) 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 에러 분석"]
-    B --> C["CUD 약정 코어 수 vs 온디맨드 Reservation 확보 코어 수 대조"]
-    C --> D{"무방비 약정(Unreserved CUD) 존재하는가?"}
-    D -->|위험| E["물리적 온디맨드 Reservation 선점 명령어 처방"]
-    D -->|안전| F["Compute Engine Future Reservation(FR) 신청 현황 전수 점검"]
-    E --> F
-    F --> G{"DRAFTING(제출 누락) 신청서 존재 여부"}
-    G -->|누락 발견| H["gcloud compute future-reservations submit 즉시 실행 안내"]
-    G -->|정상| I["report.md 자동 생성 및 통합 진단 완료"]
-    H --> I
+    subgraph Layer1["Layer 1: User & Workload Ingress (호출 계층)"]
+        ProductionWorkload["엔터프라이즈 운영 워크로드 / AI 모델 서빙"]
+        CapacityPlanner["인프라 아키텍트 / FinOps 관리자"]
+    end
+
+    subgraph Layer2["Layer 2: Capacity & CUD Policy Boundary (용량 정책 경계)"]
+        OnDemandRes["물리적 온디맨드 Reservation (지정 존 하드웨어 선점)"]
+        FutureRes["Future Reservation (FR 사전 심사 및 확정 용량)"]
+        CUDBoundary["CUD(지속 사용 약정) 요금 할인 풀"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Audit Runtime (감사 분석 런타임)"]
+        AuditLogs["Cloud Audit Logs (ZONE_RESOURCE_POOL_EXHAUSTED 역추적)"]
+        GuardCLI["diagnose.py CUD 대조 및 FR 상태 분석기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Hardware Zones (물리 인프라 슬롯)"]
+        PhysicalHosts["Compute Engine 물리 호스트 슬롯"]
+        GPURacks["NVIDIA H100 / A100 / L4 가속기 전용 랙"]
+        TargetZones["서울/도쿄 리전 타깃 존 인프라"]
+    end
+
+    ProductionWorkload --> OnDemandRes
+    OnDemandRes --> PhysicalHosts
+    FutureRes --> GPURacks
+    CapacityPlanner --> GuardCLI
+    GuardCLI --> AuditLogs
+    GuardCLI --> CUDBoundary
+    GuardCLI --> OnDemandRes
+    GuardCLI --> FutureRes
+    GuardCLI --> ReportOutput
+    PhysicalHosts --> TargetZones
+    GPURacks --> TargetZones
+    CUDBoundary -.->|"물리 예약 없을 시 스톡아웃 위험"| PhysicalHosts
 ```
 
 ---

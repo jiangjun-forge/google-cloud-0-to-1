@@ -12,12 +12,54 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 (kms-key-rotation-outage-guard)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 순수 파이썬 단일 실행 기반(diagnose.py)의 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Cloud KMS CryptoKey 버전 상태와 Cloud Storage 객체별 암호화 키 버전을 대조하여, 구버전 비활성화 시 발생하는 복호화 실패 장애를 사전에 탐지하고 온라인 `rewrite` 재암호화 처방을 제시한다.
+
+```mermaid
+sequenceDiagram
+    actor SecOps as 보안 관리자 / CISO 팀
+    participant KMS as Cloud KMS (CMEK 키 버전 관리)
+    participant GCS as Cloud Storage (버킷 객체)
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    KMS->>KMS: 90일 주기 자동 키 순환 (신규 Primary 버전 생성)
+    Note over SecOps,KMS: 구버전 키 비활성화 검토 단계
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 키 버전 및 스토리지 객체 버전 분포 역추적
+    SecOps->>CLI: python diagnose.py --dry-run
+    CLI->>KMS: cryptoKeyVersions.list(keyRing, cryptoKey)
+    KMS-->>CLI: VersionList (상태: ENABLED, DISABLED, DESTROY_SCHEDULED)
+    CLI->>GCS: objects.list(bucketName, projection="full")
+    GCS-->>CLI: ObjectMetadata (객체별 kmsKeyName 버전 태그)
+    CLI->>CLI: 구버전 키 종속성 및 장애 위험도 판정
+    end
+
+    rect rgb(245, 255, 240)
+    note right of Report: 2단계: 온라인 Rewrite 재암호화 처방 및 리포트 작성
+    CLI->>Report: generate_markdown_report()
+    Report->>Report: gcloud storage objects rewrite 일괄 갱신 명령 조립
+    Report-->>SecOps: 버전별 객체 분포 표, rewrite 가이드 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`check_key_versions`, `scan_bucket_objects`) |
+| **BR-02** (표준화된 자동 진단 체계 구축) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_default_project`, `parse_args`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`get_mock_data`, `--dry-run`) |
+| **BR-04** (실무자 조치 가이드 및 리포트 안내) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리 안내) | **NFR-04** (리포트 절대 경로 저장 보장) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-05** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 규약 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -29,7 +71,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

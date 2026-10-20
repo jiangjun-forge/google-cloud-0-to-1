@@ -17,7 +17,56 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 스토리지 및 인프라 엔지니어가 CLI를 실행하면 타깃 Cloud Storage 버킷의 보안 정책(공개 접근 차단, CMEK 암호화 바인딩)과 STS 온프레미스 에이전트 풀 상태, 대역폭 제한 정책을 교차 진단하여 전송 전 사전 요건을 검증하고 마크다운 리포트를 자동 생성한다.
+
+```mermaid
+sequenceDiagram
+    actor Engineer as 스토리지 / 인프라 엔지니어
+    participant CLI as CLI 컨트롤러 (diagnose.py)
+    participant StorageAPI as Cloud Storage API (버킷 보안)
+    participant STSAPI as Storage Transfer Service API (에이전트 풀)
+    participant KMSAPI as Cloud KMS API (CMEK 검증)
+    participant FileSys as 로컬 파일 시스템 (report.md)
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 타깃 버킷 및 온프렘 에이전트 상태 진단
+    Engineer->>CLI: python diagnose.py -p $PROJECT_ID -b $BUCKET -a $AGENT_POOL
+    CLI->>StorageAPI: gcloud storage buckets describe gs://$BUCKET
+    StorageAPI-->>CLI: 버킷 메타데이터 (PAP, CMEK 키 경로) 반환
+    CLI->>KMSAPI: gcloud kms keys describe $KEY_PATH
+    KMSAPI-->>CLI: 암호화 키 상태 및 리전 정합성 반환
+    CLI->>STSAPI: gcloud transfer agent-pools describe $AGENT_POOL
+    STSAPI-->>CLI: 에이전트 연결 상태 및 대역폭 한도 반환
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: 사전 요건 판정 및 안전 전송 가이드 생성
+    CLI->>CLI: 4대 핵심 보안 요건(PAP, CMEK, Agent 상태, 대역폭) 판정
+    CLI->>CLI: gcloud transfer jobs create 안전 전송 작업 명령어 합성
+    CLI->>FileSys: save_markdown_report(report.md)
+    FileSys-->>CLI: 덮어쓰기 완료
+    CLI-->>Engineer: 터미널 점검 현황 브리핑 및 전송 실행 가이드 출력
+    end
+```
+
+---
+
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`parse_args`, `detect_project_id`) |
+| **BR-02** (표준화된 자동 진단 체계) | **FR-02** (핵심 지표 및 설정 상태 정밀 진단) | **NFR-02** (비대화형 호환성) | `diagnose.py` (`check_bucket_security`, `check_agent_pool`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_mock_data`) |
+| **BR-04** (실무자 조치 가이드 및 리소스 정리) | **FR-04** (직관적 콘솔 조치 가이드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`print_report`, `build_markdown_report`) |
+| **BR-02** (자동 진단 및 리포트 영구 보존) | **FR-05** (마크다운 리포트 자동 생성/덮어쓰기) | **NFR-04** (리포트 절대 경로 저장) | `diagnose.py` (`save_markdown_report`) |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링) | **FR-06** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 및 거버넌스 규약) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +79,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 5. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

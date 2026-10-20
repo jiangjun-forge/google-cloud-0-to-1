@@ -12,12 +12,54 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): Multi-Cluster GKE Inference Gateway 라우팅 진단기 (`gke-multi-cluster-inference-gateway`)
 
-## 1. 아키텍처 개요 및 설계 원칙
-본 도구는 복수 리전 및 이종 클라우드에 분산된 GKE 및 GPU 인퍼런스 클러스터 진입 트래픽 제어 평면을 감사하고, 다계층 서비스 메시(As-Is)에서 구글 글로벌 L7 로드 밸런서(To-Be: Global ALB + Hybrid/Internet NEG) 플랫 직결 구조로 전환할 수 있도록 진단과 최적화 정책 생성을 수행하는 순수 파이썬 단일 실행 도구(`diagnose.py`)다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 다계층 Istio 서비스 메시 중계 병목을 진단하고, 글로벌 Anycast VIP 기반 Global External ALB와 Hybrid/Internet NEG를 활용한 1홉 플랫 직결 L7 제어 평면 상태를 점검하여 복구 명령어를 처방한다.
+
+```mermaid
+sequenceDiagram
+    actor Architect as AI 인프라 아키텍트 / SRE
+    participant Client as 전 세계 AI/LLM 클라이언트
+    participant ALB as Global External ALB (Anycast VIP)
+    participant Policy as L7 Traffic Policy (LEAST_REQUEST / KV-Cache)
+    participant NEG as NEG (Container-native / Hybrid / Internet)
+    participant GPU as 분산 GPU 클러스터 (GKE / 타 클라우드)
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    Client->>ALB: POST /v1/chat/completions (단일 Anycast VIP)
+    ALB->>Policy: 가중치 및 실시간 KV-Cache 신호 대조 (40% 임계치)
+    Policy->>NEG: 1홉 플랫 직결 라우팅
+    NEG->>GPU: 인퍼런스 요청 전달 (프록시 중계 배제)
+    GPU-->>Client: 토큰 스트리밍 반환 (TTFT 단축)
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 진단 단계: L7 제어 평면 및 8대 아키텍처 항목 감사
+    Architect->>CLI: python diagnose.py --dry-run
+    CLI->>ALB: urlMaps.list() & backendServices.list()
+    ALB-->>CLI: Topologies (Anycast 직결 여부, Outlier Detection, 타임아웃)
+    CLI->>CLI: 다계층 메시 중계 병목 및 Fleet 라이선스 비용 누수 판정
+    CLI->>Report: generate_markdown_report()
+    Report-->>Architect: 완제품 아키텍처 조견표 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (멀티 클러스터 라우팅 토폴로지 자동 진단) | **FR-01** (글로벌 L7 로드 밸런서 및 URL Map 라우팅 감사) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`audit_alb_and_url_maps`) |
+| **BR-02** (GPU 인퍼런스 가중치 및 부하 분산 점검) | **FR-02, FR-03** (백엔드 서비스, KV-Cache, 서킷 브레이커 감사) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`audit_backend_services`) |
+| **BR-03** (지연 시간 단축 및 라이선스 비용 소명) | **FR-05** (원클릭 완제품 리포트 및 복구 처방 생성) | **NFR-02** (가상 실행 모드) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-04** (CISO 및 아키텍트용 완제품 리포트 생성) | **FR-05** (원클릭 완제품 리포트 및 복구 처방 생성) | **NFR-04** (리포트 절대 경로 저장 보장) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-05** (공식 3대 제약 준수 및 우회 처방) | **FR-06** (공식 3대 제약 조건 감사) | **NFR-03** (크로스 플랫폼 단일 실행) | `diagnose.py` (`audit_official_constraints`) |
+| **BR-06** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-07** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 규약 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능 요구 사항 (Functional Requirements)
 
 ### FR-01: 글로벌 L7 로드 밸런서 및 URL Map 라우팅 규칙 감사
 - `gcloud compute url-maps list` 및 `describe`를 통해 분산 GPU 클러스터 대상 라우팅 정책(RouteRules / PathMatchers)을 감사한다.

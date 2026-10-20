@@ -391,6 +391,11 @@ def main():
       help="스캔 대상 소스 코드 디렉터리 경로 (기본값: 현재 디렉터리)",
   )
   parser.add_argument(
+      "--project",
+      default=os.getenv("PROJECT_ID", ""),
+      help="대상 Google Cloud 프로젝트 ID (옵션)",
+  )
+  parser.add_argument(
       "--dry-run",
       action="store_true",
       help="실제 스캔 없이 가상 모의 취약 코드를 기반으로 리포트를 시뮬레이션한다",

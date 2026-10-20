@@ -71,21 +71,44 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["Agent Platform Search 데이터 저장소 목록 수집"] --> B["Cloud Storage 원본 문서 수 집계"]
-    B --> C["데이터 저장소 색인 완료 문서 수 비교"]
-    C --> D{"색인 누락율 분석"}
-    D -- "누락 발생 (동기화 지연/실패)" --> E["델타 수동 재색인 명령어 처방"]
-    D -- "정상 동기화" --> F["파서 및 청킹 전략 검토"]
-    F --> G{"고급 표/도표 파싱 필요 여부"}
-    G -- "단순 텍스트 파서 한계" --> H["Layout Parser 전환 처방"]
-    G -- "적합" --> I["프로브 질의 기반 그라운딩 신뢰도 측정"]
-    E --> J["최종 품질 진단 리포트 생성"]
-    H --> J
-    I --> J
+    subgraph Layer1["Layer 1: User & Query Ingress (사용자 대화 및 그라운딩 질의)"]
+        direction TB
+        EndUser["사내 임직원 / AI 애플리케이션"]
+        UserQuery["자연어 질문 / 프로브 질의<br/>(예: '2026 클라우드 보안 정책 가이드라인')"]
+        EndUser --> UserQuery
+    end
+
+    subgraph Layer2["Layer 2: Identity & Access Boundary (서비스 에이전트 권한 경계)"]
+        direction TB
+        ServiceAgent["Discovery Engine 서비스 에이전트<br/>(service-PROJECT_NUMBER@gcp-sa-discoveryengine.iam.gserviceaccount.com)"]
+        StorageViewerRole["스토리지 객체 뷰어 권한<br/>(roles/storage.objectViewer)"]
+        ServiceAgent --- StorageViewerRole
+    end
+
+    subgraph Layer3["Layer 3: Serving & Diagnostic Runtime (검색 엔진 및 진단 런타임)"]
+        direction TB
+        SearchValidator["vertex-search-grounding-validator<br/>(diagnose.py)"]
+        DataStoreEngine["Agent Platform Search (Discovery Engine)<br/>(Data Store: customer-faq-ds, Layout Parser)"]
+        GroundingProbe["그라운딩 검색 품질 & 신뢰도 평가기"]
+        SearchValidator --> GroundingProbe
+        DataStoreEngine --> GroundingProbe
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Storage (원본 스토리지 및 제미나이 추론)"]
+        direction TB
+        SourceBucket["Cloud Storage 원본 문서 버킷<br/>(gs://demo-customer-faqs / PDF, HTML)"]
+        GeminiModel["제미나이 3.8 Flash 모델<br/>(Search Grounding 연동 추론)"]
+    end
+
+    UserQuery ==>|"그라운딩 검색 요청"| DataStoreEngine
+    ServiceAgent ==>|"문서 동기화 & 청킹"| SourceBucket
+    SourceBucket -.->|"색인 누락률 / 파서 검증"| SearchValidator
+    DataStoreEngine ==>|"관련 청크 인출 (Top-k)"| GeminiModel
+    GeminiModel --> EndUser
 ```
 
 ---

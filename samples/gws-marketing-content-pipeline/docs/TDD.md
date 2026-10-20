@@ -12,10 +12,67 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 구글 워크스페이스 마케팅 콘텐츠 파이프라인 (`gws-marketing-content-pipeline`)
 
-## 1. 시스템 아키텍처 및 동작 원리
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
 본 솔루션은 Google Cloud 프로젝트 및 로컬 파이썬 런타임 환경에 의존하지 않는 서버리스 웹 네이티브(Web-Native) Zero-GCP 아키텍처로 설계되었다. 사용자의 Google Sheets에 바인딩된 Apps Script 엔진을 컨트롤 타워로 삼아, Google Drive, Google Docs, Google Forms 및 Google AI Studio API Key 기반 Gemini REST API를 유기적으로 조율한다.
 
-### 핵심 구성 요소 및 연동 체계
+```mermaid
+sequenceDiagram
+    actor Marketer as 현업 마케터
+    participant UI as Google Sheets (사이드바 / 메뉴)
+    participant GAS as Apps Script 엔진 (bundle_apps_script.js)
+    participant Gemini as Gemini API (Google AI Studio REST)
+    participant Drive as Google Drive (캠페인 폴더 & Docs)
+    participant Forms as Google Forms (고객 VoC 설문)
+
+    Marketer->>UI: [Step 1~3 기획 및 제작 명세서 도출]
+    UI->>GAS: onPlanSpecGeneration()
+    GAS->>Gemini: generateContent(아이디어 메모, gemini-3.8-flash)
+    Gemini-->>GAS: PLAN 기획서 및 SPEC 명세서 텍스트
+    GAS->>Drive: PLAN / SPEC 구글 독스 문서 생성 및 저장
+
+    Marketer->>UI: [Step 4~5 멀티 채널 콘텐츠 생성]
+    UI->>GAS: onGenerateContent()
+    par 카피라이팅 및 비주얼 생성
+        GAS->>Gemini: generateContent(카피/비주얼 콘티)
+        Gemini-->>GAS: 카피 텍스트 및 프롬프트
+    and 모바일 숏폼 세로 영상 생성
+        GAS->>Gemini: generateVideos(veo-3.1-fast-generate-preview)
+        Gemini-->>GAS: 9:16 모바일 숏폼 비디오 바이너리
+    end
+    GAS->>Drive: campaign_content 구글 독스 및 00_shorts.mp4 저장
+
+    Marketer->>UI: [Step 6~7 AI 페르소나 다면 평가 및 종합 보고서]
+    UI->>GAS: onRunEvaluation()
+    GAS->>Gemini: callGemini(타깃 가상 패널 25인 단일 배치 다면 평가)
+    Gemini-->>GAS: JSON 평가 데이터셋
+    GAS->>Drive: ai_persona_feedbacks.json 및 feedback_summary 구글 독스 저장
+    GAS->>UI: 실행 내역 탭 갱신 및 링크 카드 활성화
+```
+
+---
+
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 구현 모듈 및 함수 |
+| :--- | :--- | :--- |
+| **BR-01** (Zero-GCP 인프라 자율성) | **FR-01** (Zero-GCP 런타임 및 API Key 인증) | `Code_Gemini.js`, `Code_Config.js` |
+| **BR-02** (명세 주도 기획 및 생성) | **FR-03, FR-04** (PLAN/SPEC 도출 및 멀티 채널 콘텐츠 생성) | `Code_Content.js`, `Code_Prompts.js` |
+| **BR-03** (타깃 AI 페르소나 합성) | **FR-05** (타깃 페르소나 패널 맞춤 합성) | `Code_Feedback.js` (`seedDefaultPersonas`) |
+| **BR-04** (Google Forms 및 QR 연동) | **FR-06** (Google Forms 자동 생성 및 QR 바인딩) | `Code_Workspace.js` (`createFeedbackForm`) |
+| **BR-05** (HITL 마케터 콘텐츠 보정) | **FR-08** (인간 참여형 직접 검토 및 반자율 보정) | `Code_Content.js` (`generateRevisionContent`) |
+| **BR-06** (실시간 실행 내역 기록) | **FR-09** (실시간 실행 내역 Plain Sheet 기록) | `Code_Utils.js` (`recordStepResultToSheet`) |
+| **BR-07** (AI 페르소나 다면 평가) | **FR-07** (페르소나 다면 평가 및 VLM 비디오 VoC 도출) | `Code_Feedback.js` (`generatePersonaFeedbacks`) |
+| **BR-08** (VLM 시각 분석 및 수작업 스캔) | **FR-10** (고객 제출 이미지 VLM 시각 분석) | `Code_Feedback.js` (`analyzeImageFeedbackWithVlm`) |
+| **BR-09** (99차 무제한 리비전 루프) | **FR-11, FR-12** (다이나믹 N차 탐지 및 사이드바 안내) | `Code_Sidebar.js`, `Code_Menu.js` |
+| **BR-10** (로컬 모듈러 테스트 수이트) | **FR-13** (개발자 사전 검증용 로컬 테스트 러너) | `test_pipeline.py`, `tests/` |
+| **BR-11** (프롬프트 구글 독스 외부화) | **FR-14** (9대 프롬프트 독스 시딩 및 스마트 캐싱) | `Code_Prompts.js` |
+| **BR-12** (실사용 액션 중심 메뉴) | **FR-15** (액션 중심 메뉴 및 선결 가드레일) | `Code_Menu.js`, `Code_Sidebar.js` |
+| **BR-13** (올인원 세팅 엔진) | **FR-16** (작업 공간, 페르소나 및 구글 폼 올인원 세팅) | `Code_Workspace.js` (`initCampaignWorkspace`) |
+
+---
+
+## 3. 핵심 구성 요소 및 연동 체계
 1. **Google Apps Script 런타임**:
    - 구글 시트 상단 액션 중심 커스텀 메뉴 (`[마케팅 콘텐츠 파이프라인]`) 및 사이드바 제어 패널 통합 제공
    - 도메인별 책임 분리 기반 9대 코어 모듈(`Code_Config.js`, `Code_Content.js`, `Code_Feedback.js`, `Code_Gemini.js`, `Code_Menu.js`, `Code_Prompts.js`, `Code_Sidebar.js`, `Code_Utils.js`, `Code_Workspace.js`) 및 마케터 원클릭 배포용 단일 번들(`bundle_apps_script.js`), 경량 무수정 부트스트랩(`bootstrap.js`), 로컬 고속 사전 검증기 지원

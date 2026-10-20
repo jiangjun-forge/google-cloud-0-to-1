@@ -12,12 +12,59 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): Gemini 도입을 위한 한국형 AI 보안성 심의 체크리스트 진단기 (korea-ai-security-checklist)
 
-## 1. 아키텍처 개요 및 설계 원칙
-본 도구는 구글 클라우드 공식 보안 약관/인증 카탈로그(`CHECKLIST_ITEMS`)와 Cloud Resource Manager, Cloud Logging, Cloud KMS 등 GCP API의 실시간 감사 결과를 통합 대조하여 표준 마크다운 소명서(`report.md`)를 자동 산출하는 순수 파이썬 단일 실행 도구(`diagnose.py`)로 구성된다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 구글 공식 보안 약관(No-Training, ISO 42001)과 사내 GCP 인프라의 실제 보안 통제(VPC-SC, CMEK, Audit Logs)를 결합하여 20대 핵심 보안 체크리스트를 실사하고 완제품 소명서(`report.md`)를 도출한다.
+
+```mermaid
+sequenceDiagram
+    actor Engineer as AI 추진 엔지니어 / SecOps
+    actor CISO as 사내 정보보호팀 / CISO
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Catalog as 구글 공식 약관/인증 카탈로그
+    participant GCP as 사내 GCP 인프라 (ResourceManager/Logging/KMS)
+    participant Report as 소명서 생성기 (report.md)
+
+    Engineer->>CLI: python diagnose.py --dry-run
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 구글 공식 약관 및 공인 인증 결합
+    CLI->>Catalog: load_checklist_catalog() (SEC-01 ~ SEC-20)
+    Catalog-->>CLI: CDPA No-Training 약관, ISO 42001 인증 증적 URL 매핑
+    end
+
+    rect rgb(245, 240, 255)
+    note right of GCP: 2단계: 사내 GCP 프로젝트 실제 기술 통제 감사
+    CLI->>GCP: orgPolicies.list() (리전 제한 및 서비스 계정 키 정책)
+    CLI->>GCP: logging.sinks.list() (감사 로그 및 BigQuery 내보내기)
+    CLI->>GCP: kms.keyRings.list() (CMEK 암호화 키 관리)
+    GCP-->>CLI: LiveTelemetry (실측 보안 설정 증적)
+    CLI->>CLI: 20대 항목별 PASS / PARTIAL / WARN 판정
+    end
+
+    rect rgb(255, 245, 240)
+    note right of Report: 3단계: CISO 제출용 완제품 소명서 생성
+    CLI->>Report: generate_markdown_report()
+    Report-->>Engineer: 20대 조견표 및 report.md 생성
+    Engineer->>CISO: 완제품 소명서 제출 및 심의 통과
+    end
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (20대 핵심 보안 심의 카탈로그 표준화) | **FR-01** (20대 핵심 보안 체크리스트 카탈로그 내장) | **NFR-03** (보안 규약 준수) | `diagnose.py` (`CHECKLIST_ITEMS`), `docs/CHECKLIST.md` |
+| **BR-02** (구글 공식 약관 및 인증 소명 결합) | **FR-02** (공식 정책/인증 소명 자동 결합) | **NFR-03** (Bare URL 준수) | `diagnose.py` (`load_catalog`) |
+| **BR-03** (사내 GCP 인프라 기술 통제 실측 감사) | **FR-03** (실시간 GCP 리소스 보안 감사) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`audit_live_infrastructure`) |
+| **BR-04** (CISO 제출용 완제품 소명서 생성) | **FR-04** (CISO 제출용 완제품 소명서 생성) | **NFR-04** (리포트 절대 경로 저장 보장) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-05** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-03** (보안 규약 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |

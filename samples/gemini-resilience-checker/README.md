@@ -70,29 +70,42 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    Start(["제미나이 API 호출 코드베이스 진단 시작"]) --> RunTool["진단 도구 실행<br/><code>python diagnose.py -p ./app</code>"]
-    
-    RunTool --> ScanCode["파이썬 및 쉘 소스 코드 정적 분석<br/>(generate_content 호출 탐색)"]
-    ScanCode --> CheckPatterns{"4대 복원력 패턴 검사<br/>- 지수 백오프<br/>- 지터(Jitter)<br/>- 최대 재시도 제한<br/>- 폴백(Fallback) 체인"}
-    
-    CheckPatterns -- "모든 패턴 충족" --> Pass(["[통과] 장애 복원력 우수"])
-    CheckPatterns -- "취약 패턴 발견" --> Report["파일별 누락 패턴 경고 리포트 출력"]
-    
-    Report --> Prescribe["표준 처방 가이드 제시<br/>(tenacity 라이브러리 기반 데코레이터 코드)"]
-    Prescribe --> Apply["소스 코드에 복원력 래퍼 적용"]
-    Apply --> Retest["도구 재실행 검증"]
-    Retest --> Done(["안정적인 엔터프라이즈 AI 서비스 완성"])
+    subgraph Layer1["Layer 1: User & Client Ingress (호출 계층)"]
+        ClientApp["엔터프라이즈 백엔드 앱 / CLI 진단자"]
+        DevOps["개발팀 / DevOps 엔지니어"]
+    end
 
-    classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
-    classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
-    classDef action fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
-    class Start,Report alert;
-    class Pass,Done success;
-    class RunTool,ScanCode,CheckPatterns,Prescribe,Apply,Retest action;
+    subgraph Layer2["Layer 2: Resilience & Security Boundary (복원력 경계)"]
+        RetryPolicy["Tenacity 지수 백오프 및 무작위 지터(Full Jitter)"]
+        MaxLimit["최대 재시도 횟수 제한 (Max Retries)"]
+        CircuitBreaker["서킷 브레이커 및 타임아웃 가드"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Serving Runtime (런타임 분석)"]
+        Scanner["diagnose.py 정적 코드 분석 엔진"]
+        AppServer["Cloud Run / GKE 서빙 컨테이너"]
+        ReportGen["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Foundation Models (대상 모델)"]
+        PrimaryModel["주력 모델: Gemini 3.8 Pro"]
+        FallbackModel["폴백 우회 모델: Gemini 3.8 Flash"]
+        VertexAPI["Vertex AI GenAI API 엔드포인트"]
+    end
+
+    DevOps --> Scanner
+    Scanner --> ReportGen
+    ClientApp --> RetryPolicy
+    RetryPolicy --> MaxLimit
+    MaxLimit --> CircuitBreaker
+    CircuitBreaker --> AppServer
+    AppServer --> PrimaryModel
+    PrimaryModel -.->|"429/503 장애 시 자동 우회"| FallbackModel
+    FallbackModel --> VertexAPI
 ```
 
 ---

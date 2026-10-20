@@ -69,16 +69,50 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 사내 도메인 선점 충돌(domain_in_use)을 진단하고 Cloud Identity Free 기반 테넌트 인수를 완결하는 4계층 시스템 토폴로지를 제공한다:
 
 ```mermaid
 flowchart TD
-    A["도메인 충돌(domain_in_use) 에러 감지"] --> B["사내 DNS TXT 소유권 검증 토큰 확인"]
-    B --> C["DNS 공급자 콘솔에 TXT 레코드 배포"]
-    C --> D["Google Admin Console 도메인 소유권 인증"]
-    D --> E["미관리 사용자(Unmanaged Users) 일괄 인수 및 계정 전환"]
-    E --> F["Cloud Identity Free 50+개 무료 라이선스 프로비저닝"]
-    F --> G["Gemini Enterprise 엔터프라이즈 권한 안전 할당"]
+    subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
+        Admin["사내 IT 어드민 / 도메인 관리자"] -->|"1. 도메인 충돌 진단 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
+
+    subgraph Layer2["2. 보안 및 신원 검증 경계 (Security & Identity Boundary)"]
+        TXTCheck{"DNS TXT 소유권 토큰<br/>(google-site-verification)"}
+        AdminAuth["Google Workspace / Cloud Identity<br/>수퍼 관리자 인가 자격 증명"]
+    end
+
+    subgraph Layer3["3. 진단 런타임 계층 (Diagnostic Runtime & Resolution)"]
+        Engine["도메인 충돌 진단 엔진<br/>(domain_in_use 역추적)"]
+        TakeoverGen["미관리 사용자 인수 스크립트 생성기<br/>(Cloud Identity Free 프로비저닝)"]
+        Engine --> TakeoverGen
+    end
+
+    subgraph Layer4["4. 대상 백엔드 서비스 계층 (Target Backend Services)"]
+        DNS["사내 외부 DNS 서버<br/>(Route53 / Cloudflare / 온프레미스 DNS)"]
+        AdminAPI["Google Admin Console & Directory API<br/>(계정 통합 및 라이선스 관리)"]
+        IdentityTenant["Cloud Identity 테넌트<br/>(50+ 무료 계정 풀)"]
+        GEApp["Gemini Enterprise app<br/>(엔터프라이즈 인스턴스)"]
+    end
+
+    CLI -->|"2. DNS TXT 질의"| TXTCheck
+    TXTCheck -->|"레코드 확인"| DNS
+    CLI -->|"3. 도메인 상태 실사"| AdminAuth
+    AdminAuth -->|"디렉터리 조회"| AdminAPI
+    TakeoverGen -->|"4. 테넌트 소유권 전환"| IdentityTenant
+    IdentityTenant -->|"5. 안전한 라이선스 할당"| GEApp
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class Admin,CLI portal;
+    class TXTCheck,AdminAuth security;
+    class Engine,TakeoverGen runtime;
+    class DNS,AdminAPI,IdentityTenant,GEApp backend;
 ```
 
 ---

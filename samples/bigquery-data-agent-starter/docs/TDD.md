@@ -81,7 +81,24 @@ sequenceDiagram
 
 ---
 
-## 3. 기능적 기술 요구 사항 명세 (Functional Requirements)
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (스몰셋 데이터셋 자동 구성) | **FR-02** (BigQuery 원천 테이블 DDL/DML 프로비저닝) | **NFR-02** (빠른 실행 속도) | `diagnose.py` (`setup_smallset_demo`) |
+| **BR-02** (시맨틱 골드 뷰 생성) | **FR-02** (표준 비즈니스 수식 내장 뷰 생성) | **NFR-01** (1P 관리형 런타임 표준) | `diagnose.py` (`setup_smallset_demo`) |
+| **BR-03** (GDA dataAgents 자동 프로비저닝) | **FR-03** (GDA dataAgents REST API 호출) | **NFR-01** (구글 관리형 테넌트) | `diagnose.py` (`create_gda_data_agent`, `--deploy-agent`) |
+| **BR-04** (A2A Agent Card 표준 규격 도출) | **FR-04** (A2A 표준 메타데이터 매니페스트 합성) | **NFR-04** (A2A 상호운용성) | `diagnose.py` (`synthesize_a2a_agent_card`) |
+| **BR-05** (Gemini Enterprise app 직결 연동) | **FR-05** (Discovery Engine 사내 갤러리 등록) | **NFR-04** (상호운용성 보장) | `diagnose.py` (`register_ge_app`, `--register-ge-app`) |
+| **BR-06** (콘솔 UI 수동 등록 보조 가이드) | **FR-06** (System Instructions 가이드 출력) | **NFR-03** (크로스 플랫폼 지원) | `diagnose.py` (`print_manual_instructions`) |
+| **BR-07** (올인원 일괄 자동 배포) | **FR-07** (파이프라인 순차 일괄 실행) | **NFR-02** (45분 워크숍 완결) | `diagnose.py` (`main`, `--all`) |
+| **BR-08** (골든 프롬프트 3선 검증) | **FR-08** (대표 비즈니스 질의 시나리오 검증) | **NFR-02** (시간 내 완주) | `diagnose.py` (`verify_prompts`) |
+| **BR-09** (원클릭 리소스 정리) | **FR-09** (실습 자원 일괄 삭제) | **NFR-01** (과금 방지 Teardown) | `diagnose.py` (`teardown_all_resources`, `--teardown`) |
+| **BR-10** (자원 거버넌스 라벨링) | **FR-10** (사내 4대 필수 라벨링 주입) | **NFR-01** (거버넌스 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 기능적 기술 요구 사항 명세 (Functional Requirements)
 
 | 요구 사항 ID | 구현 모듈 | 상세 기술 설계 명세 |
 | :--- | :--- | :--- |

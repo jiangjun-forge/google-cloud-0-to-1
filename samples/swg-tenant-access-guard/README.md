@@ -70,18 +70,47 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["사내 사용자 클라이언트 요청"] --> B["사내 관문 프록시 / SWG 검사"]
-    B --> C{"HTTP 헤더 주입 확인"}
-    C -- "X-GoogApps-Allowed-Domains 누락" --> D["개인 계정 로그인 허용 위험 (차단 조치 필요)"]
-    C -- "X-Goog-Allowed-Resources 누락" --> E["외부 타사 GCP 조직 우회 위험 (차단 조치 필요)"]
-    C -- "헤더 정상 주입" --> F["Google Cloud 인증 및 게이트웨이 도달"]
-    F --> G{"Context-Aware Access (CAA) 평가"}
-    G -- "비인가 단말기 / 미등록 그룹" --> H["접속 거부 (403 Block)"]
-    G -- "인가 단말기 & 사내 승인 그룹" --> I["콘솔 및 생성형 AI 앱 접근 허용"]
+    subgraph Layer1["Layer 1: Enterprise Client & Ingress (사내 단말기 및 트래픽 유입)"]
+        direction TB
+        CorpDevice["사내 인가 업무용 단말기<br/>(Chrome Enterprise Core / Endpoint)"]
+        ClientTraffic["콘솔 및 AI 웹 트래픽<br/>(*.google.com, *.googleapis.com)"]
+        CorpDevice --> ClientTraffic
+    end
+
+    subgraph Layer2["Layer 2: SWG Gateway & Header Injection (사내 관문 보안 경계)"]
+        direction TB
+        SWGProxy["사내 관문 프록시 (SWG)<br/>(Squid / Envoy / Zscaler)"]
+        DomainHeader["개인 계정 차단 헤더<br/>(X-GoogApps-Allowed-Domains)"]
+        TenantHeader["테넌트 우회 차단 헤더<br/>(X-Goog-Allowed-Resources)"]
+        SWGProxy --- DomainHeader
+        SWGProxy --- TenantHeader
+    end
+
+    subgraph Layer3["Layer 3: Policy Enforcement & Diagnostic Runtime (인가 평가 및 진단)"]
+        direction TB
+        GoogleIdentity["Google Cloud Identity & Access Management"]
+        CAAPolicy["Context-Aware Access (CAA)<br/>(Access Context Manager 단말기 정책)"]
+        GuardEngine["swg-tenant-access-guard<br/>(diagnose.py)"]
+        GoogleIdentity --> CAAPolicy
+        CAAPolicy --> GuardEngine
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Enterprise SaaS (보호 대상 클라우드 자산)"]
+        direction TB
+        GCPConsole["Google Cloud 콘솔 및 API"]
+        GeminiEnterpriseApp["Gemini Enterprise 웹 대화형 앱"]
+        EnterpriseData["사내 BigQuery / Cloud Storage"]
+    end
+
+    ClientTraffic ==>|"포트 443 경유"| SWGProxy
+    SWGProxy ==>|"헤더 주입 후 아웃바운드"| GoogleIdentity
+    CAAPolicy -->|인가 승인 시| GCPConsole
+    CAAPolicy -->|인가 승인 시| GeminiEnterpriseApp
+    GeminiEnterpriseApp --> EnterpriseData
 ```
 
 ---

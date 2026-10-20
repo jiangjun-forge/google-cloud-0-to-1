@@ -71,19 +71,51 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 엔터프라이즈 생성형 AI 호출 파이프라인의 전 구간 레이턴시를 4계층으로 분해하여 실측한다:
 
 ```mermaid
 flowchart TD
-    A["프로파일러 실행 (diagnose.py)"] --> B["네트워크 전송 계층 프로파일링 (DNS, TCP, TLS)"]
-    B --> C["Model Armor 가드레일 인스펙션 실측"]
-    C --> D["Vertex AI 첫 토큰 도달 시간 (TTFT) 실측"]
-    D --> E["출력 스트리밍 완료 시간 및 토큰 속도 계측"]
-    E --> F["워터폴(Waterfall) 차트 및 기여도 분석"]
-    F --> G{"최대 병목 구간 판별"}
-    G -- "보안 가드레일 병목" --> H["검사 필터 비동기화 및 신뢰도 임계치 최적화"]
-    G -- "네트워크 전송 병목" --> I["Private Service Connect 및 엔드포인트 최적화"]
-    G -- "모델 추론 병목" --> J["프롬프트 캐싱 및 Provisioned Throughput 도입 검토"]
+    subgraph Layer1["1. 사용자 및 벤치마크 계층 (User Interaction)"]
+        User["사내 임직원 업무 단말기"] -->|"실제 프롬프트 요청"| GEApp["Gemini Enterprise app"]
+        Engineer["성능 / AI 엔지니어"] -->|"1. 구간별 실측 프로파일링"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
+
+    subgraph Layer2["2. 전송 네트워크 및 보안 경계 (Network & Security Boundary)"]
+        PSC["Private Service Connect / 전송 관문<br/>(DNS 해석 + TCP 443 + TLS)"]
+        Armor["Model Armor 보안 가드레일<br/>(프롬프트 살균 & 탈옥 검사)"]
+    end
+
+    subgraph Layer3["3. 프로파일링 계측 런타임 (Profiling Engine)"]
+        Profiler["구간별 정밀 타이머 엔진<br/>- Network RTT 계측<br/>- Guardrail 지연 계측<br/>- TTFT / 토큰 생성 속도(TPS)"]
+        Waterfall["워터폴(Waterfall) 분석기<br/>(최대 병목 구간 판정)"]
+        Profiler --> Waterfall
+    end
+
+    subgraph Layer4["4. 대상 생성형 AI 인프라 (Target AI Infrastructure)"]
+        Search["Vertex AI Search<br/>(사내 RAG 컨텍스트 증강)"]
+        Cache["Prompt Caching<br/>(컨텍스트 캐시 슬롯)"]
+        Model["Gemini 3.8 Flash<br/>(글로벌/서울 파운데이션 모델 서빙)"]
+    end
+
+    CLI -->|"2. 네트워크 계측"| PSC
+    PSC -->|"3. 보안 필터 실측"| Armor
+    Armor -->|"4. RAG 검색 실측"| Search
+    Search -->|"5. 캐시 적중 여부"| Cache
+    Cache -->|"6. 첫 토큰 스트리밍(TTFT)"| Model
+    Model -->|"생성 완료"| Profiler
+    Waterfall -->|"7. 병목 최적화 리포트"| Engineer
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class User,GEApp,Engineer,CLI portal;
+    class PSC,Armor security;
+    class Profiler,Waterfall runtime;
+    class Search,Cache,Model backend;
 ```
 
 ---

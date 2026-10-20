@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Gemini Enterprise User-Level Analytics & License Reclamation Exporter.
 
-Gemini Enterprise 사용자별 채택률 및 활동 지표(Agentspace User-Level Metrics)를 분석하여
+Gemini Enterprise 사용자별 채택률 및 활동 지표(User-Level Activity Metrics)를 분석하여
 부서별 활용도 집계, 30일 이상 미사용 유휴 라이선스 탐지, BigQuery 적재 스키마 생성을 수행한다.
 """
 

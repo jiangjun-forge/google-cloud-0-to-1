@@ -12,12 +12,56 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기
 
-## 1. 아키텍처 개요 및 설계 원칙
-본 도구는 클라우드 로깅(Cloud Logging) API를 통해 Antigravity 인퍼런스 로그(`businessaicode.googleapis.com/inference_response`)를 수집하고, 사용자별 토큰 소비량 및 쿼터 캡 초과 상태를 진단하는 순수 파이썬 단일 실행 도구(`diagnose.py`)로 구성되며 터미널 출력과 함께 마크다운 리포트(`report.md`)를 자동 생성한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Cloud Logging에 적재되는 Antigravity 인퍼런스 로그를 분석하여 개발자별 토큰 소비량 및 쿼터 캡 초과자를 식별하고, IAM 조건부 만료 마커 역할 기반의 무인 자율 복구 처방을 제시한다.
+
+```mermaid
+sequenceDiagram
+    actor Developer as 사내 개발자 (IDE / CLI)
+    actor FinOps as FinOps / 보안 관리자
+    participant Backend as Antigravity 백엔드 인퍼런스
+    participant Logging as Cloud Logging (businessaicode)
+    participant CLI as 진단 CLI (diagnose.py)
+    participant IAM as Cloud IAM 정책 관리
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    Developer->>Backend: 코드 자동완성 / 프롬프트 추론 요청
+    Backend->>Logging: inference_response 기록 (principalEmail, tokens)
+    Backend-->>Developer: 코드 제안 및 답변 반환
+
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 사용자별 인퍼런스 로그 수집 및 집계
+    FinOps->>CLI: python diagnose.py --dry-run
+    CLI->>Logging: entries.list(filter='logName=".../businessaicode.googleapis.com%2Finference_response"')
+    Logging-->>CLI: LogEntries (사용자별 프롬프트/응답 토큰 및 요청 수)
+    CLI->>CLI: 일일 쿼터 캡(5,000,000 토큰) 초과 여부 평가
+    end
+
+    rect rgb(255, 245, 240)
+    note right of IAM: 2단계: IAM 통제성 분류 및 조건부 만료 처방
+    CLI->>IAM: getIamPolicy(projectId)
+    IAM-->>CLI: PolicyBindings (user: 직접 바인딩 vs group: 상속 권한)
+    CLI->>CLI: ENFORCEABLE_ALLOWED vs NOT_ENFORCEABLE 분류
+    CLI->>Report: generate_markdown_report()
+    Report-->>FinOps: 초과자 목록, CustomAntigravityCapBlocked 처방 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능 요구 사항 (FR) | 비기능 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (사용자별 토큰 사용량 투명성 확보) | **FR-01** (사용자별 사용량 집계 및 메트릭 파싱) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`fetch_inference_logs`, `parse_usage_data`) |
+| **BR-02** (쿼터 캡 초과자 식별 및 위험도 판정) | **FR-02** (쿼터 캡 임계치 평가 및 통제성 분류) | **NFR-02** (순수 파이썬 직접 실행) | `diagnose.py` (`evaluate_quota_caps`, `classify_iam_enforceability`) |
+| **BR-03** (마커 역할 기반 안전 처방 제시) | **FR-03** (안전 처방전 및 조건부 만료 IAM 차단 명령어 출력) | **NFR-03** (가상 실행 모드 지원) | `diagnose.py` (`prescribe_iam_actions`), `report.md` |
+| **BR-04** (엔터프라이즈 자동화 배치 연계 가이드) | **FR-04** (마크다운 진단 리포트 자동 생성 및 덮어쓰기) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+
+---
+
+## 3. 기능 요구 사항 (Functional Requirements)
 
 ### FR-01: 사용자별 사용량 집계 및 메트릭 파싱
 - Cloud Logging의 `logName="projects/{PROJECT_ID}/logs/businessaicode.googleapis.com%2Finference_response"` 필터로 최근 로그를 조회한다.

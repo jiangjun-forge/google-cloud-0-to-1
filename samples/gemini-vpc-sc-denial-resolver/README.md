@@ -69,34 +69,44 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    Start(["Gemini API 호출 시 VPC-SC 거부 에러 발생"]) --> RunTool["진단 도구 실행<br/><code>python diagnose.py -p my-project</code>"]
-    
-    RunTool --> QueryAudit["Cloud Logging 정책 감사 로그 조회<br/>(cloudaudit.googleapis.com/policy)"]
-    QueryAudit --> ParseEvents["위반 이벤트 및 고유 거부 ID(UUID) 파싱"]
-    
-    ParseEvents --> CheckReason{"거부 사유 코드 분석"}
-    
-    CheckReason -- "NO_MATCHING_INGRESS_POLICY" --> FixIngress["[수신 규칙 결함]<br/>VPC-SC Ingress 정책에 호출자 IP 대역 또는 SA 허용"]
-    CheckReason -- "RESOURCES_NOT_IN_SAME_PERIMETER" --> FixBridge["[경계 분리 결함]<br/>두 프로젝트를 동일 경계로 묶거나 경계 브리지 규칙 추가"]
-    CheckReason -- "기타 네트워크 사유" --> FixPGA["[사설망 연결 결함]<br/>비공개 Google 액세스(PGA) 및 PSC 라우팅 점검"]
-    
-    FixIngress --> ApplyPolicy["VPC-SC 보안 정책 업데이트"]
-    FixBridge --> ApplyPolicy
-    FixPGA --> ApplyPolicy
-    
-    ApplyPolicy --> Retest["API 호출 재시도 검증"]
-    Retest --> Done(["[통과] 안전한 사설 보안 경계 통신 완료"])
+    subgraph Layer1["Layer 1: User & Client Ingress (클라이언트 인그레스)"]
+        OnPremWorkstation["온프레미스 개발자 워크스테이션"]
+        VPCInstance["VPC 내부 워크로드 / GKE 클러스터"]
+        SecOps["보안 관리자 / SecOps 엔지니어"]
+    end
 
-    classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
-    classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
-    classDef action fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
-    class Start,CheckReason alert;
-    class Done success;
-    class RunTool,QueryAudit,ParseEvents,FixIngress,FixBridge,FixPGA,ApplyPolicy,Retest action;
+    subgraph Layer2["Layer 2: Security & Perimeter Boundary (보안 경계)"]
+        ServicePerimeter["VPC-SC 보안 서비스 경계 (Service Perimeter)"]
+        IngressPolicy["Ingress 정책 (IP 대역 / SA 기반 허용)"]
+        BridgePolicy["Perimeter Bridge (프로젝트 간 경계 브리지)"]
+        PGA_PSC["Private Google Access 및 Private Service Connect"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Logging Runtime (감사 분석 엔진)"]
+        PolicyAuditLogs["Cloud Logging (cloudaudit.googleapis.com/policy)"]
+        DiagnosticCLI["diagnose.py 정책 감사 역추적기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Protected Services (보호 대상 리소스)"]
+        VertexAIEndpoint["Vertex AI GenAI API (aiplatform.googleapis.com)"]
+        ProtectedDatasets["BigQuery 및 Cloud Storage 자산"]
+    end
+
+    OnPremWorkstation -->|Gemini 호출 시도| ServicePerimeter
+    VPCInstance -->|내부망 호출 시도| PGA_PSC
+    PGA_PSC --> ServicePerimeter
+    ServicePerimeter -.->|정책 불일치 시 차단 및 이벤트 기록| PolicyAuditLogs
+    ServicePerimeter -->|수신 규칙 일치 시 통과| IngressPolicy
+    IngressPolicy --> VertexAIEndpoint
+    BridgePolicy --> ProtectedDatasets
+    SecOps --> DiagnosticCLI
+    DiagnosticCLI -->|정책 위반 UUID 조회| PolicyAuditLogs
+    DiagnosticCLI --> ReportOutput
 ```
 
 ---

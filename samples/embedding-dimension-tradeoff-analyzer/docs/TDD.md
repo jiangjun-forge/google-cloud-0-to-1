@@ -12,12 +12,60 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 (As of 2026-10-17)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 별도의 쉘 래퍼 스크립트에 의존하지 않고 크로스 플랫폼에서 호환되는 파이썬 표준 CLI(`diagnose.py`) 단일 실행 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Vertex AI 임베딩 모델의 MRL(Matryoshka Representation Learning) 기능을 활용하여 기준 최고 차원(768d)과 축소 대상 차원들(512d, 256d, 128d)의 검색 정확도(Top-1/Top-3 Recall, MRR) 및 인덱스 RAM/스토리지 절감량을 1분 만에 비교 분석한다.
+
+```mermaid
+sequenceDiagram
+    actor DS as 데이터 과학자 / AI 엔지니어
+    participant CLI as 진단 CLI (diagnose.py)
+    participant Model as Vertex AI (text-multilingual-embedding-002)
+    participant Evaluator as 유사도 및 품질 평가 엔진
+    participant Report as 진단 리포트 생성기 (report.md)
+
+    DS->>CLI: python diagnose.py --dry-run
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 사내 표본 데이터 로드 및 기준점 벡터 생성
+    CLI->>CLI: 표본 코퍼스(1,000건) 로드 및 차원 목록 정렬 (768d -> 128d)
+    CLI->>Model: get_embeddings(texts, output_dimensionality=768)
+    Model-->>CLI: BaselineEmbeddings (768차원 기준점 벡터)
+    end
+
+    rect rgb(245, 240, 255)
+    note right of Evaluator: 2단계: 축소 차원 MRL 추출 및 정확도/용량 평가
+    loop 축소 차원별 (512d, 256d, 128d)
+        CLI->>Model: get_embeddings(texts, output_dimensionality=dim)
+        Model-->>CLI: ReducedEmbeddings
+        CLI->>Evaluator: 코사인 유사도 랭킹 산출 (Top-1 / Top-3 Recall, MRR)
+        Evaluator-->>CLI: QualityMetrics (정확도 손실률, 레이턴시, 인덱스 RAM 절감량)
+    end
+    end
+
+    rect rgb(255, 245, 240)
+    note right of Report: 3단계: 트레이드오프 분석 및 최적 티어 처방
+    CLI->>Report: generate_markdown_report(QualityMetrics)
+    Report->>Report: Tier 1(초절감: 128d), Tier 2(균형: 256d), Tier 3(최고 정밀: 512d) 처방
+    Report-->>DS: 종합 비교표 및 report.md 생성
+    end
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (현장 장애 및 리스크 사전 탐지) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`evaluate_dimension_quality`, `calculate_memory_savings`) |
+| **BR-02** (표준화된 자동 진단 체계 구축) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`get_default_project`, `parse_args`) |
+| **BR-03** (가상 실행 기반 무중단 사전 검증) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`get_mock_eval_results`, `--dry-run`) |
+| **BR-04** (실무자 조치 가이드 및 리포트 안내) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리 안내) | **NFR-03** (보안 규약 준수) | `diagnose.py` (`generate_markdown_report`), `report.md` |
+| **BR-05** (자원 거버넌스 라벨링 표준 준수) | **FR-04** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-04** (자원 거버넌스 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -28,7 +76,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

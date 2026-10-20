@@ -12,12 +12,65 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 제미나이 엔터프라이즈(Gemini Enterprise) 사내망 방화벽 FQDN 연결 진단기 (`gemini-enterprise-fqdn-checker`)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 파이썬 표준 CLI(`diagnose.py`) 기반의 자체 완결적 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 보안 및 네트워크 엔지니어가 진단 명령을 실행하면 사내 내부 DNS 서버를 통해 FQDN 이름을 해석하고, 관문 방화벽/프록시를 경유하여 대상 구글 서비스 엔드포인트와 TCP 443 TLS 핸드셰이크를 병렬 수행하여 차단 지점을 식별하고 방화벽 오픈 명세를 도출한다.
+
+```mermaid
+sequenceDiagram
+    actor NetAdmin as 네트워크 / 보안 엔지니어
+    participant CLI as 진단 CLI (diagnose.py)
+    participant DNS as 사내 내부 DNS 서버
+    participant FW as 사내 관문 방화벽 / SWG 프록시
+    participant Google as Google Core 엔드포인트
+
+    NetAdmin->>CLI: python diagnose.py --timeout 2.0
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: Exact 15대 FQDN 병렬 DNS 해석
+    par 각 FQDN 순회 (ThreadPool)
+        CLI->>DNS: getaddrinfo(fqdn, 443)
+        DNS-->>CLI: 해석된 IP 목록 반환 (또는 DNS NXDOMAIN/TIMEOUT)
+    end
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: TCP 443 소켓 연결 및 TLS 핸드셰이크
+    par 성공한 DNS 대상 순회
+        CLI->>FW: connect(IP, 443, timeout=2.0)
+        FW->>Google: TCP SYN 패킷 포워딩
+        alt 연결 허용 (Pass)
+            Google-->>CLI: SYN-ACK 및 TLS 핸드셰이크 완료
+        else 방화벽 차단/타임아웃 (Fail)
+            FW-->>CLI: RST 반환 또는 타임아웃 발생
+        end
+    end
+    end
+
+    rect rgb(255, 245, 240)
+    note right of CLI: 3단계: 중요도별 분류 및 방화벽 오픈 가이드 합성
+    CLI->>CLI: Core API, Auth, Static 자산별 연결성 매트릭스 집계
+    CLI->>CLI: 차단된 FQDN에 대한 iptables/gcloud/방화벽 허용 규칙 도출
+    end
+
+    CLI-->>NetAdmin: 종합 연결성 표 및 report.md 생성
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (계층형 환경 설정 및 카테고리 필터) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` |
+| **BR-02** (Exact FQDN 443 연결성 정밀 진단) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` |
+| **BR-03** (가상 실행 스모크 테스트 지원) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` |
+| **BR-04** (방화벽 오픈 명세 및 조치 가이드) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py`, `report.md` |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-05** (사내 거버넌스 4대 필수 표준 라벨링 주입) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -29,7 +82,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

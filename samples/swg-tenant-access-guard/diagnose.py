@@ -47,6 +47,13 @@ def parse_arguments() -> argparse.Namespace:
         help="사내 관문 SWG 프록시 엔드포인트 URL",
     )
     parser.add_argument(
+        "-p",
+        "--project",
+        dest="project_id",
+        default=os.getenv("PROJECT_ID") or "",
+        help="Google Cloud 프로젝트 ID (지정하지 않을 경우 gcloud 활성 프로젝트 자동 감지)",
+    )
+    parser.add_argument(
         "--dry-run",
         dest="dry_run",
         action="store_true",

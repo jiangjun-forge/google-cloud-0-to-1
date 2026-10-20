@@ -12,12 +12,57 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 기술 상세 설계서 (TDD): 제미나이 엔터프라이즈(Gemini Enterprise) 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기 (`gemini-enterprise-governance-guard`)
 
-## 1. 시스템 아키텍처 및 동작 원리
-본 도구는 순수 파이썬 단일 실행 기반(`diagnose.py`)의 미니셋 아키텍처로 구성된다. 상위 폴더 의존성 없이 `.env.example` 및 `gcloud config` 활성 프로젝트 자동 탐지(Cascade Fallback)를 통해 자체 완결적으로 동작한다.
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
+
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 보안팀 또는 감사관이 진단 명령을 실행하면 Discovery Engine 앱 설정과 Cloud IAM Workforce Pools 속성 매핑을 실시간 감사하여 마켓플레이스 차단 여부, 미승인 스킬 체이닝 위험 및 Entra ID SSO 400 오류 가능성을 진단하고 즉시 복구 처방을 도출한다.
+
+```mermaid
+sequenceDiagram
+    actor SecAdmin as CISO / 보안 거버넌스 관리자
+    participant CLI as 진단 CLI (diagnose.py)
+    participant DiscAPI as Discovery Engine API (앱 & 스킬)
+    participant WIFAPI as Cloud IAM API (Workforce Pools)
+    participant Entra as Microsoft Entra ID (외부 IdP)
+
+    SecAdmin->>CLI: python diagnose.py --ge-app-id APP_ID
+    
+    rect rgb(240, 245, 255)
+    note right of CLI: 1단계: 마켓플레이스 차단 및 등록 스킬 무결성 감사
+    CLI->>DiscAPI: getEngine(APP_ID)
+    DiscAPI-->>CLI: allowMarketplaceAgents 상태 반환
+    CLI->>DiscAPI: listAgents() & listTools()
+    DiscAPI-->>CLI: 사내 등록 스킬 및 외부 웹훅 목록 반환
+    CLI->>CLI: 사내 미승인 외부 스킬 존재 여부 교차 검증
+    end
+
+    rect rgb(245, 240, 255)
+    note right of CLI: 2단계: Workforce Identity Federation SSO 속성 매핑 실사
+    CLI->>WIFAPI: listWorkforcePools() & getProvider()
+    WIFAPI-->>CLI: attributeMapping & attributeCondition 반환
+    CLI->>CLI: 필수 클레임(google.subject, attribute.email, attribute.name) 매핑 검증
+    opt 속성 매핑 누락 감지 시
+        CLI->>CLI: SSO 400 Bad Request 위험 판정 및 gcloud update 명령어 합성
+    end
+    end
+
+    CLI-->>SecAdmin: 3대 거버넌스 판정 매트릭스 표 및 report.md 생성
+```
 
 ---
 
-## 2. 기능적 기술 요구 사항 (Functional Requirements)
+## 2. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **FR-01** (계층형 환경 설정 및 리소스 자동 탐지) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` |
+| **BR-02** (마켓플레이스 및 WIF SSO 정밀 진단) | **FR-02** (핵심 운영 지표 및 설정 상태 정밀 진단) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` |
+| **BR-03** (가상 실행 스모크 테스트 지원) | **FR-03** (가상 실행 스모크 테스트 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` |
+| **BR-04** (거버넌스 차단 명세 및 조치 가이드) | **FR-04** (직관적 콘솔 조치 가이드 및 리소스 정리) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py`, `report.md` |
+| **BR-05** (사내 거버넌스 4대 필수 라벨링 준수) | **FR-05** (사내 거버넌스 4대 필수 표준 라벨링 주입) | **NFR-04** (표준 리소스 라벨링) | `diagnose.py` |
+
+---
+
+## 3. 기능적 기술 요구 사항 (Functional Requirements)
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
@@ -29,7 +74,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 3. 비기능적 기술 요구 사항 (Non-Functional Requirements)
+## 4. 비기능적 기술 요구 사항 (Non-Functional Requirements)
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |

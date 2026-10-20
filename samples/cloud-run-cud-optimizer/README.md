@@ -70,17 +70,42 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["Cloud Run 서비스 구성 및 지출 데이터 수집"] --> B{"1단계: 리소스 사전 최적화 검증"}
-    B -- "유휴 min-instances / 상시 CPU 낭비" --> C["서비스 구성 최적화 선행 (min=0, 동시성 조정)"]
-    B -- "사전 최적화 양호" --> D["2단계: 90일 시계열 사용량 분석"]
-    C --> D
-    D --> E["Scale-in 시 도달하는 최저 바닥선(Trough) 도출"]
-    E --> F["콘솔 추천액 vs 안전 마진(85%) 기반 실질 최적 약정액 산출"]
-    F --> G["월간 순 추가 절감 이익 및 Compute Flexible CUD 구매 가이드 리포트"]
+    subgraph Layer1["Layer 1: User & Traffic Ingress (트래픽 계층)"]
+        ExternalUsers["외부 클라이언트 및 사용자 트래픽"]
+        FinOps["FinOps 엔지니어 / 인프라 관리자"]
+    end
+
+    subgraph Layer2["Layer 2: Security & Resource Policy (거버넌스 경계)"]
+        IAMPolicy["Cloud IAM (roles/run.viewer, roles/billing.viewer)"]
+        OrgPolicy["조직 정책 및 4대 필수 라벨링 거버넌스"]
+        CUDBoundary["Compute Flexible CUD 약정 풀"]
+    end
+
+    subgraph Layer3["Layer 3: Serving & Diagnostic Runtime (런타임 분석)"]
+        CloudRunServices["Cloud Run 서버리스 인스턴스 (Scale-in / Scale-out)"]
+        DiagnosticCLI["diagnose.py 시계열 바닥선(Trough) 분석기"]
+        ReportOutput["최적 약정액 권고 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Billing & Observability (결제 및 관측 지표)"]
+        CloudBilling["Cloud Billing 약정 할인 엔진"]
+        CloudMonitoring["Cloud Monitoring (컨테이너 CPU/메모리 할당 지표)"]
+        BillingExport["BigQuery 상세 결제 데이터 내보내기"]
+    end
+
+    ExternalUsers --> CloudRunServices
+    CloudRunServices --> CloudMonitoring
+    CloudMonitoring --> DiagnosticCLI
+    FinOps --> DiagnosticCLI
+    DiagnosticCLI --> IAMPolicy
+    DiagnosticCLI --> CUDBoundary
+    DiagnosticCLI --> ReportOutput
+    CUDBoundary --> CloudBilling
+    CloudBilling --> BillingExport
 ```
 
 ---

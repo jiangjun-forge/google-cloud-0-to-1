@@ -423,6 +423,7 @@ def main():
   parser = argparse.ArgumentParser(
       description="Gemini Enterprise Cross-Org/Project 커스텀 에이전트 연동 및 조직 정책 진단기"
   )
+  parser.add_argument("--project", "-p", dest="project", default=None, help="대상 GCP 프로젝트 ID (Gemini Enterprise 프로젝트 지정)")
   parser.add_argument("--ge-project", default=os.getenv("GE_PROJECT_ID") or None, help="Gemini Enterprise 프로젝트 ID")
   parser.add_argument("--agent-project", default=os.getenv("AGENT_PROJECT_ID") or "sample-agent-project", help="Agent Engine 프로젝트 ID")
   parser.add_argument("--engine-id", default=os.getenv("REASONING_ENGINE_ID") or "8492049182740192841", help="Agent Engine 고유 ID")
@@ -434,7 +435,8 @@ def main():
       run_config_mode("gemini-enterprise-agent-resolver")
       return
 
-  ge_prj = args.ge_project or get_default_project(is_dry_run=args.dry_run)
+  target_ge_proj = args.ge_project or args.project
+  ge_prj = target_ge_proj or get_default_project(is_dry_run=args.dry_run)
   if args.dry_run and not args.ge_project:
     ge_prj = "sample-ge-project"
   agent_prj = args.agent_project

@@ -70,19 +70,48 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-graph TD
-    A["Cloud NAT 게이트웨이 사양 수집"] --> B["DPA 활성화 및 minPortsPerVm 확인"]
-    B --> C["Cloud Monitoring 텔레메트리 조회"]
-    C --> D{"OUT_OF_RESOURCES 드롭 감지"}
-    D -- "드롭 발생 (CRITICAL)" --> E["포트 임계치 초과 VM 및 노드 식별"]
-    D -- "드롭 없음" --> F{"피크 사용률 80% 초과 여부"}
-    F -- "위험군 (WARNING)" --> E
-    F -- "안정 (HEALTHY)" --> G["정상 상태 확인 및 리포트 출력"]
-    E --> H["minPortsPerVm 256/512 상향 처방"]
-    H --> I["클라이언트 OS tcp_syn_retries 상향 안내"]
+flowchart TD
+    subgraph Layer1["Layer 1: User & Workload Ingress (내부 워크로드)"]
+        GKEPods["GKE 파드 / 컨테이너 워크로드"]
+        GCEInstances["Compute Engine VM 인스턴스"]
+        NetworkAdmin["네트워크 관리자 / SRE 팀"]
+    end
+
+    subgraph Layer2["Layer 2: Network & Routing Boundary (네트워크 경계)"]
+        VPCSubnet["VPC 서브넷 (사설 IP 대역)"]
+        CloudRouter["Cloud Router (BGP 라우팅)"]
+        CloudNAT["Cloud NAT 게이트웨이 (DPA 동적 포트 할당)"]
+        PublicIPPool["공인 IP 풀 (SNAT 변환 엔드포인트)"]
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Telemetry Runtime (감사 분석 런타임)"]
+        MonitoringAPI["Cloud Monitoring (nat/allocated_ports, dropped_sent_packets_count)"]
+        GuardCLI["diagnose.py DPA 지연 및 OUT_OF_RESOURCES 분석기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target External APIs & Internet (외부 인터넷 백엔드)"]
+        PaymentPG["외부 결제 PG사 API 엔드포인트"]
+        ThirdPartySaaS["서드파티 SaaS 웹훅 및 외부 서비스"]
+        DropSink["[위험] 사일런트 패킷 드롭 (OUT_OF_RESOURCES)"]
+    end
+
+    GKEPods --> VPCSubnet
+    GCEInstances --> VPCSubnet
+    VPCSubnet --> CloudRouter
+    CloudRouter --> CloudNAT
+    CloudNAT --> PublicIPPool
+    PublicIPPool --> PaymentPG
+    PublicIPPool --> ThirdPartySaaS
+    CloudNAT -.->|"포트 고갈 시 드롭"| DropSink
+    CloudNAT --> MonitoringAPI
+    NetworkAdmin --> GuardCLI
+    GuardCLI --> MonitoringAPI
+    GuardCLI --> CloudNAT
+    GuardCLI --> ReportOutput
 ```
 
 ---

@@ -71,18 +71,48 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["GKE 클러스터 및 Ingress 리소스 수집"] --> B["GCP 헬스 체크 방화벽 규칙 검증"]
-    B --> C["컨테이너 Readiness vs GCP HealthCheck 경로 비교"]
-    C --> D["NEG 및 Pod Readiness Gate 주입 상태 확인"]
-    D --> E["백엔드 Keepalive vs ALB 타임아웃 역전 비교"]
-    E --> F{"4대 체인 결함 발견 여부"}
-    F -- "결함 감지 (CRITICAL / WARNING)" --> G["원인별 상세 리포트 생성"]
-    F -- "정상 (HEALTHY)" --> H["정상 운영 확인 출력"]
-    G --> I["맞춤형 BackendConfig YAML 및 방화벽 명령 출력"]
+    subgraph Layer1["Layer 1: User & Client Ingress (클라이언트 인그레스)"]
+        BrowserClient["외부 웹 브라우저 / 모바일 앱 클라이언트"]
+        DevOps["SRE / 클라우드 인프라 엔지니어"]
+    end
+
+    subgraph Layer2["Layer 2: Load Balancing & Security Boundary (L7 로드 밸런싱)"]
+        ALB["Cloud Load Balancing (External / Internal ALB)"]
+        HealthProbeRule["GCP 헬스 체크 방화벽 (35.191.0.0/16, 130.211.0.0/22)"]
+        NEG["네트워크 엔드포인트 그룹 (Container-native NEG)"]
+    end
+
+    subgraph Layer3["Layer 3: Serving & Diagnostic Runtime (GKE 파드 런타임)"]
+        ReadinessGate["GKE Pod Readiness Gate (cloud.google.com/neg-ready)"]
+        BackendConfig["GKE BackendConfig (timeoutSec & HealthCheckConfig)"]
+        PodContainers["애플리케이션 파드 (Keepalive timeout 튜닝)"]
+        DiagnosticCLI["diagnose.py 4단계 체인 원인 역추적기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Observability (로깅 및 모니터링)"]
+        GKENodes["GKE 노드 풀 인프라"]
+        CloudLogging["Cloud Logging (statusDetails: failed_to_pick_backend)"]
+    end
+
+    BrowserClient --> ALB
+    ALB --> NEG
+    HealthProbeRule --> NEG
+    NEG --> ReadinessGate
+    ReadinessGate --> PodContainers
+    BackendConfig --> PodContainers
+    PodContainers --> GKENodes
+    DevOps --> DiagnosticCLI
+    DiagnosticCLI --> ALB
+    DiagnosticCLI --> HealthProbeRule
+    DiagnosticCLI --> NEG
+    DiagnosticCLI --> PodContainers
+    DiagnosticCLI --> ReportOutput
+    ALB -.->|"502 에러 발생 시 기록"| CloudLogging
 ```
 
 ---

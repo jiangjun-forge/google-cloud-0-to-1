@@ -71,18 +71,46 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["Cloud Run 서비스 목록 수집"] --> B["이그레스 연동 유형 판별"]
-    B --> C{"Direct VPC Egress 적용 여부"}
-    C -- "레거시 커넥터 감지" --> D["대역폭 병목 경고 및 Direct VPC 전환 안내"]
-    C -- "Direct VPC Egress 구성" --> E["서브넷 가용 IP 및 최대 스케일 비교"]
-    E --> F["Private Google Access 및 Cloud NAT 점검"]
-    F --> G{"설정 오류 발견"}
-    G -- "IP 고갈/NAT 부재" --> H["서브넷 확장 및 라우팅 긴급 처방"]
-    G -- "정상" --> I["최적화 완료 리포트 생성"]
+    subgraph Layer1["Layer 1: User & Traffic Ingress (트래픽 계층)"]
+        ExternalTraffic["외부 HTTPS 클라이언트 트래픽"]
+        NetworkAdmin["네트워크 관리자 / SRE 팀"]
+    end
+
+    subgraph Layer2["Layer 2: Network & Routing Boundary (네트워크 경계)"]
+        DirectEgress["Direct VPC Egress 인터페이스"]
+        VPCSubnet["VPC 서브넷 (CIDR 가용 IP 풀)"]
+        PGA["Private Google Access (사설 구글 API 라우팅)"]
+        CloudNAT["Cloud NAT 게이트웨이 (외부 아웃바운드 인터넷)"]
+    end
+
+    subgraph Layer3["Layer 3: Serving & Diagnostic Runtime (런타임 분석)"]
+        CloudRunInstance["Cloud Run 컨테이너 인스턴스 (수평 확장)"]
+        DiagnosticCLI["diagnose.py 네트워크 정합성 분석기"]
+        ReportOutput["복습용 진단 리포트 (report.md)"]
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Destinations (대상 백엔드)"]
+        OnPremDB["사설 온프레미스 데이터베이스 / Cloud SQL"]
+        GoogleServices["Google 사설 API (Cloud Storage, BigQuery)"]
+        ExternalAPI["외부 써드파티 결제/웹훅 API"]
+    end
+
+    ExternalTraffic --> CloudRunInstance
+    CloudRunInstance --> DirectEgress
+    DirectEgress --> VPCSubnet
+    VPCSubnet --> PGA
+    VPCSubnet --> CloudNAT
+    PGA --> GoogleServices
+    VPCSubnet --> OnPremDB
+    CloudNAT --> ExternalAPI
+    NetworkAdmin --> DiagnosticCLI
+    DiagnosticCLI --> DirectEgress
+    DiagnosticCLI --> VPCSubnet
+    DiagnosticCLI --> ReportOutput
 ```
 
 ---

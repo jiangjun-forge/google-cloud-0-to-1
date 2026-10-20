@@ -70,17 +70,50 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TD
-    A["침해 의심 서비스 계정 목록 입력"] --> B["사용자 관리 키 상태 점검"]
-    B --> C["Cloud Audit Logs 기간별 전수 조회"]
-    C --> D{"고위험 API 호출 탐지"}
-    D -- "권한 상승/데이터 추출 감지" --> E["긴급 키 비활성화 및 IAM 롤 회수"]
-    D -- "비정상 행위 없음" --> F["예방적 키 교체 및 폐기"]
-    E --> G["Workload Identity Federation 전환"]
-    F --> G
+    subgraph Layer1["Layer 1: External Threats & Ingress (키 유출 및 외부 침해 의심)"]
+        direction TB
+        LeakedKey["유출된 영구 JSON 키<br/>(GitHub, 외부 협업 채널 노출)"]
+        Adversary["외부 공격자 / 비인가 호출 시도"]
+        Adversary --> LeakedKey
+    end
+
+    subgraph Layer2["Layer 2: Identity & Security Boundary (서비스 계정 및 WIF 통제 경계)"]
+        direction TB
+        IAMControl["Cloud IAM 제어 평면"]
+        WIFBridge["Workload Identity Federation (WIF)<br/>(임시 OIDC 토큰 발급)"]
+        KeyPolicy["조직 정책: SA 키 발급 차단<br/>(constraints/iam.disableServiceAccountKeyCreation)"]
+        IAMControl --- KeyPolicy
+        IAMControl --- WIFBridge
+    end
+
+    subgraph Layer3["Layer 3: Diagnostic & Incident Response Engine (침해 감사 및 긴급 대응)"]
+        direction TB
+        Investigator["service-account-leak-investigator<br/>(diagnose.py)"]
+        AuditLogParser["Cloud Audit Logs 역추적기<br/>(최근 7일간 권한 상승, 데이터 탈취 쿼리)"]
+        KeyDisabler["긴급 키 비활성화 및 삭제기<br/>(gcloud iam service-accounts keys disable/delete)"]
+        AuditLogParser --> Investigator
+        Investigator --> KeyDisabler
+    end
+
+    subgraph Layer4["Layer 4: Target Backend & Critical Assets (핵심 클라우드 자산)"]
+        direction TB
+        StorageBucket["Cloud Storage (기밀 데이터 버킷)"]
+        BQDataset["BigQuery (민감 분석 데이터)"]
+        IAMAdmin["Cloud Resource Manager / IAM Roles"]
+    end
+
+    LeakedKey -.->|"비인가 API 호출 시도"| IAMControl
+    IAMControl --> StorageBucket
+    IAMControl --> BQDataset
+    IAMControl --> IAMAdmin
+
+    IAMControl -.->|"활동 로그 기록"| AuditLogParser
+    KeyDisabler ==>|"위험 키 즉시 차단"| IAMControl
+    WIFBridge ==>|"키리스(Keyless) 인증 전환"| IAMControl
 ```
 
 ---

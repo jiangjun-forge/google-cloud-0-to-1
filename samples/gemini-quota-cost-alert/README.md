@@ -69,31 +69,50 @@ python diagnose.py
 
 ---
 
-## 3. 진단 및 해결 흐름
+## 3. 솔루션 아키텍처 및 런타임 토폴로지
+
+본 도구는 Cloud Billing 예산 임계치 도달 시 Pub/Sub과 Cloud Functions를 통해 Gemini API 쿼터를 자동으로 0으로 차단하는 4계층 서킷 브레이커 토폴로지를 제공한다:
 
 ```mermaid
 flowchart TD
-    Start(["제미나이 API 비용 모니터링 가동"]) --> CheckSpend["Google Cloud Billing 비용 집계"]
-    CheckSpend --> Threshold{"예산 임계치(예: 90%) 도달 여부"}
-    
-    Threshold -- "정상 범위" --> Safe(["정상 운영 지속"])
-    Threshold -- "임계치 초과" --> TriggerAlert["Cloud Billing Budget Alert 발생"]
-    
-    TriggerAlert --> PublishPubSub["Cloud Pub/Sub 주제로 이벤트 발행<br/>(gemini-cost-alerts)"]
-    PublishPubSub --> InvokeFunction["Cloud Functions 자동 트리거<br/>(quota-auto-disable)"]
-    
-    InvokeFunction --> QuotaZero["Service Usage API 호출<br/>Gemini RPM/일일 쿼터 한도 0으로 조정"]
-    QuotaZero --> Blocked(["[자동 방어 완료] 추가 비용 발생 방어"])
-    
-    Blocked --> Notify["운영팀 및 보안팀 긴급 슬랙/이메일 통보"]
+    subgraph Layer1["1. 트래픽 및 진단 계층 (Traffic & Operation Layer)"]
+        User["애플리케이션 / API 클라이언트"] -->|"Gemini API 호출"| Endpoint["Vertex AI / Gemini API 엔드포인트"]
+        FinOps["FinOps 엔지니어 / 운영자"] -->|"1. 자동 차단 파이프라인 검증"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+    end
 
-    classDef alert fill:#ffdddd,stroke:#f44336,stroke-width:2px;
-    classDef success fill:#ddffdd,stroke:#4caf50,stroke-width:2px;
-    classDef action fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
-    class Start,Safe action;
-    class Threshold,TriggerAlert alert;
-    class Blocked,Notify success;
-    class CheckSpend,PublishPubSub,InvokeFunction,QuotaZero action;
+    subgraph Layer2["2. 이벤트 감지 및 메시징 경계 (Event & Messaging Boundary)"]
+        BudgetAlert["Cloud Billing Budget Alert<br/>(지출 90% / 100% 임계치 도달)"]
+        PubSub["Cloud Pub/Sub 주제<br/>(gemini-cost-alerts)"]
+        BudgetAlert -->|"비용 초과 이벤트 발행"| PubSub
+    end
+
+    subgraph Layer3["3. 자동 복원 및 차단 런타임 (Automated Remediation Runtime)"]
+        Function["Cloud Functions (2nd Gen)<br/>(quota-auto-disable 서킷 브레이커)"]
+        PubSub -->|"이벤트 푸시 트리거"| Function
+    end
+
+    subgraph Layer4["4. 대상 백엔드 서비스 계층 (Target Backend Services)"]
+        ServiceUsage["Service Usage API<br/>(Gemini RPM/TPM 쿼터 한도 0 강제)"]
+        Slack["Slack / 이메일 알림 채널<br/>(긴급 통보 웹훅)"]
+    end
+
+    Function -->|"쿼터 0으로 축소 (서킷 오픈)"| ServiceUsage
+    Function -->|"긴급 장애/차단 알림"| Slack
+    ServiceUsage -.->|"추가 호출 즉각 429 차단"| Endpoint
+
+    CLI -->|"2. 아키텍처 설정 상태 실사"| Layer2
+    CLI -->|"3. 차단 함수 무결성 검증"| Layer3
+    CLI -->|"4. 시뮬레이션 이벤트 발송"| PubSub
+
+    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
+    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
+
+    class User,FinOps,CLI portal;
+    class Endpoint,BudgetAlert,PubSub security;
+    class Function runtime;
+    class ServiceUsage,Slack backend;
 ```
 
 ---

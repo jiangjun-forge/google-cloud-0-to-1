@@ -77,7 +77,22 @@ sequenceDiagram
 
 ---
 
-## 3. 모듈 및 컴포넌트 설계
+## 3. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
+| :--- | :--- | :--- | :--- |
+| **BR-01** (물리적 국내 위치) | **FR-01** (gcp.resourceLocations 서울 리전 강제) | **NFR-01** (비파괴성 및 안전성) | `diagnose.py` (`check_resource_locations`) |
+| **BR-02** (사외 유출 차단) | **FR-02** (RAG 벡터 인덱스 생성 IAM Deny) | **NFR-01** (비파괴성 및 안전성) | `diagnose.py` (`check_iam_deny_policies`) |
+| **BR-03** (이중 암호화 의무) | **FR-03** (Cloud KMS CMEK 이중 암호화 감사) | **NFR-03** (실행 성능) | `diagnose.py` (`check_cmek_keys`) |
+| **BR-04** (국내 격리 추론) | **FR-04** (Vertex AI 서울 리전 엔드포인트 격리) | **NFR-03** (실행 성능) | `diagnose.py` (`check_vertex_endpoint`) |
+| **BR-05** (감사 추적) | **FR-05** (Cloud Audit Logs 데이터 접근 감사 로깅) | **NFR-01** (비파괴 스캔) | `diagnose.py` (`check_audit_logs`) |
+| **BR-06** (외국 기업 배제) | **FR-06** (사외 도메인 차단 조직 정책 감사) | **NFR-04** (민감 정보 비식별화) | `diagnose.py` (`check_allowed_domains`) |
+| **BR-07** (제공자 임의 접근 차단) | **FR-07** (Access Approval / Transparency 감사) | **NFR-01** (안전성 보장) | `diagnose.py` (`check_access_approval`) |
+| **BR-08** (사내 거버넌스 4대 필수 라벨링) | **FR-08** (사내 거버넌스 4대 필수 라벨링 적용) | **NFR-04** (거버넌스 준수) | `README.md`, `diagnose.py` |
+
+---
+
+## 4. 모듈 및 컴포넌트 설계
 
 ### 3.1 CLI 인자 파서 (`parse_args`)
 - `-p`, `--project`: 대상 GCP 프로젝트 ID (미지정 시 활성 gcloud 계정 기본 프로젝트 자동 감지).
