@@ -13,12 +13,65 @@ import json
 import os
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 
 
 def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
   """쉘 명령어를 실행하고 리턴 코드, 표준 출력, 표준 에러를 반환한다."""
   res = subprocess.run(cmd, capture_output=True, text=True)
   return res.returncode, res.stdout.strip(), res.stderr.strip()
+
+
+def _get_cloud_token() -> str:
+  """gcloud 또는 google-auth를 통해 유효한 액세스 토큰을 획득한다."""
+  try:
+    ret = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True, timeout=5)
+    if ret.returncode == 0 and ret.stdout.strip():
+      return ret.stdout.strip()
+  except Exception:
+    pass
+  try:
+    import google.auth
+    import google.auth.transport.requests
+    creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    auth_req = google.auth.transport.requests.Request()
+    creds.refresh(auth_req)
+    return creds.token
+  except Exception:
+    return ""
+
+
+def discover_ge_app_engines(project_id: str) -> list[dict[str, str]]:
+  """현재 프로젝트에 프로비저닝된 Gemini Enterprise App (Discovery Engine) 목록을 실시간 조회한다."""
+  if not project_id or project_id == "sample-project-id":
+    return []
+
+  token = _get_cloud_token()
+  if not token:
+    return []
+
+  url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines"
+  req = urllib.request.Request(
+      url,
+      headers={
+          "Authorization": f"Bearer {token}",
+          "Content-Type": "application/json",
+          "X-Goog-User-Project": project_id,
+      },
+  )
+  try:
+    with urllib.request.urlopen(req, timeout=10) as resp:
+      data = json.loads(resp.read().decode())
+      engines = data.get("engines", [])
+      result = []
+      for e in engines:
+        eng_id = e.get("name", "").split("/")[-1]
+        disp_name = e.get("displayName", eng_id)
+        result.append({"id": eng_id, "displayName": disp_name})
+      return result
+  except Exception:
+    return []
 
 
 def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-project-id") -> str:
@@ -329,7 +382,40 @@ def run_config_mode(scenario_name: str = "") -> None:
         if desc and is_interactive:
             print(f"\n[{idx}] {key} ({desc})")
 
-        if is_interactive:
+        if key in ("APP_ID", "GE_APP_ID"):
+            target_proj = new_values.get("PROJECT_ID") or gcloud_project or default_val or "sample-project-id"
+            if is_interactive:
+                print("  [*] 사내 Gemini Enterprise App (Discovery Engine) 목록 실시간 스캔 중...")
+                candidate_apps = discover_ge_app_engines(target_proj)
+                if candidate_apps:
+                    print(f"  [*] {len(candidate_apps)}개의 Gemini Enterprise App 인스턴스를 발견했습니다:")
+                    for app_idx, app in enumerate(candidate_apps, 1):
+                        disp = app.get("displayName") or "무제"
+                        app_id = app.get("id")
+                        print(f"      [{app_idx}] {app_id} (표시 이름: {disp})")
+                    choice = ""
+                    try:
+                        choice = input(f"\n  진단할 Gemini Enterprise App 번호 [1-{len(candidate_apps)}, 기본값 1]: ").strip()
+                    except (EOFError, KeyboardInterrupt):
+                        choice = ""
+                    if choice.isdigit() and 1 <= int(choice) <= len(candidate_apps):
+                        final_val = candidate_apps[int(choice) - 1]["id"]
+                    else:
+                        final_val = candidate_apps[0]["id"]
+                else:
+                    print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
+                    print("  [*] 신규 App 생성이 필요한 경우 공식 콘솔 경로를 참고하십시오:")
+                    print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
+                    fallback_app = default_val or "default-enterprise-agent-app"
+                    prompt_str = f"  입력 [Enter 시 기본값({fallback_app}) 자동 채택]: "
+                    try:
+                        user_val = input(prompt_str).strip()
+                        final_val = user_val if user_val else fallback_app
+                    except (EOFError, KeyboardInterrupt):
+                        final_val = fallback_app
+            else:
+                final_val = default_val or "default-enterprise-agent-app"
+        elif is_interactive:
             prompt_str = f"  입력 [기본값: {default_val}]: " if default_val else f"  입력: "
             try:
                 user_val = input(prompt_str).strip()
@@ -374,7 +460,13 @@ def main():
       description="Gemini Enterprise 에이전트 마켓플레이스 차단 및 사내 커스텀 에이전트 거버넌스 진단기"
   )
   parser.add_argument("--project", help="대상 구글 클라우드(Google Cloud) 프로젝트 ID")
-  parser.add_argument("--app-id", default=os.getenv("APP_ID") or "default-enterprise-agent-app", help="대상 Gemini Enterprise 앱 ID")
+  parser.add_argument(
+      "--ge-app-id",
+      "--app-id",
+      dest="ge_app_id",
+      default=os.getenv("GE_APP_ID") or os.getenv("APP_ID") or "default-enterprise-agent-app",
+      help="대상 Gemini Enterprise App ID",
+  )
   parser.add_argument("--dry-run", action="store_true", help="실제 API 호출 없이 가상 샘플 데이터로 진단")
   parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
   parser.add_argument("--json", action="store_true", help="결과를 JSON 포맷으로 출력")
@@ -388,6 +480,8 @@ def main():
     print("구글 클라우드(Google Cloud) 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
     sys.exit(1)
 
+  app_id = args.ge_app_id or "default-enterprise-agent-app"
+
   if args.dry_run:
     data = get_mock_governance_data()
   else:
@@ -398,9 +492,9 @@ def main():
   if args.json:
     print(json.dumps(diagnoses, indent=2, ensure_ascii=False))
   else:
-    print(format_console_text(diagnoses, args.app_id, project_id, args.dry_run))
+    print(format_console_text(diagnoses, app_id, project_id, args.dry_run))
 
-  report_content = build_markdown_report(diagnoses, args.app_id, project_id, is_dry_run=args.dry_run)
+  report_content = build_markdown_report(diagnoses, app_id, project_id, is_dry_run=args.dry_run)
   save_markdown_report(report_content)
   print("\n[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
 

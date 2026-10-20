@@ -145,9 +145,10 @@ def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
 
     dataset_id = cli_args.dataset or os.environ.get("DATASET_ID", "").strip() or "cymbal_gold"
     ge_engine_id = (
-        cli_args.app_id
-        or os.environ.get("GE_ENGINE_ID", "").strip()
+        getattr(cli_args, "ge_app_id", None)
+        or getattr(cli_args, "app_id", None)
         or os.environ.get("GE_APP_ID", "").strip()
+        or os.environ.get("GE_ENGINE_ID", "").strip()
         or "omni-retail-ge-app"
     )
     data_agent_name = cli_args.agent_name or os.environ.get("DATA_AGENT_NAME", "").strip() or "cymbal-retail-data-agent"
@@ -490,6 +491,38 @@ def get_access_token() -> str:
     except Exception as exc:
         print(f"[경고] 액세스 토큰 획득 실패: {exc}", file=sys.stderr)
         return ""
+
+
+def discover_ge_app_engines(project_id: str) -> List[Dict[str, str]]:
+    """현재 프로젝트에 프로비저닝된 Gemini Enterprise App (Discovery Engine) 목록을 실시간 조회한다."""
+    if not project_id or project_id == "sample-project-id":
+        return []
+
+    token = get_access_token()
+    if not token:
+        return []
+
+    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            engines = data.get("engines", [])
+            result = []
+            for e in engines:
+                eng_id = e.get("name", "").split("/")[-1]
+                disp_name = e.get("displayName", eng_id)
+                result.append({"id": eng_id, "displayName": disp_name})
+            return result
+    except Exception:
+        return []
 
 
 def send_request(
@@ -1111,7 +1144,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-d", "--dataset", type=str, help="스몰셋 BigQuery 데이터셋 ID (기본값: cymbal_gold)")
     parser.add_argument("-l", "--location", type=str, help="BigQuery 리전 (기본값: asia-northeast3)")
     parser.add_argument("--gda-location", type=str, help="GDA 런타임 리전 (기본값: global)")
-    parser.add_argument("--app-id", type=str, help="[선택 사항] 등록할 Gemini Enterprise App (Engine) ID")
+    parser.add_argument("--ge-app-id", "--app-id", dest="ge_app_id", type=str, help="[선택 사항] 등록할 Gemini Enterprise App ID")
     parser.add_argument("--agent-name", type=str, help="BigQuery Data Agent 이름 (기본값: cymbal-retail-data-agent)")
     parser.add_argument(
         "--dry-run",
@@ -1238,7 +1271,40 @@ def run_config_mode(scenario_name: str = "") -> None:
         if desc and is_interactive:
             print(f"\n[{idx}] {key} ({desc})")
 
-        if is_interactive:
+        if key in ("GE_ENGINE_ID", "GE_APP_ID"):
+            target_proj = new_values.get("PROJECT_ID") or gcloud_project or default_val or "sample-project-id"
+            if is_interactive:
+                print("  [*] 사내 Gemini Enterprise App (Discovery Engine) 목록 실시간 스캔 중...")
+                candidate_apps = discover_ge_app_engines(target_proj)
+                if candidate_apps:
+                    print(f"  [*] {len(candidate_apps)}개의 Gemini Enterprise App 인스턴스를 발견했습니다:")
+                    for app_idx, app in enumerate(candidate_apps, 1):
+                        disp = app.get("displayName") or "무제"
+                        app_id = app.get("id")
+                        print(f"      [{app_idx}] {app_id} (표시 이름: {disp})")
+                    choice = ""
+                    try:
+                        choice = input(f"\n  연결할 Gemini Enterprise App 번호 [1-{len(candidate_apps)}, 단독 사용 시 Enter(비워둠)]: ").strip()
+                    except (EOFError, KeyboardInterrupt):
+                        choice = ""
+                    if choice.isdigit() and 1 <= int(choice) <= len(candidate_apps):
+                        final_val = candidate_apps[int(choice) - 1]["id"]
+                    else:
+                        final_val = default_val
+                else:
+                    print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
+                    print("  [*] BigQuery Data Agent를 Gemini Enterprise App에 직결 연동하려면 공식 콘솔 경로를 참고하십시오:")
+                    print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
+                    print("  [*] 단독(Standalone, BigQuery Studio 전용)으로 사용할 경우 Enter를 눌러 비워둘 수 있습니다.")
+                    prompt_str = f"  입력 [기본값: {default_val}]: " if default_val else f"  입력 [Enter 시 비워둠]: "
+                    try:
+                        user_val = input(prompt_str).strip()
+                        final_val = user_val if user_val else default_val
+                    except (EOFError, KeyboardInterrupt):
+                        final_val = default_val
+            else:
+                final_val = default_val
+        elif is_interactive:
             prompt_str = f"  입력 [기본값: {default_val}]: " if default_val else f"  입력: "
             try:
                 user_val = input(prompt_str).strip()
