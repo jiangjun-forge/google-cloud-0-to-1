@@ -63,11 +63,10 @@ python diagnose.py --dry-run
 
 ### 2) 실제 사내 인프라 실시간 진단
 ```bash
-cp .env.example .env
 python diagnose.py
 ```
 > [!NOTE]
-> `.env` 설정값을 비워두면 gcloud 활성 설정과 사내 Cloud NAT 게이트웨이를 자동으로 감지하여 진단한다. 특정 리전이나 라우터를 명시하려면 `--region asia-northeast3 --router cr-prod-asia-northeast3 --nat nat-gw-prod-main` 플래그를 추가한다.
+> 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. 특정 리전이나 라우터를 명시하려면 `--region asia-northeast3 --router cr-prod-asia-northeast3 --nat nat-gw-prod-main` 플래그를 추가한다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)
 
 ---
 

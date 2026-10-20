@@ -63,11 +63,10 @@ Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방 리포트
 
 ### 2) 실제 사내 인프라 실시간 진단
 ```bash
-cp .env.example .env
 python diagnose.py
 ```
 > [!NOTE]
-> `.env` 설정값을 비워두면 gcloud 활성 설정 및 사내 리소스를 자동으로 감지하여 진단한다.
+> 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)
 
 ---
 
