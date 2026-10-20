@@ -659,7 +659,7 @@ def _get_cloud_token() -> str:
 
 
 def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> dict:
-    """커스텀 에이전트 팩토리를 Vertex AI Agent Engine으로 프로비저닝하고 Gemini Enterprise app에 자동 등록한다."""
+    """커스텀 에이전트 팩토리를 Agent Engine으로 프로비저닝하고 Gemini Enterprise app에 자동 등록한다."""
     project_id = env_info["project_id"]
     region = env_info.get("region", "us-central1")
     re_location = "us-central1"
@@ -689,7 +689,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
         simulated_re_id = "1673971543794778112"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
-        print(f"  [1] Vertex AI Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
+        print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
         print(f"  [2] 장착 도구: deploy_enterprise_agent_tool, list_deployed_agents_tool")
         print(f"  [3] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
         return {
@@ -715,7 +715,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     creds = google.oauth2.credentials.Credentials(token)
     google.auth.default = lambda *args, **kwargs: (creds, project_id)
 
-    print("\n[단계 1/2] Vertex AI Agent Engine 초기화 및 패키징 중...")
+    print("\n[단계 1/2] Agent Engine 초기화 및 패키징 중...")
     vertexai.init(
         project=project_id,
         location=re_location,
@@ -1039,7 +1039,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     )
 
     re_res = remote.resource_name
-    print(f"[성공] Vertex AI Agent Engine 생성 완료: {re_res}")
+    print(f"[성공] Agent Engine 생성 완료: {re_res}")
 
     print("\n[단계 2/2] Gemini Enterprise app 사내 갤러리(/r/agents) 자동 바인딩 중...")
     headers = {

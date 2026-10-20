@@ -61,7 +61,7 @@ python diagnose.py --dry-run
 [*] 필수 4대 라벨 : {'managed-by': 'google-cloud-0-to-1', 'scenario': 'gemini-enterprise-copilot-custom', 'env': 'sample', 'created-by': 'customer-engineer'}
 
 --> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.
-  [1] Vertex AI Agent Engine 프로비저닝 시뮬레이션: projects/sample-project-id/locations/us-central1/reasoningEngines/1673971543794778112
+  [1] Agent Engine 프로비저닝 시뮬레이션: projects/sample-project-id/locations/us-central1/reasoningEngines/1673971543794778112
   [2] 장착 도구: deploy_enterprise_agent_tool, list_deployed_agents_tool
   [3] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료
 

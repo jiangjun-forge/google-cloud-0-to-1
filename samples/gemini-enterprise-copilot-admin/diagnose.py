@@ -568,7 +568,7 @@ def _get_cloud_token() -> str:
 
 
 def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
-    """Gemini Enterprise Admin Copilot을 Vertex AI Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
+    """Gemini Enterprise Admin Copilot을 Agent Engine으로 프로비저닝하고 GE App에 자동 등록한다."""
     project_id = env_info["project_id"]
     re_location = "us-central1"
     ge_app_id = env_info["ge_app_id"]
@@ -597,7 +597,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
         simulated_re_id = "4756157723148550144"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
-        print(f"  [1] Vertex AI Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
+        print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
         print(f"  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
         return {
             "status": "DRY_RUN_PASSED",
@@ -620,7 +620,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     creds = google.oauth2.credentials.Credentials(token)
     google.auth.default = lambda *args, **kwargs: (creds, project_id)
 
-    print("\n[단계 1/2] Vertex AI Agent Engine 초기화 및 패키징 중...")
+    print("\n[단계 1/2] Agent Engine 초기화 및 패키징 중...")
     vertexai.init(
         project=project_id,
         location=re_location,
@@ -849,7 +849,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     )
 
     re_res = remote.resource_name
-    print(f"[성공] Vertex AI Agent Engine 생성 완료: {re_res}")
+    print(f"[성공] Agent Engine 생성 완료: {re_res}")
 
     print("\n[단계 2/2] Gemini Enterprise app 사내 갤러리(/r/agents) 자동 바인딩 중...")
     headers = {
@@ -923,7 +923,7 @@ def main():
     parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~7)")
     parser.add_argument("--prompt", help="사용자 정의 어드민 문의 내용")
     parser.add_argument("--interactive", action="store_true", default=False, help="대화형 번호 선택기 가동")
-    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Vertex AI Agent Engine 프로비저닝 및 Gemini Enterprise app 사내 갤러리 자동 등록")
+    parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 및 Gemini Enterprise app 사내 갤러리 자동 등록")
 
     args = parser.parse_args()
 

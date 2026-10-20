@@ -83,7 +83,7 @@ flowchart TD
 - 도구 함수 내부의 인증 처리는 하드코딩을 배제하고 애플리케이션 기본 자격 증명(ADC) 및 Secret Manager 환경 변수를 참조하도록 구성한다.
 
 ### FR-03: 에이전트 엔진 런타임 배포 스펙(`deploy.py`, `requirements.txt`) 도출
-- 생성된 파이썬 코드를 즉시 패키징하여 Vertex AI Agent Engine에 프로비저닝하고 GE App에 자동 등록하는 `deploy.py` 및 `requirements.txt`를 도출한다.
+- 생성된 파이썬 코드를 즉시 패키징하여 Agent Engine에 프로비저닝하고 GE App에 자동 등록하는 `deploy.py` 및 `requirements.txt`를 도출한다.
 
 ### FR-04: Gemini Enterprise app ADK 에이전트 바인딩 매니페스트 생성 및 연동 진단
 - 배포된 Agent Engine 리소스를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 `adkAgentDefinition`으로 등록하기 위한 JSON 페이로드를 생성한다.
@@ -94,7 +94,7 @@ flowchart TD
 - 진단 및 에이전트 생성 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, Gemini Enterprise app 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
 ### FR-06: Agent Engine 프로비저닝 및 ChatOps 실행 도구 체계
-- `python diagnose.py --deploy-engine` 단 1회 실행으로 Vertex AI Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
+- `python diagnose.py --deploy-engine` 단 1회 실행으로 Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
 - 런타임 내에 `deploy_enterprise_agent_tool`과 `list_deployed_agents_tool` 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다.
 
 ### FR-07: 알파벳순 5대 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
@@ -111,7 +111,7 @@ flowchart TD
 
 ### NFR-02: 표준 소프트웨어 스택 준수
 - AI SDK: `google-genai v2.0+`, `google-adk 2.11+`
-- 에이전트 런타임: `Vertex AI Agent Engine`
+- 에이전트 런타임: `Agent Engine`
 - 배포 체계: 순수 파이썬 스크립트 기반 원클릭 배포
 
 ### NFR-03: 결정론적 가상 실행(--dry-run) 및 사내 식별 정보 마스킹
