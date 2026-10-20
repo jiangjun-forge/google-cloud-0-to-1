@@ -423,7 +423,55 @@ agent = Agent(
     tools=[{', '.join(tools_list)}],
 )
 
-app = agent_engines.AdkApp(agent=agent, enable_tracing=True)
+# Google ADK 표준 root_agent 노출 (adk run / adk deploy 호환)
+root_agent = agent
+
+# Pydantic v2 직렬화 호환성 및 세션 안정화
+try:
+    _ = agent.canonical_model
+except Exception:
+    pass
+
+class ResilientAdkApp(agent_engines.AdkApp):
+    \"\"\"Pydantic v2 직렬화 호환성 및 세션 안정화를 지원하는 엔터프라이즈 Agent Engine 래퍼.\"\"\"
+
+    def _ensure_pydantic_private(self):
+        targets = []
+        if "agent" in self._tmpl_attrs and self._tmpl_attrs["agent"] is not None:
+            targets.append(self._tmpl_attrs["agent"])
+        for runner_key in ("runner", "in_memory_runner"):
+            runner = self._tmpl_attrs.get(runner_key)
+            if runner and hasattr(runner, "app") and runner.app:
+                if hasattr(runner.app, "root_agent") and runner.app.root_agent:
+                    targets.append(runner.app.root_agent)
+        for ag in targets:
+            if getattr(ag, "__pydantic_private__", None) is None:
+                object.__setattr__(
+                    ag,
+                    "__pydantic_private__",
+                    {{"_resolved_model": None, "_resolved_live_model": None}},
+                )
+            try:
+                _ = ag.canonical_model
+            except Exception:
+                pass
+
+    def set_up(self):
+        self._ensure_pydantic_private()
+        super().set_up()
+        self._ensure_pydantic_private()
+
+    async def streaming_agent_run_with_events(self, request_json: str):
+        self._ensure_pydantic_private()
+        async for event in super().streaming_agent_run_with_events(request_json):
+            yield event
+
+    async def async_stream_query(self, *args, **kwargs):
+        self._ensure_pydantic_private()
+        async for event in super().async_stream_query(*args, **kwargs):
+            yield event
+
+app = ResilientAdkApp(agent=agent, enable_tracing=True)
 """
 
     # 2. tools.py (파이썬 함수 도구 정의)
@@ -705,7 +753,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ## 2. 생성된 하이코드 산출물 목록 (Agent Artifacts)
 
-본 도구를 통해 다음 5대 핵심 Agent Engine 소스 코드가 완벽하게 생성되었다:
+본 도구를 통해 다음 5대 핵심 Agent Engine 소스 코드가 생성되었다:
 
 1. **`agent.py`**: Google ADK 및 `agent_engines.AdkApp` 기반 에이전트 정의 코드
 2. **`tools.py`**: 사내 시스템/BigQuery 직접 연동 도구 함수 모음
@@ -1204,7 +1252,53 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         instruction=instruction,
         tools=[deploy_enterprise_agent_tool, list_deployed_agents_tool],
     )
-    app = agent_engines.AdkApp(agent=adk_agent, enable_tracing=True)
+
+    class ResilientAdkApp(agent_engines.AdkApp):
+        """Pydantic v2 직렬화 호환성 및 세션 안정화를 지원하는 엔터프라이즈 Agent Engine 래퍼."""
+
+        def _ensure_pydantic_private(self):
+            targets = []
+            if "agent" in self._tmpl_attrs and self._tmpl_attrs["agent"] is not None:
+                targets.append(self._tmpl_attrs["agent"])
+            for runner_key in ("runner", "in_memory_runner"):
+                runner = self._tmpl_attrs.get(runner_key)
+                if runner and hasattr(runner, "app") and runner.app:
+                    if hasattr(runner.app, "root_agent") and runner.app.root_agent:
+                        targets.append(runner.app.root_agent)
+            for ag in targets:
+                if getattr(ag, "__pydantic_private__", None) is None:
+                    object.__setattr__(
+                        ag,
+                        "__pydantic_private__",
+                        {"_resolved_model": None, "_resolved_live_model": None},
+                    )
+                try:
+                    _ = ag.canonical_model
+                except Exception:
+                    pass
+
+        def set_up(self):
+            self._ensure_pydantic_private()
+            super().set_up()
+            self._ensure_pydantic_private()
+
+        async def streaming_agent_run_with_events(self, request_json: str):
+            self._ensure_pydantic_private()
+            async for event in super().streaming_agent_run_with_events(request_json):
+                yield event
+
+        async def async_stream_query(self, *args, **kwargs):
+            self._ensure_pydantic_private()
+            async for event in super().async_stream_query(*args, **kwargs):
+                yield event
+
+    # 사전 모델 해석으로 Pydantic v2 __pydantic_private__ 슬롯 초기화 강제
+    try:
+        _ = adk_agent.canonical_model
+    except Exception:
+        pass
+
+    app = ResilientAdkApp(agent=adk_agent, enable_tracing=True)
 
     runtime_env = {
         "GOOGLE_GENAI_USE_VERTEXAI": "1",
@@ -1332,7 +1426,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 | :--- | :---: | :--- |
 | **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
 | **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
-| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
+| **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 환경 기준) |
 | **내장 실행 도구** | `2종 완비` | `deploy_enterprise_agent_tool`, `list_deployed_agents_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
