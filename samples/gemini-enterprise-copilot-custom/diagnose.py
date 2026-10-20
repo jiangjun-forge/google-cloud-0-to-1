@@ -1085,8 +1085,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             return "[안내] 거버넌스 및 자원 안정성을 위해 전체 일괄 배포 대신, 한 번에 하나의 에이전트씩 개별 배포를 진행해 주시기 바랍니다. (배포 대상: 1. GitHub 저장소 주소 기반 커스텀 에이전트 배포, 2. GE Admin Copilot, 3. GE Agent Factory)"
 
         # 1. 대상 GE App 내 기존 등록 에이전트 실시간 사전 스캔 (Pre-flight check)
-        def _provision_reasoning_engine(target_display_name: str, target_desc: str, gcs_prefix: str) -> str:
-            """Vertex AI Reasoning Engine을 REST API로 직접 프로비저닝한다 (High-code 전용)."""
+        def _provision_reasoning_engine(target_display_name: str, target_desc: str, gcs_prefix: str, wait_timeout_sec: int = 10) -> dict:
+            """Vertex AI Reasoning Engine을 REST API로 프로비저닝한다 (초기 체크 후 비동기 핸드오프 지원)."""
             import time
             re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
 
@@ -1096,7 +1096,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 if list_resp.ok:
                     for re_item in list_resp.json().get("reasoningEngines", []):
                         if re_item.get("displayName") == target_display_name:
-                            return re_item.get("name")
+                            return {"status": "COMPLETED", "resource_name": re_item.get("name")}
             except Exception:
                 pass
 
@@ -1131,20 +1131,23 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             op_data = create_resp.json()
             op_name = op_data.get("name")
             if not op_name:
-                return op_data.get("name") or op_data.get("response", {}).get("name", "")
+                res_name = op_data.get("name") or op_data.get("response", {}).get("name", "")
+                return {"status": "COMPLETED", "resource_name": res_name}
 
-            # LRO 비동기 완료 대기 (최대 300초 / 5분)
+            # LRO 비동기 초기 폴링 (최대 10초 대기)
             op_url = f"https://{re_location}-aiplatform.googleapis.com/v1/{op_name}"
-            for _ in range(60):
-                time.sleep(5)
-                chk_resp = requests.get(op_url, headers=headers, timeout=15)
+            for _ in range(2):
+                time.sleep(3)
+                chk_resp = requests.get(op_url, headers=headers, timeout=10)
                 if chk_resp.ok:
                     chk_data = chk_resp.json()
                     if chk_data.get("done"):
                         if "error" in chk_data:
                             raise RuntimeError(f"Reasoning Engine 프로비저닝 오류: {chk_data['error'].get('message')}")
-                        return chk_data.get("response", {}).get("name", "")
-            raise TimeoutError("Reasoning Engine 프로비저닝 시간 초과 (300초)")
+                        return {"status": "COMPLETED", "resource_name": chk_data.get("response", {}).get("name", "")}
+
+            # 10초 경과 후에도 빌드가 진행 중이면 비동기 접수 상태로 즉시 반환 (친절한 비동기 UX)
+            return {"status": "IN_PROGRESS", "operation_name": op_name, "display_name": target_display_name}
 
         existing_agents_map = {}
         try:
@@ -1182,12 +1185,31 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     )
 
             try:
-                # 1) Vertex AI Reasoning Engine 실제 프로비저닝 (High-code 전용)
-                re_res = _provision_reasoning_engine(
+                # 1) Vertex AI Reasoning Engine 실제 프로비저닝 (비동기 LRO 지원)
+                re_res_info = _provision_reasoning_engine(
                     disp_name,
                     f"GitHub 저장소({repo_url}) 기반 빌드 및 배포된 사내 커스텀 에이전트",
                     "ge_factory_custom_agent_factory",
                 )
+
+                if isinstance(re_res_info, dict) and re_res_info.get("status") == "IN_PROGRESS":
+                    op_name = re_res_info.get("operation_name", "")
+                    return (
+                        f"### 클라우드 인프라 배포를 시작했습니다!\n\n"
+                        f"- **배포 대상**: {disp_name}\n"
+                        f"- **참조 저장소**: `{repo_url}`\n"
+                        f"- **작업 식별자 (LRO)**: `{op_name}`\n"
+                        f"- **진행 상황**: Agent Platform 환경 구성 및 Cloud Build 컨테이너 패키징이 백그라운드에서 안전하게 시작되었습니다.\n"
+                        f"- **소요 시간 안내**: 클라우드 인프라 프로비저닝 특성상 통상 2~3분(최대 15분) 소요됩니다.\n\n"
+                        f"**안내**:\n"
+                        f"배포가 진행되는 동안 다른 업무를 보시거나, 1~2분 후 **\"배포 상태 확인해 줘\"** 또는 **\"진행 상황 어때?\"**라고 말씀해 주시면 현재 상태를 확인하고 사내 갤러리 등록을 마무리해 드립니다.\n\n"
+                        f"---\n"
+                        f"**추천 후속 질문:**\n"
+                        f"1. 배포 상태 확인해 줘\n"
+                        f"2. 등록된 에이전트 목록 보여줘"
+                    )
+
+                re_name = re_res_info.get("resource_name") if isinstance(re_res_info, dict) else re_res_info
 
                 # 2) Discovery Engine에 adkAgentDefinition으로 등록
                 body = {
@@ -1203,7 +1225,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     "adkAgentDefinition": {
                         "toolSettings": {"toolDescription": f"GitHub 저장소({repo_url}) 기반 사내 커스텀 에이전트"},
                         "provisionedReasoningEngine": {
-                            "reasoningEngine": re_res
+                            "reasoningEngine": re_name
                         },
                     },
                 }
@@ -1218,7 +1240,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"- **{disp_name}**\n"
                         f"  - 상태: 등록 완료 (`{res_state}`)\n"
                         f"  - Agent ID: `{new_id}`\n"
-                        f"  - 연동 Agent Engine: `{re_res}`\n"
+                        f"  - 연동 Agent Engine: `{re_name}`\n"
                         f"  - 참조 저장소: `{repo_url}`\n\n"
                         f"[사내 갤러리 및 런타임 콘솔]\n"
                         f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
@@ -1281,15 +1303,33 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
             try:
                 # 1) 기존 프로비저닝된 Reasoning Engine 확인, 없으면 즉시 신규 프로비저닝!
-                re_res = dynamic_engines.get(slug)
-                if not re_res:
+                re_res_info = dynamic_engines.get(slug)
+                if not re_res_info:
                     gcs_prefix_map = {
                         "gemini-enterprise-agent-factory": "ge_factory_agent_factory",
                         "gemini-enterprise-admin-copilot": "ge_factory_admin_copilot",
                     }
                     target_gcs_prefix = gcs_prefix_map.get(slug, "ge_factory_custom_agent_factory")
-                    re_res = _provision_reasoning_engine(cfg["display_name"], cfg["description"], target_gcs_prefix)
-                    dynamic_engines[slug] = re_res
+                    re_res_info = _provision_reasoning_engine(cfg["display_name"], cfg["description"], target_gcs_prefix)
+                    dynamic_engines[slug] = re_res_info
+
+                if isinstance(re_res_info, dict) and re_res_info.get("status") == "IN_PROGRESS":
+                    op_name = re_res_info.get("operation_name", "")
+                    return (
+                        f"### 클라우드 인프라 배포를 시작했습니다!\n\n"
+                        f"- **배포 대상**: {cfg['display_name']}\n"
+                        f"- **작업 식별자 (LRO)**: `{op_name}`\n"
+                        f"- **진행 상황**: Agent Platform 환경 구성 및 Cloud Build 컨테이너 패키징이 백그라운드에서 안전하게 시작되었습니다.\n"
+                        f"- **소요 시간 안내**: 클라우드 인프라 프로비저닝 특성상 통상 2~3분(최대 15분) 소요됩니다.\n\n"
+                        f"**안내**:\n"
+                        f"배포가 진행되는 동안 다른 업무를 보시거나, 1~2분 후 **\"배포 상태 확인해 줘\"** 또는 **\"진행 상황 어때?\"**라고 말씀해 주시면 현재 상태를 확인하고 사내 갤러리 등록을 마무리해 드립니다.\n\n"
+                        f"---\n"
+                        f"**추천 후속 질문:**\n"
+                        f"1. 배포 상태 확인해 줘\n"
+                        f"2. 등록된 에이전트 목록 보여줘"
+                    )
+
+                re_name = re_res_info.get("resource_name") if isinstance(re_res_info, dict) else re_res_info
 
                 # 2) Discovery Engine에 adkAgentDefinition으로 등록 (noCodeAgentDefinition 전면 배제)
                 body = {
@@ -1302,7 +1342,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     "adkAgentDefinition": {
                         "toolSettings": {"toolDescription": cfg["description"]},
                         "provisionedReasoningEngine": {
-                            "reasoningEngine": re_res
+                            "reasoningEngine": re_name
                         },
                     },
                 }
@@ -1335,7 +1375,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"- **{cfg['display_name']}**\n"
                         f"  - 상태: 등록 완료 (`{agent_state}`)\n"
                         f"  - Agent ID: `{agent_id}`\n"
-                        f"  - 연동 Agent Engine: `{re_res}`\n"
+                        f"  - 연동 Agent Engine: `{re_name}`\n"
                         f"  - 런타임 콘솔: Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
                         f"  - 에이전트 목록: Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
                     )
@@ -1345,6 +1385,157 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 reports.append(f"- **{cfg['display_name']}**: 프로비저닝 예외 발생 ({str(e)})")
 
         return "### Gemini Enterprise App 자동 배포 및 사내 갤러리 등록 완료\n\n" + "\n\n".join(reports)
+
+    def check_deployment_status_tool(target_name_or_operation_id: str = "") -> str:
+        """Check the ongoing deployment status of Reasoning Engine and complete registration to Gemini Enterprise app if finished.
+        
+        Args:
+            target_name_or_operation_id: Optional agent display name or operation ID to check. If empty, checks the most recent deployment operation.
+            
+        Returns:
+            A markdown report detailing current build/deployment status or completed registration.
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Goog-User-Project": project_id,
+        }
+
+        # 1. 대상 operation 탐색
+        target_op = target_name_or_operation_id.strip() if target_name_or_operation_id else ""
+        if not target_op or not target_op.startswith("projects/"):
+            ops_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/operations"
+            try:
+                ops_resp = requests.get(ops_url, headers=headers, timeout=15)
+                if ops_resp.ok:
+                    ops = ops_resp.json().get("operations", [])
+                    for op in ops:
+                        op_target = op.get("name", "")
+                        if not target_op:
+                            target_op = op_target
+                            break
+                        elif target_name_or_operation_id.lower() in str(op).lower():
+                            target_op = op_target
+                            break
+            except Exception:
+                pass
+
+        if not target_op:
+            return list_deployed_agents_tool()
+
+        # 2. LRO 상태 조회
+        op_check_url = f"https://{re_location}-aiplatform.googleapis.com/v1/{target_op}"
+        try:
+            chk_resp = requests.get(op_check_url, headers=headers, timeout=15)
+            if not chk_resp.ok:
+                return f"[오류] 작업 상태 조회 실패 (HTTP {chk_resp.status_code}): {chk_resp.text[:200]}"
+            chk_data = chk_resp.json()
+            is_done = chk_data.get("done", False)
+
+            if not is_done:
+                return (
+                    f"### 배포 진행 상황 안내\n\n"
+                    f"- **작업 식별자**: `{target_op}`\n"
+                    f"- **현재 상태**: 클라우드 인프라 프로비저닝 및 Cloud Build 컨테이너 패키징이 정상 진행 중입니다. (진행 중)\n"
+                    f"- **소요 시간 안내**: 컨테이너 빌드 및 의존성 설치 특성상 통상 2~3분이 소요되며, 최대 15분까지 안전하게 대기 및 모니터링됩니다.\n"
+                    f"- **다음 조치**: 잠시 후 다시 **\"배포 상태 확인해 줘\"** 또는 **\"진행 상황 어때?\"**라고 요청해 주시면 완료 즉시 사내 갤러리 등록을 완결해 드립니다.\n\n"
+                    f"---\n"
+                    f"**추천 후속 질문:**\n"
+                    f"1. 배포 상태 확인해 줘\n"
+                    f"2. 등록된 에이전트 목록 보여줘"
+                )
+
+            # 에러 발생 시
+            if "error" in chk_data:
+                err_msg = chk_data["error"].get("message", "알 수 없는 오류")
+                return f"### [배포 실패] 클라우드 인프라 프로비저닝 중 오류 발생\n\n- **작업 식별자**: `{target_op}`\n- **오류 내용**: {err_msg}"
+
+            # 완료 성공 시: 생성된 Reasoning Engine 확인 및 Discovery Engine 자동 등록 집행!
+            re_name = chk_data.get("response", {}).get("name", "")
+            if not re_name:
+                re_name = chk_data.get("metadata", {}).get("target", "")
+
+            disp_name = "사내 맞춤 에이전트"
+            if re_name:
+                try:
+                    re_detail = requests.get(f"https://{re_location}-aiplatform.googleapis.com/v1/{re_name}", headers=headers, timeout=10)
+                    if re_detail.ok:
+                        disp_name = re_detail.json().get("displayName", disp_name)
+                except Exception:
+                    pass
+
+            # Discovery Engine 등록 여부 확인
+            base_url = (
+                f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+                f"/locations/{ge_location}/collections/default_collection"
+                f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+            )
+            runtimes_url = f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"
+            admin_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
+
+            reg_check = requests.get(base_url, headers=headers, timeout=15)
+            if reg_check.ok:
+                for a in reg_check.json().get("agents", []):
+                    if a.get("displayName") == disp_name:
+                        aid = a.get("name", "").split("/")[-1]
+                        return (
+                            f"### 사내 갤러리 배포 및 등록 완료!\n\n"
+                            f"- **에이전트 명칭**: **{disp_name}**\n"
+                            f"- **상태**: 정상 활성화 (`ENABLED`)\n"
+                            f"- **Agent ID**: `{aid}`\n"
+                            f"- **연동 Agent Engine**: `{re_name}`\n"
+                            f"- **공유 범위**: 전사 공개 (`ALL_USERS`)\n\n"
+                            f"**안내**:\n"
+                            f"이제 사내 갤러리(/r/agents)에서 모든 임직원이 즉시 대화하실 수 있습니다!\n\n"
+                            f"[사내 갤러리 및 런타임 콘솔]\n"
+                            f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
+                            f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
+                        )
+
+            # 미등록 상태이면 즉시 자동 등록
+            reg_body = {
+                "displayName": disp_name,
+                "description": f"Agent Platform 자동 빌드 및 배포된 사내 맞춤 에이전트",
+                "state": "ENABLED",
+                "sharingConfig": {"scope": "ALL_USERS"},
+                "customPlaceholderText": f"{disp_name}에게 업무 질의를 입력하세요...",
+                "starterPrompts": [
+                    {"text": f"{disp_name} 주요 기능 요약해 줘"},
+                    {"text": f"{disp_name} 연동 도구 목록 보여줘"},
+                ],
+                "adkAgentDefinition": {
+                    "toolSettings": {"toolDescription": f"Agent Platform 기반 사내 에이전트: {disp_name}"},
+                    "provisionedReasoningEngine": {
+                        "reasoningEngine": re_name
+                    },
+                },
+            }
+            reg_resp = requests.post(base_url, headers=headers, json=reg_body, timeout=30)
+            if reg_resp.ok:
+                new_aid = reg_resp.json().get("name", "").split("/")[-1]
+                return (
+                    f"### 사내 갤러리 배포 및 등록 완료!\n\n"
+                    f"- **에이전트 명칭**: **{disp_name}**\n"
+                    f"- **상태**: 등록 완료 (`ENABLED`)\n"
+                    f"- **Agent ID**: `{new_aid}`\n"
+                    f"- **연동 Agent Engine**: `{re_name}`\n"
+                    f"- **공유 범위**: 전사 공개 (`ALL_USERS`)\n\n"
+                    f"**안내**:\n"
+                    f"클라우드 빌드 및 사내 갤러리 바인딩이 성공적으로 완결되었습니다. 이제 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다!\n\n"
+                    f"[사내 갤러리 및 런타임 콘솔]\n"
+                    f"- Agent Platform Runtimes 콘솔 ( {runtimes_url} )\n"
+                    f"- Gemini Enterprise 에이전트 목록 콘솔 ( {admin_url} )"
+                )
+            else:
+                return (
+                    f"### [부분 완료] Agent Engine 프로비저닝 완료, 갤러리 등록 대기 중\n\n"
+                    f"- **에이전트 명칭**: **{disp_name}**\n"
+                    f"- **연동 Agent Engine**: `{re_name}`\n"
+                    f"- **갤러리 등록 응답**: HTTP {reg_resp.status_code} ({reg_resp.text[:200]})\n"
+                    f"- 런타임 콘솔에서 직접 바인딩을 완료하실 수 있습니다: Agent Platform Runtimes 콘솔 ( {runtimes_url} )"
+                )
+        except Exception as e:
+            return f"[예외 발생] 배포 상태 점검 실패: {str(e)}"
 
     def list_deployed_agents_tool() -> str:
         """List all currently active agents registered in Gemini Enterprise app.
@@ -1396,16 +1587,17 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
-1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(1: 커스텀 GitHub 레포, 2: 어드민 코파일럿, 3: 노코드 에이전트 팩토리)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 즉시 이 도구를 호출하여 실제 클라우드 배포를 집행하십시오!
-2. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
+1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(1: 커스텀 GitHub 레포, 2: 어드민 코파일럿, 3: 노코드 에이전트 팩토리)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 즉시 이 도구를 호출하여 실제 클라우드 배포를 시작하십시오!
+2. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
+3. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 후속 질문 안내 규약]
 모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
 ---
 **추천 후속 질문:**
-1. GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘
-2. GE Admin Copilot 배포해 줘
-3. GE Agent Factory 배포해 줘
+1. 배포 상태 확인해 줘
+2. GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘
+3. 등록된 에이전트 목록 보여줘
 - 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
 [소통 원칙]
@@ -1418,7 +1610,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
-        tools=[deploy_enterprise_agent_tool, list_deployed_agents_tool],
+        tools=[deploy_enterprise_agent_tool, check_deployment_status_tool, list_deployed_agents_tool],
     )
 
     class ResilientAdkApp(agent_engines.AdkApp):

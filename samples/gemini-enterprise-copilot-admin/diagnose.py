@@ -1178,7 +1178,41 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         instruction=instruction,
         tools=[get_admin_console_deeplinks_tool, list_deployed_agents_tool, get_admin_audit_queries_tool],
     )
-    app = agent_engines.AdkApp(agent=adk_agent, enable_tracing=True)
+    class ResilientAdkApp(agent_engines.AdkApp):
+        """Pydantic v2 직렬화 호환성 및 세션 안정화를 지원하는 엔터프라이즈 Agent Engine 래퍼."""
+
+        def _ensure_pydantic_private(self):
+            targets = []
+            if "agent" in self._tmpl_attrs and self._tmpl_attrs["agent"] is not None:
+                targets.append(self._tmpl_attrs["agent"])
+            for runner_key in ("runner", "in_memory_runner"):
+                runner = self._tmpl_attrs.get(runner_key)
+                if runner and hasattr(runner, "app") and runner.app:
+                    if hasattr(runner.app, "root_agent") and runner.app.root_agent:
+                        targets.append(runner.app.root_agent)
+            for ag in targets:
+                if getattr(ag, "__pydantic_private__", None) is None:
+                    object.__setattr__(
+                        ag,
+                        "__pydantic_private__",
+                        {"_resolved_model": None, "_resolved_live_model": None},
+                    )
+                try:
+                    _ = ag.canonical_model
+                except Exception:
+                    pass
+
+        def set_up(self):
+            self._ensure_pydantic_private()
+            super().set_up()
+            self._ensure_pydantic_private()
+
+        async def streaming_agent_run_with_events(self, request_json: str):
+            self._ensure_pydantic_private()
+            async for event in super().streaming_agent_run_with_events(request_json):
+                yield event
+
+    app = ResilientAdkApp(agent=adk_agent, enable_tracing=True)
 
     runtime_env = {
         "GOOGLE_GENAI_USE_VERTEXAI": "1",
