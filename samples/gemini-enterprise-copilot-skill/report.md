@@ -1,6 +1,6 @@
 # Gemini Enterprise 사내 스킬 팩토리 배포 보고서 (gemini-enterprise-copilot-skill)
 
-- **배포 일시**: 2026-10-20 02:38:34 UTC
+- **배포 일시**: 2026-10-20 03:08:55 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE Skill Factory (사내 스킬 팩토리)`
@@ -13,7 +13,7 @@
 | 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
 | **에이전트 명칭** | `PROVISIONED` | `GE Skill Factory (사내 스킬 팩토리)` |
-| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/2791448937123987456` |
+| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-skill-factory-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
 | **내장 실행 도구** | `3종 완비` | `deploy_enterprise_skill_tool`, `list_enterprise_skills_tool`, `get_preset_skills_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
@@ -92,7 +92,7 @@ flowchart TB
    ```bash
    # Agent Engine 인스턴스 삭제 (force=true)
    curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/2791448937123987456?force=true"
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-skill-factory-engine?force=true"
    ```
 
 2. **GE App 사내 갤러리 등록 해제**:

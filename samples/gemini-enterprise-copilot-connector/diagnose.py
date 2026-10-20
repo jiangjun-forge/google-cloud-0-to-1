@@ -685,7 +685,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
     if dry_run:
         project_id = "sample-project-id"
         ge_app_id = "sample-ge-app-id"
-        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/1449671171728474112"
+        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/simulated-connector-scaffolder-engine"
         sa_email = f"ge-connector-sa@{project_id}.iam.gserviceaccount.com"
     else:
         project_id = env_info["project_id"]
@@ -840,7 +840,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
 
     if dry_run:
         print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
-        simulated_re_id = "1449671171728474112"
+        simulated_re_id = "simulated-connector-scaffolder-engine"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
         print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
         print(f"  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")

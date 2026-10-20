@@ -13,7 +13,7 @@
 | 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
 | **에이전트 명칭** | `PROVISIONED` | `GE Admin Copilot (사내 어드민 코파일럿)` |
-| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/4756157723148550144` |
+| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-admin-copilot-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
 | **내장 실행 도구** | `3종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `get_admin_audit_queries_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
@@ -92,7 +92,7 @@ flowchart TB
    ```bash
    # Agent Engine 인스턴스 삭제 (force=true)
    curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/4756157723148550144?force=true"
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-admin-copilot-engine?force=true"
    ```
 
 2. **GE App 사내 갤러리 등록 해제**:

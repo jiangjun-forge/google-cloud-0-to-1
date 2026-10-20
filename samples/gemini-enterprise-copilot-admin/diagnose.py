@@ -804,7 +804,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
     if dry_run:
         project_id = "sample-project-id"
         ge_app_id = "sample-ge-app-id"
-        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/4756157723148550144"
+        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/simulated-admin-copilot-engine"
         sa_email = f"ge-admin-sa@{project_id}.iam.gserviceaccount.com"
         domain = "example-corp.com"
     else:
@@ -960,7 +960,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
 
     if dry_run:
         print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
-        simulated_re_id = "4756157723148550144"
+        simulated_re_id = "simulated-admin-copilot-engine"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
         print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
         print(f"  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")

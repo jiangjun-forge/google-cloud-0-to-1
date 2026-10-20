@@ -852,7 +852,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
     if dry_run:
         project_id = "sample-project-id"
         ge_app_id = "sample-ge-app-id"
-        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/6590530146371895296"
+        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/simulated-agent-factory-engine"
         sa_email = f"ge-agent-factory-sa@{project_id}.iam.gserviceaccount.com"
     else:
         project_id = env_info["project_id"]
@@ -1005,7 +1005,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
     if dry_run:
         print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
-        simulated_re_id = "6590530146371895296"
+        simulated_re_id = "simulated-agent-factory-engine"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
         print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
         print(f"  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
@@ -1097,15 +1097,23 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             f"/engines/{ge_app_id}/assistants/default_assistant/agents"
         )
 
-        # Agent Engine 리소스 동적 탐색
-        re_res = None
-        re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
+        # 1. 대상 GE App 내 기존 등록 여부 사전 스캔 (Idempotence Pre-flight check)
         try:
-            re_resp = requests.get(re_list_url, headers=headers, timeout=15)
-            if re_resp.ok:
-                re_engines = re_resp.json().get("reasoningEngines", [])
-                if re_engines:
-                    re_res = re_engines[0].get("name")
+            list_resp = requests.get(base_url, headers=headers, timeout=15)
+            if list_resp.ok:
+                for a in list_resp.json().get("agents", []):
+                    if a.get("displayName") == display_name:
+                        existing_id = a.get("name", "").split("/")[-1]
+                        existing_state = a.get("state", "UNKNOWN")
+                        if existing_state == "ENABLED":
+                            return (
+                                f"### 사내 노코드 에이전트 등록 현황\n\n"
+                                f"- **{display_name}**\n"
+                                f"  - 상태: 이미 사내 갤러리에 정상 등록되어 활성화(ENABLED)되어 있습니다.\n"
+                                f"  - Agent ID: `{existing_id}`\n"
+                                f"  - 공유 범위: `ALL_USERS`\n"
+                                f"  - 안내: 추가 등록 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
+                            )
         except Exception:
             pass
 
@@ -1122,18 +1130,10 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             "sharingConfig": {"scope": "ALL_USERS"},
             "customPlaceholderText": f"{display_name}에게 업무 질문이나 요청을 입력하세요...",
             "starterPrompts": [{"text": p} for p in prompts_list],
-        }
-        if re_res:
-            body["adkAgentDefinition"] = {
-                "toolSettings": {"toolDescription": description},
-                "provisionedReasoningEngine": {
-                    "reasoningEngine": re_res
-                },
-            }
-        else:
-            body["noCodeAgentDefinition"] = {
+            "noCodeAgentDefinition": {
                 "objective": instructions
-            }
+            },
+        }
 
         try:
             resp = requests.post(base_url, headers=headers, json=body, timeout=30)

@@ -700,7 +700,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
     if dry_run:
         project_id = "sample-project-id"
         ge_app_id = "sample-ge-app-id"
-        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/2791448937123987456"
+        re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/simulated-skill-factory-engine"
         sa_email = f"ge-skill-invoker-sa@{project_id}.iam.gserviceaccount.com"
     else:
         project_id = env_info["project_id"]
@@ -854,7 +854,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
     if dry_run:
         print("\n--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.")
-        simulated_re_id = "5057054473252241408"
+        simulated_re_id = "simulated-skill-factory-engine"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
         print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
         print(f"  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
@@ -921,6 +921,26 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                 f"/locations/{ge_location}/collections/default_collection"
                 f"/engines/{ge_app_id}/assistants/default_assistant/agents"
             )
+
+            # 1. 대상 GE App 내 기존 등록 여부 사전 스캔 (Idempotence Pre-flight check)
+            try:
+                list_resp = requests.get(base_url, headers=headers, timeout=15)
+                if list_resp.ok:
+                    for a in list_resp.json().get("agents", []):
+                        if a.get("displayName") == cleaned_name:
+                            existing_id = a.get("name", "").split("/")[-1]
+                            existing_state = a.get("state", "UNKNOWN")
+                            if existing_state == "ENABLED":
+                                return (
+                                    f"### 사내 스킬 등록 현황\n\n"
+                                    f"- **스킬 명칭**: `{cleaned_name}`\n"
+                                    f"  - 상태: 이미 사내 갤러리에 정상 등록되어 활성화(ENABLED)되어 있습니다.\n"
+                                    f"  - Skill ID: `{existing_id}`\n"
+                                    f"  - 공유 범위: `{a.get('sharingConfig', {}).get('scope', 'ALL_USERS')}`\n"
+                                    f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 사용하실 수 있습니다."
+                                )
+            except Exception:
+                pass
 
             body = {
                 "displayName": cleaned_name,

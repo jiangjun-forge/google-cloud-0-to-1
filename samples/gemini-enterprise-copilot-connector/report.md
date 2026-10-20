@@ -1,6 +1,6 @@
 # Gemini Enterprise 데이터 커넥터 스캐폴더 배포 보고서 (gemini-enterprise-copilot-connector)
 
-- **배포 일시**: 2026-10-20 02:38:29 UTC
+- **배포 일시**: 2026-10-20 03:07:50 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)`
@@ -13,7 +13,7 @@
 | 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
 | **에이전트 명칭** | `PROVISIONED` | `GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)` |
-| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/1449671171728474112` |
+| **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-connector-scaffolder-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
 | **내장 실행 도구** | `2종 완비` | `deploy_enterprise_connector_tool`, `list_deployed_agents_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
@@ -93,7 +93,7 @@ flowchart TB
    ```bash
    # Agent Engine 인스턴스 삭제 (force=true)
    curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/1449671171728474112?force=true"
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-connector-scaffolder-engine?force=true"
    ```
 
 2. **GE App 사내 갤러리 등록 해제**:
