@@ -695,6 +695,92 @@ if __name__ == "__main__":
     }
 
 
+def ensure_reasoning_engine_service_agent_permissions(project_id: str, token: str, dry_run: bool = False):
+    """Reasoning Engine P4SA 서비스 에이전트가 자식 에이전트를 자율 프로비저닝할 수 있도록 IAM 권한을 자체 점검 및 자동 보강(Self-Healing)한다."""
+    if dry_run:
+        print("  [*] [자가 치유] Reasoning Engine 서비스 에이전트(P4SA) 권한 사전 점검 시뮬레이션 완료")
+        return
+
+    import subprocess
+    import requests
+
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    # 1. 프로젝트 번호 조회
+    project_num = None
+    try:
+        crm_url = f"https://cloudresourcemanager.googleapis.com/v1/projects/{project_id}"
+        resp = requests.get(crm_url, headers=headers, timeout=10)
+        if resp.ok:
+            project_num = resp.json().get("projectNumber")
+    except Exception:
+        pass
+
+    if not project_num:
+        try:
+            res = subprocess.run(
+                ["gcloud", "projects", "describe", project_id, "--format=value(projectNumber)"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if res.returncode == 0 and res.stdout.strip():
+                project_num = res.stdout.strip()
+        except Exception:
+            pass
+
+    if not project_num:
+        print("  [안내] 프로젝트 번호를 조회할 수 없어 서비스 에이전트 IAM 자체 점검을 건너뜁니다.")
+        return
+
+    p4sa_email = f"service-{project_num}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+    required_p4sa_roles = ["roles/aiplatform.admin", "roles/storage.admin"]
+
+    # 2. 현재 IAM 정책 조회 및 권한 누락 여부 확인
+    roles_to_grant = []
+    try:
+        policy_url = f"https://cloudresourcemanager.googleapis.com/v1/projects/{project_id}:getIamPolicy"
+        policy_resp = requests.post(policy_url, headers=headers, json={}, timeout=10)
+        if policy_resp.ok:
+            policy_data = policy_resp.json()
+            existing_roles = set()
+            for binding in policy_data.get("bindings", []):
+                if f"serviceAccount:{p4sa_email}" in binding.get("members", []):
+                    existing_roles.add(binding.get("role"))
+            for req_role in required_p4sa_roles:
+                if req_role not in existing_roles:
+                    roles_to_grant.append(req_role)
+    except Exception:
+        for req_role in required_p4sa_roles:
+            roles_to_grant.append(req_role)
+
+    # 3. 누락된 권한 자동 부여 (Self-Healing Auto-Grant)
+    if roles_to_grant:
+        print(f"  [*] [자가 치유] Reasoning Engine 서비스 에이전트({p4sa_email}) 자식 에이전트 프로비저닝 권한 자동 보강 중...")
+        for role in roles_to_grant:
+            try:
+                sub_res = subprocess.run(
+                    [
+                        "gcloud", "projects", "add-iam-policy-binding", project_id,
+                        f"--member=serviceAccount:{p4sa_email}",
+                        f"--role={role}",
+                        "--condition=None",
+                        "--quiet",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=20,
+                )
+                if sub_res.returncode == 0:
+                    print(f"    - [부여 완료] {role}")
+                else:
+                    print(f"    - [안내] {role} 권한 부여 생략 또는 수동 권한 필요 ({sub_res.stderr.strip()[:100]})")
+            except Exception as e:
+                print(f"    - [오류] {role} 권한 부여 실패: {e}")
+    else:
+        print(f"  [*] [자가 치유] Reasoning Engine 서비스 에이전트({p4sa_email}) 필수 권한({', '.join(required_p4sa_roles)}) 완비 확인")
+
+
 def diagnose_iam_and_connectivity(chip_data: dict, env_info: dict, dry_run: bool):
     """커스텀 에이전트 구동 및 Gemini Enterprise app 연동에 필요한 IAM 권한을 사전 진단한다."""
     sa_email = "custom-agent-sa@sample-project-id.iam.gserviceaccount.com" if dry_run else env_info["service_account"]
@@ -894,6 +980,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
         print(f"  [2] 장착 도구: deploy_enterprise_agent_tool, list_deployed_agents_tool")
         print(f"  [3] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
+        ensure_reasoning_engine_service_agent_permissions(project_id, "", dry_run=True)
         return {
             "status": "DRY_RUN_PASSED",
             "reasoning_engine": simulated_res,
@@ -918,6 +1005,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     google.auth.default = lambda *args, **kwargs: (creds, project_id)
 
     print("\n[단계 1/2] Agent Engine 초기화 및 패키징 중...")
+    ensure_reasoning_engine_service_agent_permissions(project_id, token, dry_run=False)
     vertexai.init(
         project=project_id,
         location=re_location,

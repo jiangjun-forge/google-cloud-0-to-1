@@ -148,6 +148,8 @@ flowchart TB
 
 | 역할 (Role) | 부여 대상 | 용도 및 최소 권한 세부 사항 |
 | :--- | :--- | :--- |
+| `roles/aiplatform.admin` | Reasoning Engine 서비스 에이전트(P4SA) | 팩토리 에이전트가 자식 Reasoning Engine 런타임을 자율 프로비저닝하기 위한 필수 권한 (`diagnose.py` 사전 실행 시 자동 보강) |
+| `roles/storage.admin` | Reasoning Engine 서비스 에이전트(P4SA) | 자식 에이전트 패키지 아티팩트(`.pkl`, `requirements.txt`) GCS 읽기 및 빌드 권한 (`diagnose.py` 사전 실행 시 자동 보강) |
 | `roles/aiplatform.user` | 개발자 / 에이전트 실행 SA | Agent Engine 프로비저닝 및 Gemini 파운데이션 모델 추론 권한 |
 | `roles/discoveryengine.editor` | 관리자 계정 | Gemini Enterprise app 카탈로그에 에이전트 등록 및 메타데이터 바인딩 |
 | `roles/bigquery.dataViewer` | BigQuery 연동 에이전트 SA | 대상 사내 데이터셋 테이블 읽기 및 스키마 조회 권한 |
