@@ -150,14 +150,18 @@ flowchart TB
 본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 가이드를 수행한다:
 
 1. **Agent Engine 삭제**:
-   ```python
-   import vertexai
-   from vertexai import agent_engines
-
-   vertexai.init(project="PROJECT_ID", location="us-central1")
-   # agent_engines.delete(resource_name="projects/PROJECT_ID/locations/us-central1/reasoningEngines/<ENGINE_ID>")
+   ```bash
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/us-central1/reasoningEngines/<ENGINE_ID>?force=true"
    ```
-2. **서비스 계정 삭제**:
+2. **GE App 사내 갤러리 등록 해제**:
+   ```bash
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     "https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_ID}/locations/global/collections/default_collection/engines/${GE_APP_ID}/assistants/default_assistant/agents/<AGENT_ID>"
+   ```
+3. **서비스 계정 삭제**:
    ```bash
    gcloud iam service-accounts delete custom-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com --quiet
    ```

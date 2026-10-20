@@ -111,11 +111,11 @@ def get_gcloud_config(key: str) -> str:
 
 
 def get_resource_creator(dry_run: bool = False) -> str:
-    """CLI 실행 계정으로부터 GCP 표준 라벨 형식에 부합하는 creator 문자열을 추출한다."""
+    """CLI 실행 계정으로부터 GCP 표준 라벨 형식에 부합하는 풀 프린시펄(Full Principal) 문자열을 추출한다."""
     if dry_run:
         return "customer-engineer"
     account = get_gcloud_config("account") or os.environ.get("USER") or "customer-engineer"
-    clean = account.split("@")[0].lower().replace(".", "-").replace("_", "-")
+    clean = account.lower().replace("@", "-at-").replace(".", "-").replace(":", "-").replace("_", "-")
     sanitized = "".join(c for c in clean if c.isalnum() or c == "-").strip("-")
     return sanitized[:63] if sanitized else "customer-engineer"
 
@@ -818,14 +818,18 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
 
 1. **Agent Engine 삭제**:
-   ```python
-   import vertexai
-   from vertexai import agent_engines
-
-   vertexai.init(project="{project_id}", location="{env_info['region']}")
-   # agent_engines.delete(resource_name="projects/{project_id}/locations/{env_info['region']}/reasoningEngines/<ENGINE_ID>")
+   ```bash
+   # Agent Engine 인스턴스 삭제 (force=true)
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+     "https://{env_info['region']}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{env_info['region']}/reasoningEngines/<ENGINE_ID>?force=true"
    ```
-2. **서비스 계정 삭제**:
+2. **GE App 사내 갤러리 등록 해제**:
+   ```bash
+   # GE App 에이전트 삭제
+   curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+     "https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{env_info['ge_app_id']}/assistants/default_assistant/agents/<AGENT_ID>"
+   ```
+3. **서비스 계정 삭제**:
    ```bash
    gcloud iam service-accounts delete {env_info['service_account']} --quiet
    ```

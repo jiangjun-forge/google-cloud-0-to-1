@@ -183,11 +183,11 @@ def get_gcloud_config(key: str) -> str:
 
 
 def get_resource_creator(dry_run: bool = False) -> str:
-    """CLI 실행 계정으로부터 GCP 표준 라벨 형식에 부합하는 creator 문자열을 추출한다."""
+    """CLI 실행 계정으로부터 GCP 표준 라벨 형식에 부합하는 풀 프린시펄(Full Principal) 문자열을 추출한다."""
     if dry_run:
         return "customer-engineer"
     account = get_gcloud_config("account") or os.environ.get("USER") or "customer-engineer"
-    clean = account.split("@")[0].lower().replace(".", "-").replace("_", "-")
+    clean = account.lower().replace("@", "-at-").replace(".", "-").replace(":", "-").replace("_", "-")
     sanitized = "".join(c for c in clean if c.isalnum() or c == "-").strip("-")
     return sanitized[:63] if sanitized else "customer-engineer"
 

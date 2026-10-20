@@ -1,6 +1,6 @@
 # Gemini Enterprise 사내 스킬 팩토리 배포 보고서 (gemini-enterprise-copilot-skill)
 
-- **배포 일시**: 2026-10-20 02:22:15 UTC
+- **배포 일시**: 2026-10-20 02:38:34 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE Skill Factory (사내 스킬 팩토리)`
