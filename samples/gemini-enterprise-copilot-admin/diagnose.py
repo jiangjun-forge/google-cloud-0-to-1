@@ -233,11 +233,51 @@ def select_ge_app_id(project_id: str, candidate_apps: list, dry_run: bool = Fals
     return selected
 
 
+def persist_env_value(key: str, value: str, dry_run: bool = False):
+    """실행 중 자동 감지되거나 선택된 값을 로컬 .env 파일에 안전하게 반영한다."""
+    if dry_run or not value or value.startswith("sample-"):
+        return
+
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(cur_dir, ".env")
+    example_path = os.path.join(cur_dir, ".env.example")
+
+    lines = []
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    elif os.path.exists(example_path):
+        with open(example_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+    updated = False
+    new_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(f"{key}=") or stripped.startswith(f"#{key}="):
+            new_lines.append(f"{key}={value}\n")
+            updated = True
+        else:
+            new_lines.append(line)
+
+    if not updated:
+        new_lines.append(f"{key}={value}\n")
+
+    try:
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+        print(f"[*] 로컬 .env 파일에 {key}={value} 설정 자동 저장 완료")
+    except Exception:
+        pass
+
+
 def resolve_environment(args) -> dict:
     """활성 GCP 프로젝트 및 환경 변수를 스마트하게 자동 감지한다 (실시간 GE App 감지 및 대화형 번호 선택 지원)."""
     load_env_file()
 
     project_id = args.project or os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or get_gcloud_config("project") or "sample-project-id"
+    if not args.dry_run and not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
+        persist_env_value("PROJECT_ID", project_id, dry_run=args.dry_run)
 
     location = args.location or os.environ.get("LOCATION") or "global"
 
@@ -245,6 +285,8 @@ def resolve_environment(args) -> dict:
     if not ge_app_id:
         candidates = discover_ge_app_engines(project_id)
         ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
+        if not args.dry_run and ge_app_id:
+            persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
 
     sa_email = args.sa or os.environ.get("ADMIN_SERVICE_ACCOUNT") or f"ge-admin-sa@{project_id}.iam.gserviceaccount.com"
     domain = args.domain or os.environ.get("CUSTOMER_DOMAIN") or "example-corp.com"

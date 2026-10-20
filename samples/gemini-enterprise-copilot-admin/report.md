@@ -1,6 +1,6 @@
 # Gemini Enterprise 어드민 코파일럿 배포 보고서 (gemini-enterprise-copilot-admin)
 
-- **배포 일시**: 2026-10-20 01:08:50 UTC
+- **배포 일시**: 2026-10-20 01:11:01 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE Admin Copilot (사내 어드민 코파일럿)`
