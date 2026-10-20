@@ -16,37 +16,42 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 시스템 아키텍처 및 처리 흐름
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 시스템은 **스킬 기획 및 추천 칩 선택**, **OpenAPI 3.0 스키마 자동 합성 및 자격 증명 바인딩**, **Gemini Enterprise app 도구 레지스트리 배포 및 에이전트 장착**의 3단계 파이프라인으로 구성된다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 현업 임직원 또는 부서 관리자가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 8대 핵심 시스템 도구(Google Sheets, Slack, Jira, ERP 등) 연동을 요청하면, 에이전트 엔진(Agent Engine) 런타임이 OpenAPI 3.0 명세를 자동 합성하고 시크릿 매니저(Secret Manager) 보안 볼트와 결합하여 디스커버리 엔진(Discovery Engine) 도구 레지스트리에 안전하게 등록 및 대상 에이전트에 장착한다.
 
 ```mermaid
-flowchart TD
-    subgraph InputPhase ["1. 스킬 요구사항 입력 및 칩 선택"]
-        User["현업 임직원 / 부서 관리자"]
-        CLI["스킬 팩토리 CLI<br/>(diagnose.py)"]
-        ToolCatalog["8대 핵심 시스템 도구 카탈로그<br/>(Sheets, Slack, Jira, ERP 등)"]
-        User --> CLI
-        CLI --> ToolCatalog
+sequenceDiagram
+    actor User as 현업 임직원 / 부서 관리자
+    participant Portal as Gemini Enterprise (웹 포털)
+    participant Engine as Agent Engine (AdkApp 샌드박스)
+    participant Tool as skill_factory_scaffolder_tool
+    participant SecretMgr as Secret Manager (보안 볼트)
+    participant DiscEng as Discovery Engine Tool Registry
+
+    User->>Portal: "사내 Slack 및 Google Sheets 알림 스킬 등록해 줘"
+    Portal->>Engine: 세션 쿼리 전달 (Streaming)
+    Engine->>Tool: execute(skill="slack_sheets_alert", access_mode="read_write")
+
+    rect rgb(240, 245, 255)
+    note right of Tool: OpenAPI 3.0 스키마 합성 및 보안 볼트 바인딩 단계
+    Tool->>Tool: OpenAPI 3.0 규격 엔드포인트 명세 및 파라미터 유효성 검증 규칙 합성
+    Tool->>SecretMgr: POST /secrets (Webhook URL 및 서비스 계정 키 암호화 저장)
+    SecretMgr-->>Tool: Secret Version Resource Name 반환
+    Tool->>Tool: 조회(Read) vs 변경(Write) 분리 및 관리자 승인 가드레일 주입
     end
 
-    subgraph SchemaPhase ["2. OpenAPI 스키마 및 보안 가드레일 합성"]
-        SchemaGen["OpenAPI 3.0 도구 명세 생성<br/>(Paths, Parameters, Responses)"]
-        VaultBinding["시크릿 매니저 연동<br/>(Secret Manager Vault)"]
-        PermissionCheck["조회(Read) vs 변경(Write) 분리<br/>(Admin Approval Guard)"]
-        ToolCatalog --> SchemaGen
-        SchemaGen --> VaultBinding
-        VaultBinding --> PermissionCheck
+    rect rgb(240, 255, 245)
+    note right of Tool: Discovery Engine 도구 레지스트리 배포 및 에이전트 장착
+    Tool->>DiscEng: POST /tools (openApiSpec, secret_ref, auth_config)
+    DiscEng-->>Tool: Tool ID 반환 (state=READY)
+    Tool->>DiscEng: POST /agents/{target_agent_id}/tools (에이전트 기능 확장 바인딩)
+    DiscEng-->>Tool: 200 OK (스킬 활성화 완료)
     end
 
-    subgraph RegistryPhase ["3. Gemini Enterprise app 도구 레지스트리 배포 및 바인딩"]
-        ToolRegistry["Gemini Enterprise app 도구 레지스트리<br/>(Tool Registry)"]
-        TargetAgent["기존 사내 에이전트<br/>(HR, IT, CS 에이전트 등)"]
-        ActiveSkill["실행 가능한 액션 스킬 활성화<br/>(Active Action Skill)"]
-        PermissionCheck --> ToolRegistry
-        ToolRegistry --> TargetAgent
-        TargetAgent --> ActiveSkill
-    end
+    Tool-->>Engine: ToolResult("스킬 등록 완료: 실행 가능 액션, 거버넌스 가드레일 명세")
+    Engine-->>Portal: 신규 스킬 등록 카드 및 사용 예제 출력
+    Portal-->>User: "신규 액션 스킬이 사내 에이전트에 성공적으로 장착되었습니다!"
 ```
 
 ---

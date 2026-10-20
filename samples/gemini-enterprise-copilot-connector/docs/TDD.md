@@ -16,36 +16,41 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 시스템 아키텍처 및 처리 흐름
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구는 크게 **데이터 소스 칩 선택 및 스펙 컴파일**, **보안 볼트 및 ACL 동기화 매니페스트 합성**, **IAM 권한 및 Gemini Enterprise app 바인딩 진단**의 3단계 파이프라인으로 구성된다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 아키텍트 또는 데이터 엔지니어가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 8대 기간계 데이터 소스(Jira, Confluence, Salesforce, Google Drive 등) 연결 요청을 입력하면, 에이전트 엔진(Agent Engine) 런타임이 시크릿 매니저(Secret Manager) 보안 볼트와 문서 레벨 ACL 매핑을 합성하고 디스커버리 엔진(Discovery Engine) 데이터 저장소(Data Store)를 사내 앱에 안전하게 직결 바인딩한다.
 
 ```mermaid
-flowchart TD
-    subgraph Selection ["1. 데이터 소스 칩 선택"]
-        User["아키텍트 / 데이터 엔지니어"]
-        CLI["커넥터 스캐폴더 CLI<br/>(diagnose.py)"]
-        PresetSource["8대 기간계 데이터 소스 칩<br/>(Jira, Confluence, Salesforce, Drive 등)"]
-        User --> CLI
-        CLI --> PresetSource
+sequenceDiagram
+    actor Arch as 아키텍트 / 데이터 엔지니어
+    participant Portal as Gemini Enterprise (웹 포털)
+    participant Engine as Agent Engine (AdkApp 샌드박스)
+    participant Tool as connector_scaffolder_tool
+    participant SecretMgr as Secret Manager (보안 볼트)
+    participant DiscEng as Discovery Engine REST API
+
+    Arch->>Portal: "사내 Confluence 및 Jira 데이터 소스 연동 설정해 줘"
+    Portal->>Engine: 세션 쿼리 전달 (Streaming)
+    Engine->>Tool: execute(source="confluence_jira", auth_type="oauth2")
+
+    rect rgb(240, 245, 255)
+    note right of Tool: 보안 자격 증명 볼트 및 ACL 정책 합성 단계
+    Tool->>SecretMgr: POST /secrets (CII 자격 증명 암호화 보관)
+    SecretMgr-->>Tool: Secret Version Resource Name 반환
+    Tool->>Tool: 문서 레벨 ACL 및 사용자 ID 매핑(Identity Mapping) 매니페스트 합성
     end
 
-    subgraph Composition ["2. 매니페스트 및 보안 볼트 합성"]
-        SecretVault["시크릿 매니저 보안 볼트<br/>(Secret Manager OAuth Key)"]
-        DataStoreSpec["디스커버리 엔진 데이터 저장소 매니페스트<br/>(connector_spec.json)"]
-        ACLPolicy["문서 레벨 ACL 및 계정 매핑 정책<br/>(Identity Mapping Rules)"]
-        PresetSource --> SecretVault
-        PresetSource --> DataStoreSpec
-        PresetSource --> ACLPolicy
+    rect rgb(240, 255, 245)
+    note right of Tool: Discovery Engine 데이터 저장소 프로비저닝 및 앱 바인딩
+    Tool->>DiscEng: POST /dataStores (schema, secret_ref, sync_frequency)
+    DiscEng-->>Tool: DataStore ID 반환 (동기화 파이프라인 가동)
+    Tool->>DiscEng: POST /engines/{ge_app_id}/dataStores (엔진 직결 바인딩)
+    DiscEng-->>Tool: 200 OK (바인딩 완료)
     end
 
-    subgraph Registration ["3. 사내 Gemini Enterprise app 직결 바인딩"]
-        EngineBinding["Gemini Enterprise app 엔진 바인딩<br/>(Collections / Engines 바인딩 API)"]
-        IAMCheck["대행 서비스 계정 권한 진단<br/>(roles/discoveryengine.admin)"]
-        DataStoreSpec --> EngineBinding
-        SecretVault --> IAMCheck
-        IAMCheck --> EngineBinding
-    end
+    Tool-->>Engine: ToolResult("데이터 소스 바인딩 완료: 동기화 상태, ACL 매핑 명세")
+    Engine-->>Portal: 데이터 소스 등록 카드 및 ACL 동기화 매니페스트 출력
+    Portal-->>Arch: "기간계 저장소가 Gemini Enterprise app에 성공적으로 바인딩되었습니다!"
 ```
 
 ---

@@ -16,37 +16,45 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 시스템 아키텍처 및 처리 흐름
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구는 크게 **5대 어드민 관리 칩 선택**, **사내 거버넌스 및 인프라 정책 컴파일**, **조치 가이드 및 리포트 도출**의 3단계 파이프라인으로 구성된다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사내 IT 어드민 및 클라우드 인프라 담당자가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 5대 관리 칩 중 하나를 선택하거나 질의를 입력하면, 에이전트 엔진(Agent Engine) 런타임이 사내 인프라 및 조직 정책 API를 진단하고 즉시 실행 가능한 복구 가이드를 도출한다.
 
 ```mermaid
-flowchart TD
-    subgraph InputPhase ["1. 어드민 문의 접수 및 칩 선택"]
-        Admin["IT / 클라우드 어드민"]
-        CLI["어드민 코파일럿 CLI<br/>(diagnose.py)"]
-        PresetDomain["5대 어드민 관리 칩<br/>(도메인, 거버넌스, 라이선스, 과금, FQDN)"]
-        Admin --> CLI
-        CLI --> PresetDomain
+sequenceDiagram
+    actor Admin as IT / 클라우드 어드민
+    participant Portal as Gemini Enterprise (웹 포털)
+    participant Engine as Agent Engine (AdkApp 샌드박스)
+    participant Tool as admin_governance_diagnostic_tool
+    participant Auth as Google ADC (어드민 인가 토큰)
+    participant OrgAPI as Cloud Resource Manager & IAM API
+    participant MetricAPI as Cloud Monitoring & BigQuery
+
+    Admin->>Portal: "5대 관리 과제 점검: 외부 마켓플레이스 차단 상태 확인해 줘"
+    Portal->>Engine: 세션 쿼리 전달 (Streaming)
+    Engine->>Tool: execute(scenario="marketplace_governance")
+
+    rect rgb(240, 245, 255)
+    note right of Tool: 인프라 정책 및 메트릭 교차 진단 단계
+    Tool->>Auth: default_credentials.with_scopes()
+    Auth-->>Tool: Bearer Access Token 반환
+    par 조직 정책 및 IAM 점검
+        Tool->>OrgAPI: GET /v1/organizations/{org_id}/policies/constraints
+        OrgAPI-->>Tool: 조직 정책 제약 조건 상태 반환
+    and 메트릭 및 감사 로그 점검
+        Tool->>MetricAPI: GET /v3/projects/{project_id}/timeSeries
+        MetricAPI-->>Tool: 활성 사용자 및 호출 메트릭 반환
+    end
     end
 
-    subgraph AnalysisPhase ["2. 거버넌스 정책 및 인프라 상태 분석"]
-        PolicyEngine["조직 정책 및 IAM 진단<br/>(Org Policy / IAM RBAC)"]
-        NetworkCheck["사내망 프록시 및 FQDN 검증<br/>(Exact FQDN / Outbound 443)"]
-        FinOpsEngine["라이선스 회수 및 Overage 가드<br/>(BigQuery Analytics / Quota)"]
-        PresetDomain --> PolicyEngine
-        PresetDomain --> NetworkCheck
-        PresetDomain --> FinOpsEngine
+    rect rgb(245, 240, 255)
+    note right of Tool: 판정 및 복구 처방 합성
+    Tool->>Tool: 거버넌스 갭(Gap) 분석 및 4대 필수 라벨 스크립트 도출
+    Tool-->>Engine: ToolResult("진단 결과, 위험 식별, 즉시 복구 gcloud 명령어")
     end
 
-    subgraph RemediationPhase ["3. 즉시 조치 가이드 및 리포트 생성"]
-        GcloudCmd["gcloud / curl 복구 스크립트<br/>(remediation.sh)"]
-        ReportOut["표준 진단 보고서<br/>(report.md)"]
-        PolicyEngine --> GcloudCmd
-        NetworkCheck --> GcloudCmd
-        FinOpsEngine --> GcloudCmd
-        GcloudCmd --> ReportOut
-    end
+    Engine-->>Portal: 진단 매트릭스 카드 및 원클릭 복구 스크립트 출력
+    Portal-->>Admin: "점검 완료: 외부 마켓플레이스 차단 미흡 (즉시 복구 gcloud 안내)"
 ```
 
 ---

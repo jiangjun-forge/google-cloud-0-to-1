@@ -16,40 +16,45 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 시스템 아키텍처 및 처리 흐름
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 시스템은 크게 **관리자 배포 파이프라인(CLI)**과 **엔드유저 자율 생성 파이프라인(Gemini Enterprise app Web)**의 2단계 라이프사이클로 구성된다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 클라우드 IAM 권한이 없는 사내 현업 임직원(Zero IAM)이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 노코드 에이전트 팩토리와 대화형 인터뷰를 진행하고 승인하면, 에이전트 엔진(Agent Engine) 런타임의 도구가 전용 대행 서비스 계정의 토큰을 획득하여 디스커버리 엔진(Discovery Engine) REST API를 통해 신규 커스텀 에이전트를 사내 갤러리에 자동 등록한다.
 
 ```mermaid
-flowchart TD
-    subgraph AdminPhase ["1. 관리자 1회 배포 단계 (CLI)"]
-        AdminCLI["관리자 진단 및 배포 도구<br/>(diagnose.py)"]
-        CheckIAM["대행 서비스 계정 권한 점검<br/>(discoveryengine.editor)"]
-        DeployMeta["메타 에이전트 등록<br/>(@에이전트 팩토리)"]
-        AdminCLI --> CheckIAM --> DeployMeta
+sequenceDiagram
+    actor User as 사내 임직원 (Zero IAM)
+    participant Portal as Gemini Enterprise (웹 포털)
+    participant Engine as Agent Engine (AdkApp 샌드박스)
+    participant Tool as register_nocode_agent_tool
+    participant Auth as Google ADC (인라인 클로저)
+    participant DiscEng as Discovery Engine REST API
+
+    User->>Portal: "@에이전트 팩토리, 사내 VOC 분석 에이전트 만들어 줘"
+    Portal->>Engine: 세션 쿼리 전달 (Streaming)
+    Engine->>User: 3대 핵심 요소 대화형 인터뷰 (역할, 업무 지침, 도구 연동)
+    User->>Engine: 인터뷰 답변 완료 및 생성 승인 ("응, 등록해 줘")
+
+    rect rgb(240, 245, 255)
+    note right of Engine: 격리된 도구 실행 및 토큰 획득 단계
+    Engine->>Tool: execute(agent_name, prompt, tools)
+    Tool->>Auth: default_credentials.with_scopes()
+    Auth-->>Tool: Bearer Access Token 발급
     end
 
-    subgraph UserPhase ["2. 임직원 자율 생성 단계 (Gemini Enterprise app 웹 포털)"]
-        User["현업 임직원<br/>(Zero IAM 권한)"]
-        MetaAgent["@에이전트 팩토리<br/>(Meta Agent)"]
-        ChipEngine["추천 칩 카탈로그<br/>(10대 산업 / 25개 시드)"]
-        SearchGrounding["구글 검색 그라운딩<br/>(Google Search Grounding)"]
-        SpecSynth["골든 지침 및 가드레일 합성<br/>(System Instructions & Prompts)"]
-        DelegatedSA["대행 서비스 계정 도구<br/>(Agent Publisher Tool)"]
-        TargetGEApp["Gemini Enterprise app 내 신규 등록<br/>(Private 에이전트)"]
-
-        User -->|"1. 대화 시작"| MetaAgent
-        MetaAgent -->|"2. 추천 칩 제시"| ChipEngine
-        ChipEngine -->|"3. 칩 선택 / 키워드 입력"| MetaAgent
-        MetaAgent -->|"4. 실시간 최신 정보 검색"| SearchGrounding
-        SearchGrounding -->|"5. 지침 및 가드레일 합성"| SpecSynth
-        SpecSynth -->|"6. 에이전트 생성 확인"| User
-        User -->|"7. 등록 승인"| MetaAgent
-        MetaAgent -->|"8. 대행 등록 실행"| DelegatedSA
-        DelegatedSA -->|"9. Gemini Enterprise app에 즉시 배포"| TargetGEApp
+    rect rgb(240, 255, 245)
+    note right of Tool: Discovery Engine REST API 사내 갤러리 등록
+    Tool->>DiscEng: POST /assistants/default_assistant/agents<br/>(adkAgentDefinition, displayName, instructions)
+    alt 등록 성공 (200 OK)
+        DiscEng-->>Tool: Agent Response (state=ENABLED, agent_id 반환)
+        Tool-->>Engine: ToolResult("사내 갤러리 등록 완료")
+        Engine-->>Portal: 최종 완료 카드 및 갤러리 링크 노출
+        Portal-->>User: "새 에이전트가 사내 갤러리에 등록되었습니다!"
+    else API 호출 오류 (403 / 409)
+        DiscEng-->>Tool: Error Response
+        Tool-->>Engine: ToolError("권한 부족 또는 중복 슬러그")
+        Engine-->>User: 오류 안내 및 롤백 가이드 제시
     end
-
-    DeployMeta -.->|"Gemini Enterprise app 카탈로그에 상주"| MetaAgent
+    end
 ```
 
 ---

@@ -16,42 +16,52 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 1. 시스템 아키텍처 및 처리 흐름
+## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구는 크게 **커스텀 에이전트 코드 생성 및 구축** 단계, **Agent Engine 런타임 프로비저닝** 단계, **Gemini Enterprise app 사내 갤러리 바인딩** 단계의 3단계 파이프라인으로 구성된다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 개발자 또는 클라우드 아키텍트가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 추천 칩 또는 깃 저장소 URL을 입력하면, 에이전트 엔진(Agent Engine) 런타임 내의 도구가 대행 서비스 계정의 인가 토큰을 활용하여 비동기 프로비저닝 및 사내 갤러리 등록을 무인 수행한다.
 
 ```mermaid
-flowchart TD
-    subgraph InputPhase ["1. 아키텍처 요구사항 입력"]
-        Dev["개발자 / 클라우드 아키텍트"]
-        CLI["에이전트 팩토리 CLI<br/>(diagnose.py)"]
-        PresetEngine["3대 핵심 커스텀 아키텍처 칩<br/>(커스텀 레포, 어드민, 노코드)"]
-        Dev --> CLI
-        CLI --> PresetEngine
+sequenceDiagram
+    actor Dev as 개발자 / 아키텍트
+    participant Portal as Gemini Enterprise (웹 포털)
+    participant Engine as Agent Engine (AdkApp 샌드박스)
+    participant Tool as deploy_enterprise_agent_tool
+    participant Auth as Google ADC (대행 SA 토큰)
+    participant GCS as Cloud Storage (스테이징 버킷)
+    participant VertexAI as Vertex AI Reasoning Engine API
+    participant DiscEng as Discovery Engine REST API
+
+    Dev->>Portal: "https://github.com/... 저장소 에이전트 배포해 줘"
+    Portal->>Engine: 세션 쿼리 전달 (Streaming)
+    Engine->>Tool: execute(repo_url)
+    
+    rect rgb(240, 245, 255)
+    note right of Tool: 대행 서비스 계정 인가 및 패키징 단계
+    Tool->>Auth: default_credentials.with_scopes()
+    Auth-->>Tool: Bearer Access Token 반환
+    Tool->>GCS: requirements.txt 및 피클 바이너리 업로드
+    GCS-->>Tool: gs://.../agent_engine.pkl 스테이징 완료
     end
 
-    subgraph CodegenPhase ["2. 하이코드 산출물 자동 생성"]
-        AgentCode["에이전트 코어 로직<br/>(agent.py / Google ADK)"]
-        ToolsCode["도구 및 데이터 연동<br/>(tools.py / BigQuery, API)"]
-        DeploySpec["배포 스펙<br/>(deploy.py, requirements.txt)"]
-        PresetEngine --> AgentCode
-        PresetEngine --> ToolsCode
-        PresetEngine --> DeploySpec
+    rect rgb(245, 240, 255)
+    note right of Tool: 비동기 Agent Engine 호스팅 프로비저닝
+    Tool->>VertexAI: POST /reasoningEngines (staging_bucket, package_spec)
+    VertexAI-->>Tool: LRO Operation Name 반환 (비동기 빌드)
+    loop LRO 폴링
+        Tool->>VertexAI: GET /operations/{op_id}
+        VertexAI-->>Tool: done: true (Reasoning Engine Resource Name 생성)
+    end
     end
 
-    subgraph DeploymentPhase ["3. Agent Engine 배포 및 사내 갤러리 연동"]
-        AgentEngine["에이전트 엔진 호스팅 프로비저닝<br/>(Agent Engine Runtime)"]
-        GEAppBinding["Gemini Enterprise app 사내 갤러리 연동<br/>(ADK Agent Registration)"]
-        AgentCode --> AgentEngine
-        ToolsCode --> AgentEngine
-        DeploySpec --> AgentEngine
-        AgentEngine --> GEAppBinding
+    rect rgb(240, 255, 245)
+    note right of Tool: Gemini Enterprise app 사내 갤러리 등록
+    Tool->>DiscEng: PATCH /assistants/default_assistant/agents/{agent_id}<br/>(adkAgentDefinition, displayName=영문 슬러그)
+    DiscEng-->>Tool: 200 OK (state=ENABLED, 갤러리 노출)
     end
 
-    subgraph EndUser ["4. 전사 임직원 활용"]
-        User["Gemini Enterprise app 웹 인터페이스 사용자"]
-        GEAppBinding -.->|"사내 카탈로그 노출"| User
-    end
+    Tool-->>Engine: ToolResult("배포 완료: {agent_id}, 콘솔 명칭 변경 안내")
+    Engine-->>Portal: 최종 완료 카드 및 링크 출력
+    Portal-->>Dev: "새 에이전트가 사내 갤러리에 등록되었습니다!"
 ```
 
 ---
