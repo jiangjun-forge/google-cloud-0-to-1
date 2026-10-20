@@ -1123,6 +1123,17 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             async for event in super().streaming_agent_run_with_events(request_json):
                 yield event
 
+        async def async_stream_query(self, *args, **kwargs):
+            self._ensure_pydantic_private()
+            async for event in super().async_stream_query(*args, **kwargs):
+                yield event
+
+    # 사전 모델 해석으로 Pydantic v2 __pydantic_private__ 슬롯 초기화 강제
+    try:
+        _ = adk_agent.canonical_model
+    except Exception:
+        pass
+
     app = ResilientAdkApp(agent=adk_agent, enable_tracing=True)
 
     runtime_env = {
