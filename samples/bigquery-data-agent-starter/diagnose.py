@@ -55,6 +55,16 @@ def run_gcloud_cmd(args: List[str]) -> Optional[str]:
     return None
 
 
+def get_resource_creator(dry_run: bool = False) -> str:
+    """CLI 실행 계정으로부터 GCP 표준 라벨 형식에 부합하는 creator 문자열을 추출한다."""
+    if dry_run:
+        return "customer-engineer"
+    account = run_gcloud_cmd(["config", "get-value", "account"]) or os.environ.get("USER") or "customer-engineer"
+    clean = account.split("@")[0].lower().replace(".", "-").replace("_", "-")
+    sanitized = "".join(c for c in clean if c.isalnum() or c == "-").strip("-")
+    return sanitized[:63] if sanitized else "customer-engineer"
+
+
 def interactive_select(prompt_msg: str, candidates: List[str], default_idx: int = 0) -> str:
     """터미널 대화형 환경에서 번호 선택기를 제공한다."""
     if not candidates:
@@ -247,6 +257,7 @@ def setup_smallset_demo(cfg: Dict[str, Any]) -> None:
     project_id = cfg["project_id"]
     dataset_id = cfg["dataset_id"]
     location = cfg["location"]
+    creator = get_resource_creator(cfg["dry_run"])
 
     print("=" * 88)
     print(" [Step 1: CLI 자동화 구간] 45분 워크숍용 BigQuery 스몰셋 데이터셋(cymbal_gold) 구축")
@@ -271,7 +282,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.pos_transactions_gold` (
 )
 OPTIONS(
     description="POS 거래 원천 테이블",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "{creator}")]
 );
 """,
         ),
@@ -289,7 +300,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.gold_inventory_reconciliation
 )
 OPTIONS(
     description="매장 재고 대사 원장 테이블",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "{creator}")]
 );
 """,
         ),
@@ -307,7 +318,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.pos_anomaly_alerts` (
 )
 OPTIONS(
     description="POS 이상 거래 경보 테이블",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "{creator}")]
 );
 """,
         ),
@@ -323,7 +334,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.historical_transactional_data
 )
 OPTIONS(
     description="고객 구매 및 보증 이력 테이블",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "{creator}")]
 );
 """,
         ),
@@ -381,7 +392,7 @@ VALUES
 CREATE OR REPLACE VIEW `{project_id}.{dataset_id}.v_cymbal_retail_semantic`
 OPTIONS(
     description="BigQuery Data Agent 단독 및 Gemini Enterprise app 연동 실습용 시맨틱 골드 뷰. 순매출(net_revenue), 결품 커버 시간(est_cover_hours), 이상 거래 경보(alert_type) 내장.",
-    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "customer-engineer")]
+    labels=[("managed-by", "google-cloud-0-to-1"), ("scenario", "bigquery-data-agent-starter"), ("env", "sample"), ("created-by", "{creator}")]
 ) AS
 SELECT
     p.transaction_id,
@@ -432,7 +443,7 @@ LEFT JOIN `{project_id}.{dataset_id}.pos_anomaly_alerts` a
             "managed-by": "google-cloud-0-to-1",
             "scenario": "bigquery-data-agent-starter",
             "env": "sample",
-            "created-by": "customer-engineer",
+            "created-by": get_resource_creator(cfg["dry_run"]),
         }
         client.create_dataset(dataset_ref, exists_ok=True)
         print(f"  -> [성공] BigQuery 데이터셋 확인/생성 완료: {project_id}.{dataset_id}")
@@ -598,7 +609,7 @@ def create_gda_data_agent(cfg: Dict[str, Any], token: Optional[str] = None) -> s
             "managed-by": "google-cloud-0-to-1",
             "scenario": "bigquery-data-agent-starter",
             "env": "sample",
-            "created-by": "customer-engineer",
+            "created-by": get_resource_creator(cfg["dry_run"]),
         },
         "dataAnalyticsAgent": {
             "stagingContext": context_payload,

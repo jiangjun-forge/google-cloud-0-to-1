@@ -249,6 +249,16 @@ def get_gcloud_config(key: str) -> str:
     return ""
 
 
+def get_resource_creator(dry_run: bool = False) -> str:
+    """CLI 실행 계정으로부터 GCP 표준 라벨 형식에 부합하는 creator 문자열을 추출한다."""
+    if dry_run:
+        return "customer-engineer"
+    account = get_gcloud_config("account") or os.environ.get("USER") or "customer-engineer"
+    clean = account.split("@")[0].lower().replace(".", "-").replace("_", "-")
+    sanitized = "".join(c for c in clean if c.isalnum() or c == "-").strip("-")
+    return sanitized[:63] if sanitized else "customer-engineer"
+
+
 def _get_cloud_token() -> str:
     """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
     try:
@@ -443,7 +453,6 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
 
 # APPLIED MODEL & RUNTIME (적용 모델 및 런타임 표준)
 - **적용 모델**: `gemini-3.8-flash` (2026년 Google Cloud 공식 엔터프라이즈 주력 모델, 사내 RAG 및 고속 추론 기본값)
-- **구형 레거시 모델 사용 금지**: Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등 과거 모델은 이미 선셋되었으므로 일절 적용하거나 언급하지 않는다.
 
 # BUSINESS CONTEXT & WORKFLOW (업무 맥락 및 표준 실행 절차)
 1. **요청 인지 및 필수 정보 확인**:
@@ -520,7 +529,7 @@ def build_meta_agent_manifest(env_info: dict):
                         "managed-by": "google-cloud-0-to-1",
                         "scenario": "gemini-enterprise-copilot-agent",
                         "env": "sample",
-                        "created-by": "customer-engineer",
+                        "created-by": get_resource_creator(False),
                     },
                 },
             },
@@ -534,7 +543,6 @@ def build_meta_agent_manifest(env_info: dict):
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
-- 과거 레거시 모델(Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등)은 이미 선셋되었으므로 절대로 추천하거나 언급하지 않는다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [핵심 행동 수칙]
@@ -858,7 +866,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         "managed-by": "google-cloud-0-to-1",
         "scenario": "gemini-enterprise-copilot-agent",
         "env": "sample",
-        "created-by": "customer-engineer",
+        "created-by": get_resource_creator(dry_run),
     }
 
     print("\n" + "=" * 75)
@@ -909,7 +917,6 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 기본 표준 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
-- 과거 레거시 모델(Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등)은 이미 구형화/선셋되었으므로 절대로 추천하거나 언급하지 않는다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [핵심 단계별 인터뷰 절차]
@@ -1289,6 +1296,7 @@ def main():
     report_content = build_factory_markdown_report(env_info, deploy_res, dry_run=args.dry_run)
     save_markdown_report(report_content)
 
+    creator = get_resource_creator(args.dry_run)
     print("\n" + "=" * 75)
     print("  노코드 에이전트 팩토리 배포 및 등록 완료 (모든 점검 통과)")
     print("=" * 75)
@@ -1296,7 +1304,7 @@ def main():
     print("  - managed-by: google-cloud-0-to-1")
     print("  - scenario: gemini-enterprise-copilot-agent")
     print("  - env: sample")
-    print("  - created-by: customer-engineer\n")
+    print(f"  - created-by: {creator}\n")
 
 
 if __name__ == "__main__":

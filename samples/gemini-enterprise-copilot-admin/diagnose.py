@@ -135,6 +135,16 @@ def get_gcloud_config(key: str) -> str:
     return ""
 
 
+def get_resource_creator(dry_run: bool = False) -> str:
+    """CLI 실행 계정으로부터 GCP 표준 라벨 형식에 부합하는 creator 문자열을 추출한다."""
+    if dry_run:
+        return "customer-engineer"
+    account = get_gcloud_config("account") or os.environ.get("USER") or "customer-engineer"
+    clean = account.split("@")[0].lower().replace(".", "-").replace("_", "-")
+    sanitized = "".join(c for c in clean if c.isalnum() or c == "-").strip("-")
+    return sanitized[:63] if sanitized else "customer-engineer"
+
+
 def _get_cloud_token() -> str:
     """로컬 gcloud 계정 또는 클라우드 런타임 ADC로부터 유효한 OAuth2 액세스 토큰을 조회한다."""
     try:
@@ -543,7 +553,7 @@ echo "==========================================================================
             "managed-by": "google-cloud-0-to-1",
             "scenario": "gemini-enterprise-copilot-admin",
             "env": "sample",
-            "created-by": "customer-engineer",
+            "created-by": get_resource_creator(False),
         },
     }
 
@@ -811,7 +821,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         "managed-by": "google-cloud-0-to-1",
         "scenario": "gemini-enterprise-copilot-admin",
         "env": "sample",
-        "created-by": "customer-engineer",
+        "created-by": get_resource_creator(dry_run),
     }
 
     print("\n" + "=" * 75)
@@ -862,7 +872,6 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
-- 과거 레거시 모델(Gemini 1.0, Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0 등)은 이미 선셋되었으므로 절대로 추천하거나 언급하지 않는다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [2026년 Google Cloud 콘솔 공식 정규 명칭 원칙]
@@ -1230,6 +1239,7 @@ def main():
     report_content = build_factory_markdown_report(env_info, deploy_res, dry_run=args.dry_run)
     save_markdown_report(report_content)
 
+    creator = get_resource_creator(args.dry_run)
     print("\n" + "=" * 75)
     print("  어드민 코파일럿 배포 및 등록 완료 (모든 점검 통과)")
     print("=" * 75)
@@ -1237,7 +1247,7 @@ def main():
     print("  - managed-by: google-cloud-0-to-1")
     print("  - scenario: gemini-enterprise-copilot-admin")
     print("  - env: sample")
-    print("  - created-by: customer-engineer\n")
+    print(f"  - created-by: {creator}\n")
 
 
 if __name__ == "__main__":

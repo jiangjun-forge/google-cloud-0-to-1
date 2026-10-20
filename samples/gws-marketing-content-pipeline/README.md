@@ -33,6 +33,9 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 2. 빠른 시작 (Quickstart)
 
+> [!TIP]
+> Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
+
 ### 1) 구글 드라이브 작업 공간 설정
 구글 드라이브에 캠페인 전용 폴더를 생성하고 Google AI Studio API 키를 등록한다.
 

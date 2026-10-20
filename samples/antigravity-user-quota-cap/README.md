@@ -28,6 +28,9 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클�
 
 ## 2. 빠른 시작 (Quickstart)
 
+> [!TIP]
+> Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
+
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
 ```bash
