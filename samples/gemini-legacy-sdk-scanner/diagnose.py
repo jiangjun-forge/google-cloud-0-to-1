@@ -297,13 +297,18 @@ def run_config_mode(scenario_name: str = "") -> None:
                 default_val = "asia-northeast3"
             elif key in ("LOCATION", "GDA_LOCATION", "KMS_LOCATION"):
                 default_val = "asia-northeast3" if ("korea" in (scenario_name or "").lower() or "kms" in (scenario_name or "").lower()) else "global"
+            elif key == "SCAN_PATH":
+                default_val = "."
 
         desc = key_descriptions.get(key, "")
         if desc and is_interactive:
             print(f"\n[{idx}] {key} ({desc})")
 
         if is_interactive:
-            prompt_str = f"  입력 [기본값: {default_val}]: " if default_val else f"  입력: "
+            if key == "SCAN_PATH":
+                prompt_str = f"  검사할 소스 코드 폴더 경로 [Enter 시 현재 폴더({default_val})]: "
+            else:
+                prompt_str = f"  입력 [기본값: {default_val}]: " if default_val else f"  입력: "
             try:
                 user_val = input(prompt_str).strip()
                 final_val = user_val if user_val else default_val

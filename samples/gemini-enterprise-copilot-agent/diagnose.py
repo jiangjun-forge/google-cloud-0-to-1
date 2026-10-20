@@ -444,8 +444,11 @@ def run_config_mode(args):
         if not chosen_app:
             chosen_app = candidate_apps[0]["id"]
     else:
+        print("  [-] 현재 프로젝트에서 프로비저닝된 Gemini Enterprise App을 발견하지 못했습니다.")
+        print("  [*] 신규 App 생성이 필요한 경우 공식 콘솔 경로를 참고하십시오:")
+        print("      Google Cloud 콘솔 ( https://console.cloud.google.com/gen-app-builder/engines )")
         current_app = os.environ.get("GE_APP_ID") or ""
-        app_prompt = f"3. Gemini Enterprise App 인스턴스 ID [기본값: {current_app or 'default'}]: "
+        app_prompt = f"\n3. Gemini Enterprise App 인스턴스 ID [Enter 시 기본값({current_app or 'default'}) 자동 채택]: "
         if sys.stdin.isatty():
             try:
                 val = input(app_prompt).strip()
@@ -1418,6 +1421,13 @@ def main():
         return
 
     # [핵심 메인 워크플로우]: 붕어빵 틀(GE Agent Factory) 배포 및 GE App 사내 갤러리 등록
+    if not args.dry_run and not _get_cloud_token():
+        print("\n[오류] 유효한 Google Cloud 인증 자격 증명(ADC)을 찾을 수 없습니다.", file=sys.stderr)
+        print("      아래 명령어를 실행하여 로컬 자격 증명을 갱신하십시오:", file=sys.stderr)
+        print("      gcloud auth application-default login\n", file=sys.stderr)
+        print("      (참고: 실제 배포 없이 가상 검증을 수행하려면 '--dry-run' 플래그를 사용하십시오.)\n", file=sys.stderr)
+        sys.exit(1)
+
     print("\n[진행] 사내 노코드 에이전트 팩토리(붕어빵 틀) 프로비저닝 파이프라인 가동...")
     deploy_res = deploy_agent_factory_engine(env_info, dry_run=args.dry_run)
 
