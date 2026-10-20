@@ -942,6 +942,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
     body = {
         "displayName": display_name,
         "description": description,
+        "state": "ENABLED",
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "연동하고 싶은 사내 기간계 데이터 소스(Jira, Salesforce, Drive 등)나 동기화 요구 사항을 입력하세요...",
         "starterPrompts": [

@@ -937,6 +937,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             body = {
                 "displayName": cleaned_name,
                 "description": description,
+                "state": "ENABLED",
                 "skillAgentDefinition": {
                     "instruction": instruction,
                 },
@@ -1131,6 +1132,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     body = {
         "displayName": display_name,
         "description": description,
+        "state": "ENABLED",
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "새로 생성할 사내 스킬 요구사항이나 연동 시스템을 입력하세요...",
         "starterPrompts": [

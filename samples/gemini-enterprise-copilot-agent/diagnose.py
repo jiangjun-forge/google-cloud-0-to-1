@@ -1119,6 +1119,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         body = {
             "displayName": display_name,
             "description": description,
+            "state": "ENABLED",
             "sharingConfig": {"scope": "ALL_USERS"},
             "customPlaceholderText": f"{display_name}에게 업무 질문이나 요청을 입력하세요...",
             "starterPrompts": [{"text": p} for p in prompts_list],
@@ -1260,6 +1261,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     body = {
         "displayName": display_name,
         "description": description,
+        "state": "ENABLED",
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "만들고 싶은 사내 맞춤 AI 에이전트의 업무나 목적을 입력하세요...",
         "starterPrompts": [

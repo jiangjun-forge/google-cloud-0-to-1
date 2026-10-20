@@ -1222,6 +1222,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     body = {
         "displayName": display_name,
         "description": description,
+        "state": "ENABLED",
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
         "starterPrompts": [
