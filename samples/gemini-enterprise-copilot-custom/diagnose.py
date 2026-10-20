@@ -1016,6 +1016,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
             disp_name = f"사내 커스텀 에이전트 ({repo_name})"
 
+            admin_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"
+
             if disp_name in existing_agents_map:
                 existing_info = existing_agents_map[disp_name]
                 if existing_info["state"] == "ENABLED":
@@ -1028,8 +1030,20 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 공유 범위: `{existing_info.get('scope', 'ALL_USERS')}`\n"
                         f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                     )
+                else:
+                    return (
+                        f"### 사내 커스텀 에이전트 등록 현황 (활성화 대기 중)\n\n"
+                        f"- **{disp_name}**\n"
+                        f"  - 상태: 등록 완료 (`{existing_info['state']}` / Employee-made)\n"
+                        f"  - Agent ID: `{existing_info['id']}`\n"
+                        f"  - 참조 저장소: `{repo_url}`\n\n"
+                        f"[사내 갤러리 활성화 안내]\n"
+                        f"사내 거버넌스 규정상 신규 등록 에이전트는 초기 비공개(Private) 상태로 대기합니다.\n"
+                        f"전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 관리 콘솔에서 상태를 **Enable (활성화)**로 변경해 주십시오:\n"
+                        f"- GE Admin 관리자 콘솔 ( {admin_url} )"
+                    )
 
-            # 신규 등록 (ENABLED 상태 및 ALL_USERS 공유 활성화)
+            # 신규 등록 (ENABLED 상태 및 ALL_USERS 공유 활성화 요청)
             body = {
                 "displayName": disp_name,
                 "description": f"GitHub 저장소({repo_url}) 기반 자동 빌드 및 배포된 사내 커스텀 에이전트",
@@ -1047,15 +1061,19 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             try:
                 reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
                 if reg_resp.ok:
-                    new_id = reg_resp.json().get("name", "").split("/")[-1]
+                    res_json = reg_resp.json()
+                    new_id = res_json.get("name", "").split("/")[-1]
+                    res_state = res_json.get("state", "PRIVATE")
                     return (
                         f"### 사내 커스텀 에이전트 배포 완료\n\n"
                         f"- **{disp_name}**\n"
-                        f"  - 상태: 활성화 완료 (`ENABLED`)\n"
+                        f"  - 상태: 등록 완료 (`{res_state}`)\n"
                         f"  - Agent ID: `{new_id}`\n"
-                        f"  - 참조 저장소: `{repo_url}`\n"
-                        f"  - 공유 범위: `ALL_USERS` (사내 갤러리 등록)\n"
-                        f"  - 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
+                        f"  - 참조 저장소: `{repo_url}`\n\n"
+                        f"[사내 갤러리 활성화 안내]\n"
+                        f"사내 거버넌스 규정상 신규 등록 에이전트는 초기 비공개(Private) 상태로 대기합니다.\n"
+                        f"전사 사내 갤러리(/r/agents)에 에이전트를 노출하고 전사 활성화하려면 아래 관리 콘솔에서 해당 에이전트를 **Enable (활성화)**로 변경해 주십시오:\n"
+                        f"- GE Admin 관리자 콘솔 ( {admin_url} )"
                     )
                 else:
                     return f"[오류] 커스텀 에이전트 등록 실패 (HTTP {reg_resp.status_code}): {reg_resp.text[:200]}"
@@ -1098,7 +1116,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             cfg = preset_agents_spec[slug]
             disp_name = cfg["display_name"]
 
-            # 사전 점검: 이미 사내에 배포되어 있고 활성화되어 있는 경우
+            # 사전 점검: 이미 사내에 배포되어 있는 경우
+            admin_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"
             if disp_name in existing_agents_map:
                 existing_info = existing_agents_map[disp_name]
                 if existing_info["state"] == "ENABLED":
@@ -1106,10 +1125,16 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"- **{disp_name}**\n"
                         f"  - 상태: 이미 사내에 정상 배포되어 활성화(ENABLED)되어 있습니다.\n"
                         f"  - Agent ID: `{existing_info['id']}`\n"
-                        f"  - 공유 범위: `ALL_USERS`\n"
                         f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                     )
-                    continue
+                else:
+                    reports.append(
+                        f"- **{disp_name}**\n"
+                        f"  - 상태: 등록 완료 (`{existing_info['state']}` / 활성화 대기 중)\n"
+                        f"  - Agent ID: `{existing_info['id']}`\n"
+                        f"  - 사내 갤러리 활성화: 전사 사내 갤러리(/r/agents)에 노출하려면 GE Admin 관리자 콘솔 ( {admin_url} )에서 상태를 **Enable (활성화)**로 변경해 주십시오."
+                    )
+                continue
 
             # 신규 배포 진행
             re_res = dynamic_engines.get(slug)
@@ -1158,14 +1183,19 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 if resp.ok:
                     res_data = resp.json()
                     agent_id = res_data.get("name", "").split("/")[-1]
-                    agent_state = res_data.get("state", "ENABLED")
+                    agent_state = res_data.get("state", "PRIVATE")
+                    admin_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"
+                    activation_guide = (
+                        f"  - 안내: 추가 조치 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
+                        if agent_state == "ENABLED"
+                        else f"  - 사내 갤러리 활성화: 사내 거버넌스 규정에 따라 초기 비공개(Private) 상태로 대기합니다. 전사 사내 갤러리(/r/agents)에 노출하려면 GE Admin 관리자 콘솔 ( {admin_url} )에서 상태를 **Enable (활성화)**로 변경해 주십시오."
+                    )
                     reports.append(
                         f"- **{cfg['display_name']}**\n"
-                        f"  - 상태: 배포 및 GE App 사내 갤러리(`/r/agents`) 등록 성공 (`{agent_state}`)\n"
+                        f"  - 상태: 등록 완료 (`{agent_state}`)\n"
                         f"  - Agent ID: `{agent_id}`\n"
-                        f"  - 공유 범위: `ALL_USERS`\n"
                         f"  - 연동 에이전트 엔진: `{re_res or '사내 표준 런타임'}`\n"
-                        f"  - 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
+                        f"{activation_guide}"
                     )
                 else:
                     reports.append(f"- **{cfg['display_name']}**: 등록 실패 (HTTP {resp.status_code}: {resp.text[:200]})")

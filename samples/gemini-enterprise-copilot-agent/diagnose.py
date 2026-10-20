@@ -1153,16 +1153,22 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             if resp.ok:
                 res_data = resp.json()
                 agent_id = res_data.get("name", "").split("/")[-1]
-                agent_state = res_data.get("state", "ENABLED")
+                agent_state = res_data.get("state", "PRIVATE")
+                admin_url = f"https://console.cloud.google.com/gen-app-builder/engines/{ge_app_id}/assistants/default_assistant/agents?project={project_id}"
+                activation_guide = (
+                    "이제 사내 모든 임직원이 에이전트 목록 및 검색창에서 즉시 해당 에이전트를 호출하여 사용할 수 있습니다."
+                    if agent_state == "ENABLED"
+                    else f"사내 거버넌스 규정에 따라 신규 에이전트는 초기 비공개(Private) 상태로 대기합니다. 전사 사내 갤러리(/r/agents)에 노출하려면 아래 GE Admin 콘솔에서 상태를 **Enable (활성화)**로 변경해 주십시오:\n- GE Admin 관리자 콘솔 ( {admin_url} )"
+                )
                 return (
                     f"### 사내 노코드 에이전트 등록 완료\n\n"
                     f"- **에이전트 명칭**: {display_name}\n"
                     f"- **Agent ID**: `{agent_id}`\n"
-                    f"- **등록 상태**: `{agent_state}` (정상 활성화)\n"
+                    f"- **등록 상태**: `{agent_state}`\n"
                     f"- **공유 범위**: `전사 공유 (ALL_USERS)`\n"
-                    f"- **적용 모델**: `gemini-3.8-flash` (2026 최신 표준)\n"
-                    f"- **확인 경로**: 사내 Gemini Enterprise app 웹 포털 좌측 메뉴 및 사내 갤러리(/r/agents)\n\n"
-                    f"이제 사내 모든 임직원이 에이전트 목록 및 검색창에서 즉시 해당 에이전트를 호출하여 사용할 수 있습니다."
+                    f"- **적용 모델**: `gemini-3.8-flash` (2026 최신 표준)\n\n"
+                    f"[사내 갤러리 활성화 안내]\n"
+                    f"{activation_guide}"
                 )
             else:
                 return f"[등록 오류] 에이전트 등록 실패 (HTTP {resp.status_code}): {resp.text[:300]}"
