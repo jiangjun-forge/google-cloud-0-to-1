@@ -82,8 +82,8 @@ python diagnose.py
 > [!NOTE]
 > 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)
 
-### 3) 최신 Google ADK 2.11+ CLI 활용법 (선택 사항)
-스캐폴딩된 에이전트 소스(`scaffold/`)는 구글 공식 Google ADK 2.11+ 표준 CLI 도구(`adk`)를 활용하여 로컬 실행 및 배포를 수행할 수 있다:
+### 3) Google ADK CLI 활용법 (선택 사항)
+스캐폴딩된 에이전트 소스(`scaffold/`)는 구글 공식 Google ADK 표준 CLI 도구(`adk`)를 활용하여 로컬 실행 및 배포를 수행할 수 있다:
 
 ```bash
 # 1. 스캐폴딩 디렉터리 추출
@@ -122,7 +122,7 @@ flowchart TB
         
         subgraph InsideEngine["런타임 내부 구조"]
             Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
-            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            ADK["Google ADK 에이전트<br/>(gemini-3.8-flash)"]
             Tools["내장 도구 세트<br/>- deploy_enterprise_agent_tool<br/>- check_deployment_status_tool<br/>- list_deployed_agents_tool"]
             Wrapper --> ADK --> Tools
         end
@@ -188,12 +188,12 @@ flowchart TB
 
 | 번호 | 아키텍처 칩 명칭 | 대상 GitHub 저장소 | 기술 스택 및 도구 체계 |
 | :---: | :--- | :--- | :--- |
-| **1** | **사내 커스텀 GitHub 저장소 직접 입력 (Custom Repo) [기본값]** | 사용자 직접 입력 (`--repo <URL>`) | Agent Engine (ADK 2.11+) + GitHub 저장소 연동 |
-| **2** | **GE Admin Copilot (사내 어드민 코파일럿) 실물 레포** | [어드민 코파일럿 저장소 ( https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin )] | Agent Engine (ADK 2.11+) + BigQuery + Cloud Logging |
-| **3** | **GE Agent Factory (사내 노코드 에이전트 팩토리) 실물 레포** | [에이전트 팩토리 저장소 ( https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent )] | Agent Engine (ADK 2.11+) + Gemini 3.8 Flash |
+| **1** | **사내 커스텀 GitHub 저장소 직접 입력 (Custom Repo) [기본값]** | 사용자 직접 입력 (`--repo <URL>`) | Agent Engine (ADK) + GitHub 저장소 연동 |
+| **2** | **GE Admin Copilot (사내 어드민 코파일럿) 실물 레포** | [어드민 코파일럿 저장소 ( https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin )] | Agent Engine (ADK) + BigQuery + Cloud Logging |
+| **3** | **GE Agent Factory (사내 노코드 에이전트 팩토리) 실물 레포** | [에이전트 팩토리 저장소 ( https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent )] | Agent Engine (ADK) + Gemini 3.8 Flash |
 
 ### Pydantic v2 직렬화 호환성 및 세션 안정화 (ResilientAdkApp)
-Google ADK 2.11+ 및 Agent Engine 런타임 환경에서 Pydantic v2 기반 `LlmAgent`가 클라우드 피클링(`cloudpickle`) 및 언피클링될 때, 비공개 속성 슬롯(`__pydantic_private__`)이 `None`으로 역직렬화되어 `canonical_model` 조회 시 `TypeError: 'NoneType' object is not subscriptable` 에러가 발생하고 웹 프론트엔드 응답이 중단되는 현상이 발생할 수 있다.
+Google ADK 및 Agent Engine 런타임 환경에서 Pydantic v2 기반 `LlmAgent`가 클라우드 피클링(`cloudpickle`) 및 언피클링될 때, 비공개 속성 슬롯(`__pydantic_private__`)이 `None`으로 역직렬화되어 `canonical_model` 조회 시 `TypeError: 'NoneType' object is not subscriptable` 에러가 발생하고 웹 프론트엔드 응답이 중단되는 현상이 발생할 수 있다.
 
 본 솔루션은 `ResilientAdkApp` 래퍼를 적용하여:
 1. `set_up()`, `streaming_agent_run_with_events()`, `async_stream_query()` 진입 시점에 `__pydantic_private__` 슬롯의 유효성을 점검하고 필요한 경우 기본 딕셔너리로 초기화한다.

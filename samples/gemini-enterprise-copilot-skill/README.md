@@ -99,7 +99,7 @@ flowchart TB
         
         subgraph InsideEngine["런타임 내부 구조"]
             Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
-            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            ADK["Google ADK 에이전트<br/>(gemini-3.8-flash)"]
             Compiler["Open Skills 규격 컴파일러<br/>(SKILL.md & OpenAPI 3.0)"]
             Tools["내장 스킬 관리 도구 세트<br/>- deploy_enterprise_skill_tool<br/>- list_enterprise_skills_tool<br/>- get_preset_skills_tool"]
             Wrapper --> ADK --> Compiler --> Tools

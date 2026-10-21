@@ -99,7 +99,7 @@ flowchart TB
         
         subgraph InsideEngine["런타임 내부 구조"]
             Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
-            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            ADK["Google ADK 에이전트<br/>(gemini-3.8-flash)"]
             Templates["6대 기간계 매니페스트 엔진<br/>(Jira/Confluence/Salesforce 등)"]
             Wrapper --> ADK --- Templates
         end

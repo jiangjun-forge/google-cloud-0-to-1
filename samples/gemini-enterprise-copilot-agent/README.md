@@ -99,7 +99,7 @@ flowchart TB
         
         subgraph InsideEngine["런타임 내부 구조"]
             Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
-            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            ADK["Google ADK 에이전트<br/>(gemini-3.8-flash)"]
             Catalog["10대 산업별 추천 칩 카탈로그"]
             Tools["내장 도구 세트<br/>- register_nocode_agent_tool<br/>- list_deployed_agents_tool"]
             Wrapper --> ADK

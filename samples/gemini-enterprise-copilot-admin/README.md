@@ -104,7 +104,7 @@ flowchart TB
         
         subgraph InsideEngine["런타임 내부 구조"]
             Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
-            ADK["Google ADK 2.11+ 에이전트<br/>(gemini-3.8-flash)"]
+            ADK["Google ADK 에이전트<br/>(gemini-3.8-flash)"]
             Tools["내장 관리 도구 7종<br/>- filter_and_inspect_sprawl_agents_tool<br/>- batch_update_agents_state_tool<br/>- batch_update_agents_sharing_tool<br/>- batch_delete_agents_tool<br/>- list_deployed_agents_tool<br/>- get_admin_audit_queries_tool<br/>- get_admin_console_deeplinks_tool"]
             Wrapper --> ADK --> Tools
         end

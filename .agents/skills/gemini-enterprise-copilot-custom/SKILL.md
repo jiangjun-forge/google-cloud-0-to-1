@@ -57,7 +57,7 @@ python diagnose.py --dry-run
 
 ### Step 1.2 아키텍처 및 자가 검증 브리핑
 실행 완료 후 생성된 `report.md`를 바탕으로 다음 3가지를 명확히 보고한다:
-1. **아키텍처 스택**: Agent Engine (ADK 2.11+) + Vertex AI SDK + BigQuery/MCP 연동 구성
+1. **아키텍처 스택**: Agent Engine (ADK) + Vertex AI SDK + BigQuery/MCP 연동 구성
 2. **생성된 하이코드 산출물**: `agent.py`, `tools.py`, `requirements.txt`, `deploy.py` 4대 파일
 3. **Gemini Enterprise app 사내 갤러리 연동 매니페스트**: ADK 에이전트 바인딩 스키마
 
