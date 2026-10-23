@@ -1122,7 +1122,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE In-Chat Custom Agent Factory (사내 커스텀 에이전트 팩토리)"
+    display_name = "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)"
     description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 구축 및 GitHub 저장소 직결 자동 배포 에이전트 팩토리"
 
     labels = {
@@ -1172,51 +1172,63 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         credentials=creds,
     )
 
-    # 챗창에서 실제 배포를 집행하는 ChatOps 실행 도구 정의
+    # 챗창에서 실제 배포를 집행하는 ChatOps 실행 도구 정의 (코파일럿 패밀리 4대 커스텀 에이전트)
     preset_agents_spec = {
-        "custom-repo-agent": {
-            "slug": "custom-repo-agent",
-            "display_name": "사내 커스텀 에이전트",
-            "description": "GitHub 저장소 URL 기반으로 Agent Engine 빌드 및 사내 갤러리에 직결 등록하는 커스텀 에이전트",
-            "custom_placeholder_text": "배포할 GitHub 저장소 URL(https://github.com/...)을 입력하세요...",
+        "copilot-skill-factory": {
+            "slug": "copilot-skill-factory",
+            "display_name": "사내 스킬 팩토리 코파일럿 (Skill Factory)",
+            "description": "사내 비개발자 임직원을 위한 대화형 Open Skills / SKILL.md 도구 팩토리 에이전트",
+            "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-skill",
+            "custom_placeholder_text": "생성하고 싶은 업무 연동 도구나 API를 입력하세요...",
             "starter_prompts": [
-                "GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘",
-                "사내 커스텀 에이전트 배포 상태 점검해 줘",
+                "전자결재 품의 상신 및 승인 상태 조회 스킬 생성해 줘",
+                "법인카드 경비 전표 정산 및 승인 내역 조회 스킬 매니페스트 만들어 줘",
+                "주 52시간 근태 관리 및 휴가 신청 도구 바인딩 명세 작성해 줘",
             ],
-            "instruction": """당신은 사내 커스텀 에이전트입니다.
-개발자가 지정한 GitHub 저장소 코드를 바탕으로 Agent Engine에 에이전트를 프로비저닝하고 Gemini Enterprise app 사내 갤러리에 직결 등록하는 파이프라인을 지원합니다.""",
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 스킬 팩토리 코파일럿(Skill Factory)' 마스터 에이전트입니다.
+사내 비개발자 임직원을 위한 대화형 Open Skills 및 도구 매니페스트를 자율 생성합니다.""",
         },
-        "gemini-enterprise-admin-copilot": {
-            "slug": "gemini-enterprise-admin-copilot",
-            "display_name": "GE In-Chat Admin Copilot (사내 어드민 코파일럿)",
-            "description": "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿",
-            "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
-            "starter_prompts": [
-                "사내 에이전트가 100개가 넘는데 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘",
-                "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘",
-                "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?",
-                "에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리 알려 줘",
-            ],
-            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 코파일럿(Admin Copilot)' 마스터 에이전트입니다.
-사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 7대 핵심 관리 과제를 대화형으로 자율 진단하고 즉시 실행 가능한 조치 스크립트와 콘솔 가이드를 제공합니다.""",
-        },
-        "gemini-enterprise-agent-factory": {
-            "slug": "gemini-enterprise-agent-factory",
-            "display_name": "GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)",
-            "description": "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리",
+        "copilot-agent-factory": {
+            "slug": "copilot-agent-factory",
+            "display_name": "사내 노코드 에이전트 팩토리 (Agent Factory)",
+            "description": "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리 에이전트",
+            "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent",
             "custom_placeholder_text": "만들고 싶은 사내 맞춤 AI 에이전트의 업무나 목적을 입력하세요...",
             "starter_prompts": [
-                "사내 특허 출원 절차 가이드 에이전트 만들어 줘",
-                "주간 업무 보고서 취합 및 경영진 브리핑 에이전트 만들어 줘",
-                "신규 입사자 온보딩 가이드 및 사내 규정 Q&A 에이전트 만들어 줘",
-                "CS 고객 불만 유형 자동 분류 및 답변 초안 에이전트 만들어 줘",
+                "신규 입사자를 위한 인사 총무 온보딩 가이드 에이전트 생성해 줘",
+                "법인카드 경비 전표 규정 검토 및 반려 사유 안내 에이전트 만들어 줘",
+                "표준 계약서 검토 및 법무 질의응답 전담 에이전트 등록해 줘",
             ],
             "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 노코드 에이전트 팩토리(Agent Factory)' 마스터 에이전트입니다.
-사내 비개발자 및 실무 임직원이 자신의 업무를 자동화할 수 있는 맞춤형 AI 에이전트를 대화형으로 손쉽게 만들 수 있도록 안내합니다.
-
-[2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
-- 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
-- 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.""",
+사내 비개발자 및 실무 임직원이 자신의 업무를 자동화할 수 있는 맞춤형 AI 에이전트를 대화형으로 손쉽게 만들 수 있도록 안내합니다.""",
+        },
+        "copilot-connector-scaffolder": {
+            "slug": "copilot-connector-scaffolder",
+            "display_name": "기간계 데이터 커넥터 스캐폴더 (Connector Scaffolder)",
+            "description": "사내 기간계 시스템(그룹웨어, Jira, Confluence, ERP 등) 데이터스토어 연동 매니페스트 및 ACL 동기화 스캐폴더",
+            "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-connector",
+            "custom_placeholder_text": "연동하고 싶은 사내 기간계 데이터 소스(Jira, Confluence, ERP 등)를 입력하세요...",
+            "starter_prompts": [
+                "사내 그룹웨어 전자결재 및 공문서 보관함 데이터스토어 연동 매니페스트 작성해 줘",
+                "Confluence 팀 위키 및 지식 베이스 커넥터 설정 생성해 줘",
+                "SAP ERP 구매 주문서 및 회계 전표 동기화 커넥터 스캐폴딩해 줘",
+            ],
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '기간계 데이터 커넥터 스캐폴더' 마스터 에이전트입니다.
+사내 기간계 데이터 소스와 Discovery Engine 데이터스토어를 연결하는 매니페스트를 자율 생성합니다.""",
+        },
+        "copilot-admin-governor": {
+            "slug": "copilot-admin-governor",
+            "display_name": "사내 어드민 거버넌스 코파일럿 (Admin Copilot)",
+            "description": "수백 개 에이전트 전수 감사(미사용 에이전트 적발), 감사 로그 자동 적재 및 사내 거버넌스 정책 통제 전담 코파일럿",
+            "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin",
+            "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
+            "starter_prompts": [
+                "사내 에이전트 중 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘",
+                "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘",
+                "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?",
+            ],
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 거버넌스 코파일럿' 마스터 에이전트입니다.
+사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 거버넌스 과제를 대화형으로 자율 진단하고 조치 가이드를 제공합니다.""",
         },
     }
 
@@ -1412,12 +1424,16 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             except Exception as e:
                 return f"[예외 발생] 커스텀 에이전트 프로비저닝 실패: {str(e)}"
 
-        # 3. 프리셋 에이전트 타겟팅
+        # 3. 프리셋 에이전트 타겟팅 (코파일럿 패밀리 4대 에이전트)
         targets = []
-        if "admin" in norm or "어드민" in norm:
-            targets = ["gemini-enterprise-admin-copilot"]
-        elif "factory" in norm or "노코드" in norm or "agent" in norm:
-            targets = ["gemini-enterprise-agent-factory"]
+        if "skill" in norm or "스킬" in norm or "도구" in norm:
+            targets = ["copilot-skill-factory"]
+        elif "agent" in norm or "노코드" in norm or "에이전트" in norm:
+            targets = ["copilot-agent-factory"]
+        elif "connector" in norm or "커넥터" in norm or "기간계" in norm or "데이터스토어" in norm:
+            targets = ["copilot-connector-scaffolder"]
+        elif "admin" in norm or "어드민" in norm or "거버넌스" in norm:
+            targets = ["copilot-admin-governor"]
         else:
             for k in preset_agents_spec:
                 if k in norm:
@@ -1425,7 +1441,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     break
 
         if not targets:
-            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 대상: 1. GitHub 저장소 주소 기반 배포, 2. GE Admin Copilot, 3. GE Agent Factory"
+            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 대상: 1. 사내 스킬 팩토리 코파일럿, 2. 사내 노코드 에이전트 팩토리, 3. 기간계 데이터 커넥터 스캐폴더, 4. 사내 어드민 거버넌스 코파일럿, 5. GitHub 저장소 주소 기반 배포"
 
         # 4. 실시간 Reasoning Engine 동적 탐색 (하드코딩 ID 완전 배제)
         dynamic_engines = {}
@@ -1765,16 +1781,18 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
-1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(1: 커스텀 GitHub 레포, 2: 어드민 코파일럿, 3: 노코드 에이전트 팩토리)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 즉시 이 도구를 호출하여 실제 클라우드 배포를 시작하십시오!
+1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(1: 사내 스킬 팩토리 코파일럿, 2: 사내 노코드 에이전트 팩토리, 3: 기간계 데이터 커넥터 스캐폴더, 4: 사내 어드민 거버넌스 코파일럿)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 즉시 이 도구를 호출하여 실제 클라우드 배포를 시작하십시오!
 2. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
 3. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 후속 질문 안내 규약]
-모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2개의 '추천 후속 질문'을 명확히 안내한다:
+모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 '추천 후속 질문'을 명확히 안내한다:
 ---
 **추천 후속 질문:**
-1. GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘
-2. 등록된 에이전트 목록 보여 줘
+1. 사내 스킬 팩토리 코파일럿 배포해 줘
+2. 사내 노코드 에이전트 팩토리 배포해 줘
+3. 기간계 데이터 커넥터 스캐폴더 배포해 줘
+4. 사내 어드민 거버넌스 코파일럿 배포해 줘
 - 주의: 배포 진행 중인 상태일 때는 1번을 '배포 상태 확인해 줘'로 출력한다.
 - 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
@@ -1884,8 +1902,10 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "GitHub 저장소 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
         "starterPrompts": [
-            {"text": "GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘"},
-            {"text": "사내 등록된 에이전트 목록 조회해 줘"},
+            {"text": "사내 스킬 팩토리 코파일럿 배포해 줘"},
+            {"text": "사내 노코드 에이전트 팩토리 배포해 줘"},
+            {"text": "기간계 데이터 커넥터 스캐폴더 배포해 줘"},
+            {"text": "사내 어드민 거버넌스 코파일럿 배포해 줘"},
         ],
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": description},
@@ -1895,14 +1915,16 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         },
     }
 
-    # 기존 에이전트 검색
+    # 기존 에이전트 검색 (Agent ID 17400775488875547027 최우선 바인딩)
     target_agent_id = None
     existing_state = None
     list_resp = requests.get(base_url, headers=headers, timeout=30)
     if list_resp.ok:
         for a in list_resp.json().get("agents", []):
-            if a.get("displayName") == display_name:
-                target_agent_id = a.get("name").split("/")[-1]
+            aid = a.get("name", "").split("/")[-1]
+            disp = a.get("displayName", "")
+            if aid == "17400775488875547027" or disp == display_name or "Custom Agent Factory" in disp:
+                target_agent_id = aid
                 existing_state = a.get("state")
                 break
 

@@ -1,9 +1,9 @@
 # Gemini Enterprise 커스텀 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-custom)
 
-- **배포 일시**: 2026-10-23 12:14:54 UTC
+- **배포 일시**: 2026-10-23 12:32:58 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
-- **팩토리 에이전트**: `GE In-Chat Custom Agent Factory (사내 커스텀 에이전트 팩토리)`
+- **팩토리 에이전트**: `GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)`
 - **배포 상태**: `DRY_RUN_PASSED`
 
 > [!CAUTION]
@@ -18,7 +18,7 @@
 
 | 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
-| **에이전트 명칭** | `PROVISIONED` | `GE In-Chat Custom Agent Factory (사내 커스텀 에이전트 팩토리)` |
+| **에이전트 명칭** | `PROVISIONED` | `GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)` |
 | **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-custom-factory-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 환경 기준) |
 | **내장 실행 도구** | `2종 완비` | `deploy_enterprise_agent_tool`, `list_deployed_agents_tool` |
@@ -56,7 +56,7 @@ flowchart TB
 
 1. **Gemini Enterprise app 접속**:
    - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
-   - **`GE In-Chat Custom Agent Factory (사내 커스텀 에이전트 팩토리)`** 선택.
+   - **`GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)`** 선택.
 
 2. **자연어 에이전트 배포 예시 프롬프트**:
    - *"GitHub 저장소 `https://github.com/my-org/custom-agent.git` 기반으로 사내 커스텀 에이전트 배포해 줘"*

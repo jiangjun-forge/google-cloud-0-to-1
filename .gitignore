@@ -153,6 +153,7 @@ activemq-data/
 !.env.example
 .envrc
 .venv
+.jetski_session
 env/
 venv/
 ENV/
