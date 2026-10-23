@@ -66,7 +66,7 @@ CURATED_ENTERPRISE_AGENTS = [
     },
     {
         "slug": "gemini-enterprise-copilot-admin",
-        "display_name": "GE Admin Copilot (사내 어드민 코파일럿)",
+        "display_name": "GE In-Chat Admin Copilot (사내 어드민 코파일럿)",
         "description": "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크 및 GE 어드민 7대 과제 전담 코파일럿",
         "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin",
         "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
@@ -1046,7 +1046,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)"
+    display_name = "GE In-Chat Custom Agent Factory (사내 커스텀 에이전트 팩토리)"
     description = "BigQuery 및 사내 기간계를 결합한 High-code 커스텀 에이전트 구축 및 GitHub 저장소 직결 자동 배포 에이전트 팩토리"
 
     labels = {
@@ -1112,7 +1112,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         },
         "gemini-enterprise-admin-copilot": {
             "slug": "gemini-enterprise-admin-copilot",
-            "display_name": "GE Admin Copilot (사내 어드민 코파일럿)",
+            "display_name": "GE In-Chat Admin Copilot (사내 어드민 코파일럿)",
             "description": "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿",
             "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
             "starter_prompts": [
@@ -1126,7 +1126,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         },
         "gemini-enterprise-agent-factory": {
             "slug": "gemini-enterprise-agent-factory",
-            "display_name": "GE Agent Factory (사내 노코드 에이전트 팩토리)",
+            "display_name": "GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)",
             "description": "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리",
             "custom_placeholder_text": "만들고 싶은 사내 맞춤 AI 에이전트의 업무나 목적을 입력하세요...",
             "starter_prompts": [
@@ -2085,7 +2085,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
         sa_email = env_info["service_account"]
 
     status = deploy_res.get("status", "UNKNOWN")
-    display_name = deploy_res.get("display_name", "GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)")
+    display_name = deploy_res.get("display_name", "GE In-Chat Custom Agent Factory (사내 커스텀 에이전트 팩토리)")
     portal_url = f"https://gemini.google.com/app/{ge_app_id}"
 
     return f"""# Gemini Enterprise 커스텀 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-custom)

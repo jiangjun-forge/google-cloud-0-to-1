@@ -3,7 +3,7 @@
 - **배포 일시**: 2026-10-23 02:34:25 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
-- **팩토리 에이전트**: `GE Admin Copilot (사내 어드민 코파일럿)`
+- **팩토리 에이전트**: `GE In-Chat Admin Copilot (사내 어드민 코파일럿)`
 - **배포 상태**: `DRY_RUN_PASSED`
 
 ---
@@ -12,7 +12,7 @@
 
 | 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
-| **에이전트 명칭** | `PROVISIONED` | `GE Admin Copilot (사내 어드민 코파일럿)` |
+| **에이전트 명칭** | `PROVISIONED` | `GE In-Chat Admin Copilot (사내 어드민 코파일럿)` |
 | **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-admin-copilot-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
 | **내장 실행 도구** | `7종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `batch_delete_agents_tool`, `get_admin_audit_queries_tool` |
@@ -52,7 +52,7 @@ flowchart TB
 
 1. **Gemini Enterprise app 접속**:
    - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
-   - **`GE Admin Copilot (사내 어드민 코파일럿)`** 선택.
+   - **`GE In-Chat Admin Copilot (사내 어드민 코파일럿)`** 선택.
 
 2. **자연어 관리 질의 예시 프롬프트**:
    - *"사내에 등록된 테스트용/미사용 에이전트 목록 스캔해 줘"*

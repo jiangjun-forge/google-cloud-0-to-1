@@ -694,7 +694,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
         sa_email = env_info["service_account"]
 
     status = deploy_res.get("status", "UNKNOWN")
-    display_name = deploy_res.get("display_name", "GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)")
+    display_name = deploy_res.get("display_name", "GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)")
     portal_url = f"https://gemini.google.com/app/{ge_app_id}"
 
     return f"""# Gemini Enterprise 데이터 커넥터 스캐폴더 배포 보고서 (gemini-enterprise-copilot-connector)
@@ -820,7 +820,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE Connector Scaffolder (사내 데이터 커넥터 스캐폴더)"
+    display_name = "GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)"
     description = "Jira, Confluence, Salesforce, Drive, SharePoint 등 기업 기간계 데이터를 GE App에 대화형으로 연동하는 커넥터 스캐폴더"
 
     labels = {

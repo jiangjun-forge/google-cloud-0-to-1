@@ -815,7 +815,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
         domain = env_info.get("customer_domain", "example-corp.com")
 
     status = deploy_res.get("status", "UNKNOWN")
-    display_name = deploy_res.get("display_name", "GE Admin Copilot (사내 어드민 코파일럿)")
+    display_name = deploy_res.get("display_name", "GE In-Chat Admin Copilot (사내 어드민 코파일럿)")
     portal_url = f"https://gemini.google.com/app/{ge_app_id}"
 
     return f"""# Gemini Enterprise 어드민 코파일럿 배포 보고서 (gemini-enterprise-copilot-admin)
@@ -942,7 +942,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE Admin Copilot (사내 어드민 코파일럿)"
+    display_name = "GE In-Chat Admin Copilot (사내 어드민 코파일럿)"
     description = "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿"
 
     labels = {

@@ -3,7 +3,7 @@
 - **배포 일시**: 2026-10-23 03:25:05 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
-- **팩토리 에이전트**: `GE Skill Factory (사내 스킬 팩토리)`
+- **팩토리 에이전트**: `GE In-Chat Skill Factory (사내 스킬 팩토리)`
 - **배포 상태**: `DRY_RUN_PASSED`
 
 ---
@@ -12,7 +12,7 @@
 
 | 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
-| **에이전트 명칭** | `PROVISIONED` | `GE Skill Factory (사내 스킬 팩토리)` |
+| **에이전트 명칭** | `PROVISIONED` | `GE In-Chat Skill Factory (사내 스킬 팩토리)` |
 | **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-skill-factory-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
 | **내장 실행 도구** | `3종 완비` | `deploy_enterprise_skill_tool`, `list_enterprise_skills_tool`, `get_preset_skills_tool` |
@@ -52,7 +52,7 @@ flowchart TB
 
 1. **Gemini Enterprise app 접속**:
    - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
-   - **`GE Skill Factory (사내 스킬 팩토리)`** 선택.
+   - **`GE In-Chat Skill Factory (사내 스킬 팩토리)`** 선택.
 
 2. **자연어 붕어빵 생성 예시 프롬프트**:
    - *"사내 Google Sheets 실적 및 명단 행 조회 스킬 만들어 줘"*

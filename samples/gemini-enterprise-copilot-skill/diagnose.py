@@ -710,7 +710,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
         sa_email = env_info["service_account"]
 
     status = deploy_res.get("status", "UNKNOWN")
-    display_name = deploy_res.get("display_name", "GE Skill Factory (사내 스킬 팩토리)")
+    display_name = deploy_res.get("display_name", "GE In-Chat Skill Factory (사내 스킬 팩토리)")
     portal_url = f"https://gemini.google.com/app/{ge_app_id}"
 
     return f"""# Gemini Enterprise 사내 스킬 팩토리 배포 보고서 (gemini-enterprise-copilot-skill)
@@ -835,7 +835,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     ge_location = "global"
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
-    display_name = "GE Skill Factory (사내 스킬 팩토리)"
+    display_name = "GE In-Chat Skill Factory (사내 스킬 팩토리)"
     description = "사내 맞춤형 스킬(Open Skills / SKILL.md) 대화형 자율 생성 및 Gemini Enterprise app 전사 즉시 프로비저닝 팩토리"
 
     labels = {
@@ -1200,7 +1200,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     list_resp = requests.get(base_url, headers=headers, timeout=30)
     if list_resp.ok:
         for a in list_resp.json().get("agents", []):
-            if a.get("displayName") in [display_name, "GE Skill Scaffolder (사내 스킬 스캐폴더)"]:
+            if a.get("displayName") in [display_name, "GE Skill Factory (사내 스킬 팩토리)", "GE Skill Scaffolder (사내 스킬 스캐폴더)"]:
                 target_agent_id = a.get("name").split("/")[-1]
                 existing_state = a.get("state")
                 break

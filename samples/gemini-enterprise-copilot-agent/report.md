@@ -3,7 +3,7 @@
 - **배포 일시**: 2026-10-23 03:25:06 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
-- **팩토리 에이전트**: `GE Agent Factory (사내 노코드 에이전트 팩토리)`
+- **팩토리 에이전트**: `GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)`
 - **배포 상태**: `DRY_RUN_PASSED`
 
 ---
@@ -12,7 +12,7 @@
 
 | 항목 | 상태 | 세부 정보 |
 | :--- | :---: | :--- |
-| **에이전트 명칭** | `PROVISIONED` | `GE Agent Factory (사내 노코드 에이전트 팩토리)` |
+| **에이전트 명칭** | `PROVISIONED` | `GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)` |
 | **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-agent-factory-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
 | **내장 실행 도구** | `2종 완비` | `register_nocode_agent_tool`, `list_deployed_agents_tool` |
@@ -51,7 +51,7 @@ flowchart TB
 
 1. **Gemini Enterprise app 접속**:
    - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
-   - **`GE Agent Factory (사내 노코드 에이전트 팩토리)`** 선택.
+   - **`GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)`** 선택.
 
 2. **자연어 붕어빵 생성 예시 프롬프트**:
    - *"사내 특허 출원 절차 가이드 에이전트 만들어 줘"*
