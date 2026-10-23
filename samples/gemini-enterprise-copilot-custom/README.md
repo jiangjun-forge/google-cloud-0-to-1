@@ -59,11 +59,14 @@ GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여�
 # 기본 팩토리(붕어빵 틀) 가상 실행
 python diagnose.py --dry-run
 
-# GitHub 저장소 URL 기반 커스텀 스캐폴딩 가상 검증
-python diagnose.py --scaffold --dry-run --repo https://github.com/my-org/my-agent.git
+# 코파일럿 패밀리 4대 커스텀 에이전트 칩 가상 검증 (1: 스킬 팩토리, 2: 노코드 팩토리, 3: 커넥터 스캐폴더, 4: 어드민 코파일럿)
+python diagnose.py --scaffold --chip 1 --dry-run
 
-# 검증된 3대 핵심 커스텀 아키텍처 칩 가상 검증 (1: 사내 커스텀 레포, 2: 어드민 코파일럿, 3: 노코드 팩토리)
-python diagnose.py --scaffold --dry-run --chip 2
+# GitHub 저장소 URL 기반 커스텀 스캐폴딩 가상 검증
+python diagnose.py --scaffold --dry-run --repo https://github.com/example-corp/my-custom-agent.git
+
+# 자연어 자유 프롬프팅 기반 커스텀 에이전트 가상 검증
+python diagnose.py --scaffold --prompt "사내 하둡 감사" --dry-run
 ```
 
 **터미널 진단 출력 미리보기:**

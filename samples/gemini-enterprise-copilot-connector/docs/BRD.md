@@ -35,12 +35,15 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 구분 | 핵심 비즈니스 목표 및 요구 명세 |
 | :--- | :--- | :--- |
-| **BR-01** | 대화형 데이터 소스 칩 선택 | 사내 주요 8대 기간계 데이터 소스(Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery, Web Crawl) 칩을 제공하고 원클릭 인터뷰로 스펙을 수집해야 한다. |
+| **BR-01** | 엔터프라이즈 커넥터 카탈로그 및 자유 프롬프팅 | 사내 주요 기간계 시스템(그룹웨어, Confluence, Jira, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery, SAP ERP, Workday, Slack, PostgreSQL/MySQL, 인트라넷 웹, GitHub, Cloud Storage 등) 커넥터 프리셋을 제공하고, 사용자가 자유 프롬프트(`--prompt`)로 원하는 데이터 소스 연동 매니페스트를 자율 도출할 수 있어야 한다. |
 | **BR-02** | 보안 볼트 기반 자격 증명 연동 | OAuth 2.0 클라이언트 시크릿, API 토큰 등 민감 자격 증명을 시크릿 매니저(Secret Manager)에 안전하게 암호화 보관하고 대행 서비스 계정에 최소 권한을 부여해야 한다. |
-| **BR-03** | 문서 레벨 ACL 및 사용자 매핑 가이드 | 원본 SaaS의 권한 체계가 손상되지 않도록 문서 레벨 접근 제어(Document-level ACL) 및 Cloud Identity 계정 매핑 정책을 자동 판정해야 한다. |
+| **BR-03** | 문서 레벨 ACL 및 사용자 매핑 가이드 | 원본 기간계 시스템의 권한 체계가 손상되지 않도록 문서 레벨 접근 제어(Document-level ACL) 및 Cloud Identity 계정 매핑 정책을 자동 판정해야 한다. |
 | **BR-04** | 동기화 주기 및 증분 색인 스케줄링 | 데이터 변경 빈도에 따라 1시간 단위 정기 동기화 또는 일일 배치 동기화 스케줄을 포함한 Discovery Engine Data Store 구성 매니페스트를 합성해야 한다. |
 | **BR-05** | Gemini Enterprise app 사내 앱 직결 바인딩 | 생성된 데이터 저장소(Data Store)를 현재 사내 Gemini Enterprise app의 검색 엔진(Engine)에 원클릭 바인딩하는 자동화 명세를 제공해야 한다. |
 | **BR-06** | 엔터프라이즈 보안 및 4대 필수 라벨 강제 | 모든 커넥터 리소스에 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 주입하고 VPC-SC 보안 경계 차단 여부를 사전 진단해야 한다. |
+| **BR-07** | 선언적 커넥터 레시피 아키텍처 및 케밥 케이스 표준 | 파이썬 코드 수정 없이 신규 데이터 소스를 확장할 수 있도록 선언적 카탈로그 파일(`catalog.yaml`) 분리 구조를 지원하고, 모든 커넥터 슬러그는 `[domain]-[system]-[action]` 형태의 3단계 소문자 케밥 케이스(kebab-case) 표준을 준수하여야 한다. |
+| **BR-08** | 에어갭 및 오프라인 환경 회복 탄력성 보장 | 사내 보안 정책상 인터넷 연결이 차단된 에어갭(Air-gapped) 환경이나 외부 카탈로그 엔드포인트 장애 상황에서도 타임아웃(2.0초 이내)을 적용하고 내장된 시드 카탈로그로 원활히 폴백하여 무중단 동작을 보장하여야 한다. |
+| **BR-09** | 사전 슬러그 및 명칭 중복 검증 인터셉터 | 신규 커넥터 매니페스트 생성 요청 시 사내 포털에 이미 등록된 기존 커넥터와의 슬러그, 디스플레이 이름, 데이터 소스 유형 충돌 여부를 사전에 검증하여 설정 충돌 사고를 예방하여야 한다. |
 
 ---
 

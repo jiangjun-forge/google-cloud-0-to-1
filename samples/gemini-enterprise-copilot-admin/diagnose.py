@@ -17,65 +17,138 @@ import sys
 import urllib.request
 import requests
 
-# 5대 어드민 관리 칩 카탈로그
-ADMIN_TOPIC_CATALOG = {
+# 엔터프라이즈 어드민 관리 과제 인라인 폴백 시드
+FALLBACK_ADMIN_CATALOG = {
     1: {
-        "id": "domain_onboarding",
+        "id": "tenant-domain-onboarding",
+        "slug": "tenant-domain-onboarding",
         "name": "사내 도메인 선점 충돌 및 Cloud Identity 온보딩",
-        "category": "Domain & Identity",
-        "description": "사내 도메인이 이미 타 계정에 선점되었을 때 Cloud Identity Free 배포 및 DNS TXT 검증",
+        "category": "테넌트 및 도메인 관리",
+        "description": "사내 대표 도메인이 타 계정에 선점되어 Gemini Enterprise 활성화가 차단될 때, Cloud Identity Free 기반 테넌트 배포 및 DNS TXT 레코드 소유권 검증 절차를 진단한다.",
         "primary_action": "DNS TXT 레코드 소유권 확인 및 임시 테넌트 배포",
         "remediation_type": "DNS_AND_IDENTITY",
+        "default_scope": "ORG",
     },
     2: {
-        "id": "marketplace_governance",
+        "id": "sec-marketplace-governance",
+        "slug": "sec-marketplace-governance",
         "name": "외부 마켓플레이스 차단 및 사내 승인 에이전트 통제",
-        "category": "Governance & Security",
-        "description": "외부 공개 에이전트 마켓플레이스 접근을 전면 차단하고 사내 검증 에이전트만 노출",
+        "category": "보안 거버넌스 및 정책",
+        "description": "금융권 및 대기업 보안 규정에 따라 외부 공개 에이전트 마켓플레이스 접근을 전면 차단하고, 사내 검증 에이전트만 전사 갤러리(/r/agents)에 노출되도록 제어한다.",
         "primary_action": "Discovery Engine 공유 범위 ALL_USERS 및 외부 마켓플레이스 토글 비활성화",
         "remediation_type": "ORG_POLICY_AND_ENGINE_CONFIG",
+        "default_scope": "ORG",
     },
     3: {
-        "id": "license_optimization",
+        "id": "finops-license-optimizer",
+        "slug": "finops-license-optimizer",
         "name": "부서별 라이선스 채택률 분석 및 유휴 라이선스 회수",
-        "category": "FinOps & License",
-        "description": "30일 이상 미사용 임직원 라이선스를 식별하여 자동 회수하고 부서별 활성도 집계",
+        "category": "라이선스 및 FinOps 최적화",
+        "description": "30일 이상 미사용 임직원 라이선스를 식별하여 자동 회수하고 부서별 채택률 및 활성 사용 패턴을 감사 로그로 집계한다.",
         "primary_action": "BigQuery 감사 로그 분석 및 Google Admin 라이선스 비할당 CLI",
         "remediation_type": "BIGQUERY_SQL_AND_ADMIN_CLI",
+        "default_scope": "ORG",
     },
     4: {
-        "id": "overage_billing_guard",
-        "name": "Overage 추가 과금 방어 및 AI Studio 키 차단",
-        "category": "FinOps & Billing",
-        "description": "일일 쿼터 초과 시 업무 중단 없는 풀링 방어 및 임직원의 AI Studio 유료 키 발급 차단",
-        "primary_action": "결제 계정 IAM 역할 제한(Billing Account User 제거) 및 쿼터 캡 설정",
-        "remediation_type": "IAM_RBAC_AND_QUOTA",
-    },
-    5: {
-        "id": "firewall_fqdn_check",
+        "id": "net-firewall-fqdn",
+        "slug": "net-firewall-fqdn",
         "name": "사내망 프록시 허용용 Exact 15대 코어 FQDN 진단",
-        "category": "Network & Proxy",
-        "description": "와일드카드 도메인이 불허되는 폐쇄망 프록시 환경에서 필수 코어 FQDN 및 443 연결성 점검",
+        "category": "네트워크 및 프록시 방화벽",
+        "description": "와일드카드 도메인이 불허되는 폐쇄망 프록시(SWG) 환경에서 필수 코어 FQDN 목록 추출 및 아웃바운드 443 연결성을 진단한다.",
         "primary_action": "Exact FQDN 목록 추출 및 아웃바운드 443 포트 사전 프로브",
         "remediation_type": "NETWORK_PROBE_AND_PROXY_CONFIG",
-    },
-    6: {
-        "id": "agent_sprawl_governance",
-        "name": "수백 개 에이전트 전수 감사 및 좀비 에이전트 식별 (BigQuery 쿼리 팩)",
-        "category": "Agent Governance & Sprawl",
-        "description": "임직원이 생성한 수백 개 에이전트 중 60일 미사용 좀비 에이전트, 토큰 과소비 톱 10, 장애 유발 에이전트 역추적",
-        "primary_action": "BigQuery 3대 어드민 감사 SQL 팩 실행 및 방치된 에이전트 일괄 비활성화",
-        "remediation_type": "BIGQUERY_AUDIT_SQL_PACK",
-    },
-    7: {
-        "id": "one_click_log_sink_setup",
-        "name": "Cloud Logging to BigQuery 30초 원클릭 감사 로그 싱크 구축 & GCP 콘솔 길잡이",
-        "category": "Logging & Console Navigator",
-        "description": "GCP 콘솔 메뉴를 몰라도 3단계로 GE Admin에 접근하고 명령어 한 줄로 BigQuery 감사 로그 자동 적재 파이프라인 완결",
-        "primary_action": "gcloud logging sinks create 자동화 스크립트 및 완성형 콘솔 딥링크 제공",
-        "remediation_type": "LOG_SINK_PROVISION_AND_CONSOLE_DEEPLINK",
+        "default_scope": "ORG",
     },
 }
+
+ADMIN_TOPIC_CATALOG = FALLBACK_ADMIN_CATALOG
+
+
+def validate_admin_catalog_duplicates(catalog: dict):
+    """카탈로그 내 슬러그 및 디스플레이 이름의 중복을 사전 검증하여 설정 충돌을 방지한다."""
+    slugs = {}
+    names = {}
+    for idx, item in catalog.items():
+        slug = item.get("slug", "").strip()
+        name = item.get("name", "").strip()
+        if slug:
+            if slug in slugs:
+                print(f"[경고] 카탈로그 슬러그 중복 감지: '{slug}' (항목 {slugs[slug]} 및 {idx})", file=sys.stderr)
+            else:
+                slugs[slug] = idx
+        if name:
+            if name in names:
+                print(f"[경고] 카탈로그 과제명 중복 감지: '{name}' (항목 {names[name]} 및 {idx})", file=sys.stderr)
+            else:
+                names[name] = idx
+
+
+def load_admin_catalog(catalog_path: str = None) -> dict:
+    """선언적 catalog.yaml 파일로부터 엔터프라이즈 어드민 관리 과제를 동적 로드한다 (4단계 캐스케이드 탐색)."""
+    candidates = []
+    if catalog_path:
+        candidates.append(catalog_path)
+    if os.environ.get("ADMIN_CATALOG_PATH"):
+        candidates.append(os.environ.get("ADMIN_CATALOG_PATH"))
+    local_default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "catalog.yaml")
+    candidates.append(local_default)
+
+    for target in candidates:
+        if not target:
+            continue
+        try:
+            content = None
+            if target.startswith("http://") or target.startswith("https://"):
+                resp = requests.get(target, timeout=2.0)
+                if resp.status_code == 200:
+                    content = resp.text
+            elif os.path.exists(target):
+                with open(target, "r", encoding="utf-8") as f:
+                    content = f.read()
+
+            if content:
+                loaded_tasks = []
+                try:
+                    import yaml
+                    data = yaml.safe_load(content)
+                    if isinstance(data, dict) and "admin_tasks" in data:
+                        loaded_tasks = data["admin_tasks"]
+                except ImportError:
+                    import re
+                    task_blocks = content.split("  - slug:")
+                    for block in task_blocks[1:]:
+                        lines = ("slug:" + block).split("\n")
+                        item = {}
+                        for line in lines:
+                            line_s = line.strip()
+                            if ":" in line_s:
+                                k, v = line_s.split(":", 1)
+                                k = k.strip()
+                                v = v.strip().strip("'\"")
+                                if k in ["slug", "name", "category", "description", "primary_action", "remediation_type", "default_scope"]:
+                                    item[k] = v
+                        if "slug" in item and "name" in item:
+                            loaded_tasks.append(item)
+
+                if loaded_tasks:
+                    result = {}
+                    for idx, t in enumerate(loaded_tasks, 1):
+                        result[idx] = {
+                            "id": t.get("slug", f"admin_{idx}"),
+                            "slug": t.get("slug", f"admin_{idx}"),
+                            "name": t.get("name", f"과제 {idx}"),
+                            "category": t.get("category", "일반 어드민"),
+                            "description": t.get("description", ""),
+                            "primary_action": t.get("primary_action", "기본 조치"),
+                            "remediation_type": t.get("remediation_type", "DEFAULT_REMEDIATION"),
+                            "default_scope": t.get("default_scope", "ORG"),
+                        }
+                    validate_admin_catalog_duplicates(result)
+                    return result
+        except Exception as e:
+            pass
+
+    return FALLBACK_ADMIN_CATALOG
 
 CORE_FQDN_LIST = [
     "accounts.google.com",
@@ -360,17 +433,22 @@ def resolve_environment(args) -> dict:
     load_env_file()
 
     project_id = args.project or os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or get_gcloud_config("project") or "sample-project-id"
-    if not args.dry_run and not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
+    if args.dry_run:
+        project_id = "sample-project-id"
+    elif not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
         persist_env_value("PROJECT_ID", project_id, dry_run=args.dry_run)
 
     location = args.location or os.environ.get("LOCATION") or "global"
 
     ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
     if not ge_app_id:
-        candidates = discover_ge_app_engines(project_id)
-        ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
-        if not args.dry_run and ge_app_id:
-            persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
+        if args.dry_run:
+            ge_app_id = "default"
+        else:
+            candidates = discover_ge_app_engines(project_id)
+            ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
+            if ge_app_id:
+                persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
 
     sa_email = args.sa or os.environ.get("ADMIN_SERVICE_ACCOUNT") or f"ge-admin-sa@{project_id}.iam.gserviceaccount.com"
     domain = args.domain or os.environ.get("CUSTOMER_DOMAIN") or "example-corp.com"
@@ -384,29 +462,44 @@ def resolve_environment(args) -> dict:
     }
 
 
-def select_topic_interactive(dry_run: bool) -> dict:
-    """터미널 대화형 환경에서 5대 관리 칩 번호 선택기를 렌더링한다."""
+def select_topic_interactive(dry_run: bool, catalog: dict = None) -> dict:
+    """터미널 대화형 환경에서 어드민 관리 과제 칩 번호 선택기를 렌더링한다."""
+    active_catalog = catalog or ADMIN_TOPIC_CATALOG
     print("\n" + "=" * 70)
-    print("  [Gemini Enterprise] 어드민 관리 과제 칩 선택기")
+    print("  [Gemini Enterprise] 엔터프라이즈 어드민 관리 과제 선택기")
     print("=" * 70)
-    for num, data in ADMIN_TOPIC_CATALOG.items():
+    print("  [0] 자유 프롬프팅 (자연어로 관리 문의 직접 입력)")
+    for num, data in active_catalog.items():
         print(f"  [{num}] {data['name']} ({data['category']})")
         print(f"      - 설명 : {data['description']}")
         print(f"      - 조치 : {data['primary_action']}")
     print("=" * 70)
 
     if dry_run or not sys.stdin.isatty():
-        print("[*] 비대화형 또는 가상 실행 모드: 1번 (도메인 온보딩) 칩을 기본 채택합니다.")
-        return ADMIN_TOPIC_CATALOG[1]
+        print("[*] 비대화형 또는 가상 실행 모드: 1번 칩을 기본 채택합니다.")
+        return active_catalog.get(1, list(active_catalog.values())[0])
 
     try:
-        choice = input("\n진단할 어드민 과제 번호를 선택하십시오 (기본 [1]): ").strip()
+        choice = input(f"\n진단할 어드민 과제 번호를 선택하십시오 (0-{len(active_catalog)}, 기본 [1]): ").strip()
         if not choice:
-            return ADMIN_TOPIC_CATALOG[1]
+            return active_catalog.get(1, list(active_catalog.values())[0])
         num = int(choice)
-        return ADMIN_TOPIC_CATALOG.get(num, ADMIN_TOPIC_CATALOG[1])
+        if num == 0:
+            user_prompt = input("\n해결하고자 하는 사내 어드민 이슈를 입력하십시오: ").strip()
+            if not user_prompt:
+                user_prompt = "사내 인프라 및 거버넌스 점검"
+            return {
+                "id": "custom_admin_inquiry",
+                "slug": "custom-admin-inquiry",
+                "name": f"사용자 어드민 문의 ({user_prompt[:15]})",
+                "category": "사용자 맞춤형 어드민",
+                "description": f"어드민 문의({user_prompt}) 기반 맞춤형 진단 및 조치 가이드",
+                "primary_action": "맞춤형 거버넌스 및 인프라 정책 점검",
+                "remediation_type": "CUSTOM_REMEDIATION",
+            }
+        return active_catalog.get(num, active_catalog.get(1, list(active_catalog.values())[0]))
     except (ValueError, KeyboardInterrupt):
-        return ADMIN_TOPIC_CATALOG[1]
+        return active_catalog.get(1, list(active_catalog.values())[0])
 
 
 def compile_admin_remediation(topic_data: dict, env_info: dict) -> dict:
@@ -421,7 +514,7 @@ def compile_admin_remediation(topic_data: dict, env_info: dict) -> dict:
     script = ""
     manifest = {}
 
-    if tid == "domain_onboarding":
+    if tid in ["domain_onboarding", "tenant-domain-onboarding"]:
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
@@ -450,7 +543,7 @@ echo "테넌트 활성화 상태: READY"
             "status": "ACTION_REQUIRED_DNS",
         }
 
-    elif tid == "marketplace_governance":
+    elif tid in ["marketplace_governance", "sec-marketplace-governance"]:
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
@@ -478,7 +571,7 @@ echo "[2/2] 사내 등록 에이전트 전사 승인 공유 범위(ALL_USERS) �
             "governanceState": "ENFORCED",
         }
 
-    elif tid == "license_optimization":
+    elif tid in ["license_optimization", "finops-license-optimizer"]:
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
@@ -511,7 +604,7 @@ echo "[2/2] 유휴 라이선스 회수 자동화 완료 (Google Admin 콘솔 연
             "estimatedSavingsPercent": "15%+",
         }
 
-    elif tid == "overage_billing_guard":
+    elif tid in ["overage_billing_guard", "finops-overage-guard"]:
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
@@ -533,7 +626,7 @@ echo "설정 완료: 풀링 쿼터 초과 시 429 쓰로틀링 방어 및 관리
             "quotaGuard": "ENABLED",
         }
 
-    elif tid == "firewall_fqdn_check":
+    elif tid in ["firewall_fqdn_check", "net-firewall-fqdn"]:
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
@@ -1640,25 +1733,27 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     }
 
 
-def run_local_scaffolding_mode(args, env_info: dict):
+def run_local_scaffolding_mode(args, env_info: dict, catalog: dict = None):
     """로컬 단일 어드민 과제 진단 및 조치 가이드 생성 보조 모드를 실행한다."""
     print("\n[안내] 로컬 단일 어드민 조치 가이드 생성 보조 모드 가동")
+    active_catalog = catalog or ADMIN_TOPIC_CATALOG
 
     # 1. 과제 칩 선택
-    topic_data = ADMIN_TOPIC_CATALOG[1]
+    topic_data = active_catalog.get(1, list(active_catalog.values())[0])
     if args.prompt:
         topic_data = {
             "id": "custom_admin_inquiry",
+            "slug": "custom-admin-inquiry",
             "name": f"사용자 어드민 문의 ({args.prompt[:15]})",
-            "category": "Custom IT Admin",
+            "category": "사용자 맞춤형 어드민",
             "description": f"어드민 문의({args.prompt}) 기반 맞춤형 진단 및 조치 가이드",
             "primary_action": "맞춤형 거버넌스 및 인프라 정책 점검",
             "remediation_type": "CUSTOM_REMEDIATION",
         }
-    elif args.chip and args.chip in ADMIN_TOPIC_CATALOG:
-        topic_data = ADMIN_TOPIC_CATALOG[args.chip]
+    elif args.chip and args.chip in active_catalog:
+        topic_data = active_catalog[args.chip]
     elif args.interactive or (sys.stdin.isatty() and not args.dry_run):
-        topic_data = select_topic_interactive(args.dry_run)
+        topic_data = select_topic_interactive(args.dry_run, catalog=active_catalog)
 
     print(f"\n[단계 1/3] 어드민 관리 칩 스펙 컴파일 중...")
     print(f"  - 과제 명칭 : {topic_data['name']}")
@@ -1686,7 +1781,7 @@ def run_local_scaffolding_mode(args, env_info: dict):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gemini Enterprise 어드민 코파일럿 (붕어빵 틀) 배포 및 등록 도구",
+        description="Gemini Enterprise 어드민 코파일럿 배포 및 등록 도구",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--project", help="Google Cloud 프로젝트 ID (미지정 시 자동 감지)")
@@ -1694,10 +1789,11 @@ def main():
     parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
     parser.add_argument("--sa", help="어드민 실행 대행 서비스 계정 이메일")
     parser.add_argument("--domain", help="사내 도메인 명칭 (예: example-corp.com)")
+    parser.add_argument("--catalog", help="선언적 어드민 카탈로그 파일 경로 (catalog.yaml) 또는 원격 URL")
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 어드민 가이드 생성 보조 모드")
-    parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~7)")
+    parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~5)")
     parser.add_argument("--prompt", help="사용자 정의 어드민 문의 내용")
     parser.add_argument("--interactive", action="store_true", default=False, help="로컬 대화형 번호 선택기 가동")
     parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 (기본 실행과 동일)")
@@ -1716,6 +1812,8 @@ def main():
     print("  Gemini Enterprise 어드민 코파일럿 (gemini-enterprise-copilot-admin)")
     print("=" * 75)
 
+    catalog = load_admin_catalog(args.catalog)
+
     # 1. 환경 정보 해석
     env_info = resolve_environment(args)
     print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
@@ -1727,7 +1825,7 @@ def main():
 
     # 로컬 스캐폴딩 보조 모드 분기 (명시적 플래그 지정 시에만 작동)
     if args.scaffold or args.chip or args.prompt or args.interactive:
-        run_local_scaffolding_mode(args, env_info)
+        run_local_scaffolding_mode(args, env_info, catalog=catalog)
         return
 
     # [핵심 메인 워크플로우]: 붕어빵 틀(GE Admin Copilot) 배포 및 GE App 사내 갤러리 등록

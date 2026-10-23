@@ -11,203 +11,396 @@
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.request
 from datetime import datetime, timezone
 import requests
 
-# 10대 산업/부서별 추천 칩 카탈로그 (Seed Chips)
-CHIP_CATALOG = {
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+# 엔터프라이즈 노코드 에이전트 인라인 폴백 시드
+FALLBACK_AGENT_CATALOG = {
     1: {
-        "category": "IT 인프라 / 클라우드 지원",
-        "chips": [
-            {
-                "id": "vdi_unlock",
-                "title": "망분리 환경 VDI 계정 잠금 해제 및 OTP 초기화 에이전트",
-                "target_users": "사내 망분리 및 VDI 사용자",
-                "core_compliance": "금융보안원 및 사내 정보보호 규정 (2차 인증 검증 필수)",
-            },
-            {
-                "id": "cloud_incident",
-                "title": "클라우드 장애 알림 1차 원인 분석 및 온콜 에스컬레이션",
-                "target_users": "인프라 운영팀 및 데브옵스 엔지니어",
-                "core_compliance": "SRE 인시던트 관리 체계 및 서비스 연속성 지침",
-            },
-            {
-                "id": "it_faq",
-                "title": "사내 IT 헬프데스크 FAQ 및 소프트웨어 라이선스 신청",
-                "target_users": "전사 임직원",
-                "core_compliance": "사내 자산 관리 규정 및 정품 소프트웨어 인가 기준",
-            },
+        "id": "hr-onboarding-guide",
+        "slug": "hr-onboarding-guide",
+        "title": "신규 입사자 온보딩 가이드 에이전트",
+        "name": "신규 입사자 온보딩 가이드 에이전트",
+        "category": "인사 및 조직 문화",
+        "description": "사내 필수 계정 발급, 부서별 환영 절차, 멘토링 프로그램, 보안 서약 및 첫 주 적응 태스크를 안내한다.",
+        "mention_handle": "@hr-onboarding-guide",
+        "slash_command": "/hr-onboarding-guide",
+        "target_users": "신규 입사자, 팀 멘토, 피플팀",
+        "core_compliance": "사내 정보보호 서약 및 신규 입사자 준수 수칙",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "신규 입사 첫 주 필수 체크리스트와 계정 신청 링크 알려줘",
+            "사내 보안 서약서 제출 방법과 교육 이수 마감일이 언제야?",
+            "멘토 배정 기준과 온보딩 미팅 일정 템플릿 보여줘",
+            "사내 그룹웨어 및 사내망 접속 절차 가이드 해줘",
         ],
+        "instructions_summary": "신규 입사자가 사내 문화와 업무 인프라에 안착하도록 따뜻하고 전문적인 어조로 사내 규정과 링크를 안내하며, PII 보호 수칙을 준수한다.",
     },
     2: {
-        "category": "인사 / 총무 / 기업 운영",
-        "chips": [
-            {
-                "id": "hr_vacation",
-                "title": "근로기준법 준수 연차 및 특별휴가 규정 안내 에이전트",
-                "target_users": "전사 임직원 및 인사 담당자",
-                "core_compliance": "대한민국 근로기준법 및 사내 취업규칙",
-            },
-            {
-                "id": "welfare_support",
-                "title": "경조사 지원금 및 사내 복리후생 신청 절차 안내",
-                "target_users": "전사 임직원",
-                "core_compliance": "사내 복지기금 운영 규정 및 증빙 서류 지침",
-            },
-            {
-                "id": "onboarding_guide",
-                "title": "신규 입사자 온보딩 및 필수 보안 교육 이수 가이드",
-                "target_users": "신규 입사자 및 멘토",
-                "core_compliance": "정보보호 서약 및 신규 입사자 준수 수칙",
-            },
+        "id": "hr-welfare-concierge",
+        "slug": "hr-welfare-concierge",
+        "title": "임직원 복리후생 컨시어지 에이전트",
+        "name": "임직원 복리후생 컨시어지 에이전트",
+        "category": "인사 및 복리후생",
+        "description": "경조사비 지원, 휴양소 예약, 건강검진 대상 및 사내 동호회 지원 기준을 조회하고 신청 양식을 안내한다.",
+        "mention_handle": "@hr-welfare-concierge",
+        "slash_command": "/hr-welfare-concierge",
+        "target_users": "전사 임직원",
+        "core_compliance": "사내 복지기금 운영 규정 및 증빙 서류 지침",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "올해 종합건강검진 대상자 여부와 제휴 병원 목록 알려줘",
+            "경조사 화환 신청 및 경조금 지급 기준이 어떻게 돼?",
+            "하계 콘도/휴양소 추첨 신청 일정과 자격 요건 안내해줘",
+            "사내 동호회 설립 조건과 분기별 활동 지원금 규정 확인해줘",
         ],
+        "instructions_summary": "임직원이 받을 수 있는 복리후생 혜택을 놓치지 않도록 사내 규정을 명확히 안내하고 필요 증빙 서류와 신청 기한을 안내한다.",
     },
     3: {
-        "category": "재무 / 회계 / 경비 정산",
-        "chips": [
-            {
-                "id": "expense_audit",
-                "title": "법인카드 경비 전표 증빙 및 세금계산서 정산 검증 에이전트",
-                "target_users": "전사 임직원 및 재무회계팀",
-                "core_compliance": "법인세법 적격증빙 규정 및 청탁금지법 가액 기준",
-            },
-            {
-                "id": "budget_tracker",
-                "title": "부서별 분기 예산 집행 현황 조회 및 잔액 알림",
-                "target_users": "부서장 및 예산 관리자",
-                "core_compliance": "사내 예산 통제 지침 및 집행 결재선 기준",
-            },
-            {
-                "id": "travel_expense",
-                "title": "국내외 출장 여비 규정 및 출장비 사전 품의 검토",
-                "target_users": "출장 대상 임직원",
-                "core_compliance": "사내 출장 여비 지급 규정 및 실비 정산 기준",
-            },
+        "id": "hr-evaluation-assistant",
+        "slug": "hr-evaluation-assistant",
+        "title": "인사평가 및 KPI 작성 코칭 에이전트",
+        "name": "인사평가 및 KPI 작성 코칭 에이전트",
+        "category": "인사 및 조직 성과",
+        "description": "분기/반기별 목표 수립(OKR/KPI) SMART 원칙 코칭, 업무 성과 기술서 작성 및 다면 평가 피드백 작성을 돕는다.",
+        "mention_handle": "@hr-evaluation-assistant",
+        "slash_command": "/hr-evaluation-assistant",
+        "target_users": "전사 임직원 및 평가자(팀장/부서장)",
+        "core_compliance": "사내 인사평가 관리 지침 및 다면평가 비밀 유지 규정",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "이번 분기 영업/기술 지원 KPI를 SMART 기준에 맞춰 구체화해줘",
+            "상반기 주요 업무 실적 기술서 초안을 정량 지표 중심으로 다듬어줘",
+            "팀원 다면 평가 피드백을 건설적이고 객관적인 문장으로 작성해줘",
+            "하반기 역량 개발 계획서 작성 가이드라인 알려줘",
         ],
+        "instructions_summary": "과장이나 추상적인 서술을 배제하고 정량적 결과(Metric)와 구체적 기여도를 중심으로 성과 기술서를 코칭하며 비밀유지를 보장한다.",
     },
     4: {
-        "category": "고객 지원 / VOC 분석",
-        "chips": [
-            {
-                "id": "refund_policy",
-                "title": "전자상거래 주문 취소 및 반품/환불 규정 심사 에이전트",
-                "target_users": "고객센터 상담원 및 CS 운영팀",
-                "core_compliance": "전자상거래 등에서의 소비자보호에 관한 법률",
-            },
-            {
-                "id": "voc_sentiment",
-                "title": "고객 불만 VOC 감성 분석 및 긴급 대응 에스컬레이션",
-                "target_users": "CS 매니저 및 품질 관리팀",
-                "core_compliance": "소비자 분쟁 해결 기준 및 악성 민원 대응 매뉴얼",
-            },
+        "id": "finance-expense-auditor",
+        "slug": "finance-expense-auditor",
+        "title": "법인카드 경비 전표 사전 검토 에이전트",
+        "name": "법인카드 경비 전표 사전 검토 에이전트",
+        "category": "재무 및 경비 정산",
+        "description": "법인카드 전표 증빙, 부가세 공제 대상 여부, 접대비 한도 및 청탁금지법 가액 기준 충족 여부를 사전 점검한다.",
+        "mention_handle": "@finance-expense-auditor",
+        "slash_command": "/finance-expense-auditor",
+        "target_users": "전사 임직원 및 재무회계팀",
+        "core_compliance": "법인세법 적격증빙 규정 및 청탁금지법 가액 기준",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "야근 식대 법인카드 결제 한도와 필요 증빙 안내해줘",
+            "거래처 미팅 식사비 1인당 한도와 청탁금지법 체크리스트 보여줘",
+            "주말/공휴일 법인카드 사용 시 사유서 작성 요령 알려줘",
+            "해외 출장 항공권 및 숙박비 영수증 정산 절차 안내해줘",
         ],
+        "instructions_summary": "세법 및 사내 전표 규정에 부합하는지 꼼꼼하게 대조하며, 불인정 위험 항목(사적 사용, 심야 한도 초과 등)을 사전 경고한다.",
     },
     5: {
-        "category": "법무 / 준법 감시 / 컴플라이언스",
-        "chips": [
-            {
-                "id": "nda_reviewer",
-                "title": "표준 비밀유지계약서(NDA) 필수 조항 자동 검토 에이전트",
-                "target_users": "사업개발 및 영업 담당자",
-                "core_compliance": "부정경쟁방지 및 영업비밀보호에 관한 법률",
-            },
-            {
-                "id": "anti_graft",
-                "title": "청탁금지법 식사 및 선물 가액 규정 조회 보조",
-                "target_users": "전사 임직원",
-                "core_compliance": "부정청탁 및 금품등 수수의 금지에 관한 법률",
-            },
+        "id": "finance-tax-advisor",
+        "slug": "finance-tax-advisor",
+        "title": "사내 연말정산 원천징수 상담 에이전트",
+        "name": "사내 연말정산 원천징수 상담 에이전트",
+        "category": "재무 및 세무 상담",
+        "description": "근로소득 연말정산 소득/세액 공제 항목, 부양가족 요건, 국세청 간소화 자료 제출 및 원천징수영수증 발급을 상담한다.",
+        "mention_handle": "@finance-tax-advisor",
+        "slash_command": "/finance-tax-advisor",
+        "target_users": "전사 임직원",
+        "core_compliance": "소득세법 근로소득 연말정산 규정",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "올해 신설된 주택청약종합저축 소득공제 한도 알려줘",
+            "기본공제 대상 부양가족 소득 요건과 나이 요건 확인해줘",
+            "맞벌이 부부 의료비 몰아주기 공제 최적화 방법 설명해줘",
+            "연도 중 중도 입사자의 전 직장 근로소득 원천징수 합산 절차 안내해줘",
         ],
+        "instructions_summary": "최신 소득세법 기준의 공제 요건을 알기 쉽게 설명하고 과다공제로 인한 가산세 발생 위험을 예방하도록 돕는다.",
     },
     6: {
-        "category": "마케팅 / 세일즈 / 홍보",
-        "chips": [
-            {
-                "id": "press_writer",
-                "title": "신제품 런칭 보도자료 및 소셜 미디어 홍보 카피라이터",
-                "target_users": "홍보팀 및 브랜드 마케터",
-                "core_compliance": "표시·광고의 공정화에 관한 법률 및 과장 광고 금지",
-            },
-            {
-                "id": "b2b_lead_score",
-                "title": "B2B 인바운드 영업 리드 스코어링 및 적합성 평가 에이전트",
-                "target_users": "세일즈 엔지니어 및 영업 대표",
-                "core_compliance": "고객사 기밀 정보 보호 및 CRM 데이터 관리 규정",
-            },
+        "id": "legal-contract-reviewer",
+        "slug": "legal-contract-reviewer",
+        "title": "표준 계약서 1차 법무 검토 에이전트",
+        "name": "표준 계약서 1차 법무 검토 에이전트",
+        "category": "법무 및 준법 감시",
+        "description": "비밀유지계약서(NDA), 업무위수탁계약서 등 사내 표준 양식과의 독소 조항, 관할 법원, 지식재산권 귀속을 1차 스크리닝한다.",
+        "mention_handle": "@legal-contract-reviewer",
+        "slash_command": "/legal-contract-reviewer",
+        "target_users": "사업개발, 영업, 구매팀 및 법무팀",
+        "core_compliance": "부정경쟁방지 및 영업비밀보호에 관한 법률, 하도급법",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "고객사 전달 NDA에서 일방적 손해배상 독소 조항 찾아줘",
+            "SW 외주 용역 계약서의 지식재산권 귀속 조항 표준 문구 추천해줘",
+            "계약 분쟁 시 관할 법원을 우리 회사 소재지 법원으로 변경하는 특약 검토해줘",
+            "표준 업무위수탁 계약서 필수 기재사항 누락 여부 확인해줘",
         ],
+        "instructions_summary": "최종 법률 자문은 사내 법무팀의 고유 권한임을 명시하되, 불리한 독소 조항이나 법률상 필수 조항 누락을 1차적으로 안전하게 걸러낸다.",
     },
     7: {
-        "category": "스마트팩토리 / 제조 / 설비 안전",
-        "chips": [
-            {
-                "id": "iot_maintenance",
-                "title": "제조 설비 IoT 센서 이상 감지 및 정비 매뉴얼 매칭 에이전트",
-                "target_users": "공장 정비 기사 및 설비 관리자",
-                "core_compliance": "산업안전보건법 및 설비 예방 보전 지침",
-            },
-            {
-                "id": "safety_audit",
-                "title": "공장 산업안전보건 수칙 및 작업 전 위험성 평가 체크리스트",
-                "target_users": "현장 근로자 및 안전 관리 책임자",
-                "core_compliance": "중대재해 처벌 등에 관한 법률 및 고용노동부 고시",
-            },
+        "id": "sec-compliance-officer",
+        "slug": "sec-compliance-officer",
+        "title": "정보보호 및 망 분리 규정 질의 에이전트",
+        "name": "정보보호 및 망 분리 규정 질의 에이전트",
+        "category": "정보보호 및 보안",
+        "description": "사내 정보보안 수칙, 망 분리 반출입 절차, 외부 오픈소스 소프트웨어 인가 기준, 개인정보 처리 동의 가이드를 제공한다.",
+        "mention_handle": "@sec-compliance-officer",
+        "slash_command": "/sec-compliance-officer",
+        "target_users": "전사 임직원 및 개발/인프라팀",
+        "core_compliance": "개인정보보호법, 전자금융감독규정, 정보통신망법",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "내부망 PC에서 외부 개발 소스코드 반입 신청 절차 알려줘",
+            "고객 개인식별정보(PII) 포함 데이터 마스킹 표준 규정 확인해줘",
+            "상용 소프트웨어 설치 시 CISO 보안성 검토 신청 방법 안내해줘",
+            "생성형 AI 서비스 사용 시 사내 기밀 유출 방지 3대 가이드라인 보여줘",
         ],
+        "instructions_summary": "철저한 컴플라이언스 준수 원칙 하에 사내 보안 규정과 망 분리 승인 프로세스를 단호하고 명료하게 안내한다.",
     },
     8: {
-        "category": "연구개발 / 소프트웨어 엔지니어링",
-        "chips": [
-            {
-                "id": "code_review_guide",
-                "title": "사내 코딩 컨벤션 및 보안 코딩 가이드라인 안내",
-                "target_users": "소프트웨어 엔지니어",
-                "core_compliance": "시큐어 코딩 가이드 및 사내 오픈소스 거버넌스",
-            },
-            {
-                "id": "api_spec_helper",
-                "title": "사내 API 게이트웨이 호출 규격 및 인증 토큰 발급 가이드",
-                "target_users": "백엔드 개발자 및 파트너 연동사",
-                "core_compliance": "사내 API 보안 표준 및 OAuth 2.0 클라이언트 지침",
-            },
+        "id": "it-helpdesk-responder",
+        "slug": "it-helpdesk-responder",
+        "title": "사내 전산 계정 장애 1차 응대 에이전트",
+        "name": "사내 전산 계정 장애 1차 응대 에이전트",
+        "category": "IT 전산 지원",
+        "description": "SSO 계정 잠금 해제, OTP/2차 인증 초기화, VPN 접속 오류, 프린터/네트워크 설정 장애를 진단하고 티켓을 생성한다.",
+        "mention_handle": "@it-helpdesk-responder",
+        "slash_command": "/it-helpdesk-responder",
+        "target_users": "전사 임직원",
+        "core_compliance": "사내 계정 관리 보안 지침 및 IT 서비스 관리(ITSM) 체계",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "사내 SSO 계정 비밀번호 5회 오류 잠금 해제 방법 알려줘",
+            "재택근무 중 글로벌 VPN 연결 실패 시 네트워크 조치 순서 안내해줘",
+            "스마트폰 변경 후 2차 인증(OTP) 재등록 절차 설명해줘",
+            "사내 층별 복합기 드라이버 설치 및 보안 출력 설정 가이드 해줘",
         ],
+        "instructions_summary": "임직원의 업무 중단을 최소화하기 위해 즉각적인 자가 조치 가이드를 제공하고, 미해결 시 IT 헬프데스크 티켓 접수를 유도한다.",
     },
     9: {
-        "category": "구매 / 자재 / 공급망",
-        "chips": [
-            {
-                "id": "vendor_evaluation",
-                "title": "신규 협력업체 등록 심사 및 적격성 평가 에이전트",
-                "target_users": "구매팀 및 외주 관리자",
-                "core_compliance": "하도급거래 공정화에 관한 법률 및 윤리경영 강령",
-            },
-            {
-                "id": "procurement_rfq",
-                "title": "구매 품의서 적정 단가 비교 및 견적서 검토 보조",
-                "target_users": "자재 구매 담당자",
-                "core_compliance": "사내 계약 사무 처리 규정 및 수의계약 통제 기준",
-            },
+        "id": "ga-facility-navigator",
+        "slug": "ga-facility-navigator",
+        "title": "사내 시설 및 회의실 예약 도우미 에이전트",
+        "name": "사내 시설 및 회의실 예약 도우미 에이전트",
+        "category": "총무 및 시설 관리",
+        "description": "본사 및 지사 회의실 화상 장비 지원 여부, 사내 카페/피트니스 이용 시간, 주차 등록 및 방문객 출입증 발급을 지원한다.",
+        "mention_handle": "@ga-facility-navigator",
+        "slash_command": "/ga-facility-navigator",
+        "target_users": "전사 임직원 및 방문객 접수자",
+        "core_compliance": "사내 사옥 관리 규정 및 방문객 출입 보안 수칙",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "30인 이상 수용 가능한 화상회의실 예약 현황과 장비 안내해줘",
+            "외부 고객사 방문 시 임시 출입증 발급 및 무료 주차 등록 방법 알려줘",
+            "사내 피트니스 센터 이용 시간과 개인 사물함 배정 규정 확인해줘",
+            "사내 우편물 수령처와 퀵서비스 발송 신청 절차 안내해줘",
         ],
+        "instructions_summary": "사옥 편의시설과 공용 회의실 이용 수칙을 신속하게 안내하여 쾌적한 사내 환경 운영을 돕는다.",
     },
     10: {
-        "category": "정보 보안 / 인프라 보호",
-        "chips": [
-            {
-                "id": "phishing_reporter",
-                "title": "피싱 의심 이메일 악성 링크 및 첨부파일 1차 분석 에이전트",
-                "target_users": "전사 임직원 및 정보보호팀",
-                "core_compliance": "정보통신망법 및 사내 침해사고 대응 매뉴얼",
-            },
-            {
-                "id": "data_loss_guard",
-                "title": "사내 데이터 반출 승인 및 예외 신청 사전 심사",
-                "target_users": "데이터 관리자 및 보안 감사원",
-                "core_compliance": "개인정보 보호법 및 사내 정보자산 보안 규정",
-            },
+        "id": "sales-rfp-assistant",
+        "slug": "sales-rfp-assistant",
+        "title": "공공 및 엔터프라이즈 제안서 초안 에이전트",
+        "name": "공공 및 엔터프라이즈 제안서 초안 에이전트",
+        "category": "세일즈 및 사업 개발",
+        "description": "공공기관 및 대기업 제안요청서(RFP) 요구사항을 매트릭스로 분석하고, 회사 소개, 기술 스택, 수행 실적 요약 초안을 작성한다.",
+        "mention_handle": "@sales-rfp-assistant",
+        "slash_command": "/sales-rfp-assistant",
+        "target_users": "세일즈 엔지니어, 제안 PM, 사업개발팀",
+        "core_compliance": "국가를 당사자로 하는 계약에 관한 법률 및 제안 보안 규정",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "RFP 요구사항 명세서의 기능적 요구사항 분석 매트릭스 표 생성해줘",
+            "클라우드 구축 사업 제안서의 시스템 아키텍처 개요 초안 작성해줘",
+            "유사 사업 수행 실적 증명서 양식에 맞춘 3개년 주요 레퍼런스 정리해줘",
+            "제안서 평가 배점표 기준 기술 부문 고득점 차별화 전략 제안해줘",
         ],
+        "instructions_summary": "발주처의 RFP 요구사항을 정확히 충족하는 고품질 제안서 목차와 기술 서술 초안을 체계적으로 빌드한다.",
+    },
+    11: {
+        "id": "cs-voc-classifier",
+        "slug": "cs-voc-classifier",
+        "title": "고객 VOC 분류 및 대응 가이드 에이전트",
+        "name": "고객 VOC 분류 및 대응 가이드 에이전트",
+        "category": "고객 지원 및 CS",
+        "description": "인입된 고객 불만/문의(VOC)의 긴급도와 감성을 분석하여 부서별(품질, 배송, 결제)로 자동 분류하고 1차 정중 답변문을 추천한다.",
+        "mention_handle": "@cs-voc-classifier",
+        "slash_command": "/cs-voc-classifier",
+        "target_users": "고객센터 상담원, CS 매니저, 제품 품질팀",
+        "core_compliance": "소비자분쟁해결기준 및 악성 민원 대응 가이드라인",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "인입된 고객 환불 지연 항의문에 대한 1차 정중 사과 답변 초안 써줘",
+            "최근 일주일간 VOC 텍스트에서 불만 키워드 빈도 및 감성 점수 분석해줘",
+            "제품 파손 클레임 접수 시 부서별 긴급 에스컬레이션 기준 안내해줘",
+            "배송 지연에 따른 포인트 보상 기준과 고객 안내 스크립트 작성해줘",
+        ],
+        "instructions_summary": "고객의 감정에 공감하면서도 회사의 정책을 명확하게 전달하는 정중한 상담 스크립트와 분류 데이터를 제공한다.",
+    },
+    12: {
+        "id": "biz-meeting-summarizer",
+        "slug": "biz-meeting-summarizer",
+        "title": "임원 회의록 및 액션 플랜 도우미 에이전트",
+        "name": "임원 회의록 및 액션 플랜 도우미 에이전트",
+        "category": "경영 기획 및 업무 보고",
+        "description": "회의 전사 텍스트에서 주요 의사결정 사항, 부서별 담당 액션 아이템(R&R), 데드라인을 체계적으로 구조화 요약한다.",
+        "mention_handle": "@biz-meeting-summarizer",
+        "slash_command": "/biz-meeting-summarizer",
+        "target_users": "전사 임직원, 프로젝트 관리자, 경영지원팀",
+        "core_compliance": "경영 회의록 보안 등급 관리 지침",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "경영전략 주간 회의 녹취록에서 의사결정 사항 3줄 요약해줘",
+            "회의 내용 중 부서별 담당자, 액션 플랜, 완료 기한을 표로 정리해줘",
+            "주요 안건별 찬반 쟁점 사항과 차주 팔로업 안건 도출해줘",
+            "임원 보고용 1장짜리 핵심 요약 보고서 포맷으로 변환해줘",
+        ],
+        "instructions_summary": "모호하거나 장황한 대화 내용을 군더더기 없이 사실 중심의 결정 사항과 담당자별 실행 과제로 완벽히 정제한다.",
+    },
+    13: {
+        "id": "corp-pr-drafter",
+        "slug": "corp-pr-drafter",
+        "title": "사내외 보도자료 및 공지문 작성 에이전트",
+        "name": "사내외 보도자료 및 공지문 작성 에이전트",
+        "category": "홍보 및 마케팅",
+        "description": "신제품 출시, 조직 개편, 수상 실적 등 대내외 공식 공지문 및 언론 배포용 표준 보도자료 초안을 작성한다.",
+        "mention_handle": "@corp-pr-drafter",
+        "slash_command": "/corp-pr-drafter",
+        "target_users": "홍보팀, 브랜드 마케터, 사내 커뮤니케이션 담당자",
+        "core_compliance": "표시·광고의 공정화에 관한 법률 및 언론 보도 가이드라인",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "신규 AI 솔루션 런칭 관련 언론 배포용 표준 보도자료 초안 작성해줘",
+            "사내 조직 개편 및 임원 인사 발령 전사 공지문 포맷 작성해줘",
+            "ESG 친환경 경영 인증 획득 소식에 대한 사내 게시판 홍보글 써줘",
+            "보도자료 내 인용 문구(대표이사 코멘트) 적절한 톤앤매너로 다듬어줘",
+        ],
+        "instructions_summary": "과장이나 단정적 표현을 배제하고 사실과 검증된 지표 중심의 신뢰도 높은 대외 커뮤니케이션 문안을 생성한다.",
+    },
+    14: {
+        "id": "procure-vendor-screener",
+        "slug": "procure-vendor-screener",
+        "title": "협력업체 평가 및 견적 비교 에이전트",
+        "name": "협력업체 평가 및 견적 비교 에이전트",
+        "category": "구매 및 조달",
+        "description": "복수 벤더 비교 견적서 단가 차이, 신용평가등급, 납기 일정, 하도급법 준수 체크리스트를 구조화하여 비교표를 생성한다.",
+        "mention_handle": "@procure-vendor-screener",
+        "slash_command": "/procure-vendor-screener",
+        "target_users": "구매팀, 자재관리팀, 사업 PM",
+        "core_compliance": "하도급거래 공정화에 관한 법률 및 협력사 관리 규정",
+        "default_scope": "ORG",
+        "starter_prompts": [
+            "하드웨어 납품 3개사 비교 견적서 단가 및 납기 비교표 만들어줘",
+            "신규 협력업체 등록 시 필수 제출 서류 및 신용등급 심사 기준 알려줘",
+            "용역 도급 계약 시 부당 감액 방지를 위한 하도급법 점검 항목 보여줘",
+            "분기별 외주 협력사 SLA 평가 점수 집계표 작성해줘",
+        ],
+        "instructions_summary": "객관적인 수치와 납기, 신용도를 근거로 공정한 벤더 평가를 지원하며 불공정 거래 행위 위험을 사전 예방한다.",
     },
 }
+
+
+def load_agent_catalog(catalog_path: str = None) -> dict:
+    """선언적 catalog.yaml 파일로부터 도메인별 엔터프라이즈 에이전트를 동적 로드한다 (4단계 캐스케이드 탐색)."""
+    candidates = []
+    if catalog_path:
+        candidates.append(catalog_path)
+    if os.environ.get("AGENT_CATALOG_PATH"):
+        candidates.append(os.environ.get("AGENT_CATALOG_PATH"))
+    local_default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "catalog.yaml")
+    candidates.append(local_default)
+
+    raw_yaml_text = None
+    loaded_source = None
+
+    for target in candidates:
+        if not target:
+            continue
+        # 원격 URL 처리 (2.0초 타임아웃 적용하여 사내 방화벽 행 방지)
+        if target.startswith("http://") or target.startswith("https://"):
+            try:
+                req = urllib.request.Request(target, headers={"User-Agent": "GE-Agent-Factory/1.0"})
+                with urllib.request.urlopen(req, timeout=2.0) as resp:
+                    raw_yaml_text = resp.read().decode("utf-8")
+                    loaded_source = f"원격 URL ({target})"
+                    break
+            except Exception:
+                continue
+        # 로컬 파일 처리
+        elif os.path.exists(target):
+            try:
+                with open(target, "r", encoding="utf-8") as f:
+                    raw_yaml_text = f.read()
+                    loaded_source = f"로컬 파일 ({target})"
+                    break
+            except Exception:
+                continue
+
+    if not raw_yaml_text or yaml is None:
+        return FALLBACK_AGENT_CATALOG
+
+    try:
+        data = yaml.safe_load(raw_yaml_text)
+        agents_list = data.get("agents", [])
+        if not agents_list:
+            return FALLBACK_AGENT_CATALOG
+
+        catalog = {}
+        slug_pattern = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+        seen_slugs = set()
+        seen_names = set()
+        seen_mentions = set()
+
+        for idx, a in enumerate(agents_list, start=1):
+            slug = a.get("slug", f"agent-{idx}-helper")
+            if not slug_pattern.match(slug):
+                slug = slug.lower().replace("_", "-")
+
+            name = a.get("name", slug)
+            mention_handle = a.get("mention_handle", f"@{slug}")
+            slash_command = a.get("slash_command", f"/{slug}")
+
+            # 사전 중복 검증 인터셉터 (Pre-flight duplicate check)
+            if slug in seen_slugs:
+                print(f"[경고] 중복된 에이전트 슬러그 발견 및 자동 격리: {slug}", file=sys.stderr)
+                continue
+            if name in seen_names:
+                print(f"[경고] 중복된 에이전트 명칭 발견: {name}", file=sys.stderr)
+            if mention_handle in seen_mentions:
+                print(f"[경고] 중복된 멘션 핸들 발견: {mention_handle}", file=sys.stderr)
+
+            seen_slugs.add(slug)
+            seen_names.add(name)
+            seen_mentions.add(mention_handle)
+
+            catalog[idx] = {
+                "id": slug,
+                "slug": slug,
+                "title": name,
+                "name": name,
+                "category": a.get("category", "기타 엔터프라이즈 업무"),
+                "description": a.get("description", ""),
+                "mention_handle": mention_handle,
+                "slash_command": slash_command,
+                "target_users": a.get("target_users", "전사 임직원"),
+                "core_compliance": a.get("core_compliance", "사내 업무 규정"),
+                "default_scope": a.get("default_scope", "ORG"),
+                "starter_prompts": a.get("starter_prompts", []),
+                "instructions_summary": a.get("instructions_summary", ""),
+            }
+
+        return catalog if catalog else FALLBACK_AGENT_CATALOG
+    except Exception as e:
+        print(f"[정보] 선언적 카탈로그 파싱 예외 발생, 내장 시드로 폴백: {e}", file=sys.stderr)
+        return FALLBACK_AGENT_CATALOG
 
 
 def load_env_file():
@@ -473,8 +666,12 @@ def resolve_environment(args):
     """실행 환경(프로젝트 ID, 리전, Gemini Enterprise App ID, 대행 서비스 계정)을 계층형으로 확정한다 (실시간 GE App 감지 및 대화형 번호 선택 지원)."""
     load_env_file()
 
-    # 1. Project ID (CLI > .env > gcloud 활성 설정 > sample-project-id)
-    project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
+    # 1. Project ID (가상 실행 시 사내 실환경 노출 방지 가명 우선, 명시적 인자 최우선)
+    if args.dry_run and not args.project:
+        project_id = "sample-project-id"
+    else:
+        project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
+
     if not args.dry_run and not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
         persist_env_value("PROJECT_ID", project_id, dry_run=args.dry_run)
 
@@ -482,12 +679,15 @@ def resolve_environment(args):
     location = args.location or os.environ.get("LOCATION") or "global"
 
     # 3. Gemini Enterprise App ID
-    ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
-    if not ge_app_id:
-        candidates = discover_ge_app_engines(project_id)
-        ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
-        if not args.dry_run and ge_app_id:
-            persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
+    if args.dry_run and not args.ge_app_id:
+        ge_app_id = "sample-ge-app-id"
+    else:
+        ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
+        if not ge_app_id:
+            candidates = discover_ge_app_engines(project_id)
+            ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
+            if not args.dry_run and ge_app_id:
+                persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
 
     # 4. Delegated Service Account
     delegated_sa = args.delegated_sa or os.environ.get("DELEGATED_SERVICE_ACCOUNT")
@@ -502,67 +702,62 @@ def resolve_environment(args):
     }
 
 
-def select_chip_interactive(dry_run: bool):
-    """대화형 환경에서 부서 및 추천 칩을 번호로 선택한다."""
+def select_chip_interactive(dry_run: bool, catalog: dict = None):
+    """대화형 환경에서 부서 및 추천 에이전트 칩을 번호로 선택한다."""
+    active_catalog = catalog or FALLBACK_AGENT_CATALOG
     is_interactive = sys.stdin.isatty() and not dry_run
 
     if not is_interactive:
-        # 비대화형 또는 가상 실행 시 기본 1번 카테고리의 1번 칩 자동 채택
-        cat = CHIP_CATALOG[1]
-        chip = cat["chips"][0]
-        return cat["category"], chip
+        # 비대화형 또는 가상 실행 시 기본 1번 에이전트 자동 채택
+        chip = active_catalog[1]
+        return chip["category"], chip
 
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 75)
     print("  Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리")
-    print("  [1단계: 부서 및 업무 도메인을 선택하세요]")
-    print("=" * 70)
-    for cat_id, data in sorted(CHIP_CATALOG.items()):
-        print(f"  [{cat_id:2d}] {data['category']}")
-    print("  [ 0] 직접 프롬프트 입력 (Custom Prompt)")
+    print("  [부서별 맞춤형 에이전트 프리셋 목록]")
+    print("=" * 75)
+    for aid, data in sorted(active_catalog.items()):
+        handle = data.get("mention_handle", f"@{data.get('slug', 'agent')}")
+        print(f"  [{aid:2d}] {handle:24s} : {data['name']} [{data['category']}]")
+    print("  [ 0] 직접 프롬프트 입력 (Free-form Prompt)")
 
     try:
-        cat_in = input("\n도메인 번호를 입력하세요 (기본값: 1): ").strip()
-        cat_choice = int(cat_in) if cat_in else 1
+        choice_in = input(f"\n선택할 에이전트 번호를 입력하세요 [1-{len(active_catalog)}, 기본값: 1]: ").strip()
+        choice = int(choice_in) if choice_in else 1
     except ValueError:
-        cat_choice = 1
+        choice = 1
 
-    if cat_choice == 0 or cat_choice not in CHIP_CATALOG:
+    if choice == 0 or choice not in active_catalog:
         custom_title = input("\n원하는 에이전트의 업무 주제나 역할을 입력하세요: ").strip()
         if not custom_title:
             custom_title = "사내 업무 프로세스 질의응답 비서"
-        return "직접 입력 도메인", {
-            "id": "custom_agent",
+        return "사용자 직접 정의", {
+            "id": "custom-agent-helper",
+            "slug": "custom-agent-helper",
             "title": custom_title,
+            "name": custom_title,
+            "mention_handle": "@custom-agent-helper",
+            "category": "사용자 직접 정의",
             "target_users": "사내 관련 부서 임직원",
             "core_compliance": "사내 정보보호 규정 및 표준 보안 가이드라인",
+            "starter_prompts": [
+                f"{custom_title}의 주요 지원 범위를 알려줘",
+                "관련 업무 진행 시 필수 제출 서류 및 규정을 확인해줘",
+                "담당 부서 에스컬레이션 절차를 안내해줘",
+                "자주 묻는 질문 FAQ TOP 3를 정리해줘",
+            ],
+            "instructions_summary": "사용자가 직접 정의한 업무 요구사항을 바탕으로 안전하고 전문적인 업무 보조를 수행한다.",
         }
 
-    cat_data = CHIP_CATALOG[cat_choice]
-    print("\n" + "-" * 70)
-    print(f"  [2단계: {cat_data['category']} 추천 에이전트 칩]")
-    print("-" * 70)
-    for idx, c in enumerate(cat_data["chips"], start=1):
-        print(f"  [{idx}] {c['title']}")
-        print(f"      - 대상: {c['target_users']}")
-        print(f"      - 규정: {c['core_compliance']}")
-
-    try:
-        chip_in = input("\n에이전트 칩 번호를 입력하세요 (기본값: 1): ").strip()
-        chip_choice = int(chip_in) if chip_in else 1
-    except ValueError:
-        chip_choice = 1
-
-    if 1 <= chip_choice <= len(cat_data["chips"]):
-        selected_chip = cat_data["chips"][chip_choice - 1]
-    else:
-        selected_chip = cat_data["chips"][0]
-
-    return cat_data["category"], selected_chip
+    selected_chip = active_catalog[choice]
+    return selected_chip["category"], selected_chip
 
 
 def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, project_id: str):
     """실시간 검색 그라운딩 및 엔터프라이즈 골든 규격 기반으로 No-code 시스템 지침을 합성한다."""
-    title = chip["title"]
+    title = chip.get("name") or chip.get("title", "사내 업무 보조 에이전트")
+    slug = chip.get("slug", "custom-agent-helper")
+    mention_handle = chip.get("mention_handle", f"@{slug}")
     target_users = chip.get("target_users", "전사 임직원")
     compliance = chip.get("core_compliance", "사내 보안 규정")
 
@@ -572,13 +767,28 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
         f"사내 엔터프라이즈 거버넌스 표준 절차를 검색 그라운딩으로 실시간 수집 완료함."
     )
 
+    # 기본 또는 선언적 카탈로그 스타터 질문 추출
+    raw_starters = chip.get("starter_prompts")
+    if raw_starters and isinstance(raw_starters, list) and len(raw_starters) >= 2:
+        starter_prompts = raw_starters
+    else:
+        starter_prompts = [
+            f"{title}의 지원 범위와 필수 준비 서류를 알려 줘.",
+            f"{compliance} 기준에서 예외 적용이 가능한 사례가 있니?",
+            "현재 내 요청 건의 처리 절차와 승인 결재선을 확인해 줘.",
+            "자주 묻는 질문(FAQ) 및 주의 사항 TOP 3를 정리해 줘.",
+        ]
+
+    starters_formatted = "\n".join([f"{idx}. {sp}" for idx, sp in enumerate(starter_prompts, start=1)])
+
     # 5대 골든 프롬프트 구조에 따른 지침서 합성
     system_instructions = f"""# ROLE & IDENTITY (역할 및 페르소나)
-너는 사내 Gemini Enterprise App 환경에서 공식 승인된 노코드(No-code) 전담 비서인 '{title}'이다.
+너는 사내 Gemini Enterprise App 환경에서 공식 승인된 노코드(No-code) 전담 비서인 '{title}'({mention_handle})이다.
 주요 대상 사용자는 '{target_users}'이며, 신속하고 정확하며 정중한 어조로 업무를 지원한다.
 
 # APPLIED MODEL & RUNTIME (적용 모델 및 런타임 표준)
 - **적용 모델**: `gemini-3.8-flash` (2026년 Google Cloud 공식 엔터프라이즈 주력 모델, 사내 RAG 및 고속 추론 기본값)
+- **호출 핸들**: `{mention_handle}` (대화창 멘션 호출 지원)
 
 # BUSINESS CONTEXT & WORKFLOW (업무 맥락 및 표준 실행 절차)
 1. **요청 인지 및 필수 정보 확인**:
@@ -601,21 +811,13 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
 - 문의처: 사내 포털 헬프데스크 및 담당 부서 공식 채널
 
 # STARTER PROMPTS (권장 질문)
-1. {title}의 지원 범위와 필수 준비 서류를 알려 줘.
-2. {compliance} 기준에서 예외 적용이 가능한 사례가 있니?
-3. 현재 내 요청 건의 처리 절차와 승인 결재선을 확인해 줘.
-4. 자주 묻는 질문(FAQ) 및 주의 사항 TOP 3를 정리해 줘.
+{starters_formatted}
 """
-
-    starter_prompts = [
-        f"{title}의 지원 범위와 필수 준비 서류를 알려 줘.",
-        f"{compliance} 기준에서 예외 적용이 가능한 사례가 있니?",
-        "현재 내 요청 건의 처리 절차와 승인 결재선을 확인해 줘.",
-        "자주 묻는 질문(FAQ) 및 주의 사항 TOP 3를 정리해 줘.",
-    ]
 
     return {
         "title": title,
+        "slug": slug,
+        "mention_handle": mention_handle,
         "category": category,
         "target_users": target_users,
         "compliance": compliance,
@@ -1423,38 +1625,54 @@ def run_local_scaffolding_mode(args, env_info: dict):
 
     # 3. 임직원 자율 생성 시나리오 칩 선택 및 지침 합성
     print("\n[단계 3/4] 추천 칩 인터뷰 및 실시간 검색 그라운딩 지침 합성 중...")
-    category = "IT 인프라 / 클라우드 지원"
-    selected_chip = CHIP_CATALOG[1]["chips"][0]
+    catalog = load_agent_catalog(getattr(args, "catalog", None))
 
-    if args.prompt:
+    category = "인사 및 조직 문화"
+    selected_chip = catalog[1]
+
+    if getattr(args, "prompt", None):
         category = "사용자 직접 정의"
         selected_chip = {
-            "id": "custom_agent",
+            "id": "custom-agent-helper",
+            "slug": "custom-agent-helper",
             "title": args.prompt,
+            "name": args.prompt,
+            "mention_handle": "@custom-agent-helper",
+            "category": "사용자 직접 정의",
             "target_users": "사내 관련 부서 임직원",
             "core_compliance": "사내 정보보호 규정 및 표준 보안 가이드라인",
+            "starter_prompts": [
+                f"{args.prompt}의 주요 지원 범위를 알려줘",
+                "관련 업무 진행 시 필수 제출 서류 및 규정을 확인해줘",
+                "담당 부서 에스컬레이션 절차를 안내해줘",
+                "자주 묻는 질문 FAQ TOP 3를 정리해줘",
+            ],
+            "instructions_summary": "사용자가 직접 정의한 업무 요구사항을 바탕으로 안전하고 전문적인 업무 보조를 수행한다.",
         }
-    elif args.chip:
-        if ":" in args.chip:
-            try:
-                c_idx, s_idx = map(int, args.chip.split(":", 1))
-                if c_idx in CHIP_CATALOG and 1 <= s_idx <= len(CHIP_CATALOG[c_idx]["chips"]):
-                    category = CHIP_CATALOG[c_idx]["category"]
-                    selected_chip = CHIP_CATALOG[c_idx]["chips"][s_idx - 1]
-            except Exception:
-                pass
+    elif getattr(args, "chip", None):
+        chip_val = str(args.chip).strip()
+        if chip_val.isdigit() and int(chip_val) in catalog:
+            selected_chip = catalog[int(chip_val)]
+            category = selected_chip["category"]
         else:
-            for cat_id, cat_data in CHIP_CATALOG.items():
-                for c in cat_data["chips"]:
-                    if c["id"] == args.chip:
-                        category = cat_data["category"]
-                        selected_chip = c
-                        break
-    elif args.interactive or (sys.stdin.isatty() and not args.dry_run):
-        category, selected_chip = select_chip_interactive(args.dry_run)
+            found = False
+            for c in catalog.values():
+                if c.get("id") == chip_val or c.get("slug") == chip_val:
+                    selected_chip = c
+                    category = c["category"]
+                    found = True
+                    break
+            if not found:
+                print(f"[경고] 지정된 에이전트 식별자 '{chip_val}'을 카탈로그에서 찾을 수 없어 1번으로 대체합니다.")
+                selected_chip = catalog[1]
+                category = selected_chip["category"]
+    elif getattr(args, "interactive", False) or (sys.stdin.isatty() and not args.dry_run):
+        category, selected_chip = select_chip_interactive(args.dry_run, catalog=catalog)
 
+    agent_title = selected_chip.get("name") or selected_chip.get("title")
+    mention = selected_chip.get("mention_handle", f"@{selected_chip.get('slug', 'agent')}")
     print(f"  - 선택된 카테고리 : {category}")
-    print(f"  - 에이전트 타이틀 : {selected_chip['title']}")
+    print(f"  - 에이전트 타이틀 : {agent_title} ({mention})")
     print(f"  - 대상 사용자     : {selected_chip['target_users']}")
     print(f"  - 핵심 규정 기준  : {selected_chip['core_compliance']}")
 
@@ -1482,8 +1700,9 @@ def main():
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 에이전트 스펙 합성 보조 모드")
-    parser.add_argument("--chip", help="부서/칩 식별자 지정 (예: 1:1 또는 vdi_unlock)")
-    parser.add_argument("--prompt", help="사용자 직접 정의 에이전트 프롬프트 지정")
+    parser.add_argument("--catalog", help="선언적 catalog.yaml 파일 경로 (지정 시 우선 로드)")
+    parser.add_argument("--chip", help="부서/에이전트 번호(1~15) 또는 슬러그(예: hr-onboarding-guide)")
+    parser.add_argument("--prompt", help="사용자 직접 정의 에이전트 자유 프롬프트 지정")
     parser.add_argument("--interactive", action="store_true", default=False, help="로컬 에이전트 대화형 번호 선택기 강제 가동")
     parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 (기본 실행과 동일)")
 

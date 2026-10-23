@@ -14,133 +14,545 @@ import json
 import os
 import subprocess
 import sys
+import re
 import urllib.request
 from datetime import datetime, timezone
 import requests
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
-# 8대 엔터프라이즈 핵심 시스템 도구 프리셋 카탈로그
-SYSTEM_TOOL_CATALOG = {
+# 비상용 기본 시드 핵심 시스템 도구 카탈로그 (catalog.yaml 부재 시 폴백)
+FALLBACK_SYSTEM_TOOL_CATALOG = {
     1: {
-        "id": "sheets_data_lookup",
-        "title": "Google Sheets 사내 실적 및 명단 행 조회 스킬",
-        "description": "지정된 구글 스프레드시트에서 사원명, 주문번호, 자산번호 등 키워드를 기준으로 대상 행 데이터를 검색 및 추출하는 조회 도구",
-        "category": "Google Workspace 연동",
-        "action_type": "READ",
-        "http_method": "GET",
-        "endpoint_path": "/api/v1/sheets/lookup",
-        "secret_needed": "workspace-service-account-key",
+        "id": "approval-draft-create",
+        "slug": "approval-draft-create",
+        "title": "전자결재 기안문 초안 작성",
+        "description": "사내 표준 기안 양식에 맞추어 품의 제목, 추진 배경, 예산 내역, 기대 효과를 구조화하여 결재선에 상신할 초안 문서를 자동 생성한다.",
+        "category": "전자결재 및 품의",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://approval.corp.internal/api/v1/drafts/create",
+        "secret_needed": "GROUPWARE_API_SECRET",
+        "slash_command": "/approval-draft-create",
+        "mention_handle": "@approval-draft-create",
+        "default_scope": "ORG",
         "parameters": {
-            "spreadsheet_url": {"type": "string", "description": "조회 대상 구글 시트 전체 URL", "required": True},
-            "sheet_name": {"type": "string", "description": "시트 탭 명칭 (기본: 첫 번째 탭)", "required": False},
-            "search_key": {"type": "string", "description": "검색 기준 컬럼명 (예: 사원번호, 고객명)", "required": True},
-            "search_value": {"type": "string", "description": "찾고자 하는 검색값", "required": True},
+            "doc_type": {"type": "string", "description": "기안 양식 구분 (품의서, 지출결의서, 업무보고서)", "required": True},
+            "title": {"type": "string", "description": "기안 제목", "required": True},
+            "body": {"type": "string", "description": "기안 내용 및 추진 사유", "required": True},
         },
     },
     2: {
-        "id": "sheets_row_append",
-        "title": "Google Sheets 사내 결재 신청 및 VOC 접수 행 추가 스킬",
-        "description": "구글 스프레드시트의 마지막 행에 신규 접수 내역(출장 품의, 경조사 신청, VOC 불만)을 추가하는 데이터 기록 도구",
-        "category": "Google Workspace 연동",
-        "action_type": "WRITE",
-        "http_method": "POST",
-        "endpoint_path": "/api/v1/sheets/append",
-        "secret_needed": "workspace-service-account-key",
+        "id": "approval-status-check",
+        "slug": "approval-status-check",
+        "title": "결재선 진행 상태 미결함 조회",
+        "description": "본인이 상신한 결재 문서의 현재 진행 상태(대기, 검토, 전결)와 부서장/임원 결재 대기자 병목을 실시간 조회한다.",
+        "category": "전자결재 및 품의",
+        "action_type": "READ",
+        "http_method": "GET",
+        "endpoint_path": "https://approval.corp.internal/api/v1/drafts/{doc_id}/status",
+        "secret_needed": "GROUPWARE_API_SECRET",
+        "slash_command": "/approval-status-check",
+        "mention_handle": "@approval-status-check",
+        "default_scope": "ORG",
         "parameters": {
-            "spreadsheet_url": {"type": "string", "description": "기록 대상 구글 시트 전체 URL", "required": True},
-            "sheet_name": {"type": "string", "description": "기록할 시트 탭 명칭", "required": False},
-            "row_values": {"type": "array", "description": "추가할 컬럼 데이터 배열", "required": True},
+            "doc_id": {"type": "string", "description": "조회할 전자결재 문서 번호", "required": True},
         },
     },
     3: {
-        "id": "slack_webhook_notifier",
-        "title": "Slack 인커밍 웹훅 기반 장애/긴급 공지 채널 발송 스킬",
-        "description": "사내 슬랙(Slack) 특정 채널로 긴급 장애 상황, 결재 승인 대기 알림, 일일 브리핑 메시지를 마크다운 블록으로 전송하는 알림 도구",
-        "category": "사내 메신저 및 협업 도구",
+        "id": "approval-proxy-delegate",
+        "slug": "approval-proxy-delegate",
+        "title": "전결 부재 시 대결자 지정",
+        "description": "출장, 병가, 연차 휴가 등 부재 시 결재선 정체를 방지하기 위해 지정된 팀원에게 전결/대결 권한을 일시 위임한다.",
+        "category": "전자결재 및 품의",
         "action_type": "WRITE",
         "http_method": "POST",
-        "endpoint_path": "/api/v1/slack/notify",
-        "secret_needed": "slack-incoming-webhook-url",
+        "endpoint_path": "https://approval.corp.internal/api/v1/delegations",
+        "secret_needed": "GROUPWARE_API_SECRET",
+        "slash_command": "/approval-proxy-delegate",
+        "mention_handle": "@approval-proxy-delegate",
+        "default_scope": "ORG",
         "parameters": {
-            "channel_alias": {"type": "string", "description": "발송 대상 채널 별칭 (예: dev-alerts, general-notice)", "required": True},
-            "message_title": {"type": "string", "description": "공지 제목", "required": True},
-            "message_body": {"type": "string", "description": "공지 본문 내용 (슬랙 마크다운 지원)", "required": True},
-            "urgency": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"], "description": "긴급도", "required": False},
+            "delegate_emp_id": {"type": "string", "description": "대결자 사번", "required": True},
+            "start_date": {"type": "string", "description": "위임 시작일 (YYYY-MM-DD)", "required": True},
+            "end_date": {"type": "string", "description": "위임 종료일 (YYYY-MM-DD)", "required": True},
         },
     },
     4: {
-        "id": "jira_issue_creator",
-        "title": "Jira 사내 버그 티켓 자동 등록 및 상태 조회 스킬",
-        "description": "사내 아틀라시안 지라(Jira) 프로젝트에 신규 버그, 기능 개선 티켓을 자동 발행하고 이슈 상태를 조회하는 이슈 관리 도구",
-        "category": "프로젝트 및 이슈 관리",
+        "id": "corp-card-reconcile",
+        "slug": "corp-card-reconcile",
+        "title": "법인카드 영수증 내역 자동 대조",
+        "description": "사내 법인카드 승인 내역과 모바일 영수증을 자동 대조하고 지출 계정 과목 및 세무 증빙 전표를 생성한다.",
+        "category": "법인카드 및 경비 정산",
         "action_type": "WRITE",
         "http_method": "POST",
-        "endpoint_path": "/api/v1/jira/issue",
-        "secret_needed": "jira-api-token",
+        "endpoint_path": "https://expense.corp.internal/api/v1/cards/reconcile",
+        "secret_needed": "ERP_INTEGRATION_TOKEN",
+        "slash_command": "/corp-card-reconcile",
+        "mention_handle": "@corp-card-reconcile",
+        "default_scope": "ORG",
         "parameters": {
-            "project_key": {"type": "string", "description": "지라 프로젝트 키 (예: PROJ, SRE)", "required": True},
-            "issue_type": {"type": "string", "enum": ["Bug", "Task", "Improvement"], "description": "이슈 유형", "required": True},
-            "summary": {"type": "string", "description": "이슈 한 줄 요약", "required": True},
-            "description": {"type": "string", "description": "재현 경로 및 상세 내역", "required": True},
+            "approval_no": {"type": "string", "description": "카드 승인 번호 8자리", "required": True},
+            "expense_purpose": {"type": "string", "description": "사용 목적 및 상세 사유", "required": True},
         },
     },
     5: {
-        "id": "bq_table_schema_reader",
-        "title": "BigQuery 메타데이터 및 테이블 스키마 안전 조회 스킬",
-        "description": "사내 데이터 웨어하우스(BigQuery) 데이터셋의 테이블 구조, 컬럼 타입, 파티션 정보를 읽기 전용으로 안전하게 파악하는 스키마 조회 도구",
-        "category": "빅데이터 및 데이터 분석",
-        "action_type": "READ",
-        "http_method": "GET",
-        "endpoint_path": "/api/v1/bigquery/schema",
-        "secret_needed": "gcp-bigquery-reader-key",
+        "id": "overtime-transport-claim",
+        "slug": "overtime-transport-claim",
+        "title": "야근 교통비 식대 정산 신청",
+        "description": "사내 규정 시간 이후 발생한 야근 택시비 영수증과 석식대를 주 52시간 근태 기록과 대조 검증 후 자동 품의한다.",
+        "category": "법인카드 및 경비 정산",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://expense.corp.internal/api/v1/claims/overtime",
+        "secret_needed": "ERP_INTEGRATION_TOKEN",
+        "slash_command": "/overtime-transport-claim",
+        "mention_handle": "@overtime-transport-claim",
+        "default_scope": "ORG",
         "parameters": {
-            "dataset_id": {"type": "string", "description": "빅쿼리 데이터셋 ID", "required": True},
-            "table_id": {"type": "string", "description": "빅쿼리 테이블 ID", "required": True},
+            "claim_date": {"type": "string", "description": "근무 일자 (YYYY-MM-DD)", "required": True},
+            "transport_amount": {"type": "number", "description": "교통비 금액 (KRW)", "required": True},
+            "meal_amount": {"type": "number", "description": "야근 식대 금액 (KRW)", "required": True},
         },
     },
     6: {
-        "id": "erp_invoice_validator",
-        "title": "ERP 전자세금계산서 진위 확인 및 승인 상태 조회 스킬",
-        "description": "사내 ERP 회계 API와 연동하여 전자세금계산서 승인번호의 국세청 전송 상태 및 전표 매칭 여부를 실시간 검증하는 재무 도구",
-        "category": "재무 및 ERP 기간계",
-        "action_type": "READ",
-        "http_method": "GET",
-        "endpoint_path": "/api/v1/erp/invoice/verify",
-        "secret_needed": "erp-gateway-api-key",
+        "id": "biz-entertain-preapprove",
+        "slug": "biz-entertain-preapprove",
+        "title": "접대비 사전 품의서 제출",
+        "description": "청탁금지법 가이드라인 및 사내 1인당 접대 한도를 사전 점검하고 외부 이해관계자 미팅 식사 접대비 품의를 신청한다.",
+        "category": "법인카드 및 경비 정산",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://expense.corp.internal/api/v1/preapprovals/entertainment",
+        "secret_needed": "ERP_INTEGRATION_TOKEN",
+        "slash_command": "/biz-entertain-preapprove",
+        "mention_handle": "@biz-entertain-preapprove",
+        "default_scope": "ORG",
         "parameters": {
-            "tax_invoice_number": {"type": "string", "description": "전자세금계산서 24자리 승인번호", "required": True},
-            "supplier_biz_id": {"type": "string", "description": "공급자 사업자등록번호", "required": True},
+            "external_org": {"type": "string", "description": "대상 거래처명 또는 공공기관명", "required": True},
+            "attendee_count": {"type": "integer", "description": "총 참석 인원수", "required": True},
+            "budget_limit": {"type": "number", "description": "예상 지출 총액 (KRW)", "required": True},
         },
     },
     7: {
-        "id": "cloud_monitoring_alerter",
-        "title": "Cloud Monitoring 긴급 인시던트 조회 및 온콜 호출 스킬",
-        "description": "구글 클라우드 모니터링 활성 인시던트 현황을 조회하고 긴급 장애 시 온콜 담당자에게 PagerDuty 호출을 트리거하는 SRE 도구",
-        "category": "클라우드 운영 및 SRE",
-        "action_type": "WRITE",
+        "id": "tax-invoice-verify",
+        "slug": "tax-invoice-verify",
+        "title": "홈택스 전자세금계산서 진위 확인",
+        "description": "국세청 홈택스 승인 번호 24자리와 공급자 사업자등록번호를 대조하여 세금계산서의 진위 및 정상 발급 여부를 실시간 검증한다.",
+        "category": "법인카드 및 경비 정산",
+        "action_type": "READ",
         "http_method": "POST",
-        "endpoint_path": "/api/v1/monitoring/incident",
-        "secret_needed": "pagerduty-routing-key",
+        "endpoint_path": "https://hometax-gateway.corp.internal/api/v1/invoices/verify",
+        "secret_needed": "HOMETAX_API_CERT_SECRET",
+        "slash_command": "/tax-invoice-verify",
+        "mention_handle": "@tax-invoice-verify",
+        "default_scope": "ORG",
         "parameters": {
-            "incident_id": {"type": "string", "description": "Cloud Monitoring 인시던트 ID", "required": False},
-            "action": {"type": "string", "enum": ["CHECK_STATUS", "PULL_LOGS", "TRIGGER_ONCALL"], "description": "수행할 작업", "required": True},
-            "reason": {"type": "string", "description": "온콜 호출 사유", "required": False},
+            "tax_invoice_no": {"type": "string", "description": "전자세금계산서 24자리 승인 번호", "required": True},
+            "biz_reg_no": {"type": "string", "description": "공급자 사업자등록번호 10자리", "required": True},
         },
     },
     8: {
-        "id": "hr_vacation_balance",
-        "title": "사내 근태 시스템 연차 잔여일수 및 사용 내역 조회 스킬",
-        "description": "사내 인사근태 시스템 API를 조회하여 로그인한 임직원의 당해 연차 발생일수, 기사용일수, 잔여 연차를 안전하게 반환하는 인사 도구",
-        "category": "인사 및 근태 관리",
+        "id": "hr-vacation-apply",
+        "slug": "hr-vacation-apply",
+        "title": "연차 반차 경조휴가 신청",
+        "description": "사내 근태 시스템에서 잔여 연차를 확인하고 전일, 반차, 반반차 또는 경조 휴가를 신청하여 부서 캘린더에 연동한다.",
+        "category": "근태 및 주 52시간 관리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://hr.corp.internal/api/v1/leaves/apply",
+        "secret_needed": "HR_SYSTEM_TOKEN",
+        "slash_command": "/hr-vacation-apply",
+        "mention_handle": "@hr-vacation-apply",
+        "default_scope": "ORG",
+        "parameters": {
+            "leave_type": {"type": "string", "description": "휴가 종류 (연차, 오전반차, 오후반차, 경조휴가)", "required": True},
+            "start_date": {"type": "string", "description": "휴가 시작일 (YYYY-MM-DD)", "required": True},
+            "days": {"type": "number", "description": "차감 일수 (0.25, 0.5, 1.0 등)", "required": True},
+        },
+    },
+    9: {
+        "id": "work-hours-monitor",
+        "slug": "work-hours-monitor",
+        "title": "주 52시간 잔여 근무 시간 조회",
+        "description": "당해 주의 기본 근로 및 연장 근로 누적 시간을 조회하여 주 52시간 법정 한도 초과 위험을 사전에 모니터링한다.",
+        "category": "근태 및 주 52시간 관리",
         "action_type": "READ",
         "http_method": "GET",
-        "endpoint_path": "/api/v1/hr/vacation/balance",
-        "secret_needed": "hr-system-token",
+        "endpoint_path": "https://hr.corp.internal/api/v1/attendance/weekly-hours",
+        "secret_needed": "HR_SYSTEM_TOKEN",
+        "slash_command": "/work-hours-monitor",
+        "mention_handle": "@work-hours-monitor",
+        "default_scope": "ORG",
         "parameters": {
-            "employee_id": {"type": "string", "description": "사번 (기본: 본인 세션 자동 바인딩)", "required": False},
-            "year": {"type": "integer", "description": "조회 대상 연도 (기본: 현재 연도)", "required": False},
+            "emp_id": {"type": "string", "description": "임직원 사번 (미지정 시 본인 세션)", "required": False},
+        },
+    },
+    10: {
+        "id": "corp-directory-search",
+        "slug": "corp-directory-search",
+        "title": "사내 조직도 직급 사번 호칭 검색",
+        "description": "사내 조직도 및 그룹웨어 주소록에서 특정 직원의 소속 본부/팀, 직급/직책, 자리 위치, 사내 내선 번호 및 업무 분장을 검색한다.",
+        "category": "근태 및 주 52시간 관리",
+        "action_type": "READ",
+        "http_method": "GET",
+        "endpoint_path": "https://hr.corp.internal/api/v1/directory/search",
+        "secret_needed": "HR_SYSTEM_TOKEN",
+        "slash_command": "/corp-directory-search",
+        "mention_handle": "@corp-directory-search",
+        "default_scope": "ORG",
+        "parameters": {
+            "keyword": {"type": "string", "description": "검색할 직원 이름, 직급, 부서명 또는 담당 업무", "required": True},
+        },
+    },
+    11: {
+        "id": "welfare-point-check",
+        "slug": "welfare-point-check",
+        "title": "사내 복지포인트 잔액 사용 조회",
+        "description": "당해 연도 배정된 사내 복지포인트 총액, 기사용액, 잔여 포인트 및 복지몰/카페테리아 차감 가능 내역을 조회한다.",
+        "category": "근태 및 주 52시간 관리",
+        "action_type": "READ",
+        "http_method": "GET",
+        "endpoint_path": "https://welfare.corp.internal/api/v1/points/balance",
+        "secret_needed": "WELFARE_API_TOKEN",
+        "slash_command": "/welfare-point-check",
+        "mention_handle": "@welfare-point-check",
+        "default_scope": "ORG",
+        "parameters": {
+            "emp_id": {"type": "string", "description": "임직원 사번", "required": True},
+        },
+    },
+    12: {
+        "id": "room-booking-reserve",
+        "slug": "room-booking-reserve",
+        "title": "사내 회의실 화상 장비 예약",
+        "description": "참석 인원수, 빔프로젝터, 화상 회의 장비(Meet/Zoom Room) 구비 여부에 맞추어 최적의 사내 회의실을 즉시 예약한다.",
+        "category": "총무 및 시설 자산 관리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://facilities.corp.internal/api/v1/rooms/book",
+        "secret_needed": "FACILITIES_API_SECRET",
+        "slash_command": "/room-booking-reserve",
+        "mention_handle": "@room-booking-reserve",
+        "default_scope": "ORG",
+        "parameters": {
+            "start_time": {"type": "string", "description": "회의 시작 일시 (YYYY-MM-DD HH:MM)", "required": True},
+            "capacity": {"type": "integer", "description": "참석 인원수", "required": True},
+            "needs_video": {"type": "boolean", "description": "화상 회의 장비 필요 여부", "required": True},
+        },
+    },
+    13: {
+        "id": "corp-car-dispatch",
+        "slug": "corp-car-dispatch",
+        "title": "업무용 법인 차량 배차 신청",
+        "description": "고객사 미팅 및 지방 출장용 업무용 법인 차량 배차를 신청하고 하이패스 및 운행 일지 작성을 자동 연동한다.",
+        "category": "총무 및 시설 자산 관리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://facilities.corp.internal/api/v1/cars/dispatch",
+        "secret_needed": "FACILITIES_API_SECRET",
+        "slash_command": "/corp-car-dispatch",
+        "mention_handle": "@corp-car-dispatch",
+        "default_scope": "ORG",
+        "parameters": {
+            "destination": {"type": "string", "description": "출장 목적지", "required": True},
+            "purpose": {"type": "string", "description": "외근 사유", "required": True},
+            "departure_time": {"type": "string", "description": "출발 예정 시각 (YYYY-MM-DD HH:MM)", "required": True},
+        },
+    },
+    14: {
+        "id": "it-asset-request",
+        "slug": "it-asset-request",
+        "title": "업무용 PC 모니터 전산 비품 신청",
+        "description": "개발자용 고사양 노트북(MacBook/ThinkPad), 4K 모니터, 키보드/마우스 등 전산 장비 지급 및 교체 신청을 상신한다.",
+        "category": "총무 및 시설 자산 관리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://it-service.corp.internal/api/v1/assets/request",
+        "secret_needed": "ITSM_SERVICE_TOKEN",
+        "slash_command": "/it-asset-request",
+        "mention_handle": "@it-asset-request",
+        "default_scope": "ORG",
+        "parameters": {
+            "asset_category": {"type": "string", "description": "요청 품목 (노트북, 모니터, 전산주변기기)", "required": True},
+            "specs": {"type": "string", "description": "희망 사양 및 신청 사유", "required": True},
+        },
+    },
+    15: {
+        "id": "sw-license-grant",
+        "slug": "sw-license-grant",
+        "title": "사내 소프트웨어 라이선스 신청",
+        "description": "JetBrains All Products Pack, Adobe Creative Cloud, Figma 등 유료 업무 소프트웨어의 사내 라이선스 자동 배정을 신청한다.",
+        "category": "총무 및 시설 자산 관리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://it-service.corp.internal/api/v1/licenses/grant",
+        "secret_needed": "ITSM_SERVICE_TOKEN",
+        "slash_command": "/sw-license-grant",
+        "mention_handle": "@sw-license-grant",
+        "default_scope": "ORG",
+        "parameters": {
+            "software_name": {"type": "string", "description": "소프트웨어 명칭 (JetBrains, Adobe, Figma 등)", "required": True},
+            "business_need": {"type": "string", "description": "업무 필요 사유", "required": True},
+        },
+    },
+    16: {
+        "id": "doc-export-approval",
+        "slug": "doc-export-approval",
+        "title": "사내 문서 외부 반출 승인 요청",
+        "description": "망 분리 환경에서 사내 대외비 문서의 외부 반출(DRM 해제, 외부 메일 발송, USB 복사)을 위한 보안성 검토 및 승인을 요청한다.",
+        "category": "사내 정보보안 및 망 분리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://security.corp.internal/api/v1/exports/request",
+        "secret_needed": "SECURITY_PORTAL_TOKEN",
+        "slash_command": "/doc-export-approval",
+        "mention_handle": "@doc-export-approval",
+        "default_scope": "ORG",
+        "parameters": {
+            "file_name": {"type": "string", "description": "반출 대상 파일명", "required": True},
+            "recipient_org": {"type": "string", "description": "외부 수신 기관/업체명", "required": True},
+            "security_level": {"type": "string", "description": "문서 보안 등급 (일반, 대외비, 기밀)", "required": True},
+        },
+    },
+    17: {
+        "id": "firewall-open-request",
+        "slug": "firewall-open-request",
+        "title": "사내망 임시 IP 방화벽 오픈 신청",
+        "description": "개발 및 테스트 서버에서 외부 SaaS 또는 협력사 API 연동을 위해 필요한 특정 IP와 포트의 임시 방화벽 오픈을 신청한다.",
+        "category": "사내 정보보안 및 망 분리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://security.corp.internal/api/v1/firewall/requests",
+        "secret_needed": "SECURITY_PORTAL_TOKEN",
+        "slash_command": "/firewall-open-request",
+        "mention_handle": "@firewall-open-request",
+        "default_scope": "ORG",
+        "parameters": {
+            "target_ip": {"type": "string", "description": "대상 목적지 IP 또는 대역", "required": True},
+            "target_port": {"type": "integer", "description": "허용 대상 포트 번호 (예: 443)", "required": True},
+            "duration_days": {"type": "integer", "description": "신청 유효 기간 (일 단위)", "required": True},
+        },
+    },
+    18: {
+        "id": "pii-access-permit",
+        "slug": "pii-access-permit",
+        "title": "고객 개인정보 열람 사유 결재",
+        "description": "고객 지원, 장애 분석 또는 환불 처리를 위해 고객 개인식별정보(PII) 마스킹 해제 및 데이터베이스 열람 사유서를 상신한다.",
+        "category": "사내 정보보안 및 망 분리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://security.corp.internal/api/v1/pii/permit",
+        "secret_needed": "SECURITY_PORTAL_TOKEN",
+        "slash_command": "/pii-access-permit",
+        "mention_handle": "@pii-access-permit",
+        "default_scope": "ORG",
+        "parameters": {
+            "customer_id": {"type": "string", "description": "열람 대상 고객 식별자", "required": True},
+            "purpose": {"type": "string", "description": "열람 목적 및 근거 티켓 번호", "required": True},
+        },
+    },
+    19: {
+        "id": "slack-notice-broadcast",
+        "slug": "slack-notice-broadcast",
+        "title": "사내 메신저 공지 긴급 알림 배포",
+        "description": "사내 슬랙(Slack), 잔디(Jandi) 또는 카카오워크 특정 전사/부서 채널에 긴급 공지, 인사이동, 경조사 알림을 발송한다.",
+        "category": "업무 협업 및 워크스페이스",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://slack.com/api/chat.postMessage",
+        "secret_needed": "SLACK_BOT_TOKEN",
+        "slash_command": "/slack-notice-broadcast",
+        "mention_handle": "@slack-notice-broadcast",
+        "default_scope": "ORG",
+        "parameters": {
+            "channel": {"type": "string", "description": "발송 대상 채널명", "required": True},
+            "title": {"type": "string", "description": "공지 제목", "required": True},
+            "message": {"type": "string", "description": "알림 본문 내용", "required": True},
+        },
+    },
+    20: {
+        "id": "sheets-voc-append",
+        "slug": "sheets-voc-append",
+        "title": "사내 VOC 개선 제안 행 추가",
+        "description": "사내 구글 시트(Google Sheets)에 고객 불만 VOC, 신규 기능 제안, 업무 개선 아이디어 행을 실시간 추가한다.",
+        "category": "업무 협업 및 워크스페이스",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range}:append",
+        "secret_needed": "WORKSPACE_SERVICE_ACCOUNT_KEY",
+        "slash_command": "/sheets-voc-append",
+        "mention_handle": "@sheets-voc-append",
+        "default_scope": "ORG",
+        "parameters": {
+            "spreadsheet_id": {"type": "string", "description": "취합 구글 시트 ID", "required": True},
+            "category": {"type": "string", "description": "VOC 분류 (서비스, 결제, 시스템, 개선제안)", "required": True},
+            "content": {"type": "string", "description": "상세 내용", "required": True},
+        },
+    },
+    21: {
+        "id": "drive-template-find",
+        "slug": "drive-template-find",
+        "title": "사내 표준 계약서 위임장 양식 검색",
+        "description": "사내 구글 드라이브(Google Drive) 공용 폴더에서 법무팀 공인 최신 표준 계약서, NDA, 재직증명서, 위임장 양식을 검색한다.",
+        "category": "업무 협업 및 워크스페이스",
+        "action_type": "READ",
+        "http_method": "GET",
+        "endpoint_path": "https://www.googleapis.com/drive/v3/files",
+        "secret_needed": "WORKSPACE_SERVICE_ACCOUNT_KEY",
+        "slash_command": "/drive-template-find",
+        "mention_handle": "@drive-template-find",
+        "default_scope": "ORG",
+        "parameters": {
+            "template_name": {"type": "string", "description": "찾고자 하는 양식 키워드 (계약서, 위임장, 재직증명)", "required": True},
+        },
+    },
+    22: {
+        "id": "biz-reg-validate",
+        "slug": "biz-reg-validate",
+        "title": "국세청 사업자등록 휴폐업 상태 조회",
+        "description": "국세청 홈택스 API를 통해 신규 또는 기존 거래처 사업자등록번호의 계속사업자, 휴업, 폐업 상태 및 과세 유형을 실시간 조회한다.",
+        "category": "영업 및 거래처 관리",
+        "action_type": "READ",
+        "http_method": "POST",
+        "endpoint_path": "https://api.odcloud.kr/api/nts-businessman/v1/status",
+        "secret_needed": "PUBLIC_DATA_PORTAL_KEY",
+        "slash_command": "/biz-reg-validate",
+        "mention_handle": "@biz-reg-validate",
+        "default_scope": "ORG",
+        "parameters": {
+            "b_no": {"type": "string", "description": "사업자등록번호 10자리", "required": True},
+        },
+    },
+    23: {
+        "id": "bank-account-verify",
+        "slug": "bank-account-verify",
+        "title": "거래처 법인 예금주 실명 확인",
+        "description": "대금 지급 또는 계약 체결 전 금융결제원 망을 통해 거래처 은행 계좌번호와 법인명/대표자 예금주 성명의 일치 여부를 실시간 검증한다.",
+        "category": "영업 및 거래처 관리",
+        "action_type": "READ",
+        "http_method": "POST",
+        "endpoint_path": "https://bank-gateway.corp.internal/api/v1/accounts/verify-holder",
+        "secret_needed": "FINTECH_OPENBANK_SECRET",
+        "slash_command": "/bank-account-verify",
+        "mention_handle": "@bank-account-verify",
+        "default_scope": "ORG",
+        "parameters": {
+            "bank_code": {"type": "string", "description": "은행 코드 (3자리)", "required": True},
+            "account_no": {"type": "string", "description": "계좌번호 (숫자만)", "required": True},
+            "holder_name": {"type": "string", "description": "대조할 예금주 법인명", "required": True},
+        },
+    },
+    24: {
+        "id": "crm-lead-register",
+        "slug": "crm-lead-register",
+        "title": "신규 거래처 영업 미팅 일지 등록",
+        "description": "외근 미팅 후 명함 정보, 고객 관심 솔루션, 예산 규모 및 후속 액션 아이템을 CRM 시스템에 영업 기회 리드로 등록한다.",
+        "category": "영업 및 거래처 관리",
+        "action_type": "WRITE",
+        "http_method": "POST",
+        "endpoint_path": "https://crm.corp.internal/api/v1/leads",
+        "secret_needed": "CRM_API_TOKEN",
+        "slash_command": "/crm-lead-register",
+        "mention_handle": "@crm-lead-register",
+        "default_scope": "ORG",
+        "parameters": {
+            "company_name": {"type": "string", "description": "고객사 법인명", "required": True},
+            "contact_person": {"type": "string", "description": "담당자 이름 및 직함", "required": True},
+            "meeting_summary": {"type": "string", "description": "미팅 요약 및 제안 내용", "required": True},
         },
     },
 }
+
+
+def load_skill_catalog(catalog_path: str = None) -> dict:
+    """선언적 catalog.yaml 파일로부터 도메인별 엔터프라이즈 스킬을 동적 로드한다 (4단계 캐스케이드 탐색)."""
+    candidates = []
+    if catalog_path:
+        candidates.append(catalog_path)
+    if os.environ.get("SKILL_CATALOG_PATH"):
+        candidates.append(os.environ.get("SKILL_CATALOG_PATH"))
+    local_default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "catalog.yaml")
+    candidates.append(local_default)
+
+    raw_yaml_text = None
+    loaded_source = None
+
+    for target in candidates:
+        if not target:
+            continue
+        # 원격 URL 처리 (2.0초 타임아웃 적용하여 사내 방화벽 행 방지)
+        if target.startswith("http://") or target.startswith("https://"):
+            try:
+                req = urllib.request.Request(target, headers={"User-Agent": "GE-Skill-Factory/1.0"})
+                with urllib.request.urlopen(req, timeout=2.0) as resp:
+                    raw_yaml_text = resp.read().decode("utf-8")
+                    loaded_source = f"원격 URL ({target})"
+                    break
+            except Exception:
+                continue
+        # 로컬 파일 처리
+        elif os.path.exists(target):
+            try:
+                with open(target, "r", encoding="utf-8") as f:
+                    raw_yaml_text = f.read()
+                    loaded_source = f"로컬 파일 ({target})"
+                    break
+            except Exception:
+                continue
+
+    if not raw_yaml_text or yaml is None:
+        return FALLBACK_SYSTEM_TOOL_CATALOG
+
+    try:
+        data = yaml.safe_load(raw_yaml_text)
+        skills_list = data.get("skills", [])
+        if not skills_list:
+            return FALLBACK_SYSTEM_TOOL_CATALOG
+
+        catalog = {}
+        slug_pattern = re.compile(r"^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$")
+
+        for idx, s in enumerate(skills_list, start=1):
+            slug = s.get("slug", f"skill-{idx}-run")
+            if not slug_pattern.match(slug):
+                slug = slug.lower().replace("_", "-")
+
+            action_type = "READ" if s.get("access_mode", "read_only") == "read_only" else "WRITE"
+            params_dict = {}
+            for p in s.get("required_params", []):
+                pname = p.get("name")
+                if pname:
+                    params_dict[pname] = {
+                        "type": p.get("type", "string"),
+                        "description": p.get("description", ""),
+                        "required": True,
+                    }
+
+            catalog[idx] = {
+                "id": slug,
+                "slug": slug,
+                "title": s.get("name", slug),
+                "description": s.get("description", ""),
+                "category": s.get("category", "General"),
+                "action_type": action_type,
+                "http_method": s.get("http_method", "GET" if action_type == "READ" else "POST"),
+                "endpoint_path": s.get("endpoint", "/api/v1/action"),
+                "secret_needed": s.get("secret_key", "default-auth-key"),
+                "parameters": params_dict,
+                "slash_command": s.get("slash_command", f"/{slug}"),
+                "mention_handle": s.get("mention_handle", f"@{slug}"),
+                "default_scope": s.get("default_scope", "ORG"),
+                "source": loaded_source,
+            }
+        return catalog
+    except Exception:
+        return FALLBACK_SYSTEM_TOOL_CATALOG
+
+
+SYSTEM_TOOL_CATALOG = load_skill_catalog()
 
 
 def load_env_file():
@@ -436,21 +848,30 @@ def resolve_environment(args):
 
 
 def select_tool_interactive(dry_run: bool):
-    """대화형 환경에서 생성하고자 하는 도구 칩을 선택한다."""
+    """대화형 환경에서 생성하고자 하는 도구 칩을 선택한다 (도메인 카테고리별 출력)."""
     is_interactive = sys.stdin.isatty() and not dry_run
 
     if not is_interactive:
         return SYSTEM_TOOL_CATALOG[1]
 
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 75)
     print("  Gemini Enterprise 자율형 사내 스킬 팩토리 (Skill Factory)")
-    print("  [생성할 사내 시스템 연동 도구 칩을 선택하세요]")
-    print("=" * 70)
+    print("  [생성할 사내 시스템 연동 공식 스킬 레시피를 선택하세요]")
+    print("=" * 75)
+
+    current_cat = None
     for cat_id, data in sorted(SYSTEM_TOOL_CATALOG.items()):
+        cat = data.get("category", "General")
+        if cat != current_cat:
+            current_cat = cat
+            print(f"\n  [ {current_cat} ]")
         act_tag = "[조회/READ]" if data["action_type"] == "READ" else "[변경/WRITE]"
-        print(f"  [{cat_id}] {act_tag} {data['title']}")
-        print(f"      - 분류: {data['category']} ({data['http_method']} {data['endpoint_path']})")
-    print("  [0] 직접 연동 시스템 요구사항 입력 (Custom API Tool)")
+        slug = data.get("slug", data["id"])
+        slash = data.get("slash_command", f"/{slug}")
+        print(f"    [{cat_id:2d}] {act_tag} {data['title']}")
+        print(f"         슬러그: {slug} ({slash}) | {data['http_method']} {data['endpoint_path']}")
+
+    print("\n  [ 0] 직접 연동 시스템 요구사항 입력 (Custom API Tool)")
 
     try:
         choice_in = input("\n도구 번호를 입력하세요 (기본값: 1): ").strip()
@@ -461,8 +882,10 @@ def select_tool_interactive(dry_run: bool):
     if choice == 0 or choice not in SYSTEM_TOOL_CATALOG:
         custom_title = input("\n생성하고자 하는 도구 명칭을 입력하세요: ").strip()
         custom_endpoint = input("연동할 REST 엔드포인트 URL/경로를 입력하세요: ").strip()
+        custom_slug = re.sub(r"[^a-z0-9\-]", "-", (custom_title or "custom-api-tool").lower()).strip("-")
         return {
-            "id": "custom_api_tool",
+            "id": custom_slug,
+            "slug": custom_slug,
             "title": custom_title or "사내 커스텀 REST API 연동 도구",
             "description": "사내 내부 시스템과의 데이터 교환을 전담하는 커스텀 액션 스킬",
             "category": "사용자 직접 정의 API",
@@ -470,6 +893,9 @@ def select_tool_interactive(dry_run: bool):
             "http_method": "POST",
             "endpoint_path": custom_endpoint or "/api/v1/custom/action",
             "secret_needed": "custom-system-auth-token",
+            "slash_command": f"/{custom_slug}",
+            "mention_handle": f"@{custom_slug}",
+            "default_scope": "TEAM",
             "parameters": {
                 "payload": {"type": "object", "description": "전송 데이터 페이로드", "required": True},
             },
@@ -606,11 +1032,16 @@ def diagnose_secret_manager_iam(env_info: dict, dry_run: bool):
     }
 
 
-def build_markdown_report(env_info: dict, tool_data: dict, tool_manifest: dict, iam_diag: dict):
-    """스킬 생성 및 진단 결과를 표준 report.md 양식으로 조립한다."""
-    project_id = env_info["project_id"]
-    ge_app_id = env_info["ge_app_id"]
-    sa_email = env_info["service_account"]
+def build_markdown_report(env_info: dict, tool_data: dict, tool_manifest: dict, iam_diag: dict, dry_run: bool = False):
+    """스킬 생성 및 진단 결과를 표준 report.md 양식으로 조립한다 (가상 실행 시 사내 식별 정보 마스킹)."""
+    if dry_run:
+        project_id = "sample-project-id"
+        ge_app_id = "sample-ge-app-id"
+        sa_email = f"ge-skill-invoker-sa@{project_id}.iam.gserviceaccount.com"
+    else:
+        project_id = env_info["project_id"]
+        ge_app_id = env_info["ge_app_id"]
+        sa_email = env_info["service_account"]
 
     return f"""# Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 보고서
 
@@ -1022,23 +1453,29 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             return f"[예외 발생] 스킬 목록 조회 실패: {str(e)}"
 
     def get_preset_skills_tool() -> str:
-        """Get the enterprise recommended preset skills catalog (Slack, Google Sheets, Jira, BigQuery, ERP).
+        """Get the enterprise recommended preset skills catalog organized by domain.
 
         Returns:
-            A markdown catalog of 8 core enterprise preset skills ready to be deployed.
+            A markdown catalog of core enterprise preset skills organized by domain.
         """
         lines = [
-            "### 사내 8대 엔터프라이즈 프리셋 스킬 카탈로그",
-            "원하시는 스킬 번호나 명칭을 말씀하시면 즉시 귀하의 GE App에 등록해 드립니다:\n",
-            "1. **Slack 긴급 장애 알림 스킬**: Slack 인커밍 웹훅 기반 장애/긴급 공지 채널 발송 (`slack_webhook_notifier`)",
-            "2. **Google Sheets 사내 실적 행 조회 스킬**: 구글 스프레드시트 데이터 검색 및 행 추출 (`sheets_data_lookup`)",
-            "3. **Google Sheets 신규 접수 행 추가 스킬**: 결재 신청 및 VOC 접수 내역 자동 추가 (`sheets_row_append`)",
-            "4. **Jira 버그 티켓 자동 등록 스킬**: 아틀라시안 지라 이슈 자동 발행 및 상태 조회 (`jira_issue_creator`)",
-            "5. **BigQuery 테이블 스키마 조회 스킬**: DW 데이터셋 및 테이블 스키마 안전 조회 (`bq_table_schema_reader`)",
-            "6. **사내 ERP 전표 유효성 검증 스킬**: 전표 번호 및 공급가액 정합성 사전 검증 (`erp_invoice_validator`)",
-            "7. **사내 문서 요약 및 번역 스킬**: 계약서/기술 문서 보안 요약 및 다국어 번역 (`doc_summarizer_translator`)",
-            "8. **보안 감사 이벤트 알림 스킬**: Cloud Audit Logs 이상 징후 감지 및 알림 (`security_audit_notifier`)",
+            "### 사내 핵심 도메인별 엔터프라이즈 공식 스킬 카탈로그",
+            "원하시는 스킬 명칭, 슬러그 또는 슬래시 커맨드(예: `/approval-draft-create`, `corp-card-reconcile`)를 말씀하시거나, 직접 원하는 시스템 연동 요구사항을 자연어로 자유롭게 설명해 주시면 즉시 맞춤형 스킬을 제작 및 배포합니다:\n",
         ]
+        categories = {}
+        for s in SYSTEM_TOOL_CATALOG.values():
+            cat = s.get("category", "General")
+            categories.setdefault(cat, []).append(s)
+
+        for cat, items in categories.items():
+            lines.append(f"#### {cat}")
+            for item in items:
+                act = "[조회/READ]" if item.get("action_type") == "READ" else "[변경/WRITE]"
+                lines.append(
+                    f"- **{item['title']}** (`{item['slug']}` | `{item['slash_command']}`): "
+                    f"{act} {item['description']}"
+                )
+            lines.append("")
         return "\n".join(lines)
 
     print("\n[단계 1/2] Agent Engine 초기화 및 패키징 중...")
@@ -1060,10 +1497,10 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 당신에게는 실제 클라우드 환경에 스킬을 프로비저닝하고 조회할 수 있는 실제 실행 도구가 장착되어 있습니다:
 1. `deploy_enterprise_skill_tool`: 사용자가 스킬 생성을 요청하거나 확인하면, SKILL.md 지침을 컴파일하여 사용자의 Gemini Enterprise app Skills 목록에 즉시 배포합니다. (스킬 이름은 영문, 숫자, 하이픈, 공백만 허용).
 2. `list_enterprise_skills_tool`: 현재 사내에 등록된 활성 스킬 목록을 실시간 조회할 때 호출하십시오.
-3. `get_preset_skills_tool`: 사내 8대 엔터프라이즈 프리셋 스킬 카탈로그를 브리핑할 때 호출하십시오.
+3. `get_preset_skills_tool`: 사내 공식 프리셋 스킬 카탈로그를 브리핑할 때 호출하십시오.
 
 [핵심 단계별 인터뷰 절차]
-1단계 (연동 대상 시스템 파악): 연동하려는 사내 시스템 및 액션 목적 확인 (프리셋 도구 추천).
+1단계 (연동 대상 시스템 파악): 연동하려는 사내 시스템 및 액션 목적 확인 (프리셋 도구 추천 또는 사용자의 비정형 자연어 요구사항 접수).
 2단계 (스킬 명칭 및 지침 규칙 정의): 영문 스킬 명칭, 설명, 핵심 지침(SKILL.md) 및 트리거 조건 도출.
 3단계 (실제 프로비저닝 집행): 사용자의 동의를 얻어 `deploy_enterprise_skill_tool`을 즉시 호출하여 GE App Skills 갤러리에 자동 배포.
 4단계 (결과 및 활용 안내): 발급된 스킬 ID, GCS 아티팩트 URI, GE App Skills 새로고침 안내 제공.
@@ -1270,7 +1707,7 @@ def run_local_scaffolding_mode(args, env_info: dict):
     print(f"  - 상태: {iam_diag['status']} | {iam_diag['detail']}")
 
     # 4. 리포트 생성 및 저장
-    report_content = build_markdown_report(env_info, tool_data, tool_manifest, iam_diag)
+    report_content = build_markdown_report(env_info, tool_data, tool_manifest, iam_diag, dry_run=args.dry_run)
     save_markdown_report(report_content)
 
     print("\n" + "=" * 75)
@@ -1290,12 +1727,18 @@ def main():
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 도구/스킬 매니페스트 합성 보조 모드")
-    parser.add_argument("--chip", type=int, help="도구 칩 번호 직접 지정 (1~8)")
+    parser.add_argument("--catalog", help="선언적 스킬 레시피 카탈로그 경로 또는 URL (기본: ./catalog.yaml)")
+    parser.add_argument("--chip", type=int, help="도구 칩 번호 직접 지정 (1~25)")
     parser.add_argument("--prompt", help="사용자 직접 정의 연동 시스템 요구사항")
     parser.add_argument("--interactive", action="store_true", default=False, help="로컬 대화형 번호 선택기 가동")
     parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 (기본 실행과 동일)")
 
     args = parser.parse_args()
+
+    # 선언적 카탈로그 경로 오버라이드 반영
+    global SYSTEM_TOOL_CATALOG
+    if args.catalog:
+        SYSTEM_TOOL_CATALOG = load_skill_catalog(args.catalog)
 
     # 사내 환경 대화형 설정 모드 분기
     if args.config:

@@ -12,110 +12,309 @@ import argparse
 from datetime import datetime, timezone
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.request
 import requests
 
-# 8대 기업 기간계 데이터 커넥터 아키텍처 칩 카탈로그
-DATA_CONNECTOR_CATALOG = {
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+# 엔터프라이즈 기간계 데이터 커넥터 인라인 폴백 시드
+FALLBACK_CONNECTOR_CATALOG = {
     1: {
-        "id": "jira_connector",
-        "name": "Jira Cloud 엔터프라이즈 커넥터",
-        "category": "Atlassian SaaS",
-        "source_type": "JIRA",
-        "auth_type": "OAUTH2_CLIENT_CREDENTIALS",
-        "required_secret_keys": ["jira_client_id", "jira_client_secret", "jira_instance_url"],
+        "id": "gw-groupware-doc",
+        "slug": "gw-groupware-doc",
+        "name": "사내 그룹웨어 전자결재 및 공지문 커넥터",
+        "category": "그룹웨어 및 사내 포털",
+        "source_type": "GROUPWARE_DOCS",
+        "auth_type": "API_KEY_OR_JWT",
+        "required_secret_keys": ["groupware_api_endpoint", "groupware_jwt_secret", "groupware_client_id"],
         "sync_mode": "HOURLY_INCREMENTAL",
-        "acl_mode": "IDENTITY_MAPPING_OIDC",
-        "description": "사내 개발 및 운영 지라(Jira) 프로젝트 티켓, 이슈 및 에픽 데이터 동기화",
-        "content_types": ["issues", "comments", "attachments"],
+        "acl_mode": "DOCUMENT_LEVEL_APPROVAL_LINE",
+        "description": "사내 핸디소프트, 다우오피스 등 그룹웨어 전자결재 완료 문서, 사내 공지사항, 인사 발령문 색인 및 결재선 열람 권한을 동기화한다.",
+        "content_types": ["approval_documents", "board_notices", "attached_files"],
+        "default_scope": "ORG",
     },
     2: {
-        "id": "confluence_connector",
+        "id": "collab-confluence-wiki",
+        "slug": "collab-confluence-wiki",
         "name": "Confluence Cloud 사내 지식 베이스 커넥터",
-        "category": "Atlassian SaaS",
+        "category": "협업 도구 및 기술 문서",
         "source_type": "CONFLUENCE",
         "auth_type": "OAUTH2_CLIENT_CREDENTIALS",
         "required_secret_keys": ["confluence_client_id", "confluence_client_secret", "confluence_space_keys"],
         "sync_mode": "HOURLY_INCREMENTAL",
         "acl_mode": "SPACE_AND_PAGE_RESTRICTIONS",
-        "description": "사내 기술 문서, 운영 가이드 및 팀 위키 스페이스 색인 및 동기화",
+        "description": "사내 기술 문서, 운영 가이드, 부서별 위키 스페이스를 색인하고 페이지별 접근 제한 권한을 실시간 동기화한다.",
         "content_types": ["pages", "blogposts", "attachments"],
+        "default_scope": "ORG",
     },
     3: {
-        "id": "salesforce_connector",
+        "id": "itsm-jira-issue",
+        "slug": "itsm-jira-issue",
+        "name": "Jira Cloud 엔터프라이즈 이슈 트래커 커넥터",
+        "category": "프로젝트 및 이슈 관리",
+        "source_type": "JIRA",
+        "auth_type": "OAUTH2_CLIENT_CREDENTIALS",
+        "required_secret_keys": ["jira_client_id", "jira_client_secret", "jira_instance_url"],
+        "sync_mode": "HOURLY_INCREMENTAL",
+        "acl_mode": "IDENTITY_MAPPING_OIDC",
+        "description": "사내 개발 및 운영 지라(Jira) 프로젝트 티켓, 이슈 내역, 에픽 및 댓글 데이터를 색인하고 이슈 보안 스킴(Security Scheme)을 동기화한다.",
+        "content_types": ["issues", "comments", "attachments"],
+        "default_scope": "ORG",
+    },
+    4: {
+        "id": "crm-salesforce-lead",
+        "slug": "crm-salesforce-lead",
         "name": "Salesforce CRM 고객 및 영업 기회 커넥터",
-        "category": "Salesforce CRM",
+        "category": "고객 관계 관리(CRM)",
         "source_type": "SALESFORCE",
         "auth_type": "OAUTH2_JWT_BEARER",
         "required_secret_keys": ["salesforce_client_id", "salesforce_private_key", "salesforce_domain"],
         "sync_mode": "DAILY_BATCH",
         "acl_mode": "ROLE_HIERARCHY_AND_SHARING_RULES",
-        "description": "고객 계정, 영업 파이프라인 기회 및 리드 데이터 동기화",
+        "description": "세일즈포스 고객 계정(Account), 영업 기회(Opportunity), 리드(Lead) 및 고객 지원 케이스(Case)를 동기화하고 역할 계층 기반 권한을 매핑한다.",
         "content_types": ["Account", "Opportunity", "Contact", "Case"],
+        "default_scope": "ORG",
     },
-    4: {
-        "id": "servicenow_connector",
+    5: {
+        "id": "itsm-servicenow-ticket",
+        "slug": "itsm-servicenow-ticket",
         "name": "ServiceNow ITSM 인시던트 및 변경 요청 커넥터",
-        "category": "Enterprise ITSM",
+        "category": "IT 서비스 관리(ITSM)",
         "source_type": "SERVICENOW",
         "auth_type": "OAUTH2_AUTHORIZATION_CODE",
         "required_secret_keys": ["servicenow_instance_id", "servicenow_client_id", "servicenow_client_secret"],
         "sync_mode": "HOURLY_INCREMENTAL",
         "acl_mode": "USER_CRITERIA_AND_ROLES",
-        "description": "IT 서비스 관리 장애 인시던트, 서비스 카탈로그 및 변경 요청 데이터 동기화",
+        "description": "IT 서비스 관리 장애 인시던트, 서비스 카탈로그, 변경 요청 및 지식 베이스(KB)를 동기화하고 요청자/지원그룹 역할을 매핑한다.",
         "content_types": ["incident", "change_request", "kb_knowledge"],
+        "default_scope": "ORG",
     },
-    5: {
-        "id": "sharepoint_connector",
+    6: {
+        "id": "collab-sharepoint-site",
+        "slug": "collab-sharepoint-site",
         "name": "Microsoft SharePoint Online 팀 사이트 문서 커넥터",
-        "category": "Microsoft 365",
+        "category": "엔터프라이즈 오피스 및 협업",
         "source_type": "SHAREPOINT_ONLINE",
         "auth_type": "AZURE_AD_APP_CREDENTIALS",
         "required_secret_keys": ["azure_tenant_id", "azure_client_id", "azure_client_secret", "site_collections"],
         "sync_mode": "HOURLY_INCREMENTAL",
         "acl_mode": "ENTRA_ID_CROSS_DOMAIN_MAPPING",
-        "description": "Microsoft 365 SharePoint 팀 사이트 및 OneDrive 업무 문서 색인",
+        "description": "마이크로소프트 365 셰어포인트 팀 사이트 및 원드라이브 업무 문서를 색인하고 Entra ID 멤버십 권한을 온전히 동기화한다.",
         "content_types": ["docx", "pptx", "xlsx", "pdf"],
+        "default_scope": "ORG",
     },
-    6: {
-        "id": "drive_connector",
-        "name": "Google Workspace 공유 드라이브 커넥터",
-        "category": "Google Workspace",
+    7: {
+        "id": "gws-drive-shared",
+        "slug": "gws-drive-shared",
+        "name": "Google Workspace 공유 드라이브 문서 커넥터",
+        "category": "엔터프라이즈 클라우드 오피스",
         "source_type": "GOOGLE_DRIVE",
         "auth_type": "DOMAIN_WIDE_DELEGATION_SERVICE_ACCOUNT",
         "required_secret_keys": ["workspace_service_account_key", "delegated_admin_email"],
         "sync_mode": "REALTIME_WEBHOOK_AND_HOURLY",
         "acl_mode": "NATIVE_WORKSPACE_ACL",
-        "description": "전사 공유 드라이브 및 부서 폴더 문서 네이티브 권한 동기화",
+        "description": "구글 워크스페이스 전사 공유 드라이브 및 부서 폴더 문서를 색인하고 파일별 권한 및 구글 그룹스 멤버십을 실시간 동기화한다.",
         "content_types": ["Google Docs", "Google Sheets", "Google Slides", "PDF"],
-    },
-    7: {
-        "id": "bigquery_connector",
-        "name": "BigQuery 엔터프라이즈 정형 및 비정형 테이블 커넥터",
-        "category": "Google Cloud Analytics",
-        "source_type": "BIGQUERY",
-        "auth_type": "GCP_ADC_SERVICE_ACCOUNT",
-        "required_secret_keys": ["gcp_service_account_email"],
-        "sync_mode": "HOURLY_INCREMENTAL",
-        "acl_mode": "IAM_AND_ROW_LEVEL_SECURITY",
-        "description": "사내 데이터 웨어하우스 비정형 텍스트 열 및 정형 지표 테이블 색인",
-        "content_types": ["table_records", "embeddings_column", "document_chunks"],
+        "default_scope": "ORG",
     },
     8: {
-        "id": "web_crawl_connector",
-        "name": "Enterprise 사내 포털 웹 크롤링 커넥터",
-        "category": "Web Crawler",
-        "source_type": "ENTERPRISE_WEB_CRAWLER",
-        "auth_type": "CUSTOM_PROXY_HEADER_OR_NONE",
-        "required_secret_keys": ["intranet_root_url", "crawl_auth_header"],
+        "id": "dw-bigquery-lake",
+        "slug": "dw-bigquery-lake",
+        "name": "BigQuery 엔터프라이즈 데이터 레이크 메타 커넥터",
+        "category": "데이터 분석 및 웨어하우스",
+        "source_type": "BIGQUERY",
+        "auth_type": "GCP_ADC_SERVICE_ACCOUNT",
+        "required_secret_keys": ["gcp_service_account_email", "dataset_id_list"],
         "sync_mode": "DAILY_BATCH",
-        "acl_mode": "IP_AND_HEADER_RESTRICTED",
-        "description": "사내 인트라넷, 사규 포털 및 복리후생 웹사이트 자율 크롤링 및 색인",
-        "content_types": ["html", "pdf", "intranet_notices"],
+        "acl_mode": "GCP_IAM_AND_COLUMN_LEVEL_SECURITY",
+        "description": "빅쿼리 내 정형/비정형 테이블 스키마, 컬럼 설명, 쿼리 뷰 및 Dataplex 거버넌스 태그를 Gemini Enterprise 색인으로 연동한다.",
+        "content_types": ["table_schemas", "column_descriptions", "knowledge_glossary"],
+        "default_scope": "ORG",
+    },
+    9: {
+        "id": "erp-sap-hana",
+        "slug": "erp-sap-hana",
+        "name": "SAP ERP 기간계 품의 및 자재 원장 커넥터",
+        "category": "전사적 자원 관리(ERP)",
+        "source_type": "SAP_S4HANA",
+        "auth_type": "SAP_RFC_OR_ODATA",
+        "required_secret_keys": ["sap_gateway_url", "sap_client_number", "sap_service_user", "sap_service_password"],
+        "sync_mode": "DAILY_BATCH",
+        "acl_mode": "SAP_AUTHORIZATION_OBJECTS",
+        "description": "SAP S/4HANA 또는 ECC 시스템의 자재 마스터, 구매 주문서(PO), 전표 품의 내역 및 회사 코드(Company Code)별 인가 권한을 동기화한다.",
+        "content_types": ["purchase_orders", "material_master", "accounting_documents"],
+        "default_scope": "ORG",
+    },
+    10: {
+        "id": "hrms-workday-core",
+        "slug": "hrms-workday-core",
+        "name": "Workday HRMS 인사 조직 및 직무 체계 커넥터",
+        "category": "인사 관리 및 조직도",
+        "source_type": "WORKDAY",
+        "auth_type": "WORKDAY_ISU_API_TOKEN",
+        "required_secret_keys": ["workday_tenant_url", "workday_isu_username", "workday_isu_password"],
+        "sync_mode": "DAILY_BATCH",
+        "acl_mode": "SUPERVISORY_ORG_HIERARCHY",
+        "description": "워크데이(Workday) 또는 사내 인사 기간계의 조직도, 직책, 부서 R&R, 업무 프로필을 색인하여 사내 사용자 식별 및 권한 매핑을 지원한다.",
+        "content_types": ["worker_profiles", "job_profiles", "org_hierarchy"],
+        "default_scope": "ORG",
+    },
+    11: {
+        "id": "collab-slack-archive",
+        "slug": "collab-slack-archive",
+        "name": "Slack Enterprise Grid 사내 지식 채널 커넥터",
+        "category": "사내 메신저 및 협업",
+        "source_type": "SLACK_ENTERPRISE",
+        "auth_type": "SLACK_BOT_USER_OAUTH",
+        "required_secret_keys": ["slack_user_token", "slack_bot_token", "slack_public_channel_ids"],
+        "sync_mode": "HOURLY_INCREMENTAL",
+        "acl_mode": "CHANNEL_MEMBERSHIP_ACCESS",
+        "description": "사내 슬랙 엔터프라이즈 공용 기술/업무 채널의 대화 스레드, 공유 캔버스, 지식 아카이브를 색인하고 채널별 공개 범위를 준수한다.",
+        "content_types": ["thread_messages", "canvas_docs", "shared_snippets"],
+        "default_scope": "ORG",
+    },
+    12: {
+        "id": "db-rdbms-postgres",
+        "slug": "db-rdbms-postgres",
+        "name": "사내 PostgreSQL 및 MySQL 운영 DB 커넥터",
+        "category": "운영 관계형 데이터베이스",
+        "source_type": "POSTGRESQL",
+        "auth_type": "DB_CREDENTIALS_OR_CLOUD_SQL_IAM",
+        "required_secret_keys": ["db_connection_uri", "db_username", "db_password_secret"],
+        "sync_mode": "DAILY_BATCH",
+        "acl_mode": "SCHEMA_AND_ROW_LEVEL_ACCESS",
+        "description": "사내 프라이빗 네트워크(VPC) 내 Cloud SQL 및 온프레미스 PostgreSQL/MySQL의 업무 마스터 테이블 및 정형 데이터를 색인한다.",
+        "content_types": ["table_records", "view_definitions", "data_catalogs"],
+        "default_scope": "ORG",
+    },
+    13: {
+        "id": "web-internal-portal",
+        "slug": "web-internal-portal",
+        "name": "사내 인트라넷 포털 웹 크롤링 커넥터",
+        "category": "사내 웹 및 게시판",
+        "source_type": "WEB_CRAWLER",
+        "auth_type": "INTERNAL_PROXY_AUTH",
+        "required_secret_keys": ["portal_root_url", "proxy_basic_auth", "allowed_url_prefixes"],
+        "sync_mode": "DAILY_BATCH",
+        "acl_mode": "INTRANET_NETWORK_RESTRICTION",
+        "description": "사내망 내부에서만 접근 가능한 인트라넷 웹 포털, 사내 규정 위키 웹페이지, 임직원 질의응답 게시판을 웹 크롤링 방식으로 정기 색인한다.",
+        "content_types": ["html_pages", "bulletin_boards", "faq_articles"],
+        "default_scope": "ORG",
+    },
+    14: {
+        "id": "repo-github-docs",
+        "slug": "repo-github-docs",
+        "name": "GitHub Enterprise 소스 및 기술 문서 커넥터",
+        "category": "소프트웨어 개발 및 기술 문서",
+        "source_type": "GITHUB_ENTERPRISE",
+        "auth_type": "GITHUB_APP_PRIVATE_KEY",
+        "required_secret_keys": ["github_app_id", "github_app_private_key", "github_org_name"],
+        "sync_mode": "REALTIME_WEBHOOK_AND_HOURLY",
+        "acl_mode": "REPOSITORY_TEAM_PERMISSIONS",
+        "description": "사내 깃허브 엔터프라이즈 리포지토리의 README.md, 아키텍처 다이어그램, API 명세서 및 릴리스 노트를 색인하고 저장소별 권한을 매핑한다.",
+        "content_types": ["markdown_docs", "architecture_guides", "release_notes"],
+        "default_scope": "ORG",
     },
 }
+
+
+def load_connector_catalog(catalog_path: str = None) -> dict:
+    """선언적 catalog.yaml 파일로부터 도메인별 엔터프라이즈 데이터 커넥터를 동적 로드한다 (4단계 캐스케이드 탐색)."""
+    candidates = []
+    if catalog_path:
+        candidates.append(catalog_path)
+    if os.environ.get("CONNECTOR_CATALOG_PATH"):
+        candidates.append(os.environ.get("CONNECTOR_CATALOG_PATH"))
+    local_default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "catalog.yaml")
+    candidates.append(local_default)
+
+    raw_yaml_text = None
+    loaded_source = None
+
+    for target in candidates:
+        if not target:
+            continue
+        # 원격 URL 처리 (2.0초 타임아웃 적용하여 사내 방화벽 행 방지)
+        if target.startswith("http://") or target.startswith("https://"):
+            try:
+                req = urllib.request.Request(target, headers={"User-Agent": "GE-Connector-Factory/1.0"})
+                with urllib.request.urlopen(req, timeout=2.0) as resp:
+                    raw_yaml_text = resp.read().decode("utf-8")
+                    loaded_source = f"원격 URL ({target})"
+                    break
+            except Exception:
+                continue
+        # 로컬 파일 처리
+        elif os.path.exists(target):
+            try:
+                with open(target, "r", encoding="utf-8") as f:
+                    raw_yaml_text = f.read()
+                    loaded_source = f"로컬 파일 ({target})"
+                    break
+            except Exception:
+                continue
+
+    if not raw_yaml_text or yaml is None:
+        return FALLBACK_CONNECTOR_CATALOG
+
+    try:
+        data = yaml.safe_load(raw_yaml_text)
+        connectors_list = data.get("connectors", [])
+        if not connectors_list:
+            return FALLBACK_CONNECTOR_CATALOG
+
+        catalog = {}
+        slug_pattern = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+        seen_slugs = set()
+        seen_names = set()
+        seen_sources = set()
+
+        for idx, c in enumerate(connectors_list, start=1):
+            slug = c.get("slug", f"connector-{idx}-source")
+            if not slug_pattern.match(slug):
+                slug = slug.lower().replace("_", "-")
+
+            name = c.get("name", slug)
+            source_type = c.get("source_type", "CUSTOM_SOURCE")
+
+            # 사전 중복 검증 인터셉터 (Pre-flight duplicate check)
+            if slug in seen_slugs:
+                print(f"[경고] 중복된 커넥터 슬러그 발견 및 자동 격리: {slug}", file=sys.stderr)
+                continue
+            if name in seen_names:
+                print(f"[경고] 중복된 커넥터 명칭 발견: {name}", file=sys.stderr)
+            if source_type in seen_sources:
+                print(f"[경고] 중복된 데이터 소스 유형 발견: {source_type}", file=sys.stderr)
+
+            seen_slugs.add(slug)
+            seen_names.add(name)
+            seen_sources.add(source_type)
+
+            catalog[idx] = {
+                "id": slug,
+                "slug": slug,
+                "name": name,
+                "category": c.get("category", "기타 엔터프라이즈 기간계"),
+                "source_type": source_type,
+                "auth_type": c.get("auth_type", "CUSTOM_CREDENTIALS"),
+                "required_secret_keys": c.get("required_secret_keys", ["custom_secret_key"]),
+                "sync_mode": c.get("sync_mode", "DAILY_BATCH"),
+                "acl_mode": c.get("acl_mode", "NATIVE_ACCESS_CONTROL"),
+                "description": c.get("description", ""),
+                "content_types": c.get("content_types", ["documents"]),
+                "default_scope": c.get("default_scope", "ORG"),
+            }
+
+        return catalog if catalog else FALLBACK_CONNECTOR_CATALOG
+    except Exception as e:
+        print(f"[정보] 선언적 카탈로그 파싱 예외 발생, 내장 시드로 폴백: {e}", file=sys.stderr)
+        return FALLBACK_CONNECTOR_CATALOG
 
 
 def load_env_file():
@@ -381,18 +580,26 @@ def resolve_environment(args) -> dict:
     """활성 GCP 프로젝트 및 환경 변수를 스마트하게 자동 감지한다 (실시간 GE App 감지 및 대화형 번호 선택 지원)."""
     load_env_file()
 
-    project_id = args.project or os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or get_gcloud_config("project") or "sample-project-id"
+    # 1. Project ID (가상 실행 시 사내 실환경 노출 방지 가명 우선, 명시적 인자 최우선)
+    if args.dry_run and not args.project:
+        project_id = "sample-project-id"
+    else:
+        project_id = args.project or os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or get_gcloud_config("project") or "sample-project-id"
+
     if not args.dry_run and not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
         persist_env_value("PROJECT_ID", project_id, dry_run=args.dry_run)
 
     location = args.location or os.environ.get("LOCATION") or "global"
 
-    ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
-    if not ge_app_id:
-        candidates = discover_ge_app_engines(project_id)
-        ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
-        if not args.dry_run and ge_app_id:
-            persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
+    if args.dry_run and not args.ge_app_id:
+        ge_app_id = "sample-ge-app-id"
+    else:
+        ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
+        if not ge_app_id:
+            candidates = discover_ge_app_engines(project_id)
+            ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
+            if not args.dry_run and ge_app_id:
+                persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
 
     sa_email = args.sa or os.environ.get("CONNECTOR_SERVICE_ACCOUNT") or f"ge-connector-sa@{project_id}.iam.gserviceaccount.com"
 
@@ -404,29 +611,53 @@ def resolve_environment(args) -> dict:
     }
 
 
-def select_connector_interactive(dry_run: bool) -> dict:
+def select_connector_interactive(dry_run: bool, catalog: dict = None) -> dict:
     """터미널 대화형 환경에서 커넥터 칩 번호 선택기를 렌더링한다."""
-    print("\n" + "=" * 70)
-    print("  [Gemini Enterprise] 기간계 데이터 커넥터 아키텍처 칩 선택기")
-    print("=" * 70)
-    for num, data in DATA_CONNECTOR_CATALOG.items():
-        print(f"  [{num}] {data['name']} ({data['category']})")
-        print(f"      - 소스 유형 : {data['source_type']} | 인증: {data['auth_type']}")
-        print(f"      - 주요 기능 : {data['description']}")
-    print("=" * 70)
+    active_catalog = catalog or FALLBACK_CONNECTOR_CATALOG
+    is_interactive = sys.stdin.isatty() and not dry_run
 
-    if dry_run or not sys.stdin.isatty():
-        print("[*] 비대화형 또는 가상 실행 모드: 1번 (Jira Cloud) 칩을 기본 채택합니다.")
-        return DATA_CONNECTOR_CATALOG[1]
+    if not is_interactive:
+        return active_catalog[1]
+
+    print("\n" + "=" * 75)
+    print("  [Gemini Enterprise] 엔터프라이즈 기간계 데이터 커넥터 선택기")
+    print("=" * 75)
+    for num, data in sorted(active_catalog.items()):
+        slug = data.get("slug", data.get("id"))
+        print(f"  [{num:2d}] {data['name']} [{data['category']}]")
+        print(f"       - 슬러그    : {slug}")
+        print(f"       - 소스 유형 : {data['source_type']} | 인증: {data['auth_type']}")
+        print(f"       - 주요 설명 : {data['description']}")
+    print("  [ 0] 직접 프롬프트 입력 (Free-form Prompt)")
+    print("=" * 75)
 
     try:
-        choice = input("\n연동할 데이터 커넥터 번호를 선택하십시오 (기본 [1]): ").strip()
+        choice = input(f"\n연동할 데이터 커넥터 번호를 선택하십시오 [1-{len(active_catalog)}, 기본값 1]: ").strip()
         if not choice:
-            return DATA_CONNECTOR_CATALOG[1]
+            return active_catalog[1]
         num = int(choice)
-        return DATA_CONNECTOR_CATALOG.get(num, DATA_CONNECTOR_CATALOG[1])
+        if num == 0 or num not in active_catalog:
+            custom_title = input("\n연동하려는 기간계 시스템이나 데이터 소스 이름을 입력하세요: ").strip()
+            if not custom_title:
+                custom_title = "사내 맞춤형 기간계 데이터베이스"
+            clean_slug = "custom-data-source"
+            return {
+                "id": clean_slug,
+                "slug": clean_slug,
+                "name": custom_title,
+                "category": "사용자 직접 정의",
+                "source_type": "CUSTOM_DATA_SOURCE",
+                "auth_type": "API_KEY_OR_BEARER_TOKEN",
+                "required_secret_keys": ["custom_endpoint_url", "custom_auth_token"],
+                "sync_mode": "DAILY_BATCH",
+                "acl_mode": "USER_RESTRICTED_ACCESS",
+                "description": f"사용자 정의 데이터 소스({custom_title}) 연동 및 보안 색인",
+                "content_types": ["documents", "records"],
+                "default_scope": "ORG",
+            }
+        return active_catalog[num]
     except (ValueError, KeyboardInterrupt):
-        return DATA_CONNECTOR_CATALOG[1]
+        return active_catalog[1]
 
 
 def generate_connector_manifest(connector_data: dict, env_info: dict) -> dict:
@@ -1041,14 +1272,17 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
 def run_local_scaffolding_mode(args, env_info: dict):
     """로컬 단일 커넥터 매니페스트 합성 및 스캐폴딩 보조 모드를 실행한다."""
     print("\n[안내] 로컬 단일 커넥터 매니페스트 합성 보조 모드 가동")
+    catalog = load_connector_catalog(getattr(args, "catalog", None))
 
     # 1. 커넥터 칩 선택
-    connector_data = DATA_CONNECTOR_CATALOG[1]
-    if args.prompt:
+    connector_data = catalog[1]
+    if getattr(args, "prompt", None):
+        custom_slug = "custom-data-source"
         connector_data = {
-            "id": "custom_connector",
+            "id": custom_slug,
+            "slug": custom_slug,
             "name": f"맞춤형 시스템 커넥터 ({args.prompt[:15]})",
-            "category": "Custom SaaS / Intranet",
+            "category": "사용자 직접 정의",
             "source_type": "CUSTOM_DATA_SOURCE",
             "auth_type": "API_KEY_OR_OAUTH2",
             "required_secret_keys": ["custom_api_key", "custom_endpoint"],
@@ -1056,14 +1290,27 @@ def run_local_scaffolding_mode(args, env_info: dict):
             "acl_mode": "IDENTITY_MAPPING_OIDC",
             "description": f"사용자 정의 요구사항({args.prompt}) 기반 맞춤형 기간계 데이터 연동",
             "content_types": ["documents", "records"],
+            "default_scope": "ORG",
         }
-    elif args.chip and args.chip in DATA_CONNECTOR_CATALOG:
-        connector_data = DATA_CONNECTOR_CATALOG[args.chip]
-    elif args.interactive or (sys.stdin.isatty() and not args.dry_run):
-        connector_data = select_connector_interactive(args.dry_run)
+    elif getattr(args, "chip", None):
+        chip_val = str(args.chip).strip()
+        if chip_val.isdigit() and int(chip_val) in catalog:
+            connector_data = catalog[int(chip_val)]
+        else:
+            found = False
+            for c in catalog.values():
+                if c.get("id") == chip_val or c.get("slug") == chip_val:
+                    connector_data = c
+                    found = True
+                    break
+            if not found:
+                print(f"[경고] 지정된 커넥터 식별자 '{chip_val}'을 카탈로그에서 찾을 수 없어 1번으로 대체합니다.")
+                connector_data = catalog[1]
+    elif getattr(args, "interactive", False) or (sys.stdin.isatty() and not args.dry_run):
+        connector_data = select_connector_interactive(args.dry_run, catalog=catalog)
 
     print(f"\n[단계 1/3] 커넥터 칩 스펙 컴파일 중...")
-    print(f"  - 커넥터 명칭 : {connector_data['name']}")
+    print(f"  - 커넥터 명칭 : {connector_data['name']} (슬러그: {connector_data.get('slug', connector_data.get('id'))})")
     print(f"  - 시스템 분류 : {connector_data['category']}")
     print(f"  - 인증 방식   : {connector_data['auth_type']}")
     print(f"  - ACL 동기화  : {connector_data['acl_mode']}")
@@ -1100,8 +1347,9 @@ def main():
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 커넥터 매니페스트 합성 보조 모드")
-    parser.add_argument("--chip", type=int, help="데이터 커넥터 칩 번호 직접 지정 (1~8)")
-    parser.add_argument("--prompt", help="사용자 정의 시스템 연동 요구사항")
+    parser.add_argument("--catalog", help="선언적 catalog.yaml 파일 경로 (지정 시 우선 로드)")
+    parser.add_argument("--chip", help="데이터 커넥터 번호(1~15) 또는 슬러그(예: gw-groupware-doc)")
+    parser.add_argument("--prompt", help="사용자 정의 시스템 연동 요구사항 (자유 프롬프트)")
     parser.add_argument("--interactive", action="store_true", default=False, help="로컬 대화형 번호 선택기 가동")
     parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 (기본 실행과 동일)")
 

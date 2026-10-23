@@ -45,7 +45,14 @@ python diagnose.py --config
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
 ```bash
+# 기본 팩토리(붕어빵 틀) 가상 배포 시뮬레이션
 python diagnose.py --dry-run
+
+# 에이전트 칩 스펙 합성 가상 검증 (1번: 인사 총무 복리후생 매니저)
+python diagnose.py --scaffold --chip 1 --dry-run
+
+# 자유 프롬프트 기반 맞춤 에이전트 스펙 합성 가상 검증
+python diagnose.py --scaffold --prompt "사내 특허 출원 가이드 에이전트" --dry-run
 ```
 
 **터미널 진단 출력 미리보기:**
@@ -53,29 +60,42 @@ python diagnose.py --dry-run
 ===========================================================================
   Gemini Enterprise 노코드 에이전트 팩토리 (gemini-enterprise-copilot-agent)
 ===========================================================================
-[*] 사내 활성 Gemini Enterprise App 자동 감지: sample-ge-app-id
 [*] 활성 프로젝트    : sample-project-id
 [*] 대상 리전        : global
-[*] 대상 Gemini Enterprise App ID   : sample-ge-app-id
+[*] 대상 GE App ID   : sample-ge-app-id
 [*] 대행 서비스 계정 : ge-agent-factory-sa@sample-project-id.iam.gserviceaccount.com
 [*] 실행 모드        : 가상 실행 (--dry-run)
 
-[진행] 사내 노코드 에이전트 팩토리(붕어빵 틀) 프로비저닝 파이프라인 가동...
+[안내] 로컬 단일 에이전트 스펙 합성 및 인터뷰 보조 모드 가동
 
---> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.
-  [1] Agent Engine 프로비저닝 시뮬레이션: projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-agent-factory-engine
-  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료
+[단계 1/4] 대행 서비스 계정(Delegated SA) IAM 권한 진단 중...
+  - 상태: PASS (Simulated) | 가상 실행 검증 완료
 
-[성공] 마크다운 진단 보고서가 저장되었습니다: /path/to/samples/gemini-enterprise-copilot-agent/report.md
+[단계 2/4] 메타 에이전트(@에이전트 팩토리) 매니페스트 및 도구 정의 구성 중...
+  - 메타 에이전트: GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)
+  - 등록 도구(Tool): create_ge_nocode_agent (대행 권한 연동)
+
+[단계 3/4] 추천 칩 인터뷰 및 실시간 검색 그라운딩 지침 합성 중...
+  - 선택된 카테고리 : 인사 및 조직 문화
+  - 에이전트 타이틀 : 신규 입사자 온보딩 가이드 에이전트 (@hr-onboarding-guide)
+  - 대상 사용자     : 신규 입사자, 팀 멘토, 피플팀
+  - 핵심 규정 기준  : 사내 정보보호 서약 및 신규 입사자 준수 수칙
+  - 5대 골든 지침 및 스타터 프롬프트 합성 완료 (No-Training & PII 보호 가드레일 강제)
+
+[성공] 마크다운 진단 보고서가 저장되었습니다: report.md
 
 ===========================================================================
-  노코드 에이전트 팩토리 배포 및 등록 완료 (모든 점검 통과)
+  로컬 에이전트 스펙 합성 완료
 ===========================================================================
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+### 2) 실제 사내 인프라 실시간 진단 및 팩토리 프로비저닝
 ```bash
+# 팩토리 메타 에이전트 프로비저닝 및 사내 갤러리(/r/agents) 전사 등록
 python diagnose.py
+
+# 또는 외부 선언적 카탈로그를 지정하여 대화형 선택기 가동
+python diagnose.py --scaffold --catalog catalog.yaml --interactive
 ```
 > [!NOTE]
 > 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)

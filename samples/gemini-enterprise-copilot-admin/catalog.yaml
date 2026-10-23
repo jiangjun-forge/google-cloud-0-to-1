@@ -1,0 +1,53 @@
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+# It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+# All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+version: "1.0.0"
+description: "Gemini Enterprise app 엔터프라이즈 어드민 거버넌스 및 관리 과제 카탈로그"
+admin_tasks:
+  # ==========================================
+  # 1. 테넌트 도메인 및 계정 온보딩 (Tenant & Domain)
+  # ==========================================
+  - slug: "tenant-domain-onboarding"
+    name: "사내 도메인 선점 충돌 및 Cloud Identity 온보딩"
+    category: "테넌트 및 도메인 관리"
+    description: "사내 대표 도메인이 타 계정에 선점되어 Gemini Enterprise 활성화가 차단될 때, Cloud Identity Free 기반 테넌트 배포 및 DNS TXT 레코드 소유권 검증 절차를 진단한다."
+    primary_action: "DNS TXT 레코드 소유권 확인 및 임시 테넌트 배포"
+    remediation_type: "DNS_AND_IDENTITY"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 2. 보안 거버넌스 및 마켓플레이스 통제 (Security & Governance)
+  # ==========================================
+  - slug: "sec-marketplace-governance"
+    name: "외부 마켓플레이스 차단 및 사내 승인 에이전트 통제"
+    category: "보안 거버넌스 및 정책"
+    description: "금융권 및 대기업 보안 규정에 따라 외부 공개 에이전트 마켓플레이스 접근을 전면 차단하고, 사내 검증 에이전트만 전사 갤러리(/r/agents)에 노출되도록 제어한다."
+    primary_action: "Discovery Engine 공유 범위 ALL_USERS 및 외부 마켓플레이스 토글 비활성화"
+    remediation_type: "ORG_POLICY_AND_ENGINE_CONFIG"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 3. FinOps 라이선스 최적화 (FinOps & License)
+  # ==========================================
+  - slug: "finops-license-optimizer"
+    name: "부서별 라이선스 채택률 분석 및 유휴 라이선스 회수"
+    category: "FinOps 및 라이선스 관리"
+    description: "전사 배포된 라이선스의 부서별 실제 활성도 지표를 BigQuery 감사 로그로 집계하고, 30일 이상 미사용 임직원의 유휴 라이선스를 자동 식별 및 회수한다."
+    primary_action: "BigQuery 감사 로그 분석 및 Google Admin 라이선스 비할당 CLI"
+    remediation_type: "BIGQUERY_SQL_AND_ADMIN_CLI"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 5. 네트워크 방화벽 및 코어 FQDN (Network & Proxy)
+  # ==========================================
+  - slug: "net-firewall-fqdn"
+    name: "사내망 프록시 허용용 Exact 15대 코어 FQDN 진단"
+    category: "네트워크 및 프록시 보안"
+    description: "와일드카드 도메인이 불허되는 사내 관문 프록시(SWG) 및 폐쇄망 환경에서 Gemini Enterprise 정상 구동에 필요한 15대 필수 FQDN 아웃바운드 443 연결성을 진단한다."
+    primary_action: "Exact FQDN 목록 추출 및 아웃바운드 443 포트 사전 프로브"
+    remediation_type: "NETWORK_PROBE_AND_PROXY_CONFIG"
+    default_scope: "ORG"

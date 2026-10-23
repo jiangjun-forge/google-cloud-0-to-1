@@ -49,7 +49,14 @@ python diagnose.py --config
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
 ```bash
+# 기본 팩토리 가상 실행 검증
 python diagnose.py --dry-run
+
+# 단일 어드민 과제 가상 조치 가이드 생성 (1번: 도메인 선점 충돌 및 온보딩)
+python diagnose.py --scaffold --chip 1 --dry-run
+
+# 자연어 자유 프롬프팅 가상 조치 가이드 생성
+python diagnose.py --scaffold --prompt "사내 하둡 감사" --dry-run
 ```
 
 **터미널 진단 출력 미리보기:**

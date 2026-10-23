@@ -1,0 +1,290 @@
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+# It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+# All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+version: "1.0.0"
+description: "Gemini Enterprise app 엔터프라이즈 기간계 데이터 커넥터 카탈로그"
+connectors:
+  # ==========================================
+  # 1. 그룹웨어 및 사내 포털 (Groupware & Portal)
+  # ==========================================
+  - slug: "gw-groupware-doc"
+    name: "사내 그룹웨어 전자결재 및 공지문 커넥터"
+    category: "그룹웨어 및 사내 포털"
+    source_type: "GROUPWARE_DOCS"
+    auth_type: "API_KEY_OR_JWT"
+    required_secret_keys:
+      - "groupware_api_endpoint"
+      - "groupware_jwt_secret"
+      - "groupware_client_id"
+    sync_mode: "HOURLY_INCREMENTAL"
+    acl_mode: "DOCUMENT_LEVEL_APPROVAL_LINE"
+    description: "사내 핸디소프트, 다우오피스 등 그룹웨어 전자결재 완료 문서, 사내 공지사항, 인사 발령문 색인 및 결재선 열람 권한을 동기화한다."
+    content_types:
+      - "approval_documents"
+      - "board_notices"
+      - "attached_files"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 2. 사내 기술 위키 및 이슈 트래커 (Atlassian Suite)
+  # ==========================================
+  - slug: "collab-confluence-wiki"
+    name: "Confluence Cloud 사내 지식 베이스 커넥터"
+    category: "협업 도구 및 기술 문서"
+    source_type: "CONFLUENCE"
+    auth_type: "OAUTH2_CLIENT_CREDENTIALS"
+    required_secret_keys:
+      - "confluence_client_id"
+      - "confluence_client_secret"
+      - "confluence_space_keys"
+    sync_mode: "HOURLY_INCREMENTAL"
+    acl_mode: "SPACE_AND_PAGE_RESTRICTIONS"
+    description: "사내 기술 문서, 운영 가이드, 부서별 위키 스페이스를 색인하고 페이지별 접근 제한 권한을 실시간 동기화한다."
+    content_types:
+      - "pages"
+      - "blogposts"
+      - "attachments"
+    default_scope: "ORG"
+
+  - slug: "itsm-jira-issue"
+    name: "Jira Cloud 엔터프라이즈 이슈 트래커 커넥터"
+    category: "프로젝트 및 이슈 관리"
+    source_type: "JIRA"
+    auth_type: "OAUTH2_CLIENT_CREDENTIALS"
+    required_secret_keys:
+      - "jira_client_id"
+      - "jira_client_secret"
+      - "jira_instance_url"
+    sync_mode: "HOURLY_INCREMENTAL"
+    acl_mode: "IDENTITY_MAPPING_OIDC"
+    description: "사내 개발 및 운영 지라(Jira) 프로젝트 티켓, 이슈 내역, 에픽 및 댓글 데이터를 색인하고 이슈 보안 스킴(Security Scheme)을 동기화한다."
+    content_types:
+      - "issues"
+      - "comments"
+      - "attachments"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 3. 고객 관계 관리 및 IT 서비스 (CRM & ITSM)
+  # ==========================================
+  - slug: "crm-salesforce-lead"
+    name: "Salesforce CRM 고객 및 영업 기회 커넥터"
+    category: "고객 관계 관리(CRM)"
+    source_type: "SALESFORCE"
+    auth_type: "OAUTH2_JWT_BEARER"
+    required_secret_keys:
+      - "salesforce_client_id"
+      - "salesforce_private_key"
+      - "salesforce_domain"
+    sync_mode: "DAILY_BATCH"
+    acl_mode: "ROLE_HIERARCHY_AND_SHARING_RULES"
+    description: "세일즈포스 고객 계정(Account), 영업 기회(Opportunity), 리드(Lead) 및 고객 지원 케이스(Case)를 동기화하고 역할 계층 기반 권한을 매핑한다."
+    content_types:
+      - "Account"
+      - "Opportunity"
+      - "Contact"
+      - "Case"
+    default_scope: "ORG"
+
+  - slug: "itsm-servicenow-ticket"
+    name: "ServiceNow ITSM 인시던트 및 변경 요청 커넥터"
+    category: "IT 서비스 관리(ITSM)"
+    source_type: "SERVICENOW"
+    auth_type: "OAUTH2_AUTHORIZATION_CODE"
+    required_secret_keys:
+      - "servicenow_instance_id"
+      - "servicenow_client_id"
+      - "servicenow_client_secret"
+    sync_mode: "HOURLY_INCREMENTAL"
+    acl_mode: "USER_CRITERIA_AND_ROLES"
+    description: "IT 서비스 관리 장애 인시던트, 서비스 카탈로그, 변경 요청 및 지식 베이스(KB)를 동기화하고 요청자/지원그룹 역할을 매핑한다."
+    content_types:
+      - "incident"
+      - "change_request"
+      - "kb_knowledge"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 4. 엔터프라이즈 클라우드 오피스 (Microsoft 365 & Workspace)
+  # ==========================================
+  - slug: "collab-sharepoint-site"
+    name: "Microsoft SharePoint Online 팀 사이트 문서 커넥터"
+    category: "엔터프라이즈 오피스 및 협업"
+    source_type: "SHAREPOINT_ONLINE"
+    auth_type: "AZURE_AD_APP_CREDENTIALS"
+    required_secret_keys:
+      - "azure_tenant_id"
+      - "azure_client_id"
+      - "azure_client_secret"
+      - "site_collections"
+    sync_mode: "HOURLY_INCREMENTAL"
+    acl_mode: "ENTRA_ID_CROSS_DOMAIN_MAPPING"
+    description: "마이크로소프트 365 셰어포인트 팀 사이트 및 원드라이브 업무 문서를 색인하고 Entra ID 멤버십 권한을 온전히 동기화한다."
+    content_types:
+      - "docx"
+      - "pptx"
+      - "xlsx"
+      - "pdf"
+    default_scope: "ORG"
+
+  - slug: "gws-drive-shared"
+    name: "Google Workspace 공유 드라이브 문서 커넥터"
+    category: "엔터프라이즈 클라우드 오피스"
+    source_type: "GOOGLE_DRIVE"
+    auth_type: "DOMAIN_WIDE_DELEGATION_SERVICE_ACCOUNT"
+    required_secret_keys:
+      - "workspace_service_account_key"
+      - "delegated_admin_email"
+    sync_mode: "REALTIME_WEBHOOK_AND_HOURLY"
+    acl_mode: "NATIVE_WORKSPACE_ACL"
+    description: "구글 워크스페이스 전사 공유 드라이브 및 부서 폴더 문서를 색인하고 파일별 권한 및 구글 그룹스 멤버십을 실시간 동기화한다."
+    content_types:
+      - "Google Docs"
+      - "Google Sheets"
+      - "Google Slides"
+      - "PDF"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 5. 데이터 분석 및 전사 자원 관리 (DW & ERP)
+  # ==========================================
+  - slug: "dw-bigquery-lake"
+    name: "BigQuery 엔터프라이즈 데이터 레이크 메타 커넥터"
+    category: "데이터 분석 및 웨어하우스"
+    source_type: "BIGQUERY"
+    auth_type: "GCP_ADC_SERVICE_ACCOUNT"
+    required_secret_keys:
+      - "gcp_service_account_email"
+      - "dataset_id_list"
+    sync_mode: "DAILY_BATCH"
+    acl_mode: "GCP_IAM_AND_COLUMN_LEVEL_SECURITY"
+    description: "빅쿼리 내 정형/비정형 테이블 스키마, 컬럼 설명, 쿼리 뷰 및 Dataplex 거버넌스 태그를 Gemini Enterprise 색인으로 연동한다."
+    content_types:
+      - "table_schemas"
+      - "column_descriptions"
+      - "knowledge_glossary"
+    default_scope: "ORG"
+
+  - slug: "erp-sap-hana"
+    name: "SAP ERP 기간계 품의 및 자재 원장 커넥터"
+    category: "전사적 자원 관리(ERP)"
+    source_type: "SAP_S4HANA"
+    auth_type: "SAP_RFC_OR_ODATA"
+    required_secret_keys:
+      - "sap_gateway_url"
+      - "sap_client_number"
+      - "sap_service_user"
+      - "sap_service_password"
+    sync_mode: "DAILY_BATCH"
+    acl_mode: "SAP_AUTHORIZATION_OBJECTS"
+    description: "SAP S/4HANA 또는 ECC 시스템의 자재 마스터, 구매 주문서(PO), 전표 품의 내역 및 회사 코드(Company Code)별 인가 권한을 동기화한다."
+    content_types:
+      - "purchase_orders"
+      - "material_master"
+      - "accounting_documents"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 6. 인사 관리 및 사내 메신저 (HRMS & Messaging)
+  # ==========================================
+  - slug: "hrms-workday-core"
+    name: "Workday HRMS 인사 조직 및 직무 체계 커넥터"
+    category: "인사 관리 및 조직도"
+    source_type: "WORKDAY"
+    auth_type: "WORKDAY_ISU_API_TOKEN"
+    required_secret_keys:
+      - "workday_tenant_url"
+      - "workday_isu_username"
+      - "workday_isu_password"
+    sync_mode: "DAILY_BATCH"
+    acl_mode: "SUPERVISORY_ORG_HIERARCHY"
+    description: "워크데이(Workday) 또는 사내 인사 기간계의 조직도, 직책, 부서 R&R, 업무 프로필을 색인하여 사내 사용자 식별 및 권한 매핑을 지원한다."
+    content_types:
+      - "worker_profiles"
+      - "job_profiles"
+      - "org_hierarchy"
+    default_scope: "ORG"
+
+  - slug: "collab-slack-archive"
+    name: "Slack Enterprise Grid 사내 지식 채널 커넥터"
+    category: "사내 메신저 및 협업"
+    source_type: "SLACK_ENTERPRISE"
+    auth_type: "SLACK_BOT_USER_OAUTH"
+    required_secret_keys:
+      - "slack_user_token"
+      - "slack_bot_token"
+      - "slack_public_channel_ids"
+    sync_mode: "HOURLY_INCREMENTAL"
+    acl_mode: "CHANNEL_MEMBERSHIP_ACCESS"
+    description: "사내 슬랙 엔터프라이즈 공용 기술/업무 채널의 대화 스레드, 공유 캔버스, 지식 아카이브를 색인하고 채널별 공개 범위를 준수한다."
+    content_types:
+      - "thread_messages"
+      - "canvas_docs"
+      - "shared_snippets"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 7. 관계형 데이터베이스 및 인트라넷 웹 (RDBMS & Web)
+  # ==========================================
+  - slug: "db-rdbms-postgres"
+    name: "사내 PostgreSQL 및 MySQL 운영 DB 커넥터"
+    category: "운영 관계형 데이터베이스"
+    source_type: "POSTGRESQL"
+    auth_type: "DB_CREDENTIALS_OR_CLOUD_SQL_IAM"
+    required_secret_keys:
+      - "db_connection_uri"
+      - "db_username"
+      - "db_password_secret"
+    sync_mode: "DAILY_BATCH"
+    acl_mode: "SCHEMA_AND_ROW_LEVEL_ACCESS"
+    description: "사내 프라이빗 네트워크(VPC) 내 Cloud SQL 및 온프레미스 PostgreSQL/MySQL의 업무 마스터 테이블 및 정형 데이터를 색인한다."
+    content_types:
+      - "table_records"
+      - "view_definitions"
+      - "data_catalogs"
+    default_scope: "ORG"
+
+  - slug: "web-internal-portal"
+    name: "사내 인트라넷 포털 웹 크롤링 커넥터"
+    category: "사내 웹 및 게시판"
+    source_type: "WEB_CRAWLER"
+    auth_type: "INTERNAL_PROXY_AUTH"
+    required_secret_keys:
+      - "portal_root_url"
+      - "proxy_basic_auth"
+      - "allowed_url_prefixes"
+    sync_mode: "DAILY_BATCH"
+    acl_mode: "INTRANET_NETWORK_RESTRICTION"
+    description: "사내망 내부에서만 접근 가능한 인트라넷 웹 포털, 사내 규정 위키 웹페이지, 임직원 질의응답 게시판을 웹 크롤링 방식으로 정기 색인한다."
+    content_types:
+      - "html_pages"
+      - "bulletin_boards"
+      - "faq_articles"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 8. 소스 코드 저장소 및 오브젝트 스토리지 (DevOps & Storage)
+  # ==========================================
+  - slug: "repo-github-docs"
+    name: "GitHub Enterprise 소스 및 기술 문서 커넥터"
+    category: "소프트웨어 개발 및 기술 문서"
+    source_type: "GITHUB_ENTERPRISE"
+    auth_type: "GITHUB_APP_PRIVATE_KEY"
+    required_secret_keys:
+      - "github_app_id"
+      - "github_app_private_key"
+      - "github_org_name"
+    sync_mode: "REALTIME_WEBHOOK_AND_HOURLY"
+    acl_mode: "REPOSITORY_TEAM_PERMISSIONS"
+    description: "사내 깃허브 엔터프라이즈 리포지토리의 README.md, 아키텍처 다이어그램, API 명세서 및 릴리스 노트를 색인하고 저장소별 권한을 매핑한다."
+    content_types:
+      - "markdown_docs"
+      - "architecture_guides"
+      - "release_notes"
+    default_scope: "ORG"
+
+

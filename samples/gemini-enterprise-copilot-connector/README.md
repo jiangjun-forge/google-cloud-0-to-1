@@ -45,7 +45,14 @@ python diagnose.py --config
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
 ```bash
+# 기본 팩토리(붕어빵 틀) 가상 배포 시뮬레이션
 python diagnose.py --dry-run
+
+# 커넥터 매니페스트 합성 가상 검증 (1번: 그룹웨어 커넥터)
+python diagnose.py --scaffold --chip 1 --dry-run
+
+# 자유 프롬프트 기반 맞춤형 시스템 커넥터 합성 가상 검증
+python diagnose.py --scaffold --prompt "사내 하둡 HDFS 데이터 레이크 커넥터" --dry-run
 ```
 
 **터미널 진단 출력 미리보기:**
@@ -53,29 +60,41 @@ python diagnose.py --dry-run
 ===========================================================================
   Gemini Enterprise 데이터 커넥터 스캐폴더 (gemini-enterprise-copilot-connector)
 ===========================================================================
-[*] 사내 활성 Gemini Enterprise App 자동 감지: sample-ge-app-id
 [*] 활성 프로젝트    : sample-project-id
 [*] 배포 리전        : global
 [*] 대상 GE App ID   : sample-ge-app-id
 [*] 실행 서비스 계정 : ge-connector-sa@sample-project-id.iam.gserviceaccount.com
 [*] 실행 모드        : 가상 실행 (--dry-run)
 
-[진행] 사내 데이터 커넥터 스캐폴더(붕어빵 틀) 프로비저닝 파이프라인 가동...
+[안내] 로컬 단일 커넥터 매니페스트 합성 보조 모드 가동
 
---> [가상 실행 모드 (--dry-run)] 실제 배포 없이 프로비저닝 명세를 시뮬레이션합니다.
-  [1] Agent Engine 프로비저닝 시뮬레이션: projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-connector-scaffolder-engine
-  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료
+[단계 1/3] 커넥터 칩 스펙 컴파일 중...
+  - 커넥터 명칭 : 사내 그룹웨어 전자결재 및 공지문 커넥터 (슬러그: gw-groupware-doc)
+  - 시스템 분류 : 그룹웨어 및 사내 포털
+  - 인증 방식   : API_KEY_OR_JWT
+  - ACL 동기화  : DOCUMENT_LEVEL_APPROVAL_LINE
 
-[성공] 마크다운 진단 보고서가 저장되었습니다: /path/to/samples/gemini-enterprise-copilot-connector/report.md
+[단계 2/3] Discovery Engine 매니페스트 및 보안 볼트 연동 스펙 합성 중...
+  - 생성된 Data Store ID : ds-gw-groupware-doc-sample-p
+  - Secret Manager 볼트 : connector-secret-gw-groupware-doc
+
+[단계 3/3] 서비스 계정 IAM 권한 및 Gemini Enterprise app 바인딩 진단 중...
+  - 상태: PASS (Simulated) | 가상 실행 검증 완료
+
+[성공] 마크다운 진단 보고서가 저장되었습니다: report.md
 
 ===========================================================================
-  데이터 커넥터 스캐폴더 배포 및 등록 완료 (모든 점검 통과)
+  데이터 커넥터 스펙 컴파일 및 진단 완료
 ===========================================================================
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+### 2) 실제 사내 인프라 실시간 진단 및 팩토리 프로비저닝
 ```bash
+# 팩토리 메타 에이전트 프로비저닝 및 사내 갤러리(/r/agents) 전사 등록
 python diagnose.py
+
+# 또는 외부 선언적 카탈로그를 지정하여 대화형 선택기 가동
+python diagnose.py --scaffold --catalog catalog.yaml --interactive
 ```
 > [!NOTE]
 > 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)

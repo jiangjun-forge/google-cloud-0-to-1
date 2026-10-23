@@ -18,119 +18,174 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import requests
 
-# 엔지니어링 3대 핵심 커스텀 아키텍처 칩 카탈로그
-CUSTOM_ARCHITECTURE_CATALOG = {
+# 엔터프라이즈 코파일럿 패밀리 4대 커스텀 에이전트 인라인 폴백 시드
+FALLBACK_CUSTOM_CATALOG = {
     1: {
-        "id": "custom_repo_agent",
-        "title": "사내 커스텀 GitHub 저장소 연동 (Custom Repo) [기본값]",
-        "description": "사내 개발팀의 GitHub 저장소 코드를 바탕으로 Agent Engine 빌드 및 Gemini Enterprise app 사내 갤러리에 직결 등록하는 커스텀 에이전트 배포",
-        "repo_url": "https://github.com/my-org/my-custom-agent",
-        "backend_tech": "Agent Engine (ADK 2.11+) + GitHub 저장소 연동",
-        "tools_included": ["git_clone_repo", "validate_manifest", "deploy_agent_engine", "publish_ge_gallery"],
-        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
+        "id": "copilot-skill-factory",
+        "slug": "copilot-skill-factory",
+        "title": "사내 스킬 팩토리 코파일럿 (Skill Factory)",
+        "name": "사내 스킬 팩토리 코파일럿",
+        "category": "업무 도구 및 스킬 팩토리",
+        "description": "사내 비개발자 임직원을 위한 대화형 Open Skills / SKILL.md 도구 팩토리 에이전트",
+        "backend_tech": "Agent Engine (ADK 2.11+) + OpenAPI 3.0",
+        "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-skill",
+        "custom_placeholder_text": "생성하고 싶은 업무 연동 도구나 API를 입력하세요...",
+        "starter_prompts": [
+            "전자결재 품의 상신 및 승인 상태 조회 스킬 생성해 줘",
+            "법인카드 경비 전표 정산 및 승인 내역 조회 스킬 매니페스트 만들어 줘",
+            "주 52시간 근태 관리 및 휴가 신청 도구 바인딩 명세 작성해 줘",
+        ],
+        "tools_included": ["create_skill_manifest", "validate_secret_binding", "register_skill_tool"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/secretmanager.secretAccessor"],
     },
     2: {
-        "id": "gemini_enterprise_admin_copilot",
-        "title": "GE Admin Copilot (사내 어드민 코파일럿) 실물 레포",
-        "description": "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크 및 GE 어드민 7대 과제 전담 코파일럿 실물 레포",
-        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin",
-        "backend_tech": "Agent Engine (ADK 2.11+) + google-cloud-bigquery + google-cloud-logging",
-        "tools_included": ["audit_zombie_agents", "sync_cloud_logging_bq", "query_token_consumption"],
-        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/logging.viewer", "roles/bigquery.admin"],
-    },
-    3: {
-        "id": "gemini_enterprise_agent_factory",
-        "title": "GE Agent Factory (사내 노코드 에이전트 팩토리) 실물 레포",
-        "description": "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리 실물 레포",
-        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent",
-        "backend_tech": "Agent Engine (ADK 2.11+) + google-genai (gemini-3.8-flash)",
+        "id": "copilot-agent-factory",
+        "slug": "copilot-agent-factory",
+        "title": "사내 노코드 에이전트 팩토리 (Agent Factory)",
+        "name": "사내 노코드 에이전트 팩토리",
+        "category": "노코드 에이전트 팩토리",
+        "description": "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리 에이전트",
+        "backend_tech": "Agent Engine (ADK 2.11+) + Discovery Engine",
+        "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent",
+        "custom_placeholder_text": "만들고 싶은 사내 업무 에이전트 역할이나 페르소나를 입력하세요...",
+        "starter_prompts": [
+            "신규 입사자를 위한 인사 총무 온보딩 가이드 에이전트 생성해 줘",
+            "법인카드 경비 전표 규정 검토 및 반려 사유 안내 에이전트 만들어 줘",
+            "표준 계약서 검토 및 법무 질의응답 전담 에이전트 등록해 줘",
+        ],
         "tools_included": ["create_nocode_agent", "publish_to_gallery", "test_conversation"],
         "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
     },
-}
-
-# Gemini Enterprise app 등록용 6대 핵심 상주형 커스텀 에이전트 카탈로그
-CURATED_ENTERPRISE_AGENTS = [
-    {
-        "slug": "bigquery-data-agent-starter",
-        "display_name": "사내 빅쿼리 데이터 분석 에이전트",
-        "description": "빅쿼리(BigQuery) 실데이터(cymbal_gold) 기반 대화형 데이터 분석 및 비즈니스 인사이트 도출 에이전트",
-        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/bigquery-data-agent-starter",
-        "custom_placeholder_text": "매출 추이, 상품 판매 랭킹, 고객 분석 등 데이터 질의를 입력하세요...",
+    3: {
+        "id": "copilot-connector-scaffolder",
+        "slug": "copilot-connector-scaffolder",
+        "title": "기간계 데이터 커넥터 스캐폴더 (Connector Scaffolder)",
+        "name": "기간계 데이터 커넥터 스캐폴더",
+        "category": "데이터 커넥터 및 지식 베이스",
+        "description": "사내 기간계 시스템(그룹웨어, Jira, Confluence, ERP 등) 데이터스토어 연동 매니페스트 및 ACL 동기화 스캐폴더",
+        "backend_tech": "Agent Engine (ADK 2.11+) + Discovery Engine Data Store",
+        "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-connector",
+        "custom_placeholder_text": "연동하고 싶은 사내 기간계 데이터 소스(Jira, Confluence, ERP 등)를 입력하세요...",
         "starter_prompts": [
-            "지난 분기 카테고리별 매출 추이와 마진율 높은 상위 5개 제품 분석해 줘",
-            "최근 30일간 VIP 고객들의 재구매율과 주요 구매 품목 요약해 줘",
-            "BigQuery cymbal_gold 데이터셋의 주요 테이블 스키마와 데이터 통계 알려 줘",
+            "사내 그룹웨어 전자결재 및 공문서 보관함 데이터스토어 연동 매니페스트 작성해 줘",
+            "Confluence 팀 위키 및 지식 베이스 커넥터 설정 생성해 줘",
+            "SAP ERP 구매 주문서 및 회계 전표 동기화 커넥터 스캐폴딩해 줘",
         ],
-        "gcs_prefix": "ge_factory_custom_agent_factory",
+        "tools_included": ["scaffold_connector_manifest", "sync_datastore_acl", "verify_secret_vault"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/secretmanager.secretAccessor"],
     },
-    {
-        "slug": "gemini-enterprise-copilot-admin",
-        "display_name": "GE In-Chat Admin Copilot (사내 어드민 코파일럿)",
-        "description": "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크 및 GE 어드민 7대 과제 전담 코파일럿",
-        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin",
+    4: {
+        "id": "copilot-admin-governor",
+        "slug": "copilot-admin-governor",
+        "title": "사내 어드민 거버넌스 코파일럿 (Admin Copilot)",
+        "name": "사내 어드민 거버넌스 코파일럿",
+        "category": "IT 어드민 및 인프라 거버넌스",
+        "description": "수백 개 에이전트 전수 감사(미사용 에이전트 적발), 감사 로그 자동 적재 및 사내 거버넌스 정책 통제 전담 코파일럿",
+        "backend_tech": "Agent Engine (ADK 2.11+) + google-cloud-bigquery + google-cloud-logging",
+        "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin",
         "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
         "starter_prompts": [
             "사내 에이전트 중 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘",
             "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘",
             "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?",
-            "에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리 알려 줘",
         ],
-        "gcs_prefix": "ge_factory_gemini_enterprise_admin_copilot",
+        "tools_included": ["audit_zombie_agents", "sync_cloud_logging_bq", "query_token_consumption"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/logging.viewer", "roles/bigquery.admin"],
     },
+}
+
+CUSTOM_ARCHITECTURE_CATALOG = FALLBACK_CUSTOM_CATALOG
+
+# 4대 코파일럿 패밀리 상주형 커스텀 에이전트 목록
+CURATED_ENTERPRISE_AGENTS = [
     {
-        "slug": "gws-marketing-content-pipeline",
-        "display_name": "사내 마케팅 콘텐츠 파이프라인 에이전트",
-        "description": "구글 드라이브(Google Drive) 및 구글 시트(Google Sheets) 연동 마케팅 기획서, 멀티 채널 카피 제작 및 AI 가상 페르소나 다면 평가 오케스트레이터",
-        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gws-marketing-content-pipeline",
-        "custom_placeholder_text": "기획하고 싶은 마케팅 캠페인 주제나 콘텐츠 아이디어를 입력하세요...",
-        "starter_prompts": [
-            "신규 금융 상품 출시 마케팅 캠페인 기획서(PLAN) 초안 작성해 줘",
-            "소셜 미디어(인스타그램, 유튜브 숏폼) 채널별 홍보 카피와 제작 명세서 도출해 줘",
-            "작성된 카피라이팅에 대해 2030 가상 소비자 페르소나 패널 5인 다면 평가 실행해 줘",
-        ],
-        "gcs_prefix": "ge_factory_custom_agent_factory",
-    },
-    {
-        "slug": "iam-permission-resolver",
-        "display_name": "사내 클라우드 IAM 권한 헬프데스크",
-        "description": "GCP 작업 중 발생하는 403 권한 거부(Permission Denied) 에러를 감사 로그에서 역추적하고 최소 권한(Least Privilege) IAM 역할 및 복구 gcloud 명령어를 즉시 처방하는 헬프데스크",
-        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/iam-permission-resolver",
-        "custom_placeholder_text": "GCP 작업 중 발생한 403 에러 메시지나 상황을 입력하세요...",
-        "starter_prompts": [
-            "버텍스 AI 모델 배포 중 403 에러가 떴는데 감사 로그 확인해서 필요한 권한 알려 줘",
-            "BigQuery 테이블 쿼리 시 403 권한 거부 발생했을 때 최소 권한 부여 gcloud 명령어 줘",
-            "GCS 버킷 업로드 403 오류 역추적 방법과 서비스 계정 필수 역할 알려 줘",
-        ],
-        "gcs_prefix": "ge_factory_custom_agent_factory",
-    },
-    {
-        "slug": "korea-ai-security-checklist",
-        "display_name": "사내 AI 보안성 심의 자문 코파일럿",
-        "description": "Gemini 및 사내 AI 도입 시 CISO/정보보호팀 보안성 심의 대응을 위한 구글 무학습(No-Training), 인적 검토 배제, 사내 GCP 보안 설정 대조 20대 체크리스트 소명서 자동 작성 에이전트",
-        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/korea-ai-security-checklist",
-        "custom_placeholder_text": "AI 도입 프로젝트 보안성 심의 관련 문의를 입력하세요...",
-        "starter_prompts": [
-            "고객 상담용 제미나이 도입 시 CISO 보안성 심의 20대 체크리스트 소명서 작성해 줘",
-            "사내 GCP 환경의 데이터 비학습(No-Training) 및 인적 검토 배제 공식 증빙 확인해 줘",
-            "사내 VPC-SC 경계 및 CMEK 암호화 설정이 AI 보안 심의 기준을 충족하는지 점검해 줘",
-        ],
-        "gcs_prefix": "ge_factory_custom_agent_factory",
-    },
-    {
-        "slug": "antigravity-user-quota-cap",
-        "display_name": "Antigravity 개발자 쿼터 통제 코파일럿",
-        "description": "Google Antigravity 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고 일일/주간 쿼터 캡(Cap) 초과자 식별 및 프로젝트 IAM 마커 기반 안전 통제 처방 에이전트",
-        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/antigravity-user-quota-cap",
-        "custom_placeholder_text": "Antigravity 사용량, 쿼터 초과자, 토큰 통제 관련 질문을 입력하세요...",
-        "starter_prompts": [
-            "이번 주 Antigravity 토큰 사용량 상위 개발자 TOP 5 랭킹 보여 줘",
-            "일일 토큰 쿼터 캡을 초과한 개발자 목록과 IAM 차단 마커 역할 처방해 줘",
-            "개발팀별 월간 누적 토큰 비용 예측치와 쿼터 최적화 가이드 알려 줘",
-        ],
-        "gcs_prefix": "ge_factory_custom_agent_factory",
-    },
+        "slug": item["slug"],
+        "display_name": item["name"],
+        "description": item["description"],
+        "repo_url": item["repo_url"],
+        "custom_placeholder_text": item["custom_placeholder_text"],
+        "starter_prompts": item["starter_prompts"],
+        "gcs_prefix": f"ge_factory_{item['slug'].replace('-', '_')}",
+    }
+    for item in FALLBACK_CUSTOM_CATALOG.values()
 ]
+
+
+def validate_custom_catalog_duplicates(catalog: dict):
+    """카탈로그 내 슬러그 및 디스플레이 이름의 중복을 사전 검증하여 설정 충돌을 방지한다."""
+    slugs = {}
+    names = {}
+    for idx, item in catalog.items():
+        slug = item.get("slug", "").strip()
+        name = item.get("name", "").strip()
+        if slug:
+            if slug in slugs:
+                print(f"[경고] 카탈로그 슬러그 중복 감지: '{slug}' (항목 {slugs[slug]} 및 {idx})", file=sys.stderr)
+            else:
+                slugs[slug] = idx
+        if name:
+            if name in names:
+                print(f"[경고] 카탈로그 과제명 중복 감지: '{name}' (항목 {names[name]} 및 {idx})", file=sys.stderr)
+            else:
+                names[name] = idx
+
+
+def load_custom_catalog(catalog_path: str = None) -> dict:
+    """선언적 catalog.yaml 파일로부터 엔터프라이즈 커스텀 에이전트를 동적 로드한다 (4단계 캐스케이드 탐색)."""
+    candidates = []
+    if catalog_path:
+        candidates.append(catalog_path)
+    if os.environ.get("CUSTOM_CATALOG_PATH"):
+        candidates.append(os.environ.get("CUSTOM_CATALOG_PATH"))
+    local_default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "catalog.yaml")
+    candidates.append(local_default)
+
+    for target in candidates:
+        if not target:
+            continue
+        try:
+            content = None
+            if target.startswith("http://") or target.startswith("https://"):
+                resp = requests.get(target, timeout=2.0)
+                if resp.status_code == 200:
+                    content = resp.text
+            elif os.path.exists(target):
+                with open(target, "r", encoding="utf-8") as f:
+                    content = f.read()
+
+            if content:
+                loaded_agents = []
+                try:
+                    import yaml
+                    data = yaml.safe_load(content)
+                    if isinstance(data, dict) and "custom_agents" in data:
+                        loaded_agents = data["custom_agents"]
+                except ImportError:
+                    pass
+
+                if loaded_agents:
+                    result = {}
+                    for idx, a in enumerate(loaded_agents, 1):
+                        result[idx] = {
+                            "id": a.get("slug", f"custom_{idx}"),
+                            "slug": a.get("slug", f"custom_{idx}"),
+                            "title": a.get("name", f"에이전트 {idx}"),
+                            "name": a.get("name", f"에이전트 {idx}"),
+                            "category": a.get("category", "커스텀 에이전트"),
+                            "description": a.get("description", ""),
+                            "backend_tech": a.get("backend_tech", "Agent Engine (ADK 2.11+)"),
+                            "repo_url": a.get("repo_url", ""),
+                            "custom_placeholder_text": a.get("custom_placeholder_text", "문의를 입력하세요..."),
+                            "starter_prompts": a.get("starter_prompts", []),
+                            "tools_included": ["git_clone_repo", "validate_manifest", "deploy_agent_engine", "publish_ge_gallery"],
+                            "required_roles": a.get("required_roles", ["roles/aiplatform.user", "roles/discoveryengine.editor"]),
+                        }
+                    validate_custom_catalog_duplicates(result)
+                    return result
+        except Exception:
+            pass
+
+    return FALLBACK_CUSTOM_CATALOG
 
 
 def load_env_file():
@@ -398,7 +453,9 @@ def resolve_environment(args):
 
     # 1. Project ID (CLI > .env > gcloud 활성 설정 > sample-project-id)
     project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
-    if not args.dry_run and not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
+    if args.dry_run:
+        project_id = "sample-project-id"
+    elif not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
         persist_env_value("PROJECT_ID", project_id, dry_run=args.dry_run)
 
     # 2. Region
@@ -407,11 +464,13 @@ def resolve_environment(args):
     # 3. Gemini Enterprise App ID
     ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
     if not ge_app_id:
-        # 실시간 사내 GE App 목록 포착
-        candidates = discover_ge_app_engines(project_id)
-        ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
-        if not args.dry_run and ge_app_id:
-            persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
+        if args.dry_run:
+            ge_app_id = "default"
+        else:
+            candidates = discover_ge_app_engines(project_id)
+            ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
+            if ge_app_id:
+                persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
 
     # 4. Service Account
     sa = args.custom_sa or os.environ.get("CUSTOM_AGENT_SERVICE_ACCOUNT")
@@ -426,52 +485,59 @@ def resolve_environment(args):
     }
 
 
-def select_architecture_interactive(dry_run: bool):
+def select_architecture_interactive(dry_run: bool, catalog: dict = None):
     """대화형 환경에서 커스텀 에이전트 아키텍처 칩을 선택한다."""
+    active_catalog = catalog or CUSTOM_ARCHITECTURE_CATALOG
     is_interactive = sys.stdin.isatty() and not dry_run
 
     if not is_interactive:
-        return CUSTOM_ARCHITECTURE_CATALOG[1]
+        return active_catalog.get(1, list(active_catalog.values())[0])
 
     print("\n" + "=" * 70)
     print("  Gemini Enterprise 커스텀 에이전트 팩토리 (High-code Builder)")
     print("  [원하는 커스텀 아키텍처 칩을 선택하세요]")
     print("=" * 70)
-    for cat_id, data in sorted(CUSTOM_ARCHITECTURE_CATALOG.items()):
-        print(f"  [{cat_id}] {data['title']}")
+    print("  [0] 자유 프롬프팅 (임의의 커스텀 GitHub 저장소 주소 직접 입력)")
+    for cat_id, data in sorted(active_catalog.items()):
+        print(f"  [{cat_id}] {data.get('title') or data.get('name')}")
         print(f"      - 저장소: {data['repo_url']}")
         print(f"      - 기술  : {data['backend_tech']}")
-        print(f"      - 도구  : {', '.join(data['tools_included'])}")
 
     try:
-        choice_in = input("\n아키텍처 번호를 입력하세요 [1-3, 기본값 1]: ").strip()
+        choice_in = input(f"\n아키텍처 번호를 입력하세요 [0-{len(active_catalog)}, 기본값 1]: ").strip()
         choice = int(choice_in) if choice_in else 1
     except ValueError:
         choice = 1
 
-    if choice not in CUSTOM_ARCHITECTURE_CATALOG:
-        choice = 1
-
-    selected_chip = dict(CUSTOM_ARCHITECTURE_CATALOG[choice])
-
-    # 1번(사내 커스텀 GitHub 저장소 직접 입력)인 경우 GitHub URL 입력 프롬프트 제공
-    if choice == 1:
-        default_repo = os.environ.get("GITHUB_REPO_URL") or selected_chip["repo_url"]
-        repo_prompt = f"\n배포할 GitHub 저장소 URL을 입력하세요 [기본값: {default_repo}]: "
+    if choice == 0:
+        repo_prompt = "\n배포할 커스텀 GitHub 저장소 URL을 입력하세요: "
         try:
             repo_in = input(repo_prompt).strip()
-            if repo_in:
-                selected_chip["repo_url"] = repo_in
-            else:
-                selected_chip["repo_url"] = default_repo
+            if not repo_in:
+                repo_in = "https://github.com/example-corp/my-custom-agent"
         except (EOFError, KeyboardInterrupt):
-            selected_chip["repo_url"] = default_repo
+            repo_in = "https://github.com/example-corp/my-custom-agent"
 
-        repo_name = selected_chip["repo_url"].rstrip("/").split("/")[-1].replace(".git", "")
-        selected_chip["title"] = f"사내 커스텀 에이전트 ({repo_name})"
-        selected_chip["description"] = f"GitHub 저장소({selected_chip['repo_url']}) 기반 자동 빌드 및 배포 에이전트"
+        repo_name = repo_in.rstrip("/").split("/")[-1].replace(".git", "")
+        return {
+            "id": f"custom_{repo_name}",
+            "slug": f"custom-{repo_name.lower().replace('_', '-')}",
+            "title": f"사내 커스텀 에이전트 ({repo_name})",
+            "name": f"사내 커스텀 에이전트 ({repo_name})",
+            "category": "사용자 맞춤형 에이전트",
+            "description": f"GitHub 저장소({repo_in}) 기반 자동 빌드 및 배포 에이전트",
+            "backend_tech": "Agent Engine (ADK 2.11+) + GitHub 저장소 연동",
+            "repo_url": repo_in,
+            "custom_placeholder_text": "문의를 입력하세요...",
+            "starter_prompts": ["에이전트 기능 안내해 줘"],
+            "tools_included": ["git_clone_repo", "validate_manifest", "deploy_agent_engine", "publish_ge_gallery"],
+            "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
+        }
 
-    return selected_chip
+    if choice not in active_catalog:
+        choice = 1
+
+    return dict(active_catalog[choice])
 
 
 def generate_scaffold_artifacts(chip_data: dict, env_info: dict, dry_run: bool = False):
@@ -2216,29 +2282,49 @@ flowchart TB
 """
 
 
-def run_local_scaffolding_mode(args, env_info):
-    """(보조 옵션) 로컬 단일 커스텀 에이전트(붕어빵) 소스 코드 및 매니페스트 합성 모드."""
-    chip_data = dict(CUSTOM_ARCHITECTURE_CATALOG[1])
-    if args.repo:
+def run_local_scaffolding_mode(args, env_info, catalog: dict = None):
+    """(보조 옵션) 로컬 단일 커스텀 에이전트 소스 코드 및 매니페스트 합성 모드."""
+    active_catalog = catalog or CUSTOM_ARCHITECTURE_CATALOG
+    chip_data = dict(active_catalog.get(1, list(active_catalog.values())[0]))
+
+    if args.prompt:
+        chip_data = {
+            "id": "custom_prompt_agent",
+            "slug": "custom-prompt-agent",
+            "title": f"사내 커스텀 에이전트 ({args.prompt[:15]})",
+            "name": f"사내 커스텀 에이전트 ({args.prompt[:15]})",
+            "category": "사용자 맞춤형 에이전트",
+            "description": f"사용자 요구사항({args.prompt}) 기반 맞춤형 커스텀 에이전트",
+            "backend_tech": "Agent Engine (ADK 2.11+) + 맞춤 툴체인",
+            "repo_url": "https://github.com/example-corp/my-custom-agent",
+            "custom_placeholder_text": "문의를 입력하세요...",
+            "starter_prompts": ["에이전트 기능 안내해 줘"],
+            "tools_included": ["git_clone_repo", "validate_manifest", "deploy_agent_engine", "publish_ge_gallery"],
+            "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
+        }
+    elif args.repo:
         repo_name = args.repo.rstrip("/").split("/")[-1].replace(".git", "")
         chip_data = {
             "id": "custom_repo_agent",
+            "slug": f"custom-{repo_name.lower().replace('_', '-')}",
             "title": f"사내 커스텀 에이전트 ({repo_name})",
+            "name": f"사내 커스텀 에이전트 ({repo_name})",
+            "category": "사용자 맞춤형 에이전트",
             "description": f"GitHub 저장소({args.repo}) 기반 자동 빌드 및 배포 에이전트",
             "repo_url": args.repo,
             "backend_tech": "Agent Engine (ADK 2.11+) + GitHub 저장소 연동",
             "tools_included": ["git_clone_repo", "validate_manifest", "deploy_agent_engine", "publish_ge_gallery"],
             "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
         }
-    elif args.chip and args.chip in CUSTOM_ARCHITECTURE_CATALOG:
-        chip_data = dict(CUSTOM_ARCHITECTURE_CATALOG[args.chip])
+    elif args.chip and args.chip in active_catalog:
+        chip_data = dict(active_catalog[args.chip])
     elif args.interactive:
-        chip_data = select_architecture_interactive(args.dry_run)
+        chip_data = select_architecture_interactive(args.dry_run, catalog=active_catalog)
 
     print(f"\n[로컬 스캐폴딩] 아키텍처 칩 컴파일 중...")
-    print(f"  - 타이틀    : {chip_data['title']}")
+    print(f"  - 타이틀    : {chip_data.get('title') or chip_data.get('name')}")
     print(f"  - 기술 스택 : {chip_data['backend_tech']}")
-    print(f"  - 내장 도구 : {', '.join(chip_data['tools_included'])}")
+    print(f"  - 내장 도구 : {', '.join(chip_data.get('tools_included', []))}")
 
     artifacts = generate_scaffold_artifacts(chip_data, env_info, dry_run=args.dry_run)
     print("  - 소스 코드 및 Gemini Enterprise app 외부 연동 매니페스트 합성 완료")
@@ -2263,14 +2349,16 @@ def main():
     parser.add_argument("--region", help="Agent Engine 리전 (기본: us-central1)")
     parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
     parser.add_argument("--custom-sa", help="커스텀 에이전트 서비스 계정 이메일")
+    parser.add_argument("--catalog", help="선언적 커스텀 에이전트 카탈로그 파일 경로 (catalog.yaml) 또는 원격 URL")
+    parser.add_argument("--prompt", help="사용자 정의 커스텀 에이전트 구축 프롬프트 또는 요구사항")
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--repo", help="GitHub 저장소 URL (예: https://github.com/my-org/my-agent.git) 기반 저장소 연동 자동 배포")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 커스텀 에이전트 소스 코드 샘플 추출 보조 모드")
     parser.add_argument("--write-files", action="store_true", default=False, help="scaffold/ 폴더에 소스 파일 추출")
-    parser.add_argument("--chip", type=int, choices=[1, 2, 3], help="커스텀 아키텍처 칩 번호 직접 지정 (1: 커스텀 GitHub 레포 [기본값], 2: 어드민 코파일럿, 3: 노코드 팩토리)")
+    parser.add_argument("--chip", type=int, choices=[1, 2, 3, 4], help="커스텀 아키텍처 칩 번호 직접 지정 (1: 스킬 팩토리, 2: 노코드 팩토리, 3: 커넥터 스캐폴더, 4: 어드민 코파일럿)")
     parser.add_argument("--interactive", action="store_true", default=False, help="로컬 아키텍처 대화형 선택기 가동")
-    parser.add_argument("--deploy-curated", action="store_true", default=False, help="검증된 6대 핵심 상주형 커스텀 에이전트 일괄 생성, 배포 및 GE App 사내 갤러리 등록 (중복 시 기존 에이전트 자동 삭제 후 재등록)")
+    parser.add_argument("--deploy-curated", action="store_true", default=False, help="검증된 4대 핵심 상주형 커스텀 에이전트 일괄 생성, 배포 및 GE App 사내 갤러리 등록 (중복 시 기존 에이전트 자동 삭제 후 재등록)")
 
     args = parser.parse_args()
 
@@ -2287,6 +2375,8 @@ def main():
     print("  Gemini Enterprise 커스텀 에이전트 팩토리 (gemini-enterprise-copilot-custom)")
     print("=" * 75)
 
+    catalog = load_custom_catalog(args.catalog)
+
     # 1. 환경 정보 해석
     env_info = resolve_environment(args)
     print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
@@ -2298,8 +2388,8 @@ def main():
     print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 실행 모드'}")
 
     # 로컬 스캐폴딩 보조 모드 분기 (명시적 플래그 지정 시에만 작동)
-    if args.scaffold or args.chip or args.write_files or args.interactive:
-        run_local_scaffolding_mode(args, env_info)
+    if args.scaffold or args.chip or args.write_files or args.interactive or args.prompt:
+        run_local_scaffolding_mode(args, env_info, catalog=catalog)
         return
 
     # 검증된 6대 핵심 상주형 커스텀 에이전트 일괄 배포 모드 분기

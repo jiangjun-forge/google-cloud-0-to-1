@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 자율형 사내 스킬 팩토리 (gemini-enterprise-copilot-skill)
 
-제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 구글 시트(Google Sheets), 슬랙(Slack), 지라(Jira), ERP 등 사내 시스템을 제어할 수 있는 도구 및 맞춤 업무 스킬(Open Skills / SKILL.md)을 비개발자가 대화형으로 자율 생성하고, Gemini Enterprise app Skills 목록에 원클릭으로 직접 자동 프로비저닝 및 전사 배포할 수 있도록 지원하는 사내 스킬 팩토리 솔루션이다. (As of 2026-10-19)
+제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 전자결재, 법인카드 경비 정산, 주 52시간 근태 관리, 보안성 심의 승인 등 사내 기간계 시스템을 직접 제어할 수 있는 엔터프라이즈 업무 스킬(Open Skills / SKILL.md) 카탈로그를 비개발자가 대화형 또는 자연어 자유 프롬프팅으로 자율 생성하고, Gemini Enterprise app Skills 목록에 원클릭으로 자동 프로비저닝 및 전사 배포할 수 있도록 지원하는 사내 스킬 팩토리 솔루션이다. (As of 2026-10-23)
 
 ---
 
@@ -79,6 +79,18 @@ python diagnose.py
 ```
 > [!NOTE]
 > 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)
+
+### 3) 선언적 스킬 레시피 카탈로그 지정 (선택 사항)
+사내 커스텀 카탈로그 파일이나 외부 URL 레시피를 로드하고자 할 때 `--catalog` 옵션을 지정한다:
+```bash
+python diagnose.py --dry-run --catalog ./catalog.yaml
+```
+
+### 4) 자연어 자유 프롬프팅 스킬 합성 (선택 사항)
+사내 비정형 고유 시스템 연동 요구 사항을 자연어로 직접 입력하여 OpenAPI 3.0 매니페스트를 즉시 합성한다:
+```bash
+python diagnose.py --dry-run --prompt "사내 결재 시스템(https://approval.example.com/api) 연동 및 Bearer 토큰 인증 기안문 상신 액션 스킬"
+```
 
 ---
 

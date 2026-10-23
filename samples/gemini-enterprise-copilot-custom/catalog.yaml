@@ -1,0 +1,85 @@
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+# It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+# All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+version: "1.0.0"
+description: "Gemini Enterprise app 엔터프라이즈 코파일럿 패밀리 4대 커스텀 에이전트 카탈로그"
+custom_agents:
+  # ==========================================
+  # 1. 사내 업무 도구 팩토리 (Skill Factory)
+  # ==========================================
+  - slug: "copilot-skill-factory"
+    name: "사내 스킬 팩토리 코파일럿"
+    category: "업무 도구 및 스킬 팩토리"
+    description: "사내 비개발자 임직원을 위한 대화형 Open Skills / SKILL.md 도구 팩토리 에이전트"
+    backend_tech: "Agent Engine (ADK 2.11+) + OpenAPI 3.0"
+    repo_url: "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-skill"
+    custom_placeholder_text: "생성하고 싶은 업무 연동 도구나 API를 입력하세요..."
+    starter_prompts:
+      - "전자결재 품의 상신 및 승인 상태 조회 스킬 생성해 줘"
+      - "법인카드 경비 전표 정산 및 승인 내역 조회 스킬 매니페스트 만들어 줘"
+      - "주 52시간 근태 관리 및 휴가 신청 도구 바인딩 명세 작성해 줘"
+    required_roles:
+      - "roles/aiplatform.user"
+      - "roles/discoveryengine.editor"
+      - "roles/secretmanager.secretAccessor"
+
+  # ==========================================
+  # 2. 사내 노코드 에이전트 팩토리 (Agent Factory)
+  # ==========================================
+  - slug: "copilot-agent-factory"
+    name: "사내 노코드 에이전트 팩토리"
+    category: "노코드 에이전트 팩토리"
+    description: "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리 에이전트"
+    backend_tech: "Agent Engine (ADK 2.11+) + Discovery Engine"
+    repo_url: "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent"
+    custom_placeholder_text: "만들고 싶은 사내 업무 에이전트 역할이나 페르소나를 입력하세요..."
+    starter_prompts:
+      - "신규 입사자를 위한 인사 총무 온보딩 가이드 에이전트 생성해 줘"
+      - "법인카드 경비 전표 규정 검토 및 반려 사유 안내 에이전트 만들어 줘"
+      - "표준 계약서 검토 및 법무 질의응답 전담 에이전트 등록해 줘"
+    required_roles:
+      - "roles/aiplatform.user"
+      - "roles/discoveryengine.editor"
+
+  # ==========================================
+  # 3. 기간계 데이터 커넥터 스캐폴더 (Connector Scaffolder)
+  # ==========================================
+  - slug: "copilot-connector-scaffolder"
+    name: "기간계 데이터 커넥터 스캐폴더"
+    category: "데이터 커넥터 및 지식 베이스"
+    description: "사내 기간계 시스템(그룹웨어, Jira, Confluence, ERP 등) 데이터스토어 연동 매니페스트 및 ACL 동기화 스캐폴더"
+    backend_tech: "Agent Engine (ADK 2.11+) + Discovery Engine Data Store"
+    repo_url: "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-connector"
+    custom_placeholder_text: "연동하고 싶은 사내 기간계 데이터 소스(Jira, Confluence, ERP 등)를 입력하세요..."
+    starter_prompts:
+      - "사내 그룹웨어 전자결재 및 공문서 보관함 데이터스토어 연동 매니페스트 작성해 줘"
+      - "Confluence 팀 위키 및 지식 베이스 커넥터 설정 생성해 줘"
+      - "SAP ERP 구매 주문서 및 회계 전표 동기화 커넥터 스캐폴딩해 줘"
+    required_roles:
+      - "roles/aiplatform.user"
+      - "roles/discoveryengine.editor"
+      - "roles/secretmanager.secretAccessor"
+
+  # ==========================================
+  # 4. IT 어드민 거버넌스 코파일럿 (Admin Copilot)
+  # ==========================================
+  - slug: "copilot-admin-governor"
+    name: "사내 어드민 거버넌스 코파일럿"
+    category: "IT 어드민 및 인프라 거버넌스"
+    description: "수백 개 에이전트 전수 감사(미사용 에이전트 적발), 감사 로그 자동 적재 및 사내 거버넌스 정책 통제 전담 코파일럿"
+    backend_tech: "Agent Engine (ADK 2.11+) + google-cloud-bigquery + google-cloud-logging"
+    repo_url: "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin"
+    custom_placeholder_text: "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요..."
+    starter_prompts:
+      - "사내 에이전트 중 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘"
+      - "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘"
+      - "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?"
+    required_roles:
+      - "roles/aiplatform.user"
+      - "roles/discoveryengine.editor"
+      - "roles/logging.viewer"
+      - "roles/bigquery.admin"
