@@ -1119,8 +1119,8 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                                 f"  - 공유 범위: `ALL_USERS`\n"
                                 f"  - 안내: 추가 등록 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                             )
-                    # 팩토리 자체의 Reasoning Engine 리소스 이름 동적 추출
-                    if "Agent Factory" in a.get("displayName", "") and a.get("adkAgentDefinition"):
+                    # 팩토리 자체의 Reasoning Engine 리소스 이름 동적 추출 (adkAgentDefinition 리소스 스펙 기반)
+                    if "adkAgentDefinition" in a:
                         re_engine = a.get("adkAgentDefinition", {}).get("provisionedReasoningEngine", {}).get("reasoningEngine")
                         if re_engine:
                             factory_re_res = re_engine
@@ -1200,11 +1200,23 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         except Exception as e:
             return f"[등록 예외] 에이전트 등록 중 예외 발생: {str(e)}"
 
+    def _get_agent_type(agent_dict: dict) -> str:
+        """Discovery Engine 리소스 스키마 정의 키 기반 순수 리소스 유형 판별."""
+        if "skillAgentDefinition" in agent_dict:
+            return "스킬 (/r/skills)"
+        elif "a2aAgentDefinition" in agent_dict:
+            return "A2A 데이터 에이전트 (/r/agents)"
+        elif "adkAgentDefinition" in agent_dict:
+            return "커스텀 에이전트 (/r/agents)"
+        elif "noCodeAgentDefinition" in agent_dict:
+            return "노코드 에이전트 (/r/agents)"
+        return "기타"
+
     def list_deployed_agents_tool() -> str:
         """List all currently active agents registered in Gemini Enterprise app.
 
         Returns:
-            A markdown-formatted summary table of registered agents.
+            A markdown-formatted summary table of registered agents with explicit resource definition types.
         """
         token = ""
         try:
@@ -1238,17 +1250,18 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                 return "현재 등록된 에이전트가 없습니다."
 
             lines = [
-                "### Gemini Enterprise App 등록 에이전트 현황",
+                "### Gemini Enterprise App 등록 에이전트 및 스킬 현황",
                 "",
-                "| 에이전트 명칭 | Agent ID | 상태 (State) | 공유 범위 (Sharing) |",
-                "| :--- | :--- | :--- | :--- |",
+                "| 에이전트 명칭 | Agent ID | 유형 (Type) | 상태 (State) | 공유 범위 (Sharing) |",
+                "| :--- | :--- | :--- | :--- | :--- |",
             ]
             for a in agents:
                 aid = a.get("name", "").split("/")[-1]
                 disp = a.get("displayName", "-")
+                atype = _get_agent_type(a)
                 state = a.get("state", "UNKNOWN")
                 scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
-                lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` |")
+                lines.append(f"| {disp} | `{aid}` | {atype} | `{state}` | `{scope}` |")
             return "\n".join(lines)
         except Exception as e:
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"

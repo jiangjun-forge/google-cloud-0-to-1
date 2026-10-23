@@ -1000,25 +1000,22 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
                 return f"[조회 실패] 에이전트/스킬 목록 조회 오류: {resp.text}"
 
             agents = resp.json().get("agents", [])
-            skills = [
-                a for a in agents
-                if a.get("skillAgentDefinition") is not None
-                or "스킬" in a.get("displayName", "")
-                or "Skill" in a.get("displayName", "")
-            ]
+            # 명칭(displayName) 문자열 매칭을 배제하고 Discovery Engine 리소스 스펙(skillAgentDefinition)으로만 순수 타입 필터링
+            skills = [a for a in agents if "skillAgentDefinition" in a]
             if not skills:
-                return "현재 등록된 커스텀 스킬이 없습니다. '스킬 생성'을 요청하시면 즉시 배포할 수 있습니다."
+                return "현재 사내에 등록된 공식 스킬이 없습니다. '스킬 생성'을 요청하시면 새 스킬을 즉시 배포할 수 있습니다."
 
             lines = [
-                "| 스킬 명칭 | 스킬 ID | 상태 | 공유 범위 |",
+                "### Gemini Enterprise 사내 등록 공식 스킬 현황",
+                "",
+                "| 스킬 명칭 | 스킬 ID | 규격 (Spec) | 공유 범위 |",
                 "| :--- | :--- | :--- | :--- |",
             ]
             for s in skills:
                 disp = s.get("displayName", "N/A")
                 sid = s.get("name", "").split("/")[-1]
-                st = s.get("state", "PRIVATE")
                 sc = s.get("sharingConfig", {}).get("scope", "PRIVATE")
-                lines.append(f"| {disp} | `{sid}` | `{st}` | `{sc}` |")
+                lines.append(f"| {disp} | `{sid}` | `skillAgentDefinition (/r/skills)` | `{sc}` |")
 
             return "\n".join(lines)
         except Exception as e:

@@ -1625,6 +1625,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     def _get_agent_type(agent_dict: dict) -> str:
         if "skillAgentDefinition" in agent_dict:
             return "스킬 (/r/skills)"
+        elif "a2aAgentDefinition" in agent_dict:
+            return "A2A 데이터 에이전트 (/r/agents)"
         elif "adkAgentDefinition" in agent_dict:
             return "커스텀 에이전트 (/r/agents)"
         elif "noCodeAgentDefinition" in agent_dict:

@@ -1082,6 +1082,8 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     def _get_agent_type(agent_dict: dict) -> str:
         if "skillAgentDefinition" in agent_dict:
             return "스킬 (/r/skills)"
+        elif "a2aAgentDefinition" in agent_dict:
+            return "A2A 데이터 에이전트 (/r/agents)"
         elif "adkAgentDefinition" in agent_dict:
             return "커스텀 에이전트 (/r/agents)"
         elif "noCodeAgentDefinition" in agent_dict:
@@ -1234,6 +1236,8 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
                     continue
                 if tp_f:
                     if tp_f in ("SKILL", "스킬") and "skillAgentDefinition" not in a:
+                        continue
+                    elif tp_f in ("A2A", "DATA", "데이터") and "a2aAgentDefinition" not in a:
                         continue
                     elif tp_f in ("CUSTOM", "ADK", "커스텀") and "adkAgentDefinition" not in a:
                         continue
