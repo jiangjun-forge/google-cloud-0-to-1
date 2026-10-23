@@ -18,6 +18,18 @@ All contents, designs, and code examples are subject to change, modification, or
 
 클라우드 아키텍트 및 백엔드 엔지니어가 사내 데이터베이스(BigQuery) 및 클라우드 자산 등 엔터프라이즈 환경을 결합한 High-code 커스텀 에이전트를 Agent Engine으로 원클릭 구축하고, GitHub 저장소 URL 입력만으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 에이전트를 자동 배포 및 사내 갤러리에 직결 등록할 수 있도록 지원하는 사내 커스텀 에이전트 팩토리 도구다. (As of 2026-10-19)
 
+> [!CAUTION]
+> **엔터프라이즈 보안 고지 및 운영 거버넌스 원칙 (Security Disclaimer & Governance)**:
+> 
+> 1. **도구의 위상 및 사용자 한정 (IT Administrator-Only Scope)**:
+>    - 본 커스텀 에이전트 팩토리(Custom Agent Factory)는 일반 임직원이나 개별 개발자가 임의로 에이전트를 전사 배포하는 범용 도구가 아니며, 사내 클라우드 인프라팀 및 IT 관리자(IT Administrators)가 사내 표준 에이전트를 프로비저닝하기 위해 활용하는 **내부 관리자 전용 프로비저닝 도구**다.
+> 2. **코드 취약점 및 비즈니스 로직 적법성 검증 책임 (Shared Responsibility)**:
+>    - **코드 취약점 점검**: 배포 대상 GitHub 저장소의 소스 코드는 사내 CI/CD 파이프라인 상에서 정적 분석 도구(Codemender, SAST, 시크릿 스캐너 등)를 통해 보안 취약점, 악성 코드 및 자격 증명 하드코딩 여부가 사전에 100% 검증된 것이어야 한다.
+>    - **비즈니스 로직 적법성 (HITL 승인)**: 에이전트의 목적, 데이터 접근 범위 및 도구 실행 권한은 사내 정보보호팀의 보안성 심의 또는 인간 개입 승인(Human-In-The-Loop)을 정식 통과한 승인된 저장소에 한해서만 배포를 집행하여야 한다.
+> 3. **배포 후 즉시 회수 및 정리 원칙 (Deploy-then-Teardown Best Practice)**:
+>    - 팩토리 에이전트 자체를 Gemini Enterprise app 환경에 상시 상주형(Always-on)으로 유지할 경우, 불필요한 공격 표면(Attack Surface)이 노출되거나 미승인 에이전트 배포 창구로 악용될 위험이 있다.
+>    - 따라서 사내에 필요한 공식 에이전트(BigQuery Data Agent, Admin Copilot 등)의 생성, 배포 및 사내 갤러리 등록이 완료된 즉시 **본 커스텀 에이전트 팩토리 자체는 Agent Engine 및 사내 갤러리에서 즉시 삭제/정리(Teardown)하는 것을 사내 보안 운영 대원칙으로 권장**한다.
+
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
@@ -157,6 +169,7 @@ flowchart TB
 ### 사내 갤러리 전사 활성화 및 배포 확인 가이드
 - **사내 갤러리 즉시 노출**: 본 팩토리 에이전트를 통해 생성된 신규 에이전트는 엔터프라이즈 정규 규격(`adkAgentDefinition`)으로 프로비저닝되어, 별도의 수동 승인 절차 없이 **즉시 활성화(`state: ENABLED`) 및 전사 사내 갤러리(`ALL_USERS`)**에 자동 바인딩된다.
 - **등록된 에이전트 목록 확인 및 관리**: 배포된 에이전트의 상태, 프롬프트, 도구 설정은 **Gemini Enterprise 에이전트 목록 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )**에서 확인 및 관리한다.
+- **배포 후 팩토리 자체 리소스 정리 권고 (Deploy-then-Teardown)**: 사내에 필요한 공식 에이전트의 배포와 갤러리 등록이 완료되면, 보안 공격 표면 최소화 및 미승인 에이전트 임의 배포 방지를 위해 팩토리 에이전트 자체는 반드시 리소스 정리(Teardown)를 수행한다.
 
 ### 주요 콘솔 링크
 - **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 에이전트 대화 ( https://gemini.google.com )
@@ -212,6 +225,10 @@ Google ADK 및 Agent Engine 런타임 환경에서 Pydantic v2 기반 `LlmAgent`
 
 ---
 ## 7. 리소스 정리 (Teardown) 안내
+
+> [!IMPORTANT]
+> **배포 후 팩토리 자체 리소스 정리 원칙 (Deploy-then-Teardown)**:
+> 사내 IT 관리자(IT Admin)가 사내에 필요한 공식 에이전트들을 모두 생성, 배포 및 사내 갤러리에 등록 완료한 후에는, 보안 공격 표면(Attack Surface)을 최소화하고 미승인 임의 에이전트의 난립을 방지하기 위해 **본 커스텀 에이전트 팩토리(Custom Agent Factory) 자체를 즉시 삭제/정리(Teardown)하는 것을 권장**한다. 배포된 자식 에이전트들은 독립된 Agent Engine 슬롯에서 영구 동작하므로 팩토리를 삭제해도 영향을 받지 않는다.
 
 본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 가이드를 수행한다:
 
