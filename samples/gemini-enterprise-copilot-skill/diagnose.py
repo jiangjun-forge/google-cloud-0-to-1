@@ -941,22 +941,13 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             except Exception:
                 pass
 
-            # 전사 갤러리 즉시 노출 및 ENABLED 활성화를 위해 엔터프라이즈 정규 adkAgentDefinition 규격 적용
+            # GE App 공식 좌측 메뉴 'Skills(/r/skills)' 탭 노출을 위해 공식 skillAgentDefinition 규격 적용
             body = {
                 "displayName": cleaned_name,
                 "description": description,
-                "state": "ENABLED",
                 "sharingConfig": {"scope": "ALL_USERS" if scope == "ALL_USERS" else "PRIVATE"},
-                "customPlaceholderText": f"{cleaned_name} 스킬에 전달할 작업 파라미터를 입력하세요...",
-                "starterPrompts": [
-                    {"text": f"{cleaned_name} 스킬 실행해 줘"},
-                    {"text": f"{cleaned_name} 연동 상태 점검해 줘"},
-                ],
-                "adkAgentDefinition": {
-                    "toolSettings": {"toolDescription": f"{description}\n(Instructions: {instruction})"},
-                    "provisionedReasoningEngine": {
-                        "reasoningEngine": factory_re_res or f"projects/{project_id}/locations/us-central1/reasoningEngines/1287101780492025856"
-                    },
+                "skillAgentDefinition": {
+                    "instruction": instruction,
                 },
             }
             post_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
@@ -967,12 +958,12 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             skill_id = skill_data.get("name", "").split("/")[-1]
 
             return (
-                f"### Gemini Enterprise 스킬 배포 완료\n\n"
+                f"### Gemini Enterprise 공식 스킬 배포 완료\n\n"
                 f"- **스킬 명칭**: `{cleaned_name}`\n"
                 f"- **스킬 ID**: `{skill_id}`\n"
-                f"- **공유 상태**: `ALL_USERS (사내 갤러리 전사 활성화)`\n"
-                f"- **호스팅 엔진**: `{factory_re_res or 'Enterprise Managed Reasoning Engine'}`\n"
-                f"- **확인 방법**: GE App 좌측 **사내 갤러리(/r/agents)** 또는 Skills 메뉴를 새로고침(F5)하면 본인 및 팀원들의 도구 목록에 즉시 표시됩니다."
+                f"- **공유 상태**: `ALL_USERS (전사 스킬 활성화)`\n"
+                f"- **매니페스트 규격**: `skillAgentDefinition (GE App 공식 스킬)`\n"
+                f"- **확인 방법**: GE App 좌측 **'Skills'(/r/skills)** 메뉴를 새로고침(F5)하면 공식 스킬 목록에 즉시 노출됩니다."
             )
         except Exception as e:
             return f"[예외 발생] 스킬 배포 실패: {str(e)}"

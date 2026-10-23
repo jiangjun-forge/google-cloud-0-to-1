@@ -1622,6 +1622,15 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         except Exception as e:
             return f"[예외 발생] 배포 상태 점검 실패: {str(e)}"
 
+    def _get_agent_type(agent_dict: dict) -> str:
+        if "skillAgentDefinition" in agent_dict:
+            return "스킬 (/r/skills)"
+        elif "adkAgentDefinition" in agent_dict:
+            return "커스텀 에이전트 (/r/agents)"
+        elif "noCodeAgentDefinition" in agent_dict:
+            return "노코드 에이전트 (/r/agents)"
+        return "기타"
+
     def list_deployed_agents_tool() -> str:
         """List all currently active agents registered in Gemini Enterprise app.
         
@@ -1648,17 +1657,18 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 return "현재 등록된 에이전트가 없습니다."
 
             lines = [
-                "### Gemini Enterprise App 등록 에이전트 현황",
+                "### Gemini Enterprise App 등록 에이전트 및 스킬 현황",
                 "",
-                "| 에이전트 명칭 | Agent ID | 상태 (State) | 공유 범위 (Sharing) |",
-                "| :--- | :--- | :--- | :--- |",
+                "| 에이전트/스킬 명칭 | Agent ID | 유형 (Type) | 상태 (State) | 공유 범위 (Sharing) |",
+                "| :--- | :--- | :--- | :--- | :--- |",
             ]
             for a in agents:
                 aid = a.get("name", "").split("/")[-1]
                 disp = a.get("displayName", "-")
+                atype = _get_agent_type(a)
                 state = a.get("state", "UNKNOWN")
                 scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
-                lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` |")
+                lines.append(f"| {disp} | `{aid}` | {atype} | `{state}` | `{scope}` |")
             return "\n".join(lines)
         except Exception as e:
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"

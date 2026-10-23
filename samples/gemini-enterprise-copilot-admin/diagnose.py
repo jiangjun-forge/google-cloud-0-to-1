@@ -878,9 +878,9 @@ flowchart TB
    - *"사내에 등록된 테스트용/미사용 에이전트 목록 스캔해 줘"*
    - *"테스트 에이전트들 일괄 비활성화(DISABLED) 처리해 줘"*
    - *"특정 에이전트 전사 공유(ALL_USERS) 승인 또는 비공개(PRIVATE) 회수해 줘"*
-   - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 30초 싱크 가이드 알려줘"*
-   - *"사내 도메인(`{domain}`) 선점 충돌 해결을 위한 Cloud Identity 온보딩 절차 알려줘"*
-   - *"외부 마켓플레이스 차단 및 사내 승인 에이전트 강제 조직 정책 가이드 보여줘"*
+   - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 30초 싱크 가이드 알려 줘"*
+   - *"사내 도메인(`{domain}`) 선점 충돌 해결을 위한 Cloud Identity 온보딩 절차 알려 줘"*
+   - *"외부 마켓플레이스 차단 및 사내 승인 에이전트 강제 조직 정책 가이드 보여 줘"*
 
 3. **코파일럿 에이전트 자율 동작**:
    - 어드민 코파일럿이 내장된 `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `list_deployed_agents_tool`, `get_admin_audit_queries_tool`, `get_admin_console_deeplinks_tool`을 호출하여 에이전트 확산(Sprawl) 배치 거버넌스 및 실시간 현황 감사, 1클릭 복구 gcloud 명령어를 제공한다.
@@ -1019,12 +1019,13 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 관리자 업무를 즉시 지원할 수 있는 강력한 사내 거버넌스 실행 도구가 장착되어 있습니다:
 1. `get_admin_console_deeplinks_tool`: GCP 콘솔 딥링크를 질의하거나 바로가기 링크를 요구할 때 즉시 호출하여 클릭 가능한 딥링크 표를 출력하십시오.
-2. `list_deployed_agents_tool`: 사내에 등록된 전체 활성 에이전트 목록과 콘솔 직접 링크를 실시간 조회할 때 호출하십시오.
-3. `filter_and_inspect_sprawl_agents_tool`: 특정 키워드(예: '테스트', '임시', 'FAQ'), 상태('ENABLED', 'DISABLED', 'PRIVATE'), 공유 범위('ALL_USERS', 'PRIVATE')로 사내 에이전트를 선별 조회할 때 호출하십시오.
-4. `batch_update_agents_state_tool`: 임직원이 생성하여 방치된 에이전트들의 상태를 일괄 비활성화('DISABLED')하거나 활성화('ENABLED')할 때 호출하십시오. (에이전트 ID 목록을 쉼표로 전달)
-5. `batch_update_agents_sharing_tool`: 에이전트들의 사내 공유 범위를 일괄 전사 공개('ALL_USERS')로 승인하거나 비공개('PRIVATE')로 회수할 때 호출하십시오.
-6. `batch_delete_agents_tool`: 사내에 무제한 생성된 테스트/폐기 대상 에이전트들을 일괄 영구 삭제할 때 호출하십시오. (confirm=True 필요)
-7. `get_admin_audit_queries_tool`: 좀비 에이전트 적발, 토큰 과소비 분석, 429 에러 역추적 BigQuery SQL을 요청받았을 때 호출하십시오.
+2. `list_deployed_agents_tool`: 사내에 등록된 전체 활성 에이전트 및 스킬 목록(유형별: 커스텀 에이전트, 스킬, 노코드)과 콘솔 직접 링크를 실시간 조회할 때 호출하십시오.
+3. `list_connected_datastores_tool`: 사내 Gemini Enterprise app에 연결된 데이터 저장소(Data Store / 기간계 커넥터: Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, Cloud Storage, BigQuery 등) 현황과 바인딩 상태를 실시간 조회할 때 호출하십시오.
+4. `filter_and_inspect_sprawl_agents_tool`: 특정 키워드(예: '테스트', '임시', 'FAQ'), 상태('ENABLED', 'DISABLED', 'PRIVATE'), 공유 범위('ALL_USERS', 'PRIVATE'), 유형('skill', 'custom', 'nocode')으로 사내 에이전트 및 스킬을 선별 조회할 때 호출하십시오.
+5. `batch_update_agents_state_tool`: 임직원이 생성하여 방치된 에이전트들의 상태를 일괄 비활성화('DISABLED')하거나 활성화('ENABLED')할 때 호출하십시오. (에이전트 ID 목록을 쉼표로 전달)
+6. `batch_update_agents_sharing_tool`: 에이전트들의 사내 공유 범위를 일괄 전사 공개('ALL_USERS')로 승인하거나 비공개('PRIVATE')로 회수할 때 호출하십시오.
+7. `batch_delete_agents_tool`: 사내에 무제한 생성된 테스트/폐기 대상 에이전트들을 일괄 영구 삭제할 때 호출하십시오. (confirm=True 필요)
+8. `get_admin_audit_queries_tool`: 좀비 에이전트 적발, 토큰 과소비 분석, 429 에러 역추적 BigQuery SQL을 요청받았을 때 호출하십시오.
 
 [에이전트 확산(Agent Sprawl) 배치 거버넌스 업무 시나리오]
 - 사용자가 "방치된/테스트용 에이전트 찾아서 비활성화해 줘"라고 요청하면:
@@ -1062,6 +1063,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
             ("서비스 계정 관리 콘솔", f"https://console.cloud.google.com/iam-admin/serviceaccounts?project={project_id}"),
             ("조직 정책 (Org Policy) 콘솔", f"https://console.cloud.google.com/iam-admin/orgpolicies?project={project_id}"),
             ("Cloud Billing 결제 관리 콘솔", "https://console.cloud.google.com/billing"),
+            ("Gemini Enterprise 데이터 커넥터 (Data Stores) 콘솔", f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/data-stores?project={project_id}"),
             ("Gemini Enterprise 사내 임직원 웹 포털", f"https://gemini.google.com/app/{ge_app_id}"),
             ("Gemini Enterprise 사내 에이전트 갤러리", f"https://gemini.google.com/app/{ge_app_id}/r/agents"),
         ]
@@ -1076,6 +1078,15 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
             if not cat or cat == "all" or cat in name.lower() or cat in url.lower():
                 lines.append(f"| {name} | ( {url} ) |")
         return "\n".join(lines)
+
+    def _get_agent_type(agent_dict: dict) -> str:
+        if "skillAgentDefinition" in agent_dict:
+            return "스킬 (/r/skills)"
+        elif "adkAgentDefinition" in agent_dict:
+            return "커스텀 에이전트 (/r/agents)"
+        elif "noCodeAgentDefinition" in agent_dict:
+            return "노코드 에이전트 (/r/agents)"
+        return "기타"
 
     def list_deployed_agents_tool() -> str:
         """List all currently active agents registered in Gemini Enterprise app.
@@ -1103,29 +1114,90 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
                 return "현재 등록된 에이전트가 없습니다."
 
             lines = [
-                "### Gemini Enterprise App 등록 에이전트 현황",
+                "### Gemini Enterprise App 등록 에이전트 및 스킬 현황",
                 "",
-                "| 에이전트 명칭 | Agent ID | 상태 (State) | 공유 범위 (Sharing) | 콘솔 직접 관리 |",
-                "| :--- | :--- | :--- | :--- | :--- |",
+                "| 에이전트 명칭 | Agent ID | 유형 (Type) | 상태 (State) | 공유 범위 (Sharing) | 콘솔 직접 관리 |",
+                "| :--- | :--- | :--- | :--- | :--- | :--- |",
             ]
             for a in agents:
                 aid = a.get("name", "").split("/")[-1]
                 disp = a.get("displayName", "-")
+                atype = _get_agent_type(a)
                 state = a.get("state", "UNKNOWN")
                 scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
                 agent_url = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
-                lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` | ( {agent_url} ) |")
+                lines.append(f"| {disp} | `{aid}` | {atype} | `{state}` | `{scope}` | ( {agent_url} ) |")
             return "\n".join(lines)
         except Exception as e:
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
 
-    def filter_and_inspect_sprawl_agents_tool(keyword: str = "", state_filter: str = "", scope_filter: str = "") -> str:
-        """Filter and inspect potentially unmanaged or sprawling agents by keyword, lifecycle state, or sharing scope.
+    def list_connected_datastores_tool() -> str:
+        """List all enterprise data stores and connectors (Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, Cloud Storage, BigQuery) connected to Gemini Enterprise app.
+
+        Returns:
+            A markdown-formatted summary table of connected data stores, content types, and binding status.
+        """
+        token = _get_cloud_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Goog-User-Project": project_id,
+        }
+        # 1. 대상 GE App 엔진에 바인딩된 dataStoreIds 조회
+        engine_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection/engines/{ge_app_id}"
+        )
+        bound_ids = set()
+        try:
+            eng_resp = requests.get(engine_url, headers=headers, timeout=20)
+            if eng_resp.ok:
+                bound_ids = set(eng_resp.json().get("dataStoreIds", []))
+        except Exception:
+            pass
+
+        # 2. 프로젝트 컬렉션 내 전체 DataStore 목록 조회
+        ds_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection/dataStores"
+        )
+        try:
+            resp = requests.get(ds_url, headers=headers, timeout=30)
+            if not resp.ok:
+                return f"[오류] 데이터 저장소 목록 조회 실패 (HTTP {resp.status_code}): {resp.text}"
+            data = resp.json()
+            stores = data.get("dataStores", [])
+            if not stores:
+                return f"현재 프로젝트(`{project_id}`)에 생성된 데이터 저장소(Data Store / 커넥터)가 없습니다."
+
+            lines = [
+                "### Gemini Enterprise App 데이터 저장소(Data Stores / 커넥터) 연동 현황",
+                "",
+                "| 데이터스토어 명칭 | Data Store ID | GE App 바인딩 상태 | 콘텐츠 유형 (Content) | 콘솔 직접 관리 |",
+                "| :--- | :--- | :--- | :--- | :--- |",
+            ]
+            ds_console_base = f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/data-stores?project={project_id}"
+            for s in stores:
+                sid = s.get("name", "").split("/")[-1]
+                disp = s.get("displayName", "-")
+                content_config = s.get("contentConfig", "STRUCTURED")
+                is_bound = "바인딩 완료 (ACTIVE)" if sid in bound_ids else "미바인딩 (UNBOUND)"
+                lines.append(f"| {disp} | `{sid}` | `{is_bound}` | `{content_config}` | ( {ds_console_base} ) |")
+
+            lines.append("")
+            lines.append(f"- **총 데이터 저장소 수**: {len(stores)}개 (바인딩됨: {len(bound_ids)}개)")
+            lines.append("- **신규 커넥터 연동 안내**: Jira, Confluence, Salesforce 등 신규 기업 기간계 저장소 연결은 `copilot-connector`를 통해 생성 및 바인딩하실 수 있습니다.")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"[예외 발생] 데이터 저장소 조회 실패: {str(e)}"
+
+    def filter_and_inspect_sprawl_agents_tool(keyword: str = "", state_filter: str = "", scope_filter: str = "", type_filter: str = "") -> str:
+        """Filter and inspect potentially unmanaged or sprawling agents by keyword, lifecycle state, sharing scope, or asset type.
 
         Args:
             keyword: Filter by substring in agent displayName or description (case-insensitive).
             state_filter: Filter by lifecycle state ('ENABLED', 'DISABLED', 'PRIVATE').
             scope_filter: Filter by sharing scope ('ALL_USERS', 'PRIVATE').
+            type_filter: Filter by asset type ('skill' for Skills, 'custom' for ADK Custom Agents, 'nocode' for No-code Agents).
         """
         token = _get_cloud_token()
         headers = {
@@ -1145,6 +1217,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
             kw = keyword.lower().strip()
             st_f = state_filter.upper().strip()
             sc_f = scope_filter.upper().strip()
+            tp_f = type_filter.upper().strip()
 
             filtered = []
             for a in agents:
@@ -1159,25 +1232,33 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
                     continue
                 if sc_f and scope != sc_f:
                     continue
+                if tp_f:
+                    if tp_f in ("SKILL", "스킬") and "skillAgentDefinition" not in a:
+                        continue
+                    elif tp_f in ("CUSTOM", "ADK", "커스텀") and "adkAgentDefinition" not in a:
+                        continue
+                    elif tp_f in ("NOCODE", "NO_CODE", "노코드") and "noCodeAgentDefinition" not in a:
+                        continue
                 filtered.append(a)
 
             if not filtered:
-                return f"조건(키워드='{keyword}', 상태='{state_filter}', 공유='{scope_filter}')에 일치하는 에이전트가 없습니다."
+                return f"조건(키워드='{keyword}', 상태='{state_filter}', 공유='{scope_filter}', 유형='{type_filter}')에 일치하는 에이전트가 없습니다."
 
             lines = [
                 f"### 에이전트 확산(Sprawl) 필터링 결과 ({len(filtered)}건 발견)",
                 "",
-                "| 에이전트 명칭 | Agent ID | 현재 상태 | 공유 범위 |",
-                "| :--- | :--- | :--- | :--- |",
+                "| 에이전트 명칭 | Agent ID | 유형 (Type) | 현재 상태 | 공유 범위 |",
+                "| :--- | :--- | :--- | :--- | :--- |",
             ]
             ids = []
             for a in filtered:
                 aid = a.get("name", "").split("/")[-1]
                 disp = a.get("displayName", "-")
+                atype = _get_agent_type(a)
                 state = a.get("state", "UNKNOWN")
                 scope = a.get("sharingConfig", {}).get("scope", "PRIVATE")
                 ids.append(aid)
-                lines.append(f"| {disp} | `{aid}` | `{state}` | `{scope}` |")
+                lines.append(f"| {disp} | `{aid}` | {atype} | `{state}` | `{scope}` |")
 
             lines.append("")
             lines.append(f"- **대상 Agent ID 목록**: `{','.join(ids)}`")
@@ -1413,6 +1494,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         tools=[
             get_admin_console_deeplinks_tool,
             list_deployed_agents_tool,
+            list_connected_datastores_tool,
             filter_and_inspect_sprawl_agents_tool,
             batch_update_agents_state_tool,
             batch_update_agents_sharing_tool,
@@ -1514,6 +1596,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
         "customPlaceholderText": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
         "starterPrompts": [
             {"text": "사내 등록된 테스트/미사용 에이전트 목록 스캔하고 비활성화(DISABLED) 처리해 줘"},
+            {"text": "사내 GE App에 연결된 데이터 커넥터(Data Store) 목록 조회해 줘"},
             {"text": "사내 에이전트가 100개가 넘는데 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘"},
             {"text": "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘"},
             {"text": "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?"},

@@ -601,14 +601,14 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
 - 문의처: 사내 포털 헬프데스크 및 담당 부서 공식 채널
 
 # STARTER PROMPTS (권장 질문)
-1. {title}의 지원 범위와 필수 준비 서류를 알려줘.
+1. {title}의 지원 범위와 필수 준비 서류를 알려 줘.
 2. {compliance} 기준에서 예외 적용이 가능한 사례가 있니?
 3. 현재 내 요청 건의 처리 절차와 승인 결재선을 확인해 줘.
 4. 자주 묻는 질문(FAQ) 및 주의 사항 TOP 3를 정리해 줘.
 """
 
     starter_prompts = [
-        f"{title}의 지원 범위와 필수 준비 서류를 알려줘.",
+        f"{title}의 지원 범위와 필수 준비 서류를 알려 줘.",
         f"{compliance} 기준에서 예외 적용이 가능한 사례가 있니?",
         "현재 내 요청 건의 처리 절차와 승인 결재선을 확인해 줘.",
         "자주 묻는 질문(FAQ) 및 주의 사항 TOP 3를 정리해 줘.",
@@ -1075,7 +1075,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             display_name: The display name of the agent (e.g. '사내 특허 출원 절차 가이드 에이전트').
             description: Short summary of what the agent does.
             instructions: Complete 5 golden prompt system instructions for the agent.
-            starter_prompts: Comma-separated starter questions (e.g. '특허 출원 지원 범위 알려줘, 필수 서류는 뭐야').
+            starter_prompts: Comma-separated starter questions (e.g. '특허 출원 지원 범위 알려 줘, 필수 서류는 뭐야').
         """
         token = ""
         try:
@@ -1128,9 +1128,9 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             pass
 
         prompts_list = [p.strip() for p in starter_prompts.split(",") if p.strip()] if starter_prompts else [
-            f"{display_name}의 주요 기능을 알려줘",
+            f"{display_name}의 주요 기능을 알려 줘",
             "업무 처리 절차와 승인 결재선 확인해 줘",
-            "필수 준비 서류와 주의 사항 알려줘",
+            "필수 준비 서류와 주의 사항 알려 줘",
             "자주 묻는 질문(FAQ) 정리해 줘",
         ]
 
