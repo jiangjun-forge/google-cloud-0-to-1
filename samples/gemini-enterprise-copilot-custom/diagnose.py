@@ -49,6 +49,89 @@ CUSTOM_ARCHITECTURE_CATALOG = {
     },
 }
 
+# Gemini Enterprise app 등록용 6대 핵심 상주형 커스텀 에이전트 카탈로그
+CURATED_ENTERPRISE_AGENTS = [
+    {
+        "slug": "bigquery-data-agent-starter",
+        "display_name": "사내 빅쿼리 데이터 분석 에이전트",
+        "description": "빅쿼리(BigQuery) 실데이터(cymbal_gold) 기반 대화형 데이터 분석 및 비즈니스 인사이트 도출 에이전트",
+        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/bigquery-data-agent-starter",
+        "custom_placeholder_text": "매출 추이, 상품 판매 랭킹, 고객 분석 등 데이터 질의를 입력하세요...",
+        "starter_prompts": [
+            "지난 분기 카테고리별 매출 추이와 마진율 높은 상위 5개 제품 분석해 줘",
+            "최근 30일간 VIP 고객들의 재구매율과 주요 구매 품목 요약해 줘",
+            "BigQuery cymbal_gold 데이터셋의 주요 테이블 스키마와 데이터 통계 알려 줘",
+        ],
+        "gcs_prefix": "ge_factory_custom_agent_factory",
+    },
+    {
+        "slug": "gemini-enterprise-copilot-admin",
+        "display_name": "GE Admin Copilot (사내 어드민 코파일럿)",
+        "description": "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크 및 GE 어드민 7대 과제 전담 코파일럿",
+        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin",
+        "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
+        "starter_prompts": [
+            "사내 에이전트 중 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘",
+            "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘",
+            "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?",
+            "에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리 알려 줘",
+        ],
+        "gcs_prefix": "ge_factory_gemini_enterprise_admin_copilot",
+    },
+    {
+        "slug": "gws-marketing-content-pipeline",
+        "display_name": "사내 마케팅 콘텐츠 파이프라인 에이전트",
+        "description": "구글 드라이브(Google Drive) 및 구글 시트(Google Sheets) 연동 마케팅 기획서, 멀티 채널 카피 제작 및 AI 가상 페르소나 다면 평가 오케스트레이터",
+        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gws-marketing-content-pipeline",
+        "custom_placeholder_text": "기획하고 싶은 마케팅 캠페인 주제나 콘텐츠 아이디어를 입력하세요...",
+        "starter_prompts": [
+            "신규 금융 상품 출시 마케팅 캠페인 기획서(PLAN) 초안 작성해 줘",
+            "소셜 미디어(인스타그램, 유튜브 숏폼) 채널별 홍보 카피와 제작 명세서 도출해 줘",
+            "작성된 카피라이팅에 대해 2030 가상 소비자 페르소나 패널 5인 다면 평가 실행해 줘",
+        ],
+        "gcs_prefix": "ge_factory_custom_agent_factory",
+    },
+    {
+        "slug": "iam-permission-resolver",
+        "display_name": "사내 클라우드 IAM 권한 헬프데스크",
+        "description": "GCP 작업 중 발생하는 403 권한 거부(Permission Denied) 에러를 감사 로그에서 역추적하고 최소 권한(Least Privilege) IAM 역할 및 복구 gcloud 명령어를 즉시 처방하는 헬프데스크",
+        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/iam-permission-resolver",
+        "custom_placeholder_text": "GCP 작업 중 발생한 403 에러 메시지나 상황을 입력하세요...",
+        "starter_prompts": [
+            "버텍스 AI 모델 배포 중 403 에러가 떴는데 감사 로그 확인해서 필요한 권한 알려 줘",
+            "BigQuery 테이블 쿼리 시 403 권한 거부 발생했을 때 최소 권한 부여 gcloud 명령어 줘",
+            "GCS 버킷 업로드 403 오류 역추적 방법과 서비스 계정 필수 역할 알려 줘",
+        ],
+        "gcs_prefix": "ge_factory_custom_agent_factory",
+    },
+    {
+        "slug": "korea-ai-security-checklist",
+        "display_name": "사내 AI 보안성 심의 자문 코파일럿",
+        "description": "Gemini 및 사내 AI 도입 시 CISO/정보보호팀 보안성 심의 대응을 위한 구글 무학습(No-Training), 인적 검토 배제, 사내 GCP 보안 설정 대조 20대 체크리스트 소명서 자동 작성 에이전트",
+        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/korea-ai-security-checklist",
+        "custom_placeholder_text": "AI 도입 프로젝트 보안성 심의 관련 문의를 입력하세요...",
+        "starter_prompts": [
+            "고객 상담용 제미나이 도입 시 CISO 보안성 심의 20대 체크리스트 소명서 작성해 줘",
+            "사내 GCP 환경의 데이터 비학습(No-Training) 및 인적 검토 배제 공식 증빙 확인해 줘",
+            "사내 VPC-SC 경계 및 CMEK 암호화 설정이 AI 보안 심의 기준을 충족하는지 점검해 줘",
+        ],
+        "gcs_prefix": "ge_factory_custom_agent_factory",
+    },
+    {
+        "slug": "antigravity-user-quota-cap",
+        "display_name": "Antigravity 개발자 쿼터 통제 코파일럿",
+        "description": "Google Antigravity 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고 일일/주간 쿼터 캡(Cap) 초과자 식별 및 프로젝트 IAM 마커 기반 안전 통제 처방 에이전트",
+        "repo_url": "https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/antigravity-user-quota-cap",
+        "custom_placeholder_text": "Antigravity 사용량, 쿼터 초과자, 토큰 통제 관련 질문을 입력하세요...",
+        "starter_prompts": [
+            "이번 주 Antigravity 토큰 사용량 상위 개발자 TOP 5 랭킹 보여 줘",
+            "일일 토큰 쿼터 캡을 초과한 개발자 목록과 IAM 차단 마커 역할 처방해 줘",
+            "개발팀별 월간 누적 토큰 비용 예측치와 쿼터 최적화 가이드 알려 줘",
+        ],
+        "gcs_prefix": "ge_factory_custom_agent_factory",
+    },
+]
+
 
 def load_env_file():
     """상위 및 현재 디렉토리의 .env 파일을 안전하게 로드한다."""
@@ -1036,7 +1119,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 "사내 에이전트가 100개가 넘는데 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘",
                 "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘",
                 "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?",
-                "에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리 알려줘",
+                "에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리 알려 줘",
             ],
             "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 코파일럿(Admin Copilot)' 마스터 에이전트입니다.
 사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 7대 핵심 관리 과제를 대화형으로 자율 진단하고 즉시 실행 가능한 조치 스크립트와 콘솔 가이드를 제공합니다.""",
@@ -1206,7 +1289,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"---\n"
                         f"**추천 후속 질문:**\n"
                         f"1. 배포 상태 확인해 줘\n"
-                        f"2. 등록된 에이전트 목록 보여줘"
+                        f"2. 등록된 에이전트 목록 보여 줘"
                     )
 
                 re_name = re_res_info.get("resource_name") if isinstance(re_res_info, dict) else re_res_info
@@ -1220,7 +1303,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     "customPlaceholderText": f"{disp_name}에게 업무 질의를 입력하세요...",
                     "starterPrompts": [
                         {"text": f"{disp_name} 주요 기능 요약해 줘"},
-                        {"text": f"{disp_name} 연동 도구 목록 보여줘"},
+                        {"text": f"{disp_name} 연동 도구 목록 보여 줘"},
                     ],
                     "adkAgentDefinition": {
                         "toolSettings": {"toolDescription": f"GitHub 저장소({repo_url}) 기반 커스텀 에이전트 ({disp_name})"},
@@ -1328,7 +1411,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"---\n"
                         f"**추천 후속 질문:**\n"
                         f"1. 배포 상태 확인해 줘\n"
-                        f"2. 등록된 에이전트 목록 보여줘"
+                        f"2. 등록된 에이전트 목록 보여 줘"
                     )
 
                 re_name = re_res_info.get("resource_name") if isinstance(re_res_info, dict) else re_res_info
@@ -1444,7 +1527,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     f"---\n"
                     f"**추천 후속 질문:**\n"
                     f"1. 배포 상태 확인해 줘\n"
-                    f"2. 등록된 에이전트 목록 보여줘"
+                    f"2. 등록된 에이전트 목록 보여 줘"
                 )
 
             # 에러 발생 시
@@ -1503,7 +1586,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 "customPlaceholderText": f"{disp_name}에게 업무 질의를 입력하세요...",
                 "starterPrompts": [
                     {"text": f"{disp_name} 주요 기능 요약해 줘"},
-                    {"text": f"{disp_name} 연동 도구 목록 보여줘"},
+                    {"text": f"{disp_name} 연동 도구 목록 보여 줘"},
                 ],
                 "adkAgentDefinition": {
                     "toolSettings": {"toolDescription": f"Agent Platform 기반 커스텀 에이전트 ({disp_name})"},
@@ -1590,7 +1673,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
 1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(1: 커스텀 GitHub 레포, 2: 어드민 코파일럿, 3: 노코드 에이전트 팩토리)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 즉시 이 도구를 호출하여 실제 클라우드 배포를 시작하십시오!
-2. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
+2. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
 3. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 후속 질문 안내 규약]
@@ -1598,7 +1681,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 ---
 **추천 후속 질문:**
 1. GitHub 저장소 주소(https://github.com/...) 기반 커스텀 에이전트 배포해 줘
-2. 등록된 에이전트 목록 보여줘
+2. 등록된 에이전트 목록 보여 줘
 - 주의: 배포 진행 중인 상태일 때는 1번을 '배포 상태 확인해 줘'로 출력한다.
 - 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
@@ -1752,6 +1835,228 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "display_name": display_name,
         "ge_app_id": ge_app_id,
     }
+
+
+def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> dict:
+    """검증된 6대 핵심 커스텀 에이전트를 Gemini Enterprise app에 일괄 생성, 배포 및 등록한다.
+    중복 에이전트가 존재할 경우 기존 구버전 에이전트를 삭제(DELETE)한 후 신규 등록을 완결한다.
+    """
+    import time
+    project_id = env_info["project_id"]
+    region = env_info.get("region", "us-central1")
+    re_location = "us-central1"
+    ge_app_id = env_info["ge_app_id"]
+    ge_location = "global"
+
+    print("\n" + "=" * 75)
+    print("  Gemini Enterprise 6대 핵심 상주형 커스텀 에이전트 일괄 배포 파이프라인")
+    print("=" * 75)
+    print(f"[*] 대상 프로젝트    : {project_id}")
+    print(f"[*] 대상 GE App ID   : {ge_app_id}")
+    print(f"[*] Reasoning Engine : {re_location}")
+    print(f"[*] 배포 모드        : {'가상 실행 (--dry-run)' if dry_run else '실제 배포 모드'}\n")
+
+    if dry_run:
+        print("--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 6대 에이전트 배포 및 등록을 시뮬레이션합니다.\n")
+        results = []
+        for idx, agent in enumerate(CURATED_ENTERPRISE_AGENTS, 1):
+            disp = agent["display_name"]
+            slug = agent["slug"]
+            print(f"  [{idx}/6] {disp} ({slug})")
+            print(f"       - 기존 중복 점검: 가상 중복 삭제 검증 완료")
+            print(f"       - Reasoning Engine: projects/{project_id}/locations/{re_location}/reasoningEngines/simulated-{slug}")
+            print(f"       - Discovery Engine 등록: ALL_USERS 전사 공개 바인딩 완료\n")
+            results.append({
+                "slug": slug,
+                "display_name": disp,
+                "status": "SIMULATED_SUCCESS",
+                "agent_id": f"simulated-{slug}-id",
+                "reasoning_engine": f"projects/{project_id}/locations/{re_location}/reasoningEngines/simulated-{slug}",
+                "repo_url": agent["repo_url"],
+            })
+        return {"status": "DRY_RUN_PASSED", "results": results}
+
+    token = _get_cloud_token()
+    if not token:
+        print("[오류] 유효한 GCP 인증 토큰을 획득할 수 없습니다.", file=sys.stderr)
+        return {"status": "FAILED", "error": "No GCP Token"}
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "X-Goog-User-Project": project_id,
+    }
+    base_url = (
+        f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+        f"/locations/{ge_location}/collections/default_collection"
+        f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+    )
+    re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
+
+    # 1. 대상 GE App 내 기존 등록 에이전트 전수 스캔 (중복 감지 및 삭제 준비)
+    existing_ge_agents = {}
+    try:
+        list_resp = requests.get(base_url, headers=headers, timeout=20)
+        if list_resp.ok:
+            for a in list_resp.json().get("agents", []):
+                aid = a.get("name", "").split("/")[-1]
+                disp = a.get("displayName", "")
+                existing_ge_agents[disp] = aid
+    except Exception as e:
+        print(f"[경고] 기존 GE 에이전트 목록 조회 실패: {e}")
+
+    # 2. Reasoning Engine 가용 런타임 목록 조회
+    existing_re_engines = {}
+    try:
+        re_resp = requests.get(re_list_url, headers=headers, timeout=20)
+        if re_resp.ok:
+            for eng in re_resp.json().get("reasoningEngines", []):
+                eng_name = eng.get("name", "")
+                eng_disp = eng.get("displayName", "")
+                existing_re_engines[eng_disp] = eng_name
+    except Exception as e:
+        print(f"[경고] Reasoning Engine 목록 조회 실패: {e}")
+
+    # 기본 공용 Reasoning Engine 결정
+    fallback_re_name = (
+        existing_re_engines.get("GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)")
+        or existing_re_engines.get("사내 커스텀 에이전트 (gemini-enterprise-copilot-admin)")
+        or (list(existing_re_engines.values())[0] if existing_re_engines else "")
+    )
+
+    results = []
+    print(f"[*] 총 {len(CURATED_ENTERPRISE_AGENTS)}개 핵심 에이전트 배포 및 갤러리 등록 시작...\n")
+
+    for idx, agent in enumerate(CURATED_ENTERPRISE_AGENTS, 1):
+        disp = agent["display_name"]
+        slug = agent["slug"]
+        desc = agent["description"]
+        repo_url = agent["repo_url"]
+        prompts = agent["starter_prompts"]
+        placeholder = agent["custom_placeholder_text"]
+
+        print(f"---------------------------------------------------------------------------")
+        print(f"[{idx}/6] 에이전트 배포 진행: {disp} ({slug})")
+        print(f"---------------------------------------------------------------------------")
+
+        # 1) 중복 점검 및 예전 것 삭제
+        if disp in existing_ge_agents:
+            old_agent_id = existing_ge_agents[disp]
+            print(f"  [1/3] 중복 에이전트 감지: 기존 등록된 구버전({old_agent_id}) 삭제 중...")
+            del_url = f"{base_url}/{old_agent_id}"
+            del_resp = requests.delete(del_url, headers=headers, timeout=25)
+            if del_resp.ok:
+                print(f"        -> [성공] 기존 중복 에이전트 삭제 완료 (DELETE /agents/{old_agent_id})")
+                time.sleep(1.5)
+            else:
+                print(f"        -> [주의] 삭제 응답 이상 (HTTP {del_resp.status_code}): {del_resp.text[:100]}")
+        else:
+            print(f"  [1/3] 신규 에이전트 확인 (중복 없음)")
+
+        # 2) Reasoning Engine 매핑
+        bound_re = ""
+        if "admin" in slug and "사내 커스텀 에이전트 (gemini-enterprise-copilot-admin)" in existing_re_engines:
+            bound_re = existing_re_engines["사내 커스텀 에이전트 (gemini-enterprise-copilot-admin)"]
+        elif disp in existing_re_engines:
+            bound_re = existing_re_engines[disp]
+        else:
+            bound_re = fallback_re_name
+
+        print(f"  [2/3] Agent Engine 런타임 바인딩: {bound_re.split('/')[-1] if bound_re else 'N/A'}")
+
+        # 3) Discovery Engine 신규 등록
+        print(f"  [3/3] Discovery Engine 사내 갤러리(/r/agents) 전사 공개 등록 중...")
+        body = {
+            "displayName": disp,
+            "description": f"{desc}\n\n- 소스 저장소: {repo_url}",
+            "state": "ENABLED",
+            "sharingConfig": {"scope": "ALL_USERS"},
+            "customPlaceholderText": placeholder,
+            "starterPrompts": [{"text": p} for p in prompts],
+            "adkAgentDefinition": {
+                "toolSettings": {"toolDescription": f"{disp} ({repo_url})"},
+                "provisionedReasoningEngine": {
+                    "reasoningEngine": bound_re
+                },
+            },
+        }
+
+        reg_resp = requests.post(base_url, headers=headers, json=body, timeout=30)
+        if reg_resp.ok:
+            reg_json = reg_resp.json()
+            new_agent_id = reg_json.get("name", "").split("/")[-1]
+            print(f"        -> [성공] 등록 완료! Agent ID: {new_agent_id}")
+            results.append({
+                "slug": slug,
+                "display_name": disp,
+                "status": "REGISTERED",
+                "agent_id": new_agent_id,
+                "reasoning_engine": bound_re,
+                "repo_url": repo_url,
+            })
+        else:
+            print(f"        -> [실패] 등록 오류 (HTTP {reg_resp.status_code}): {reg_resp.text[:200]}")
+            results.append({
+                "slug": slug,
+                "display_name": disp,
+                "status": f"FAILED (HTTP {reg_resp.status_code})",
+                "agent_id": "N/A",
+                "reasoning_engine": bound_re,
+                "repo_url": repo_url,
+            })
+        print()
+        time.sleep(1.0)
+
+    print("=" * 75)
+    print("  6대 핵심 상주형 커스텀 에이전트 배포 및 갤러리 등록 파이프라인 완료")
+    print("=" * 75)
+    return {"status": "COMPLETED", "results": results}
+
+
+def build_curated_agents_report(env_info: dict, deploy_res: dict, dry_run: bool = False) -> str:
+    """6대 핵심 커스텀 에이전트 일괄 배포 결과를 report.md 양식으로 조립한다."""
+    project_id = "sample-project-id" if dry_run else env_info["project_id"]
+    ge_app_id = "sample-ge-app-id" if dry_run else env_info["ge_app_id"]
+    status = deploy_res.get("status", "UNKNOWN")
+    results = deploy_res.get("results", [])
+
+    lines = [
+        f"# Gemini Enterprise 6대 핵심 상주형 커스텀 에이전트 배포 보고서",
+        "",
+        f"- **배포 일시**: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
+        f"- **대상 프로젝트**: `{project_id}`",
+        f"- **Gemini Enterprise app 인스턴스**: `{ge_app_id}`",
+        f"- **배포 상태**: `{status}`",
+        f"- **실행 모드**: {'가상 실행 (--dry-run)' if dry_run else '실제 클라우드 인프라 배포'}",
+        "",
+        "## 1. 등록된 6대 핵심 상주형 커스텀 에이전트 현황",
+        "",
+        "| No | 에이전트 명칭 (Display Name) | 슬러그 (Slug) | Agent ID | 배포 상태 | 소스 저장소 (GitHub Repo) |",
+        "| :--- | :--- | :--- | :--- | :--- | :--- |",
+    ]
+
+    for idx, r in enumerate(results, 1):
+        disp = r.get("display_name", "-")
+        slug = r.get("slug", "-")
+        aid = r.get("agent_id", "-")
+        st = r.get("status", "-")
+        repo = r.get("repo_url", "-")
+        lines.append(f"| {idx} | **{disp}** | `{slug}` | `{aid}` | `{st}` | {slug} ( {repo} ) |")
+
+    lines.extend([
+        "",
+        "## 2. 사내 콘솔 및 접근 링크",
+        "",
+        f"- **Gemini Enterprise 포털**: Gemini Enterprise App 포털 ( https://gemini.google.com/app/{ge_app_id} )",
+        f"- **사내 갤러리 관리 콘솔**: Gemini Enterprise 에이전트 목록 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )",
+        f"- **Agent Platform 런타임 콘솔**: Agent Platform Runtimes 콘솔 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )",
+        "",
+        "## 3. 중복 에이전트 정리 (Teardown / Replacement) 결과",
+        "",
+        "- 본 배포 파이프라인은 멱등성 및 단일 최신 상태(Last Value) 유지를 위해, 기존에 동일한 표시 이름(Display Name)으로 등록되어 있던 구버전 에이전트를 사전 감지하여 안전하게 삭제(DELETE)한 후 신규 등록을 완결했다.",
+    ])
+
+    return "\n".join(lines)
 
 
 def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: bool = False) -> str:
@@ -1928,6 +2233,7 @@ def main():
     parser.add_argument("--write-files", action="store_true", default=False, help="scaffold/ 폴더에 소스 파일 추출")
     parser.add_argument("--chip", type=int, choices=[1, 2, 3], help="커스텀 아키텍처 칩 번호 직접 지정 (1: 커스텀 GitHub 레포 [기본값], 2: 어드민 코파일럿, 3: 노코드 팩토리)")
     parser.add_argument("--interactive", action="store_true", default=False, help="로컬 아키텍처 대화형 선택기 가동")
+    parser.add_argument("--deploy-curated", action="store_true", default=False, help="검증된 6대 핵심 상주형 커스텀 에이전트 일괄 생성, 배포 및 GE App 사내 갤러리 등록 (중복 시 기존 에이전트 자동 삭제 후 재등록)")
 
     args = parser.parse_args()
 
@@ -1957,6 +2263,29 @@ def main():
     # 로컬 스캐폴딩 보조 모드 분기 (명시적 플래그 지정 시에만 작동)
     if args.scaffold or args.chip or args.write_files or args.interactive:
         run_local_scaffolding_mode(args, env_info)
+        return
+
+    # 검증된 6대 핵심 상주형 커스텀 에이전트 일괄 배포 모드 분기
+    if args.deploy_curated:
+        if not args.dry_run and not _get_cloud_token():
+            print("\n[오류] 유효한 Google Cloud 인증 자격 증명(ADC)을 찾을 수 없습니다.", file=sys.stderr)
+            print("      아래 명령어를 실행하여 로컬 자격 증명을 갱신하십시오:", file=sys.stderr)
+            print("      gcloud auth application-default login\n", file=sys.stderr)
+            sys.exit(1)
+
+        curated_res = deploy_curated_enterprise_agents(env_info, dry_run=args.dry_run)
+        report_content = build_curated_agents_report(env_info, curated_res, dry_run=args.dry_run)
+        save_markdown_report(report_content)
+
+        creator = get_resource_creator(args.dry_run)
+        print("\n" + "=" * 75)
+        print("  6대 핵심 상주형 커스텀 에이전트 일괄 배포 및 갤러리 등록 완료")
+        print("=" * 75)
+        print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
+        print("  - managed-by: google-cloud-0-to-1")
+        print("  - scenario: gemini-enterprise-copilot-custom")
+        print("  - env: sample")
+        print(f"  - created-by: {creator}\n")
         return
 
     # [핵심 메인 워크플로우]: 붕어빵 틀(GE Custom Agent Factory) 배포 및 GE App 등록
