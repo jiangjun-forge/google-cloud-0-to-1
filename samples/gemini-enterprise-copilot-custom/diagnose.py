@@ -1333,8 +1333,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         except Exception:
             pass
 
-        # 2. GitHub 저장소 URL 기반 커스텀 에이전트 배포 분기
-        if "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm or github_repo_url:
+        # 2. GitHub 저장소 URL 기반 커스텀 에이전트 배포 분기 (0번 옵션)
+        if norm in ("0", "0번") or "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm or github_repo_url:
             repo_url = github_repo_url or "https://github.com/jiangjun-forge/google-cloud-0-to-1"
             repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
             disp_name = repo_name  # 영문 슬러그 원형 유지
@@ -1424,15 +1424,15 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             except Exception as e:
                 return f"[예외 발생] 커스텀 에이전트 프로비저닝 실패: {str(e)}"
 
-        # 3. 프리셋 에이전트 타겟팅 (코파일럿 패밀리 4대 에이전트)
+        # 3. 프리셋 에이전트 타겟팅 (코파일럿 패밀리 4대 에이전트 및 번호 매핑)
         targets = []
-        if "skill" in norm or "스킬" in norm or "도구" in norm:
+        if norm in ("1", "1번") or "skill" in norm or "스킬" in norm or "도구" in norm:
             targets = ["copilot-skill-factory"]
-        elif "agent" in norm or "노코드" in norm or "에이전트" in norm:
+        elif norm in ("2", "2번") or "agent" in norm or "노코드" in norm or "에이전트" in norm:
             targets = ["copilot-agent-factory"]
-        elif "connector" in norm or "커넥터" in norm or "기간계" in norm or "데이터스토어" in norm:
+        elif norm in ("3", "3번") or "connector" in norm or "커넥터" in norm or "기간계" in norm or "데이터스토어" in norm:
             targets = ["copilot-connector-scaffolder"]
-        elif "admin" in norm or "어드민" in norm or "거버넌스" in norm:
+        elif norm in ("4", "4번") or "admin" in norm or "어드민" in norm or "거버넌스" in norm:
             targets = ["copilot-admin-governor"]
         else:
             for k in preset_agents_spec:
@@ -1441,7 +1441,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     break
 
         if not targets:
-            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 대상: 1. 사내 스킬 팩토리 코파일럿, 2. 사내 노코드 에이전트 팩토리, 3. 기간계 데이터 커넥터 스캐폴더, 4. 사내 어드민 거버넌스 코파일럿, 5. GitHub 저장소 주소 기반 배포"
+            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 대상: 1번(사내 스킬 팩토리 코파일럿), 2번(사내 노코드 에이전트 팩토리), 3번(기간계 데이터 커넥터 스캐폴더), 4번(사내 어드민 거버넌스 코파일럿), 또는 GitHub 저장소 주소"
 
         # 4. 실시간 Reasoning Engine 동적 탐색 (하드코딩 ID 완전 배제)
         dynamic_engines = {}
@@ -1767,6 +1767,30 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         except Exception as e:
             return f"[예외 발생] 에이전트 목록 조회 실패: {str(e)}"
 
+    def show_custom_catalog_tool() -> str:
+        """Show the complete enterprise copilot catalog (all 5 architecture recipes including option 0).
+        
+        Returns:
+            A formatted markdown table detailing the complete architecture catalog.
+        """
+        lines = [
+            "### 사내 커스텀 에이전트 팩토리 전체 카탈로그 (총 5대 레시피)",
+            "",
+            "임직원은 번호(0~4번)를 말씀하시거나 에이전트 명칭을 입력하여 즉시 사내 갤러리에 프로비저닝할 수 있습니다:",
+            "",
+            "| 번호 | 아키텍처 명칭 | 분류 | 주요 역할 및 기능 | 표준 소스 저장소 |",
+            "| :---: | :--- | :--- | :--- | :--- |",
+            "| **0** | **자유 저장소 직접 배포** | 커스텀 빌드 | 사내 개발팀의 GitHub 저장소 URL 직접 연동 자동 빌드 | GitHub URL 직접 입력 |",
+            "| **1** | **사내 스킬 팩토리 코파일럿** | 도구 팩토리 | Open Skills / SKILL.md 기반 사내 업무 연동 도구 자율 생성 | `samples/gemini-enterprise-copilot-skill` |",
+            "| **2** | **사내 노코드 에이전트 팩토리** | 에이전트 팩토리 | 비개발자 임직원 전용 사내 맞춤 AI 에이전트 대화형 제작 | `samples/gemini-enterprise-copilot-agent` |",
+            "| **3** | **기간계 데이터 커넥터 스캐폴더** | 데이터 연동 | Jira, Confluence, ERP 등 데이터스토어 연동 매니페스트 | `samples/gemini-enterprise-copilot-connector` |",
+            "| **4** | **사내 어드민 거버넌스 코파일럿** | IT 거버넌스 | 좀비 에이전트 전수 적발, 감사 로그 BigQuery 싱크 및 거버넌스 | `samples/gemini-enterprise-copilot-admin` |",
+            "",
+            "**배포 실행 안내**:",
+            "원하시는 에이전트의 번호나 명칭(예: *'1번 배포해 줘'* 또는 *'사내 노코드 에이전트 팩토리 배포해 줘'*)을 말씀해 주시면 즉시 프로비저닝을 시작합니다.",
+        ]
+        return "\n".join(lines)
+
     instruction = """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 팩토리(Custom Agent Factory)' 에이전트입니다.
 사내 데이터베이스(BigQuery) 및 클라우드 자산과 결합한 High-code 맞춤 에이전트를 원클릭으로 구축하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 에이전트 자동 배포를 안내하고 실행합니다.
 
@@ -1781,18 +1805,19 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
-1. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(1: 사내 스킬 팩토리 코파일럿, 2: 사내 노코드 에이전트 팩토리, 3: 기간계 데이터 커넥터 스캐폴더, 4: 사내 어드민 거버넌스 코파일럿)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 즉시 이 도구를 호출하여 실제 클라우드 배포를 시작하십시오!
-2. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
-3. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
+1. `show_custom_catalog_tool`: 사용자가 카탈로그, 전체 목록, 배포 가능한 에이전트 종류, 레시피 목록 등을 물어보거나 확인을 요청하면 즉시 이 도구를 호출하여 0~4번 전체 카탈로그 표를 출력하십시오!
+2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 즉시 이 도구를 호출하여 실제 클라우드 배포를 시작하십시오!
+3. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
+4. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 후속 질문 안내 규약]
 모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 '추천 후속 질문'을 명확히 안내한다:
 ---
 **추천 후속 질문:**
-1. 사내 스킬 팩토리 코파일럿 배포해 줘
-2. 사내 노코드 에이전트 팩토리 배포해 줘
-3. 기간계 데이터 커넥터 스캐폴더 배포해 줘
-4. 사내 어드민 거버넌스 코파일럿 배포해 줘
+1. 배포 가능한 에이전트 카탈로그 보여 줘
+2. 사내 스킬 팩토리 코파일럿 배포해 줘
+3. 사내 노코드 에이전트 팩토리 배포해 줘
+4. 사내 등록된 에이전트 목록 조회해 줘
 - 주의: 배포 진행 중인 상태일 때는 1번을 '배포 상태 확인해 줘'로 출력한다.
 - 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
@@ -1806,7 +1831,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
-        tools=[deploy_enterprise_agent_tool, check_deployment_status_tool, list_deployed_agents_tool],
+        tools=[show_custom_catalog_tool, deploy_enterprise_agent_tool, check_deployment_status_tool, list_deployed_agents_tool],
     )
 
     class ResilientAdkApp(agent_engines.AdkApp):
@@ -1902,10 +1927,10 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "sharingConfig": {"scope": "ALL_USERS"},
         "customPlaceholderText": "GitHub 저장소 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
         "starterPrompts": [
+            {"text": "배포 가능한 에이전트 카탈로그 보여 줘"},
             {"text": "사내 스킬 팩토리 코파일럿 배포해 줘"},
+            {"text": "사내 등록된 에이전트 목록 조회해 줘"},
             {"text": "사내 노코드 에이전트 팩토리 배포해 줘"},
-            {"text": "기간계 데이터 커넥터 스캐폴더 배포해 줘"},
-            {"text": "사내 어드민 거버넌스 코파일럿 배포해 줘"},
         ],
         "adkAgentDefinition": {
             "toolSettings": {"toolDescription": description},
