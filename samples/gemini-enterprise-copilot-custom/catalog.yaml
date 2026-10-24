@@ -5,81 +5,694 @@
 # It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
 # All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
 
-version: "1.0.0"
-description: "Gemini Enterprise app 엔터프라이즈 코파일럿 패밀리 4대 커스텀 에이전트 카탈로그"
+version: 2.0.0
+description: Google Cloud 0-to-1 전체 46개 미니 프로젝트 엔터프라이즈 커스텀 에이전트 카탈로그
 custom_agents:
-  # ==========================================
-  # 1. 사내 업무 도구 팩토리 (Skill Factory)
-  # ==========================================
-  - slug: "copilot-skill-factory"
-    name: "사내 스킬 팩토리 코파일럿"
-    category: "업무 도구 및 스킬 팩토리"
-    description: "사내 비개발자 임직원을 위한 대화형 Open Skills / SKILL.md 도구 팩토리 에이전트"
-    backend_tech: "Agent Engine (ADK 2.11+) + OpenAPI 3.0"
-    repo_url: "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-skill"
-    custom_placeholder_text: "생성하고 싶은 업무 연동 도구나 API를 입력하세요..."
-    starter_prompts:
-      - "전자결재 품의 상신 및 승인 상태 조회 스킬 생성해 줘"
-      - "법인카드 경비 전표 정산 및 승인 내역 조회 스킬 매니페스트 만들어 줘"
-      - "주 52시간 근태 관리 및 휴가 신청 도구 바인딩 명세 작성해 줘"
-    required_roles:
-      - "roles/aiplatform.user"
-      - "roles/discoveryengine.editor"
-      - "roles/secretmanager.secretAccessor"
-
-  # ==========================================
-  # 2. 사내 노코드 에이전트 팩토리 (Agent Factory)
-  # ==========================================
-  - slug: "copilot-agent-factory"
-    name: "사내 노코드 에이전트 팩토리"
-    category: "노코드 에이전트 팩토리"
-    description: "사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리 에이전트"
-    backend_tech: "Agent Engine (ADK 2.11+) + Discovery Engine"
-    repo_url: "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent"
-    custom_placeholder_text: "만들고 싶은 사내 업무 에이전트 역할이나 페르소나를 입력하세요..."
-    starter_prompts:
-      - "신규 입사자를 위한 인사 총무 온보딩 가이드 에이전트 생성해 줘"
-      - "법인카드 경비 전표 규정 검토 및 반려 사유 안내 에이전트 만들어 줘"
-      - "표준 계약서 검토 및 법무 질의응답 전담 에이전트 등록해 줘"
-    required_roles:
-      - "roles/aiplatform.user"
-      - "roles/discoveryengine.editor"
-
-  # ==========================================
-  # 3. 기간계 데이터 커넥터 스캐폴더 (Connector Scaffolder)
-  # ==========================================
-  - slug: "copilot-connector-scaffolder"
-    name: "기간계 데이터 커넥터 스캐폴더"
-    category: "데이터 커넥터 및 지식 베이스"
-    description: "사내 기간계 시스템(그룹웨어, Jira, Confluence, ERP 등) 데이터스토어 연동 매니페스트 및 ACL 동기화 스캐폴더"
-    backend_tech: "Agent Engine (ADK 2.11+) + Discovery Engine Data Store"
-    repo_url: "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-connector"
-    custom_placeholder_text: "연동하고 싶은 사내 기간계 데이터 소스(Jira, Confluence, ERP 등)를 입력하세요..."
-    starter_prompts:
-      - "사내 그룹웨어 전자결재 및 공문서 보관함 데이터스토어 연동 매니페스트 작성해 줘"
-      - "Confluence 팀 위키 및 지식 베이스 커넥터 설정 생성해 줘"
-      - "SAP ERP 구매 주문서 및 회계 전표 동기화 커넥터 스캐폴딩해 줘"
-    required_roles:
-      - "roles/aiplatform.user"
-      - "roles/discoveryengine.editor"
-      - "roles/secretmanager.secretAccessor"
-
-  # ==========================================
-  # 4. IT 어드민 거버넌스 코파일럿 (Admin Copilot)
-  # ==========================================
-  - slug: "copilot-admin-governor"
-    name: "사내 어드민 거버넌스 코파일럿"
-    category: "IT 어드민 및 인프라 거버넌스"
-    description: "수백 개 에이전트 전수 감사(미사용 에이전트 적발), 감사 로그 자동 적재 및 사내 거버넌스 정책 통제 전담 코파일럿"
-    backend_tech: "Agent Engine (ADK 2.11+) + google-cloud-bigquery + google-cloud-logging"
-    repo_url: "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin"
-    custom_placeholder_text: "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요..."
-    starter_prompts:
-      - "사내 에이전트 중 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘"
-      - "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘"
-      - "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?"
-    required_roles:
-      - "roles/aiplatform.user"
-      - "roles/discoveryengine.editor"
-      - "roles/logging.viewer"
-      - "roles/bigquery.admin"
+- slug: antigravity-user-quota-cap
+  name: Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기
+  category: 생성형 AI 및 데이터 분석
+  description: Google Antigravity 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고, 일일/주간 쿼터 캡(Cap) 초과자를 식별하여 프로젝트 IAM 마커 역할 기반의 안전한 통제 처방을 제공하는
+    진단 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/antigravity-user-quota-cap
+  custom_placeholder_text: Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: bigquery-data-agent-semantic-enricher
+  name: BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드
+  category: 생성형 AI 및 데이터 분석
+  description: BigQuery Data Agent(Gemini in BigQuery, 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅
+    문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, Dataplex 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로
+    보강(Enrichment)하는 실무 진단 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/bigquery-data-agent-semantic-enricher
+  custom_placeholder_text: BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: bigquery-data-agent-starter
+  name: BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드
+  category: 생성형 AI 및 데이터 분석
+  description: 45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(--setup-demo)로 BigQuery 스몰셋 데이터셋(cymbal_gold)과 실데이터를 10초 만에 자동 구축하고, 구글 1P 완전 관리형
+    GDA dataAgents REST API를 통해 CLI 원클릭(--deploy-agent)으로 데이터 에이전트를 프로비저닝하며, A2A 표준 규격 기반으로 Gemini Enterprise app에 직결 연동하는
+    워크숍 스타터 키트다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/bigquery-data-agent-starter
+  custom_placeholder_text: BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: cloud-nat-port-exhaustion-guard
+  name: Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기
+  category: 인프라 및 네트워크 복원력
+  description: GKE 클러스터 및 Compute Engine 환경에서 외부 API 호출 시 발생하는 간헐적 타임아웃 장애의 근본 원인을 규명하기 위해, Cloud NAT의 동적 포트 할당(DPA) 확장 지연과
+    자원 고갈 패킷 드롭(OUT_OF_RESOURCES)을 1분 만에 교차 진단하고 최적의 최소 할당 포트와 커널 재시도 파라미터를 도출하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/cloud-nat-port-exhaustion-guard
+  custom_placeholder_text: Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: cloud-run-cud-optimizer
+  name: Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석 진단 에이전트
+  category: FinOps 및 비용 최적화
+  description: 서버리스 Cloud Run 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough)
+    기반의 최적 Compute Flexible CUD 약정액과 사전 리소스 최적화 가이드를 처방하는 진단 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/cloud-run-cud-optimizer
+  custom_placeholder_text: Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: cloud-run-direct-vpc-egress-checker
+  name: Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기
+  category: 인프라 및 네트워크 복원력
+  description: Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access
+    및 Cloud NAT 라우팅 정합성을 1분 만에 일괄 진단하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/cloud-run-direct-vpc-egress-checker
+  custom_placeholder_text: Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: embedding-dimension-tradeoff-analyzer
+  name: 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기
+  category: 생성형 AI 및 데이터 분석
+  description: 'Vertex AI 임베딩 모델(한국어/다국어: text-multilingual-embedding-002, 영어/코드: text-embedding-005)의 Matryoshka Representation
+    Learning(MRL) 기능을 활용하여, 사내 실데이터 또는 표본을 대상으로 차원 축소 시 인덱스 용량 절감량과 검색 정확도 손실률 트레이드오프를 1분 만에 비교 분석하는 도구다.'
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/embedding-dimension-tradeoff-analyzer
+  custom_placeholder_text: 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: fcm-push-quota-guard
+  name: FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단 진단 에이전트
+  category: 업무 자동화 및 모바일
+  description: 모바일 앱 대규모 마케팅이나 긴급 공지 발송 시 FCM(Firebase Cloud Messaging) HTTP v1 API의 다운스트림 메시지 할당량 초과로 발생하는 429 Quota Exceeded
+    쓰로틀링과 메시지 유실을 진단하고, 사전 쿼터 증설 및 토큰 버킷 속도 제한, Full Jitter 지수 백오프 복원력 패턴을 처방한다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/fcm-push-quota-guard
+  custom_placeholder_text: FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gce-instance-flexibility-planner
+  name: 컴퓨트 엔진 & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기
+  category: 인프라 및 네트워크 복원력
+  description: Compute Engine 및 GKE 환경에서 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED)으로 인한 배포 중단 및 파드 적체 위험을 방어하기 위해, GKE Custom
+    ComputeClass(CCC)의 능동적 마이그레이션 및 Compute Engine Regional MIG의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하는 진단 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gce-instance-flexibility-planner
+  custom_placeholder_text: 컴퓨트 엔진 & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 컴퓨트 엔진 & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 컴퓨트 엔진 & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 컴퓨트 엔진 & GKE 인스턴스 유연성 및 스톡아웃 방어 설계기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gce-region-latency-probe
+  name: 서울 워크로드 대체 컴퓨트 엔진 GPU 및 인프라 리전 레이턴시/가용성 프로브 진단 에이전트
+  category: 인프라 및 네트워크 복원력
+  description: 서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와
+    GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gce-region-latency-probe
+  custom_placeholder_text: 서울 워크로드 대체 컴퓨트 엔진 GPU 및 인프라 리전 레이턴시/가용성 프로브 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 서울 워크로드 대체 컴퓨트 엔진 GPU 및 인프라 리전 레이턴시/가용성 프로브 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 서울 워크로드 대체 컴퓨트 엔진 GPU 및 인프라 리전 레이턴시/가용성 프로브 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 서울 워크로드 대체 컴퓨트 엔진 GPU 및 인프라 리전 레이턴시/가용성 프로브 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gce-reservation-guard
+  name: 컴퓨트 엔진 하드웨어 예약 및 CUD 용량 보장 통합 진단기
+  category: 인프라 및 네트워크 복원력
+  description: Compute Engine 리전 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 장애를 감사 로그로 역추적하고, CUD 약정 대비 물리적 Reservation 확보율 및 Future
+    Reservation(FR) 신청/제출 상태를 통합 진단하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gce-reservation-guard
+  custom_placeholder_text: 컴퓨트 엔진 하드웨어 예약 및 CUD 용량 보장 통합 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 컴퓨트 엔진 하드웨어 예약 및 CUD 용량 보장 통합 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 컴퓨트 엔진 하드웨어 예약 및 CUD 용량 보장 통합 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 컴퓨트 엔진 하드웨어 예약 및 CUD 용량 보장 통합 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-billing-spike
+  name: 제미나이 API 비용 급증 원인 진단 진단 에이전트
+  category: FinOps 및 비용 최적화
+  description: 데이터 액세스 감사 로그(Audit Logs)가 꺼져 있어도, 구글 클라우드 기본 모니터링 지표를 통해 **어떤 인증 수단(API 키, 서비스 계정, OAuth 등)에서 Gemini 호출 비용이
+    급증했는지 1분 만에 규명**하는 진단 가이드다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-billing-spike
+  custom_placeholder_text: 제미나이 API 비용 급증 원인 진단 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 API 비용 급증 원인 진단 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 API 비용 급증 원인 진단 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 API 비용 급증 원인 진단 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-agent-resolver
+  name: 제미나이 엔터프라이즈 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트/조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책, IAM 권한, VPC-SC 격리를
+    진단하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-agent-resolver
+  custom_placeholder_text: 제미나이 엔터프라이즈 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 엔터프라이즈 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 엔터프라이즈 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 엔터프라이즈 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-analytics-exporter
+  name: 제미나이 엔터프라이즈 사용자 채택률 분석 및 유휴 라이선스 회수 진단기
+  category: FinOps 및 비용 최적화
+  description: 전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 BigQuery 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는
+    도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-analytics-exporter
+  custom_placeholder_text: 제미나이 엔터프라이즈 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 엔터프라이즈 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 엔터프라이즈 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 엔터프라이즈 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-copilot-admin
+  name: GE In-Chat Admin Copilot (사내 어드민 코파일럿)
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: 사내 IT 어드민 및 인프라 팀을 위해 도메인 선점 충돌, 외부 마켓플레이스 차단 거버넌스, 유휴 라이선스 회수, Overage 과금 방어, 사내망 FQDN 허용 등 5대 관리 과제를 대화형으로
+    자율 진단하고 조치 가이드를 제공하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-admin
+  custom_placeholder_text: Gemini Enterprise 어드민 코파일럿 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Gemini Enterprise 어드민 코파일럿 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Gemini Enterprise 어드민 코파일럿 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Gemini Enterprise 어드민 코파일럿 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-copilot-agent
+  name: GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: Gemini Enterprise app 환경에서 비개발자 임직원이 대화형 인터뷰와 추천 칩으로 노코드 에이전트를 자율 생성하고 대행 서비스 계정으로 안전하게 등록하는 자율형 사내 에이전트 팩토리
+    도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-agent
+  custom_placeholder_text: Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-copilot-connector
+  name: GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive 등 기업 기간계 저장소를 Gemini Enterprise app에 연결하기
+    위한 데이터 저장소(Data Store) 매니페스트, Secret Manager 보안 볼트 연동 및 문서 레벨 ACL 동기화 설정을 대화형으로 자율 생성하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-connector
+  custom_placeholder_text: Gemini Enterprise 데이터 커넥터 스캐폴더 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Gemini Enterprise 데이터 커넥터 스캐폴더 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Gemini Enterprise 데이터 커넥터 스캐폴더 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Gemini Enterprise 데이터 커넥터 스캐폴더 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-copilot-custom
+  name: GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: 사내 BigQuery, ERP, 모니터링 시스템 등 복잡한 기업 기간계 자산을 결합한 High-code 커스텀 에이전트(Agent Platform / Agent Engine)를 원클릭 스캐폴딩하고,
+    GitHub 레포 URL 기반으로 Gemini Enterprise app에 자동 배포 및 사내 갤러리에 직결 등록하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-custom
+  custom_placeholder_text: Gemini Enterprise 커스텀 에이전트 팩토리 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Gemini Enterprise 커스텀 에이전트 팩토리 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Gemini Enterprise 커스텀 에이전트 팩토리 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Gemini Enterprise 커스텀 에이전트 팩토리 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-copilot-skill
+  name: GE In-Chat Skill Factory (사내 스킬 팩토리)
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: Gemini Enterprise app 환경에서 에이전트가 호출할 사내 시스템(Google Sheets, Slack, Jira, ERP 등) 연동 도구(Tools / Extensions)를 대화형으로
+    자율 생성하고 Secret Manager 보안 볼트 및 거버넌스 승인을 거쳐 등록하는 사내 스킬 팩토리 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-skill
+  custom_placeholder_text: Gemini Enterprise 자율형 사내 스킬 팩토리 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Gemini Enterprise 자율형 사내 스킬 팩토리 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Gemini Enterprise 자율형 사내 스킬 팩토리 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Gemini Enterprise 자율형 사내 스킬 팩토리 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-domain-resolver
+  name: 제미나이 엔터프라이즈 도입을 위한 도메인 충돌 진단기
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: Gemini Enterprise 도입 시 사내 도메인 선점 충돌을 진단하고 Cloud Identity Free 계정 기반의 테넌트 배포를 지원하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-domain-resolver
+  custom_placeholder_text: 제미나이 엔터프라이즈 도입을 위한 도메인 충돌 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 엔터프라이즈 도입을 위한 도메인 충돌 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 엔터프라이즈 도입을 위한 도메인 충돌 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 엔터프라이즈 도입을 위한 도메인 충돌 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-fqdn-checker
+  name: 제미나이 엔터프라이즈 사내망 방화벽 FQDN 연결 진단기
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: 사내망 보안 정책상 와일드카드 도메인 등록이 불가한 환경에서 Gemini Enterprise App 정상 구동에 필요한 필수 코어 API, 인증, 정적 에셋 FQDN의 아웃바운드 443 및 DNS
+    연결성을 1분 만에 일괄 진단하고 방화벽 허용 명세를 자동 생성하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-fqdn-checker
+  custom_placeholder_text: 제미나이 엔터프라이즈 사내망 방화벽 FQDN 연결 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 엔터프라이즈 사내망 방화벽 FQDN 연결 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 엔터프라이즈 사내망 방화벽 FQDN 연결 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 엔터프라이즈 사내망 방화벽 FQDN 연결 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-governance-guard
+  name: 제미나이 엔터프라이즈 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: Gemini Enterprise 환경에서 외부 공개 에이전트 마켓플레이스 접근 차단, 사내 승인 커스텀 에이전트 강제 정책, 미승인 스킬 체이닝 위험 및 Microsoft Entra ID(Workforce
+    Identity Federation) SSO 400 인증 오류를 1분 만에 자동 진단하고 복구 처방을 제공하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-governance-guard
+  custom_placeholder_text: 제미나이 엔터프라이즈 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 엔터프라이즈 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 엔터프라이즈 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 엔터프라이즈 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-latency-profiler
+  name: 제미나이 엔터프라이즈 파이프라인 구간별 지연 시간 분석기
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: 엔터프라이즈 생성형 AI 파이프라인에서 발생하는 체감 지연 시간(Latency)의 원인을 전송 네트워크(DNS, TCP, TLS), 보안 가드레일(Model Armor, Sensitive Data
+    Protection), 컨텍스트 증강(Search Grounding), 순수 LLM 추론(TTFT, 토큰 생성 속도) 구간별로 분해 계측하여 워터폴(Waterfall) 차트 및 병목 최적화 권고안을 제공하는 실측
+    진단 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-latency-profiler
+  custom_placeholder_text: 제미나이 엔터프라이즈 파이프라인 구간별 지연 시간 분석기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 엔터프라이즈 파이프라인 구간별 지연 시간 분석기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 엔터프라이즈 파이프라인 구간별 지연 시간 분석기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 엔터프라이즈 파이프라인 구간별 지연 시간 분석기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-overage-guard
+  name: 제미나이 엔터프라이즈 추가 과금 방어 및 비인가 API 호출 차단 가드 진단 에이전트
+  category: FinOps 및 비용 최적화
+  description: Gemini Enterprise 도입 환경에서 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 방어뿐만 아니라, 임직원이 Google AI Studio에서 회사 결제 계정으로 API 키를 발급하거나
+    유료 API를 호출하는 섀도우 과금 누수를 차단하고 계열사 중간 관리자 권한 거버넌스를 진단하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-overage-guard
+  custom_placeholder_text: 제미나이 엔터프라이즈 추가 과금 방어 및 비인가 API 호출 차단 가드 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 엔터프라이즈 추가 과금 방어 및 비인가 API 호출 차단 가드 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 엔터프라이즈 추가 과금 방어 및 비인가 API 호출 차단 가드 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 엔터프라이즈 추가 과금 방어 및 비인가 API 호출 차단 가드 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-usage-by-account
+  name: Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석기
+  category: 엔터프라이즈 코파일럿 및 거버넌스
+  description: Gemini Enterprise app 공식 내장 프롬프트/응답 로깅 기능 안내 및 BigQuery 로그 기반 계정별 토큰 사용량/지연시간 분석 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-usage-by-account
+  custom_placeholder_text: Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-legacy-sdk-scanner
+  name: 구형 제미나이 SDK 탐색 및 신규 SDK 마이그레이션 진단기
+  category: 생성형 AI 및 데이터 분석
+  description: 소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인
+    `google-genai`로의 마이그레이션 가이드를 1분 만에 제공하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-legacy-sdk-scanner
+  custom_placeholder_text: 구형 제미나이 SDK 탐색 및 신규 SDK 마이그레이션 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 구형 제미나이 SDK 탐색 및 신규 SDK 마이그레이션 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 구형 제미나이 SDK 탐색 및 신규 SDK 마이그레이션 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 구형 제미나이 SDK 탐색 및 신규 SDK 마이그레이션 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-quota-cost-alert
+  name: 제미나이 API 비용 및 쿼터 임계치 실시간 경보 자동화 진단기
+  category: FinOps 및 비용 최적화
+  description: 제미나이(Gemini) API 비용 급증 및 예산 임계치 도달 시, Cloud Pub/Sub과 Cloud Functions를 연동하여 실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로
+    차단하는 안전 아키텍처를 검증하고 시뮬레이션하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-quota-cost-alert
+  custom_placeholder_text: 제미나이 API 비용 및 쿼터 임계치 실시간 경보 자동화 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 API 비용 및 쿼터 임계치 실시간 경보 자동화 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 API 비용 및 쿼터 임계치 실시간 경보 자동화 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 API 비용 및 쿼터 임계치 실시간 경보 자동화 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-request-response-logging
+  name: 제미나이 API 요청 및 응답 BigQuery 자동 로깅 진단 에이전트
+  category: 생성형 AI 및 데이터 분석
+  description: 별도의 복잡한 엔드포인트 프록시 서버 구축 없이, 제미나이(Gemini) 파운데이션 모델 자체의 설정을 통해 모든 프롬프트 요청 및 응답 데이터를 BigQuery로 자동 내보내고 사용자별 토큰
+    소비량을 1분 만에 분석하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-request-response-logging
+  custom_placeholder_text: 제미나이 API 요청 및 응답 BigQuery 자동 로깅 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 API 요청 및 응답 BigQuery 자동 로깅 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 API 요청 및 응답 BigQuery 자동 로깅 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 API 요청 및 응답 BigQuery 자동 로깅 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-resilience-checker
+  name: 제미나이 API 복원력 패턴 자가 진단 진단 에이전트
+  category: 생성형 AI 및 데이터 분석
+  description: 제미나이(Gemini) API 호출 소스 코드에서 429 과부하 에러와 일시적 네트워크 장애를 방어하기 위한 지수 백오프, 지터(무작위 대기), 최대 재시도 제약, 폴백 모델 체인 구비 여부를
+    1분 만에 정적 진단하고 표준 처방 코드를 제시하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-resilience-checker
+  custom_placeholder_text: 제미나이 API 복원력 패턴 자가 진단 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 API 복원력 패턴 자가 진단 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 API 복원력 패턴 자가 진단 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 API 복원력 패턴 자가 진단 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-vpc-sc-denial-resolver
+  name: 제미나이 VPC Service Controls 차단 감사 추적 및 처방 진단 에이전트
+  category: 보안, 규제 및 컴플라이언스
+  description: 제미나이(Gemini / Vertex AI) API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서
+    역추적하고 거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-vpc-sc-denial-resolver
+  custom_placeholder_text: 제미나이 VPC Service Controls 차단 감사 추적 및 처방 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 제미나이 VPC Service Controls 차단 감사 추적 및 처방 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 제미나이 VPC Service Controls 차단 감사 추적 및 처방 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 제미나이 VPC Service Controls 차단 감사 추적 및 처방 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gke-ingress-502-resolver
+  name: GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기 진단 에이전트
+  category: 인프라 및 네트워크 복원력
+  description: GKE 클러스터의 파드가 정상 기동 중임에도 외부 또는 내부 HTTP(S) 로드 밸런서에서 간헐적 또는 전면적으로 반환되는 502 Bad Gateway 오류의 4대 원인(헬스 체크 방화벽 차단,
+    프로브 경로 불일치, NEG Pod Readiness Gate 미충족, Keepalive 타임아웃 역전)을 1분 만에 교차 진단하고 복구 YAML 및 방화벽 명령을 도출하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gke-ingress-502-resolver
+  custom_placeholder_text: GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gke-multi-cluster-inference-gateway
+  name: Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기
+  category: 인프라 및 네트워크 복원력
+  description: 대규모 AI/LLM 서빙 환경에서 다중 리전 및 멀티 클라우드에 분산된 수십 개 GPU/TPU 쿠버네티스 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연
+    시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검
+    및 처방하는 아키텍처 진단 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gke-multi-cluster-inference-gateway
+  custom_placeholder_text: Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gke-source-ip-snat-guard
+  name: GKE 소스 IP 보존 및 SNAT/부하 불균형 진단기
+  category: 인프라 및 네트워크 복원력
+  description: 'GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 트래픽의 출발지 IP(Client IP) 유실(kube-proxy 2-Hop SNAT) 현상과
+    externalTrafficPolicy: Local 전환 시 발생하는 파드 부하 불균등(Pod Hotspotting) 위험을 1분 만에 자동 진단하고 최적 k8s 매니페스트를 처방하는 도구다.'
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gke-source-ip-snat-guard
+  custom_placeholder_text: GKE 소스 IP 보존 및 SNAT/부하 불균형 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - GKE 소스 IP 보존 및 SNAT/부하 불균형 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - GKE 소스 IP 보존 및 SNAT/부하 불균형 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - GKE 소스 IP 보존 및 SNAT/부하 불균형 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gws-marketing-content-pipeline
+  name: 구글 워크스페이스 마케팅 콘텐츠 파이프라인 진단 에이전트
+  category: 업무 자동화 및 워크스페이스
+  description: Copyright 2026 Google LLC. All Rights Reserved.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gws-marketing-content-pipeline
+  custom_placeholder_text: 구글 워크스페이스 마케팅 콘텐츠 파이프라인 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 구글 워크스페이스 마케팅 콘텐츠 파이프라인 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 구글 워크스페이스 마케팅 콘텐츠 파이프라인 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 구글 워크스페이스 마케팅 콘텐츠 파이프라인 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: iam-permission-resolver
+  name: GCP IAM 권한 거부 감사 역추적 및 원클릭 복구 진단 에이전트
+  category: 보안, 규제 및 컴플라이언스
+  description: GCP 클라우드 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM
+    역할 및 즉시 복구...
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/iam-permission-resolver
+  custom_placeholder_text: GCP IAM 권한 거부 감사 역추적 및 원클릭 복구 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - GCP IAM 권한 거부 감사 역추적 및 원클릭 복구 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - GCP IAM 권한 거부 감사 역추적 및 원클릭 복구 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - GCP IAM 권한 거부 감사 역추적 및 원클릭 복구 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: kms-key-rotation-outage-guard
+  name: Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 진단 에이전트
+  category: 보안, 규제 및 컴플라이언스
+  description: Cloud KMS 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 Cloud Storage 객체 및 영구 데이터의 복호화 실패로 인한
+    대형 서비...
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/kms-key-rotation-outage-guard
+  custom_placeholder_text: Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: korea-ai-security-checklist
+  name: Gemini & Gemini Enterprise 도입을 위한 한국형 AI 보안성 심의 체크리스트 진단기
+  category: 보안, 규제 및 컴플라이언스
+  description: Gemini 및 Gemini Enterprise 도입 시 사내 정보보호팀과 CISO 보안성 심의에 대응하기 위해 구글 공식 무학습(No-Training), 인적 검토 배제, ISO 42001
+    및 사내 GCP 인프라 실제 설정을 종합 대조하여 20대 핵심 보안 체크리스트 완제품 소명서를 자동 생성하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/korea-ai-security-checklist
+  custom_placeholder_text: Gemini & Gemini Enterprise 도입을 위한 한국형 AI 보안성 심의 체크리스트 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Gemini & Gemini Enterprise 도입을 위한 한국형 AI 보안성 심의 체크리스트 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Gemini & Gemini Enterprise 도입을 위한 한국형 AI 보안성 심의 체크리스트 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Gemini & Gemini Enterprise 도입을 위한 한국형 AI 보안성 심의 체크리스트 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: korea-model-armor-guard
+  name: 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기
+  category: 보안, 규제 및 컴플라이언스
+  description: 대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전을
+    진단하고 온소일 살균 처방을 제공하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/korea-model-armor-guard
+  custom_placeholder_text: 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: korea-nct-compliance-checker
+  name: 국가 핵심 기술 생성형 AI 보안 통제 및 데이터 주권 진단기
+  category: 보안, 규제 및 컴플라이언스
+  description: 대한민국 산업기술보호법 및 산자부 국가 핵심 기술 클라우드 보안 관리 안내서에 따른 7대 핵심 기술적 통제와 데이터 주권을 진단하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/korea-nct-compliance-checker
+  custom_placeholder_text: 국가 핵심 기술 생성형 AI 보안 통제 및 데이터 주권 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 국가 핵심 기술 생성형 AI 보안 통제 및 데이터 주권 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 국가 핵심 기술 생성형 AI 보안 통제 및 데이터 주권 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 국가 핵심 기술 생성형 AI 보안 통제 및 데이터 주권 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: korea-regulatory-perimeter-guard
+  name: 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드
+  category: 보안, 규제 및 컴플라이언스
+  description: 대한민국 금융 분야 망 분리 개선 로드맵 및 전자금융감독규정에 따라 퍼블릭 클라우드 인프라가 책임져야 하는 9대 핵심 기술적 통제를 종합 진단하는 도구다.
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/korea-regulatory-perimeter-guard
+  custom_placeholder_text: 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 혁신 금융 서비스 규제 준수 보안 경계 진단 가이드 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: lro-polling-quota-guard
+  name: Google Cloud LRO 비동기 작업 폴링 쿼터 고갈 및 429 장애 진단 도구
+  category: 인프라 및 네트워크 복원력
+  description: 'Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations: Speech-to-Text, Document AI, Video Intelligence, Translation
+    등) 파이프라인에서 대시보드상 요청 RPM이 정상임에도 발생하는 원인 불명의 429 RESOURCE_EXHAUSTED 장애를 진단하고, Python SDK 비동기 폴링(google-api-core) 지수 백오프
+    최적화 및 비동기 분리 아키텍처를 처방하는 도구다.'
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/lro-polling-quota-guard
+  custom_placeholder_text: Google Cloud LRO 비동기 작업 폴링 쿼터 고갈 및 429 장애 진단 도구 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Google Cloud LRO 비동기 작업 폴링 쿼터 고갈 및 429 장애 진단 도구 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Google Cloud LRO 비동기 작업 폴링 쿼터 고갈 및 429 장애 진단 도구 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Google Cloud LRO 비동기 작업 폴링 쿼터 고갈 및 429 장애 진단 도구 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: org-policy-resolver
+  name: GCP 조직 정책 위반 감사 역추적 및 복구 진단 에이전트
+  category: 보안, 규제 및 컴플라이언스
+  description: GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정책 제약 조건(Constraints) 위반 에러를 감사 로그에서 역추적하고, **위반된 제약 조건 ID와 즉시 복구/우회 가능한
+    gcloud 명령어를 1...
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/org-policy-resolver
+  custom_placeholder_text: GCP 조직 정책 위반 감사 역추적 및 복구 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - GCP 조직 정책 위반 감사 역추적 및 복구 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - GCP 조직 정책 위반 감사 역추적 및 복구 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - GCP 조직 정책 위반 감사 역추적 및 복구 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: service-account-leak-investigator
+  name: 서비스 계정 유출 긴급 대응 및 감사 로그 역추적기 진단 에이전트
+  category: 보안, 규제 및 컴플라이언스
+  description: 유출된 서비스 계정 키의 악용 이력을 Cloud Audit Logs로 전수 추적하고, 위험 키 비활성화 및 Workload Identity Federation 전환을 지원하는 보안 긴급 대응
+    진...
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/service-account-leak-investigator
+  custom_placeholder_text: 서비스 계정 유출 긴급 대응 및 감사 로그 역추적기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 서비스 계정 유출 긴급 대응 및 감사 로그 역추적기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 서비스 계정 유출 긴급 대응 및 감사 로그 역추적기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 서비스 계정 유출 긴급 대응 및 감사 로그 역추적기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: storage-transfer-secure-uploader
+  name: 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기
+  category: 인프라 및 네트워크 복원력
+  description: 온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 Cloud KMS 암호화 및 무결성 검증을 거쳐 Cloud...
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/storage-transfer-secure-uploader
+  custom_placeholder_text: 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: swg-tenant-access-guard
+  name: 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단 진단 에이전트
+  category: 보안, 규제 및 컴플라이언스
+  description: 금융권 및 엔터프라이즈 환경에서 사내 관문 프록시(SWG)의 테넌트 제한 HTTP 헤더 주입 상태와 Context-Aware Access(CAA) 인가 단말기 접근 통제 정책을 종합 진단하여,
+    금융보안원 생성형 ...
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/swg-tenant-access-guard
+  custom_placeholder_text: 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - 사내 관문 SWG 헤더 주입 및 Context-Aware Access 단말기 인가 진단 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: vertex-search-grounding-validator
+  name: Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기
+  category: 생성형 AI 및 데이터 분석
+  description: Agent Platform 및 RAG 파이프라인에서 Cloud Storage 원본 문서와 Vertex AI Search 데이터 저장소(Data Store) 간의 색인 누락, 청...
+  backend_tech: Agent Engine (ADK 2.11+) + Python
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/vertex-search-grounding-validator
+  custom_placeholder_text: Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기 관련 증상이나 진단 요구사항을 입력하세요...
+  starter_prompts:
+  - Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기 주요 발생 증상 및 진단 체크리스트 확인해 줘
+  - Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기 사전 준비 사항 및 필요 IAM 권한 안내해 줘
+  - Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기 조치 가이드 및 권장 명령어 알려줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor

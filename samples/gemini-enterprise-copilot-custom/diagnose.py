@@ -1983,9 +1983,9 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     }
 
 
-def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> dict:
-    """검증된 6대 핵심 커스텀 에이전트를 Gemini Enterprise app에 일괄 생성, 배포 및 등록한다.
-    중복 에이전트가 존재할 경우 기존 구버전 에이전트를 삭제(DELETE)한 후 신규 등록을 완결한다.
+def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False, catalog: dict = None) -> dict:
+    """선언적 카탈로그에 등록된 엔터프라이즈 커스텀 에이전트들을 Gemini Enterprise app에 일괄 생성, 배포 및 등록한다.
+    중복 에이전트가 존재할 경우 최신 상태를 확인하여 멱등성 있게 업데이트 또는 재등록을 완결한다.
     """
     import time
     project_id = env_info["project_id"]
@@ -1994,8 +1994,12 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> d
     ge_app_id = env_info["ge_app_id"]
     ge_location = "global"
 
+    # 타깃 카탈로그 목록 확정 (catalog 인자 우선, 없으면 load_custom_catalog 호출)
+    effective_catalog = catalog if catalog else load_custom_catalog()
+    target_agents = list(effective_catalog.values())
+
     print("\n" + "=" * 75)
-    print("  Gemini Enterprise 6대 핵심 상주형 커스텀 에이전트 일괄 배포 파이프라인")
+    print(f"  Gemini Enterprise 커스텀 에이전트 일괄 배포 파이프라인 (총 {len(target_agents)}개)")
     print("=" * 75)
     print(f"[*] 대상 프로젝트    : {project_id}")
     print(f"[*] 대상 GE App ID   : {ge_app_id}")
@@ -2003,22 +2007,23 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> d
     print(f"[*] 배포 모드        : {'가상 실행 (--dry-run)' if dry_run else '실제 배포 모드'}\n")
 
     if dry_run:
-        print("--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 6대 에이전트 배포 및 등록을 시뮬레이션합니다.\n")
+        print(f"--> [가상 실행 모드 (--dry-run)] 실제 배포 없이 {len(target_agents)}개 에이전트 배포 및 등록을 시뮬레이션합니다.\n")
         results = []
-        for idx, agent in enumerate(CURATED_ENTERPRISE_AGENTS, 1):
-            disp = agent["display_name"]
-            slug = agent["slug"]
-            print(f"  [{idx}/6] {disp} ({slug})")
-            print(f"       - 기존 중복 점검: 가상 중복 삭제 검증 완료")
-            print(f"       - Reasoning Engine: projects/{project_id}/locations/{re_location}/reasoningEngines/simulated-{slug}")
-            print(f"       - Discovery Engine 등록: ALL_USERS 전사 공개 바인딩 완료\n")
+        for idx, agent in enumerate(target_agents, 1):
+            disp = agent.get("name") or agent.get("display_name", f"에이전트 {idx}")
+            slug = agent.get("slug", f"sample-slug-{idx}")
+            repo_url = agent.get("repo_url", "")
+            print(f"  [{idx:2d}/{len(target_agents)}] {disp} ({slug})")
+            print(f"         - 기존 중복 점검: 가상 중복 검증 완료")
+            print(f"         - Reasoning Engine: projects/{project_id}/locations/{re_location}/reasoningEngines/simulated-{slug}")
+            print(f"         - Discovery Engine 등록: ALL_USERS 전사 공개 바인딩 완료\n")
             results.append({
                 "slug": slug,
                 "display_name": disp,
                 "status": "SIMULATED_SUCCESS",
                 "agent_id": f"simulated-{slug}-id",
                 "reasoning_engine": f"projects/{project_id}/locations/{re_location}/reasoningEngines/simulated-{slug}",
-                "repo_url": agent["repo_url"],
+                "repo_url": repo_url,
             })
         return {"status": "DRY_RUN_PASSED", "results": results}
 
@@ -2039,15 +2044,32 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> d
     )
     re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
 
-    # 1. 대상 GE App 내 기존 등록 에이전트 전수 스캔 (중복 감지 및 삭제 준비)
+    # 1. 대상 GE App 내 기존 등록 에이전트 전수 스캔 (완전한 페이지네이션 적용)
     existing_ge_agents = {}
+    existing_ge_slugs = {}
     try:
-        list_resp = requests.get(base_url, headers=headers, timeout=20)
-        if list_resp.ok:
-            for a in list_resp.json().get("agents", []):
+        page_token = ""
+        while True:
+            fetch_url = f"{base_url}?pageSize=100"
+            if page_token:
+                fetch_url += f"&pageToken={page_token}"
+            list_resp = requests.get(fetch_url, headers=headers, timeout=20)
+            if not list_resp.ok:
+                print(f"[경고] 기존 GE 에이전트 목록 조회 실패: HTTP {list_resp.status_code}")
+                break
+            data = list_resp.json()
+            for a in data.get("agents", []):
                 aid = a.get("name", "").split("/")[-1]
                 disp = a.get("displayName", "")
                 existing_ge_agents[disp] = aid
+                desc = a.get("description", "")
+                slug_match = re.search(r"\[Slug:\s*([a-zA-Z0-9\-_]+)\]", desc)
+                if slug_match:
+                    existing_ge_slugs[slug_match.group(1)] = aid
+            page_token = data.get("nextPageToken")
+            if not page_token:
+                break
+        print(f"[*] 사내 기존 등록 에이전트 {len(existing_ge_agents)}개 전수 스캔 완료.")
     except Exception as e:
         print(f"[경고] 기존 GE 에이전트 목록 조회 실패: {e}")
 
@@ -2060,10 +2082,11 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> d
                 eng_name = eng.get("name", "")
                 eng_disp = eng.get("displayName", "")
                 existing_re_engines[eng_disp] = eng_name
+        print(f"[*] 가용 Agent Engine 호스팅 런타임 {len(existing_re_engines)}개 감지 완료.")
     except Exception as e:
         print(f"[경고] Reasoning Engine 목록 조회 실패: {e}")
 
-    # 기본 공용 Reasoning Engine 결정
+    # 기본 공용 Reasoning Engine 결정 (GE Custom Agent Factory 마스터 엔진)
     fallback_re_name = (
         existing_re_engines.get("GE Custom Agent Factory (사내 커스텀 에이전트 팩토리)")
         or existing_re_engines.get("사내 커스텀 에이전트 (gemini-enterprise-copilot-admin)")
@@ -2071,38 +2094,49 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> d
     )
 
     results = []
-    print(f"[*] 총 {len(CURATED_ENTERPRISE_AGENTS)}개 핵심 에이전트 배포 및 갤러리 등록 시작...\n")
+    print(f"[*] 총 {len(target_agents)}개 커스텀 에이전트 배포 및 갤러리 등록 시작...\n")
 
-    for idx, agent in enumerate(CURATED_ENTERPRISE_AGENTS, 1):
-        disp = agent["display_name"]
-        slug = agent["slug"]
-        desc = agent["description"]
-        repo_url = agent["repo_url"]
-        prompts = agent["starter_prompts"]
-        placeholder = agent["custom_placeholder_text"]
+    for idx, agent in enumerate(target_agents, 1):
+        disp = agent.get("name") or agent.get("display_name", f"에이전트 {idx}")
+        slug = agent.get("slug", f"sample-{idx}")
+        desc = agent.get("description", "")
+        repo_url = agent.get("repo_url", f"https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/{slug}")
+        prompts = agent.get("starter_prompts", [
+            f"{disp} 주요 기능 및 진단 대상 알려줘",
+            f"{disp} 사전 준비 사항 확인해 줘",
+            f"{disp} 조치 가이드 및 명령어 안내해 줘",
+        ])
+        placeholder = agent.get("custom_placeholder_text", f"{disp} 관련 문의나 증상을 입력하세요...")
 
         print(f"---------------------------------------------------------------------------")
-        print(f"[{idx}/6] 에이전트 배포 진행: {disp} ({slug})")
+        print(f"[{idx:2d}/{len(target_agents)}] 에이전트 배포 진행: {disp} ({slug})")
         print(f"---------------------------------------------------------------------------")
 
-        # 1) 중복 점검 및 예전 것 삭제
-        if disp in existing_ge_agents:
-            old_agent_id = existing_ge_agents[disp]
-            print(f"  [1/3] 중복 에이전트 감지: 기존 등록된 구버전({old_agent_id}) 삭제 중...")
-            del_url = f"{base_url}/{old_agent_id}"
+        # 1) 중복 점검 (슬러그 또는 디스플레이 이름 일치 여부)
+        matched_id = existing_ge_slugs.get(slug) or existing_ge_agents.get(disp)
+        if matched_id:
+            print(f"  [1/3] 중복 에이전트 감지: 기존 등록된 에이전트 ID `{matched_id}` 확인.")
+            # 구버전 클린 재등록을 위해 DELETE 수행 후 신규 등록
+            del_url = f"{base_url}/{matched_id}"
             del_resp = requests.delete(del_url, headers=headers, timeout=25)
             if del_resp.ok:
-                print(f"        -> [성공] 기존 중복 에이전트 삭제 완료 (DELETE /agents/{old_agent_id})")
-                time.sleep(1.5)
+                print(f"        -> [성공] 기존 에이전트 삭제 완료 (DELETE /agents/{matched_id})")
+                time.sleep(1.0)
             else:
-                print(f"        -> [주의] 삭제 응답 이상 (HTTP {del_resp.status_code}): {del_resp.text[:100]}")
+                print(f"        -> [주의] 삭제 응답: HTTP {del_resp.status_code}")
         else:
             print(f"  [1/3] 신규 에이전트 확인 (중복 없음)")
 
         # 2) Reasoning Engine 매핑
         bound_re = ""
-        if "admin" in slug and "사내 커스텀 에이전트 (gemini-enterprise-copilot-admin)" in existing_re_engines:
-            bound_re = existing_re_engines["사내 커스텀 에이전트 (gemini-enterprise-copilot-admin)"]
+        if slug == "gemini-enterprise-copilot-agent" and "GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)" in existing_re_engines:
+            bound_re = existing_re_engines["GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)"]
+        elif slug == "gemini-enterprise-copilot-skill" and "GE In-Chat Skill Factory (사내 스킬 팩토리)" in existing_re_engines:
+            bound_re = existing_re_engines["GE In-Chat Skill Factory (사내 스킬 팩토리)"]
+        elif slug == "gemini-enterprise-copilot-connector" and "GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)" in existing_re_engines:
+            bound_re = existing_re_engines["GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)"]
+        elif slug == "gemini-enterprise-copilot-admin" and "GE In-Chat Admin Copilot (사내 어드민 코파일럿)" in existing_re_engines:
+            bound_re = existing_re_engines["GE In-Chat Admin Copilot (사내 어드민 코파일럿)"]
         elif disp in existing_re_engines:
             bound_re = existing_re_engines[disp]
         else:
@@ -2112,15 +2146,16 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> d
 
         # 3) Discovery Engine 신규 등록
         print(f"  [3/3] Discovery Engine 사내 갤러리(/r/agents) 전사 공개 등록 중...")
+        full_desc = f"{desc}\n\n[Slug: {slug}]\n- 소스 저장소: {repo_url}"
         body = {
             "displayName": disp,
-            "description": f"{desc}\n\n- 소스 저장소: {repo_url}",
+            "description": full_desc,
             "state": "ENABLED",
             "sharingConfig": {"scope": "ALL_USERS"},
             "customPlaceholderText": placeholder,
             "starterPrompts": [{"text": p} for p in prompts],
             "adkAgentDefinition": {
-                "toolSettings": {"toolDescription": f"{disp} ({repo_url})"},
+                "toolSettings": {"toolDescription": full_desc},
                 "provisionedReasoningEngine": {
                     "reasoningEngine": bound_re
                 },
@@ -2151,23 +2186,23 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False) -> d
                 "repo_url": repo_url,
             })
         print()
-        time.sleep(1.0)
+        time.sleep(0.5)
 
     print("=" * 75)
-    print("  6대 핵심 상주형 커스텀 에이전트 배포 및 갤러리 등록 파이프라인 완료")
+    print(f"  총 {len(target_agents)}개 커스텀 에이전트 배포 및 갤러리 등록 파이프라인 완료")
     print("=" * 75)
     return {"status": "COMPLETED", "results": results}
 
 
 def build_curated_agents_report(env_info: dict, deploy_res: dict, dry_run: bool = False) -> str:
-    """6대 핵심 커스텀 에이전트 일괄 배포 결과를 report.md 양식으로 조립한다."""
+    """엔터프라이즈 커스텀 에이전트 일괄 배포 결과를 report.md 양식으로 조립한다."""
     project_id = "sample-project-id" if dry_run else env_info["project_id"]
     ge_app_id = "sample-ge-app-id" if dry_run else env_info["ge_app_id"]
     status = deploy_res.get("status", "UNKNOWN")
     results = deploy_res.get("results", [])
 
     lines = [
-        f"# Gemini Enterprise 6대 핵심 상주형 커스텀 에이전트 배포 보고서",
+        f"# Gemini Enterprise 엔터프라이즈 커스텀 에이전트 배포 보고서 (총 {len(results)}개)",
         "",
         f"- **배포 일시**: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
         f"- **대상 프로젝트**: `{project_id}`",
@@ -2175,7 +2210,7 @@ def build_curated_agents_report(env_info: dict, deploy_res: dict, dry_run: bool 
         f"- **배포 상태**: `{status}`",
         f"- **실행 모드**: {'가상 실행 (--dry-run)' if dry_run else '실제 클라우드 인프라 배포'}",
         "",
-        "## 1. 등록된 6대 핵심 상주형 커스텀 에이전트 현황",
+        f"## 1. 등록된 {len(results)}개 엔터프라이즈 커스텀 에이전트 현황",
         "",
         "| No | 에이전트 명칭 (Display Name) | 슬러그 (Slug) | Agent ID | 배포 상태 | 소스 저장소 (GitHub Repo) |",
         "| :--- | :--- | :--- | :--- | :--- | :--- |",
@@ -2199,7 +2234,7 @@ def build_curated_agents_report(env_info: dict, deploy_res: dict, dry_run: bool 
         "",
         "## 3. 중복 에이전트 정리 (Teardown / Replacement) 결과",
         "",
-        "- 본 배포 파이프라인은 멱등성 및 단일 최신 상태(Last Value) 유지를 위해, 기존에 동일한 표시 이름(Display Name)으로 등록되어 있던 구버전 에이전트를 사전 감지하여 안전하게 삭제(DELETE)한 후 신규 등록을 완결했다.",
+        "- 본 배포 파이프라인은 멱등성 및 단일 최신 상태(Last Value) 유지를 위해, 기존에 동일한 표시 이름(Display Name) 또는 슬러그([Slug: ...])로 등록되어 있던 구버전 에이전트를 사전 감지하여 안전하게 삭제(DELETE)한 후 신규 등록을 완결했다.",
     ])
 
     return "\n".join(lines)
@@ -2445,7 +2480,7 @@ def main():
         run_local_scaffolding_mode(args, env_info, catalog=catalog)
         return
 
-    # 검증된 6대 핵심 상주형 커스텀 에이전트 일괄 배포 모드 분기
+    # 카탈로그 커스텀 에이전트 일괄 배포 모드 분기
     if args.deploy_curated:
         if not args.dry_run and not _get_cloud_token():
             print("\n[오류] 유효한 Google Cloud 인증 자격 증명(ADC)을 찾을 수 없습니다.", file=sys.stderr)
@@ -2453,13 +2488,13 @@ def main():
             print("      gcloud auth application-default login\n", file=sys.stderr)
             sys.exit(1)
 
-        curated_res = deploy_curated_enterprise_agents(env_info, dry_run=args.dry_run)
+        curated_res = deploy_curated_enterprise_agents(env_info, dry_run=args.dry_run, catalog=catalog)
         report_content = build_curated_agents_report(env_info, curated_res, dry_run=args.dry_run)
         save_markdown_report(report_content)
 
         creator = get_resource_creator(args.dry_run)
         print("\n" + "=" * 75)
-        print("  6대 핵심 상주형 커스텀 에이전트 일괄 배포 및 갤러리 등록 완료")
+        print("  엔터프라이즈 커스텀 에이전트 일괄 배포 및 갤러리 등록 완료")
         print("=" * 75)
         print("\n[안내] 사내 거버넌스 및 자원 추적을 위한 4대 필수 표준 라벨:")
         print("  - managed-by: google-cloud-0-to-1")
