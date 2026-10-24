@@ -1303,7 +1303,66 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     creds = google.oauth2.credentials.Credentials(token)
     google.auth.default = lambda *args, **kwargs: (creds, project_id)
 
-    # 1. 에이전트 내장 실행 도구 정의 (Skills 직접 프로비저닝)
+    # 1. 에이전트 내장 실행 도구 정의 (Skills 직접 프로비저닝 및 사전 검증)
+    def check_skill_duplicate_tool(skill_name: str) -> str:
+        """Check whether a skill with the given name or similar keyword already exists and is active in Gemini Enterprise app.
+
+        Args:
+            skill_name: The name or keyword of the skill to check (e.g. 'Slack Emergency Alert', 'Google Sheets Lookup').
+
+        Returns:
+            Pre-flight status indicating if the skill already exists, its state, ID, or if it is safe to create a new one.
+        """
+        import re
+        import requests
+        import google.auth
+        import google.auth.transport.requests
+
+        try:
+            creds, _ = google.auth.default()
+            auth_req = google.auth.transport.requests.Request()
+            creds.refresh(auth_req)
+            cur_token = creds.token
+
+            headers = {
+                "Authorization": f"Bearer {cur_token}",
+                "Content-Type": "application/json",
+                "X-Goog-User-Project": project_id,
+            }
+            base_url = (
+                f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+                f"/locations/{ge_location}/collections/default_collection"
+                f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+            )
+            list_resp = requests.get(base_url, headers=headers, timeout=15)
+            if list_resp.ok:
+                clean_target = re.sub(r"\s+", "", skill_name).lower()
+                for a in list_resp.json().get("agents", []):
+                    d_name = a.get("displayName", "")
+                    clean_d = re.sub(r"\s+", "", d_name).lower()
+                    if clean_target and (clean_target in clean_d or clean_d in clean_target):
+                        skill_id = a.get("name", "").split("/")[-1]
+                        state = a.get("state", "UNKNOWN")
+                        portal_url = f"https://gemini.google.com/app/{ge_app_id}/r/skills"
+                        return (
+                            f"### [사전 중복 검증] 기등록 스킬 감지\n\n"
+                            f"- **스킬 명칭**: {d_name}\n"
+                            f"- **Skill ID**: `{skill_id}`\n"
+                            f"- **상태**: `{state}`\n"
+                            f"- **사내 스킬 갤러리 바로가기**: {portal_url}\n\n"
+                            f"동일하거나 유사한 스킬이 이미 사내 스킬 갤러리에 등록되어 활성화되어 있습니다.\n"
+                            f"추가적인 기획 인터뷰를 진행하지 않고, 위 사내 갤러리 링크에서 확인하시거나, "
+                            f"해당 스킬의 지침을 업데이트할 것인지 사용자에게 확인하십시오."
+                        )
+                return (
+                    f"### [사전 중복 검증] 신규 생성 가능\n\n"
+                    f"- 확인 대상 명칭: '{skill_name}'\n"
+                    f"- 사내 갤러리에 중복된 스킬이 존재하지 않습니다. 정상적으로 1단계(연동 대상 시스템 파악) 기획을 시작할 수 있습니다."
+                )
+            return f"[사전 검증 조회 오류] HTTP {list_resp.status_code}: {list_resp.text[:200]}"
+        except Exception as e:
+            return f"[사전 검증 예외] 조회 중 예외 발생: {str(e)}"
+
     def deploy_enterprise_skill_tool(
         skill_name: str,
         description: str,
@@ -1495,11 +1554,16 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 스킬을 프로비저닝하고 조회할 수 있는 실제 실행 도구가 장착되어 있습니다:
-1. `deploy_enterprise_skill_tool`: 사용자가 스킬 생성을 요청하거나 확인하면, SKILL.md 지침을 컴파일하여 사용자의 Gemini Enterprise app Skills 목록에 즉시 배포합니다. (스킬 이름은 영문, 숫자, 하이픈, 공백만 허용).
-2. `list_enterprise_skills_tool`: 현재 사내에 등록된 활성 스킬 목록을 실시간 조회할 때 호출하십시오.
-3. `get_preset_skills_tool`: 사내 공식 프리셋 스킬 카탈로그를 브리핑할 때 호출하십시오.
+1. `check_skill_duplicate_tool`: 사용자가 특정 스킬 생성을 요청했을 때, 기획이나 인터뷰를 시작하기 전에 사내 갤러리에 동일하거나 유사한 스킬이 이미 존재하는지 실시간으로 사전 검증하는 최우선 필수 도구입니다.
+2. `deploy_enterprise_skill_tool`: 사용자가 스킬 생성을 요청하거나 확인하면, SKILL.md 지침을 컴파일하여 사용자의 Gemini Enterprise app Skills 목록에 즉시 배포합니다. (스킬 이름은 영문, 숫자, 하이픈, 공백만 허용).
+3. `list_enterprise_skills_tool`: 현재 사내에 등록된 활성 스킬 목록을 실시간 조회할 때 호출하십시오.
+4. `get_preset_skills_tool`: 사내 공식 프리셋 스킬 카탈로그를 브리핑할 때 호출하십시오.
 
 [핵심 단계별 인터뷰 절차]
+0단계 (사전 중복 검증 인터셉터 - 최우선 필수 실행):
+- 사용자가 특정 사내 도구나 스킬 생성을 요청하면, 1단계 인터뷰를 시작하기 전에 반드시 가장 먼저 `check_skill_duplicate_tool` 도구를 호출하여 사내 스킬 갤러리에 기등록 여부를 점검한다!
+- 기등록 스킬(중복) 발견 시: 1단계~3단계 기획 인터뷰를 일절 진행하지 않고, 즉시 첫 턴에서 사내 스킬 갤러리 바로가기 링크( /r/skills )와 함께 이미 등록되어 활성화되어 있음을 알리고 기존 스킬을 사용하거나 업데이트할 것인지 묻는다.
+- 신규 스킬인 경우에만: 비로소 1단계(연동 대상 시스템 파악) 인터뷰를 시작한다.
 1단계 (연동 대상 시스템 파악): 연동하려는 사내 시스템 및 액션 목적 확인 (프리셋 도구 추천 또는 사용자의 비정형 자연어 요구사항 접수).
 2단계 (스킬 명칭 및 지침 규칙 정의): 영문 스킬 명칭, 설명, 핵심 지침(SKILL.md) 및 트리거 조건 도출.
 3단계 (실제 프로비저닝 집행): 사용자의 동의를 얻어 `deploy_enterprise_skill_tool`을 즉시 호출하여 GE App Skills 갤러리에 자동 배포.
@@ -1524,7 +1588,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
-        tools=[deploy_enterprise_skill_tool, list_enterprise_skills_tool, get_preset_skills_tool],
+        tools=[check_skill_duplicate_tool, deploy_enterprise_skill_tool, list_enterprise_skills_tool, get_preset_skills_tool],
     )
     class ResilientAdkApp(agent_engines.AdkApp):
         """Pydantic v2 직렬화 호환성 및 세션 안정화를 지원하는 엔터프라이즈 Agent Engine 래퍼."""

@@ -1103,6 +1103,11 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
+[다중 데이터 소스 인스턴스 스캐폴딩 및 중복 허용 원칙 (Multi-Source Instance Policy)]
+- 사내 환경에서는 동일한 커넥터 종류(예: Jira, Confluence, Google Drive, Salesforce 등)라 하더라도 부서별 또는 목적별(예: '개발팀 Jira' vs '인사팀 Jira', '전사 공용 Drive' vs '재무팀 보안 Drive')로 서로 다른 엔터프라이즈 데이터 소스를 연결해야 합니다.
+- 따라서 커넥터 종류가 같다는 이유로 스캐폴딩 생성을 임의로 차단하거나 거부하지 않으며, 각각 독립된 데이터 저장소 식별자(Data Store ID)와 인스턴스 매니페스트로 다중 스캐폴딩 생성을 완벽히 지원합니다.
+- 사용자가 동일한 종류의 SaaS 연동을 다시 요청하더라도, 기존 인스턴스와 충돌하지 않도록 고유한 데이터 소스 접미사(예: jira-dev, jira-hr)를 부여하여 새로운 매니페스트를 자율 생성하십시오.
+
 [핵심 단계별 인터뷰 절차]
 1단계 (데이터 소스 파악): 연동 대상 SaaS/기간계 시스템 및 수집 범위 확인.
 2단계 (인증 및 자격 증명): 인증 방식 확인 및 Secret Manager 보안 볼트 키 URI 매핑.

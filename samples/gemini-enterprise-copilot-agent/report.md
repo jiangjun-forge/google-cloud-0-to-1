@@ -1,6 +1,6 @@
 # Gemini Enterprise 노코드 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-agent)
 
-- **배포 일시**: 2026-10-23 12:14:52 UTC
+- **배포 일시**: 2026-10-24 00:38:29 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)`
@@ -15,7 +15,7 @@
 | **에이전트 명칭** | `PROVISIONED` | `GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)` |
 | **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-agent-factory-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
-| **내장 실행 도구** | `2종 완비` | `register_nocode_agent_tool`, `list_deployed_agents_tool` |
+| **내장 실행 도구** | `3종 완비` | `check_agent_duplicate_tool`, `register_nocode_agent_tool`, `list_deployed_agents_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---

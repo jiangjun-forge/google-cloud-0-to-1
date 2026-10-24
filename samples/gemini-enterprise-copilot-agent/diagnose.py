@@ -1083,7 +1083,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 | **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
 | **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
-| **내장 실행 도구** | `2종 완비` | `register_nocode_agent_tool`, `list_deployed_agents_tool` |
+| **내장 실행 도구** | `3종 완비` | `check_agent_duplicate_tool`, `register_nocode_agent_tool`, `list_deployed_agents_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
@@ -1240,6 +1240,10 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [핵심 단계별 인터뷰 절차]
+0단계 (사전 중복 검증 인터셉터 - 최우선 필수 실행):
+- 사용자가 특정 업무나 명칭의 에이전트 생성을 요청하거나 추천 칩을 선택하면, 1단계 인터뷰나 기획서 작성을 시작하기 전에 반드시 가장 먼저 `check_agent_duplicate_tool` 도구를 호출하여 사내 갤러리에 기등록 여부를 점검한다!
+- 기등록 에이전트(중복) 발견 시: 1단계~4단계 인터뷰를 일절 진행하지 않고, 즉시 첫 턴에서 사내 갤러리 바로가기 링크( /r/agents )와 함께 이미 등록되어 활성화되어 있음을 알리고 기존 에이전트를 사용하거나 업데이트할 것인지 묻는다.
+- 신규 에이전트인 경우에만: 비로소 1단계 인터뷰를 시작한다.
 1단계 (목적 파악): 해결하려는 구체적인 업무 페인포인트와 주요 사용 부서 확인.
 2단계 (핵심 규칙): 에이전트가 지켜야 할 사내 규정과 처리 기준, 필수 기재 항목 정의.
 3단계 (지식 베이스): 연동할 사내 구글 드라이브(Google Drive), 구글 시트(Google Sheets), 문서, 사내 위키 등 데이터 저장소 정의.
@@ -1248,8 +1252,9 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
-1. `register_nocode_agent_tool`: 인터뷰를 마치고 에이전트 기획이 완료되면, 사용자가 "등록해 줘", "배포해 줘", "생성해 줘"라고 하거나 동의했을 때 즉시 이 도구를 호출하여 실제 클라우드에 에이전트를 등록하십시오! 이 도구를 호출해야만 사내 에이전트 목록에 나타납니다.
-2. `list_deployed_agents_tool`: 현재 사내에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
+1. `check_agent_duplicate_tool`: 사용자가 특정 에이전트 생성이나 칩을 요청했을 때, 인터뷰를 시작하기 전에 사내 갤러리에 동일하거나 유사한 에이전트가 이미 존재하는지 실시간으로 사전 검증하는 최우선 필수 도구입니다.
+2. `register_nocode_agent_tool`: 인터뷰를 마치고 에이전트 기획이 완료되면, 사용자가 "등록해 줘", "배포해 줘", "생성해 줘"라고 하거나 동의했을 때 즉시 이 도구를 호출하여 실제 클라우드에 에이전트를 등록하십시오! 이 도구를 호출해야만 사내 에이전트 목록에 나타납니다.
+3. `list_deployed_agents_tool`: 현재 사내에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [단계별 추천 후속 질문 안내 규약]
 모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
@@ -1264,6 +1269,68 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 정중하고 품격 있는 문어체(-다, -한다)와 한글 맞춤법 복합어 띄어쓰기를 철저히 준수합니다.
 - 이모지나 특수 기호 대신 깔끔한 마크다운을 사용합니다.
 """
+
+    def check_agent_duplicate_tool(display_name: str) -> str:
+        """Check whether an agent with the given name or similar keyword already exists and is active in Gemini Enterprise app.
+
+        Args:
+            display_name: The name or keyword of the agent to check (e.g. '신규 입사자 온보딩 가이드 에이전트').
+
+        Returns:
+            Pre-flight status indicating if the agent already exists, its state, ID, or if it is safe to create a new one.
+        """
+        token = ""
+        try:
+            import google.auth
+            import google.auth.transport.requests
+            creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+            auth_req = google.auth.transport.requests.Request()
+            creds.refresh(auth_req)
+            token = creds.token
+        except Exception:
+            try:
+                token = _get_cloud_token()
+            except Exception:
+                token = ""
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        }
+        base_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection"
+            f"/engines/{ge_app_id}/assistants/default_assistant/agents"
+        )
+        try:
+            list_resp = requests.get(base_url, headers=headers, timeout=15)
+            if list_resp.ok:
+                clean_target = re.sub(r"\s+", "", display_name).lower()
+                for a in list_resp.json().get("agents", []):
+                    d_name = a.get("displayName", "")
+                    clean_d = re.sub(r"\s+", "", d_name).lower()
+                    if clean_target and (clean_target in clean_d or clean_d in clean_target):
+                        agent_id = a.get("name", "").split("/")[-1]
+                        state = a.get("state", "UNKNOWN")
+                        portal_url = f"https://gemini.google.com/app/{ge_app_id}/r/agents"
+                        return (
+                            f"### [사전 중복 검증] 기등록 에이전트 감지\n\n"
+                            f"- **에이전트 명칭**: {d_name}\n"
+                            f"- **Agent ID**: `{agent_id}`\n"
+                            f"- **상태**: `{state}`\n"
+                            f"- **사내 갤러리 바로가기**: {portal_url}\n\n"
+                            f"동일하거나 유사한 에이전트가 이미 사내 갤러리에 등록되어 활성화되어 있습니다.\n"
+                            f"추가적인 기획 인터뷰를 진행하지 않고, 위 사내 갤러리 링크에서 기존 에이전트와 바로 대화하시거나, "
+                            f"해당 에이전트의 설정을 업데이트할 것인지 사용자에게 확인하십시오."
+                        )
+                return (
+                    f"### [사전 중복 검증] 신규 생성 가능\n\n"
+                    f"- 확인 대상 명칭: '{display_name}'\n"
+                    f"- 사내 갤러리에 중복된 에이전트가 존재하지 않습니다. 정상적으로 1단계(목적 파악) 기획 인터뷰를 시작할 수 있습니다."
+                )
+            return f"[사전 검증 조회 오류] HTTP {list_resp.status_code}: {list_resp.text[:200]}"
+        except Exception as e:
+            return f"[사전 검증 예외] 조회 중 예외 발생: {str(e)}"
 
     def register_nocode_agent_tool(
         display_name: str,
@@ -1473,7 +1540,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
-        tools=[register_nocode_agent_tool, list_deployed_agents_tool],
+        tools=[check_agent_duplicate_tool, register_nocode_agent_tool, list_deployed_agents_tool],
     )
     class ResilientAdkApp(agent_engines.AdkApp):
         """Pydantic v2 직렬화 호환성 및 세션 안정화를 지원하는 엔터프라이즈 Agent Engine 래퍼."""

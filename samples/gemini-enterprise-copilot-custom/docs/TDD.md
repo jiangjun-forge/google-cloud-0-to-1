@@ -107,13 +107,18 @@ sequenceDiagram
 - 개발자 계정 및 실행 서비스 계정의 필수 IAM 권한(`roles/aiplatform.user`, `roles/discoveryengine.editor`)을 사전 점검한다.
 - 진단 및 에이전트 생성 완료 시 생성된 파일 목록, 소스 코드 미리보기, 배포 가이드, Gemini Enterprise app 연동 매니페스트를 포함하는 `report.md`를 자동으로 생성 및 덮어쓴다.
 
-### FR-06: Agent Engine 프로비저닝 및 ChatOps 실행 도구 체계
+### FR-06: Agent Engine 프로비저닝 및 ChatOps 4대 실행 도구 체계
 - `python diagnose.py` 실행으로 Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
-- 런타임 내에 `deploy_enterprise_agent_tool`과 `list_deployed_agents_tool` 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다.
+- 런타임 내에 4대 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다:
+  1. `show_custom_catalog_tool`: 0~4번 전체 카탈로그 마크다운 표 실시간 브리핑
+  2. `deploy_enterprise_agent_tool`: 사전 중복 검증 및 원클릭 프로비저닝 집행 (기등록 활성화 에이전트 발견 시 즉시 안내 및 중복 빌드 차단)
+  3. `check_deployment_status_tool`: 백그라운드 LRO 빌드/배포 상태 비동기 추적 및 갤러리 등록 완결
+  4. `list_deployed_agents_tool`: 사내 갤러리 활성 에이전트 목록 및 리소스 유형 정밀 조회
 
-### FR-07: 3대 핵심 커스텀 추천 질문 칩 (Starter Prompts) 주입 및 단독 배포 파이프라인
-- GE App 매니페스트에 3대 원클릭 추천 질문 칩을 순서(1: GitHub 저장소 주소 기반 커스텀 에이전트 배포 -> 2: GE Admin Copilot -> 3: GE Agent Factory) 및 에이전트 목록 조회 칩으로 정렬 배치한다.
-- 전체 일괄 배포를 배제하고 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
+### FR-07: 4대 패밀리 추천 질문 칩 및 MAX_SUGGESTIONS_COUNT 제약 극복 인터랙션
+- GE App 시스템 제약(추천 질문 칩 최대 3개 표시 한도)에 대응하여, 핵심 칩 3개(0번 GitHub 레포 배포, 1번 어드민 코파일럿, 2번 노코드 에이전트 팩토리)를 우선 노출한다.
+- 3번(데이터 커넥터 스캐폴더), 4번(사내 스킬 팩토리)을 포함한 전체 카탈로그는 `show_custom_catalog_tool` 및 0~4번 번호 기반 자연어 호출로 손쉽게 배포할 수 있도록 인터랙션을 표준화한다.
+- 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
 
 ---
 
