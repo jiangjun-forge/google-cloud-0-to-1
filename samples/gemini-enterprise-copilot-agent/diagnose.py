@@ -1240,10 +1240,11 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [핵심 단계별 인터뷰 절차]
-0단계 (사전 중복 검증 인터셉터 - 최우선 필수 실행):
-- 사용자가 특정 업무나 명칭의 에이전트 생성을 요청하거나 추천 칩을 선택하면, 1단계 인터뷰나 기획서 작성을 시작하기 전에 반드시 가장 먼저 `check_agent_duplicate_tool` 도구를 호출하여 사내 갤러리에 기등록 여부를 점검한다!
-- 기등록 에이전트(중복) 발견 시: 1단계~4단계 인터뷰를 일절 진행하지 않고, 즉시 첫 턴에서 사내 갤러리 바로가기 링크( /r/agents )와 함께 이미 등록되어 활성화되어 있음을 알리고 기존 에이전트를 사용하거나 업데이트할 것인지 묻는다.
-- 신규 에이전트인 경우에만: 비로소 1단계 인터뷰를 시작한다.
+0단계 (사전 슬러그/ID 중복 검증 인터셉터 - 최우선 필수 실행):
+- 사용자가 에이전트 생성을 요청하거나 추천 칩을 선택하면, 1단계 인터뷰나 기획서 작성을 시작하기 전에 반드시 가장 먼저 해당 에이전트의 고유 슬러그(ID, 영문 소문자 케밥 케이스, 예: hr-onboarding-guide, fin-tax-advisor)를 도출하여 `check_agent_duplicate_tool(slug=...)` 도구를 호출한다!
+- 주의 원칙: 자연어 디스플레이 이름은 유사할 수 있으므로 절대 차단하지 않으며, 오로지 시스템 고유 식별자인 슬러그(ID)가 정확히 일치할 때만 중복으로 판정한다!
+- 기등록 슬러그 발견 시: 1단계~4단계 인터뷰를 일절 진행하지 않고, 즉시 첫 턴에서 사내 갤러리 바로가기 링크( /r/agents )와 함께 해당 슬러그 ID의 에이전트가 이미 등록되어 활성화되어 있음을 알리고 기존 에이전트를 사용하거나 설정을 업데이트할 것인지 묻는다.
+- 신규 슬러그인 경우에만: 비로소 1단계(목적 파악) 인터뷰를 시작한다.
 1단계 (목적 파악): 해결하려는 구체적인 업무 페인포인트와 주요 사용 부서 확인.
 2단계 (핵심 규칙): 에이전트가 지켜야 할 사내 규정과 처리 기준, 필수 기재 항목 정의.
 3단계 (지식 베이스): 연동할 사내 구글 드라이브(Google Drive), 구글 시트(Google Sheets), 문서, 사내 위키 등 데이터 저장소 정의.
@@ -1252,7 +1253,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
-1. `check_agent_duplicate_tool`: 사용자가 특정 에이전트 생성이나 칩을 요청했을 때, 인터뷰를 시작하기 전에 사내 갤러리에 동일하거나 유사한 에이전트가 이미 존재하는지 실시간으로 사전 검증하는 최우선 필수 도구입니다.
+1. `check_agent_duplicate_tool`: 사용자가 특정 에이전트 생성이나 칩을 요청했을 때, 인터뷰를 시작하기 전에 사내 갤러리에 동일한 고유 슬러그(ID)가 이미 존재하는지 실시간으로 사전 검증하는 최우선 필수 도구입니다. (유사한 자연어 이름은 허용하고, 오로지 슬러그 ID가 일치할 때만 검증).
 2. `register_nocode_agent_tool`: 인터뷰를 마치고 에이전트 기획이 완료되면, 사용자가 "등록해 줘", "배포해 줘", "생성해 줘"라고 하거나 동의했을 때 즉시 이 도구를 호출하여 실제 클라우드에 에이전트를 등록하십시오! 이 도구를 호출해야만 사내 에이전트 목록에 나타납니다.
 3. `list_deployed_agents_tool`: 현재 사내에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
@@ -1270,14 +1271,18 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 이모지나 특수 기호 대신 깔끔한 마크다운을 사용합니다.
 """
 
-    def check_agent_duplicate_tool(display_name: str) -> str:
-        """Check whether an agent with the given name or similar keyword already exists and is active in Gemini Enterprise app.
+    def check_agent_duplicate_tool(slug: str) -> str:
+        """Check whether an agent with the EXACT unique slug (ID) already exists and is active in Gemini Enterprise app.
+
+        Note:
+            This tool strictly validates the unique slug identifier (e.g. 'hr-onboarding-guide').
+            Similar natural language display names are explicitly permitted and will NOT be blocked.
 
         Args:
-            display_name: The name or keyword of the agent to check (e.g. '신규 입사자 온보딩 가이드 에이전트').
+            slug: The unique canonical kebab-case slug ID of the agent to check (e.g. 'hr-onboarding-guide').
 
         Returns:
-            Pre-flight status indicating if the agent already exists, its state, ID, or if it is safe to create a new one.
+            Pre-flight status indicating if the exact slug already exists, its state, ID, or if it is safe to create a new one.
         """
         token = ""
         try:
@@ -1305,28 +1310,39 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         try:
             list_resp = requests.get(base_url, headers=headers, timeout=15)
             if list_resp.ok:
-                clean_target = re.sub(r"\s+", "", display_name).lower()
+                target_slug = slug.strip().lower()
                 for a in list_resp.json().get("agents", []):
-                    d_name = a.get("displayName", "")
-                    clean_d = re.sub(r"\s+", "", d_name).lower()
-                    if clean_target and (clean_target in clean_d or clean_d in clean_target):
+                    d_name = a.get("displayName", "").strip().lower()
+                    desc = a.get("description", "").lower()
+
+                    # 오로지 슬러그(ID)의 정확한 일치 여부만 체크 (자연어 유사도는 차단하지 않음)
+                    is_match = False
+                    if d_name == target_slug:
+                        is_match = True
+                    elif f"[slug: {target_slug}]" in desc or f"(slug: {target_slug})" in desc:
+                        is_match = True
+                    elif f"slug:{target_slug}" in desc.replace(" ", ""):
+                        is_match = True
+
+                    if is_match:
                         agent_id = a.get("name", "").split("/")[-1]
                         state = a.get("state", "UNKNOWN")
                         portal_url = f"https://gemini.google.com/app/{ge_app_id}/r/agents"
                         return (
-                            f"### [사전 중복 검증] 기등록 에이전트 감지\n\n"
-                            f"- **에이전트 명칭**: {d_name}\n"
+                            f"### [사전 슬러그 중복 검증] 기등록 에이전트 감지\n\n"
+                            f"- **슬러그 (ID)**: `{slug}`\n"
+                            f"- **에이전트 명칭**: {a.get('displayName', '')}\n"
                             f"- **Agent ID**: `{agent_id}`\n"
                             f"- **상태**: `{state}`\n"
                             f"- **사내 갤러리 바로가기**: {portal_url}\n\n"
-                            f"동일하거나 유사한 에이전트가 이미 사내 갤러리에 등록되어 활성화되어 있습니다.\n"
+                            f"동일한 고유 슬러그 ID(`{slug}`)의 에이전트가 이미 사내 갤러리에 등록되어 활성화되어 있습니다.\n"
                             f"추가적인 기획 인터뷰를 진행하지 않고, 위 사내 갤러리 링크에서 기존 에이전트와 바로 대화하시거나, "
                             f"해당 에이전트의 설정을 업데이트할 것인지 사용자에게 확인하십시오."
                         )
                 return (
-                    f"### [사전 중복 검증] 신규 생성 가능\n\n"
-                    f"- 확인 대상 명칭: '{display_name}'\n"
-                    f"- 사내 갤러리에 중복된 에이전트가 존재하지 않습니다. 정상적으로 1단계(목적 파악) 기획 인터뷰를 시작할 수 있습니다."
+                    f"### [사전 슬러그 중복 검증] 신규 생성 가능\n\n"
+                    f"- 확인 대상 슬러그 (ID): `{slug}`\n"
+                    f"- 사내 갤러리에 동일한 슬러그 ID가 존재하지 않습니다. 정상적으로 1단계(목적 파악) 기획 인터뷰를 시작할 수 있습니다."
                 )
             return f"[사전 검증 조회 오류] HTTP {list_resp.status_code}: {list_resp.text[:200]}"
         except Exception as e:
@@ -1336,6 +1352,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         display_name: str,
         description: str,
         instructions: str,
+        slug: str = "",
         starter_prompts: str = "",
     ) -> str:
         """Register the newly designed no-code agent directly into Gemini Enterprise app so it appears in the enterprise gallery.
@@ -1344,6 +1361,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             display_name: The display name of the agent (e.g. '사내 특허 출원 절차 가이드 에이전트').
             description: Short summary of what the agent does.
             instructions: Complete 5 golden prompt system instructions for the agent.
+            slug: Unique canonical kebab-case slug ID (e.g. 'legal-patent-guide').
             starter_prompts: Comma-separated starter questions (e.g. '특허 출원 지원 범위 알려 줘, 필수 서류는 뭐야').
         """
         token = ""
@@ -1403,16 +1421,18 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             "자주 묻는 질문(FAQ) 정리해 줘",
         ]
 
+        full_desc = f"{description}\n\n[Slug: {slug}]" if slug else description
+
         # 전사 갤러리 즉시 노출 및 ENABLED 활성화를 위해 엔터프라이즈 정규 adkAgentDefinition 규격 적용
         body = {
             "displayName": display_name,
-            "description": description,
+            "description": full_desc,
             "state": "ENABLED",
             "sharingConfig": {"scope": "ALL_USERS"},
             "customPlaceholderText": f"{display_name}에게 업무 질문이나 요청을 입력하세요...",
             "starterPrompts": [{"text": p} for p in prompts_list],
             "adkAgentDefinition": {
-                "toolSettings": {"toolDescription": description},
+                "toolSettings": {"toolDescription": full_desc},
                 "provisionedReasoningEngine": {
                     "reasoningEngine": factory_re_res or f"projects/{project_id}/locations/us-central1/reasoningEngines/1287101780492025856"
                 },

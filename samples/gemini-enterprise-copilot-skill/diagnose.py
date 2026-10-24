@@ -819,7 +819,10 @@ def resolve_environment(args):
     load_env_file()
 
     # 1. Project ID
-    project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
+    if args.dry_run:
+        project_id = "sample-project-id"
+    else:
+        project_id = args.project or os.environ.get("PROJECT_ID") or get_gcloud_config("project") or "sample-project-id"
     if not args.dry_run and not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
         persist_env_value("PROJECT_ID", project_id, dry_run=args.dry_run)
 
@@ -1304,14 +1307,18 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
     google.auth.default = lambda *args, **kwargs: (creds, project_id)
 
     # 1. 에이전트 내장 실행 도구 정의 (Skills 직접 프로비저닝 및 사전 검증)
-    def check_skill_duplicate_tool(skill_name: str) -> str:
-        """Check whether a skill with the given name or similar keyword already exists and is active in Gemini Enterprise app.
+    def check_skill_duplicate_tool(slug: str) -> str:
+        """Check whether a skill with the EXACT unique slug (ID) already exists and is active in Gemini Enterprise app.
+
+        Note:
+            This tool strictly validates the unique slug identifier (e.g. 'approval-draft-create', 'slack-incident-alert').
+            Similar natural language display names are explicitly permitted and will NOT be blocked.
 
         Args:
-            skill_name: The name or keyword of the skill to check (e.g. 'Slack Emergency Alert', 'Google Sheets Lookup').
+            slug: The unique canonical kebab-case slug ID of the skill to check (e.g. 'approval-draft-create').
 
         Returns:
-            Pre-flight status indicating if the skill already exists, its state, ID, or if it is safe to create a new one.
+            Pre-flight status indicating if the exact slug already exists, its state, ID, or if it is safe to create a new one.
         """
         import re
         import requests
@@ -1336,28 +1343,39 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             )
             list_resp = requests.get(base_url, headers=headers, timeout=15)
             if list_resp.ok:
-                clean_target = re.sub(r"\s+", "", skill_name).lower()
+                target_slug = slug.strip().lower()
                 for a in list_resp.json().get("agents", []):
-                    d_name = a.get("displayName", "")
-                    clean_d = re.sub(r"\s+", "", d_name).lower()
-                    if clean_target and (clean_target in clean_d or clean_d in clean_target):
+                    d_name = a.get("displayName", "").strip().lower()
+                    desc = a.get("description", "").lower()
+
+                    # 오로지 슬러그(ID)의 정확한 일치 여부만 체크
+                    is_match = False
+                    if d_name == target_slug:
+                        is_match = True
+                    elif f"[slug: {target_slug}]" in desc or f"(slug: {target_slug})" in desc:
+                        is_match = True
+                    elif f"slug:{target_slug}" in desc.replace(" ", ""):
+                        is_match = True
+
+                    if is_match:
                         skill_id = a.get("name", "").split("/")[-1]
                         state = a.get("state", "UNKNOWN")
                         portal_url = f"https://gemini.google.com/app/{ge_app_id}/r/skills"
                         return (
-                            f"### [사전 중복 검증] 기등록 스킬 감지\n\n"
-                            f"- **스킬 명칭**: {d_name}\n"
+                            f"### [사전 슬러그 중복 검증] 기등록 스킬 감지\n\n"
+                            f"- **슬러그 (ID)**: `{slug}`\n"
+                            f"- **스킬 명칭**: {a.get('displayName', '')}\n"
                             f"- **Skill ID**: `{skill_id}`\n"
                             f"- **상태**: `{state}`\n"
                             f"- **사내 스킬 갤러리 바로가기**: {portal_url}\n\n"
-                            f"동일하거나 유사한 스킬이 이미 사내 스킬 갤러리에 등록되어 활성화되어 있습니다.\n"
+                            f"동일한 고유 슬러그 ID(`{slug}`)의 스킬이 이미 사내 스킬 갤러리에 등록되어 활성화되어 있습니다.\n"
                             f"추가적인 기획 인터뷰를 진행하지 않고, 위 사내 갤러리 링크에서 확인하시거나, "
                             f"해당 스킬의 지침을 업데이트할 것인지 사용자에게 확인하십시오."
                         )
                 return (
-                    f"### [사전 중복 검증] 신규 생성 가능\n\n"
-                    f"- 확인 대상 명칭: '{skill_name}'\n"
-                    f"- 사내 갤러리에 중복된 스킬이 존재하지 않습니다. 정상적으로 1단계(연동 대상 시스템 파악) 기획을 시작할 수 있습니다."
+                    f"### [사전 슬러그 중복 검증] 신규 생성 가능\n\n"
+                    f"- 확인 대상 슬러그 (ID): `{slug}`\n"
+                    f"- 사내 갤러리에 동일한 슬러그 ID가 존재하지 않습니다. 정상적으로 1단계(연동 대상 시스템 파악) 기획을 시작할 수 있습니다."
                 )
             return f"[사전 검증 조회 오류] HTTP {list_resp.status_code}: {list_resp.text[:200]}"
         except Exception as e:
@@ -1367,6 +1385,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         skill_name: str,
         description: str,
         instruction: str,
+        slug: str = "",
         scope: str = "ALL_USERS",
     ) -> str:
         """Create and deploy a new official skill directly into the user's Gemini Enterprise app Skills catalog.
@@ -1375,6 +1394,7 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             skill_name: English display name for the skill (letters, numbers, hyphens, spaces only, max 64 chars).
             description: Concise description explaining what this skill does and when to invoke it.
             instruction: Comprehensive SKILL.md-compatible instructions and prompt rules for the skill.
+            slug: Unique canonical kebab-case slug ID (e.g. 'approval-draft-create').
             scope: Visibility scope ('ALL_USERS' for org-wide shared skill, or 'PRIVATE' for personal use).
         """
         import re
@@ -1431,10 +1451,12 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             except Exception:
                 pass
 
+            full_desc = f"{description}\n\n[Slug: {slug}]" if slug else description
+
             # GE App 공식 좌측 메뉴 'Skills(/r/skills)' 탭 노출을 위해 공식 skillAgentDefinition 규격 적용
             body = {
                 "displayName": cleaned_name,
-                "description": description,
+                "description": full_desc,
                 "sharingConfig": {"scope": "ALL_USERS" if scope == "ALL_USERS" else "PRIVATE"},
                 "skillAgentDefinition": {
                     "instruction": instruction,
@@ -1560,10 +1582,11 @@ def deploy_skill_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 4. `get_preset_skills_tool`: 사내 공식 프리셋 스킬 카탈로그를 브리핑할 때 호출하십시오.
 
 [핵심 단계별 인터뷰 절차]
-0단계 (사전 중복 검증 인터셉터 - 최우선 필수 실행):
-- 사용자가 특정 사내 도구나 스킬 생성을 요청하면, 1단계 인터뷰를 시작하기 전에 반드시 가장 먼저 `check_skill_duplicate_tool` 도구를 호출하여 사내 스킬 갤러리에 기등록 여부를 점검한다!
-- 기등록 스킬(중복) 발견 시: 1단계~3단계 기획 인터뷰를 일절 진행하지 않고, 즉시 첫 턴에서 사내 스킬 갤러리 바로가기 링크( /r/skills )와 함께 이미 등록되어 활성화되어 있음을 알리고 기존 스킬을 사용하거나 업데이트할 것인지 묻는다.
-- 신규 스킬인 경우에만: 비로소 1단계(연동 대상 시스템 파악) 인터뷰를 시작한다.
+0단계 (사전 슬러그/ID 중복 검증 인터셉터 - 최우선 필수 실행):
+- 사용자가 특정 사내 도구나 스킬 생성을 요청하면, 1단계 인터뷰를 시작하기 전에 반드시 가장 먼저 해당 스킬의 고유 슬러그(ID, 3계층 영문 소문자 케밥 케이스, 예: approval-draft-create, slack-incident-alert)를 도출하여 `check_skill_duplicate_tool(slug=...)` 도구를 호출한다!
+- 주의 원칙: 자연어 도구 명칭은 유사할 수 있으므로 절대 차단하지 않으며, 오로지 시스템 고유 식별자인 슬러그(ID)가 정확히 일치할 때만 중복으로 판정한다!
+- 기등록 슬러그 발견 시: 1단계~3단계 기획 인터뷰를 일절 진행하지 않고, 즉시 첫 턴에서 사내 스킬 갤러리 바로가기 링크( /r/skills )와 함께 해당 슬러그 ID의 스킬이 이미 등록되어 활성화되어 있음을 알리고 기존 스킬을 사용하거나 설정을 업데이트할 것인지 묻는다.
+- 신규 슬러그인 경우에만: 비로소 1단계(연동 대상 시스템 파악) 인터뷰를 시작한다.
 1단계 (연동 대상 시스템 파악): 연동하려는 사내 시스템 및 액션 목적 확인 (프리셋 도구 추천 또는 사용자의 비정형 자연어 요구사항 접수).
 2단계 (스킬 명칭 및 지침 규칙 정의): 영문 스킬 명칭, 설명, 핵심 지침(SKILL.md) 및 트리거 조건 도출.
 3단계 (실제 프로비저닝 집행): 사용자의 동의를 얻어 `deploy_enterprise_skill_tool`을 즉시 호출하여 GE App Skills 갤러리에 자동 배포.

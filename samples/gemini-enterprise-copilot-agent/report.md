@@ -1,6 +1,6 @@
 # Gemini Enterprise 노코드 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-agent)
 
-- **배포 일시**: 2026-10-24 00:38:29 UTC
+- **배포 일시**: 2026-10-24 00:46:10 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)`
