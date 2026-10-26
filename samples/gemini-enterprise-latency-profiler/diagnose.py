@@ -921,7 +921,19 @@ def run_config_mode(scenario_name: str = "") -> None:
             elif key == "MODEL_ID":
                 default_val = "gemini-3.8-flash"
             elif key == "GE_APP_ID":
-                default_val = os.environ.get("GE_APP_ID", "")
+                target_proj = new_values.get("PROJECT_ID") or gcloud_project or os.environ.get("PROJECT_ID", "")
+                if target_proj:
+                    try:
+                        token = get_gcloud_auth_token()
+                        discovered = discover_ge_app_engines(target_proj, token)
+                        if discovered:
+                            default_val = discovered[0]["id"]
+                            if is_interactive and len(discovered) > 1:
+                                print(f"  [*] 사내 발견된 Gemini Enterprise App 목록: {', '.join(d['id'] for d in discovered)}")
+                    except Exception:
+                        pass
+                if not default_val:
+                    default_val = os.environ.get("GE_APP_ID", "")
 
         desc = key_descriptions.get(key, "")
         if desc and is_interactive:
