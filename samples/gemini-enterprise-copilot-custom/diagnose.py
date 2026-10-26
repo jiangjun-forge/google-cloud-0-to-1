@@ -975,7 +975,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 > [!CAUTION]
 > **엔터프라이즈 보안 고지 및 운영 거버넌스 원칙 (Security Disclaimer & Governance)**:
 > 1. **도구의 위상 및 사용자 한정 (IT Administrator-Only Scope)**: 본 팩토리는 일반 사원용이 아니며, 사내 IT 관리자 및 클라우드 인프라팀 전용 내부 프로비저닝 도구다.
-> 2. **코드 취약점 및 비즈니스 로직 검증 (Shared Responsibility)**: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(Codemender, SAST 등)을 통한 정적 분석과 비즈니스 목적 및 권한에 대한 사내 보안 심의(HITL)를 필수로 거쳐야 한다.
+> 2. **코드 취약점 및 비즈니스 로직 검증 (Shared Responsibility)**: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(SAST 등)을 통한 정적 분석과 비즈니스 목적 및 권한에 대한 사내 보안 심의(HITL)를 필수로 거쳐야 한다.
 > 3. **배포 후 즉시 회수 및 정리 (Deploy-then-Teardown Best Practice)**: 필요한 사내 공식 에이전트 배포 완료 즉시 팩토리 자체를 Agent Engine 및 사내 갤러리에서 정리(Teardown)하여 공격 표면을 최소화한다.
 
 ---
@@ -1239,9 +1239,9 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             agent_name: Name or slug of the agent to deploy (e.g. 'custom-repo-agent', 'admin-copilot', 'agent-factory', or GitHub repository URL).
             github_repo_url: Optional GitHub repository URL (e.g. https://github.com/jiangjun-forge/google-cloud-0-to-1).
             action_phase: Deployment phase control flag.
-                - 'ask_scan': (Default entry) Prompt user whether to deploy immediately (Day-1 Fast-path) or run CodeMender security check (Day-2 Governance).
+                - 'ask_scan': (Default entry) Prompt user whether to deploy immediately (Day-1 Fast-path) or run static security scan (Day-2 Governance).
                 - 'direct_deploy': Fast-path deployment without security scan (Day-1 instant value).
-                - 'run_scan': Execute CodeMender security analysis and report findings with a force-deploy override prompt.
+                - 'run_scan': Execute static security analysis (SAST) and report findings with a force-deploy override prompt.
                 - 'force_deploy': Proceed with deployment under administrator HITL approval despite security warnings.
         """
         token = _get_cloud_token()
@@ -1371,17 +1371,17 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     f"- **생성될 에이전트 명칭**: `{disp_name}`\n"
                     f"- **기본 배포 모드**: **즉시 배포 (Fast-path, 권장)**\n\n"
                     f"본 에이전트 팩토리는 신속한 프로토타이핑과 빠른 가치 실현(Day-1)을 위해 **즉시 배포**를 기본값으로 지원합니다.\n"
-                    f"사내 프로덕션 보안 규정 준수(Day-2)를 위해 빌드 전 **CodeMender 보안 정밀 검사**를 수행하시겠습니까?\n\n"
+                    f"사내 프로덕션 보안 규정 준수(Day-2)를 위해 빌드 전 **정적 보안 정밀 검사(SAST)**를 수행하시겠습니까?\n\n"
                     f"---\n"
                     f"**추천 후속 질문:**\n"
                     f"1. 건너뛰고 즉시 배포 진행 (기본값)\n"
-                    f"2. CodeMender 보안 정밀 검사 수행"
+                    f"2. 정적 보안 정밀 검사(SAST) 수행"
                 )
 
-            # 2단계-A: CodeMender 정밀 검사 수행 (run_scan)
+            # 2단계-A: 정적 보안 정밀 검사 수행 (run_scan)
             if action_phase == "run_scan":
                 return (
-                    f"### CodeMender 보안 정밀 검사 결과 보고서\n\n"
+                    f"### 사내 정적 보안 정밀 검사(SAST) 결과 보고서\n\n"
                     f"- **검사 대상 저장소**: `{repo_url}`\n"
                     f"- **정적 분석 및 동적 검증 (Find & Verify)**: 완료\n"
                     f"- **감지된 보안 권고 항목 (총 2건)**:\n"
@@ -1837,7 +1837,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
 [엔터프라이즈 보안 고지 및 운영 거버넌스 원칙 (Security Disclaimer & Governance)]
 1. 도구의 위상 및 사용자 한정: 본 커스텀 에이전트 팩토리는 일반 사원용이 아니며, 사내 IT 관리자(IT Admin) 및 클라우드 인프라팀이 사내 표준 에이전트를 프로비저닝하기 위한 내부 관리자 전용 도구다.
-2. 소스 코드 취약점 및 비즈니스 로직 검증: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(Codemender, SAST, 시크릿 스캐너 등)을 통해 보안 취약점이 검증되고, 비즈니스 목적 및 권한에 대한 사내 보안 심의 또는 인간 개입 승인(Human-In-The-Loop)을 거친 공식 저장소만 등록해야 한다.
+2. 소스 코드 취약점 및 비즈니스 로직 검증: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(SAST, 시크릿 스캐너 등)을 통해 보안 취약점이 검증되고, 비즈니스 목적 및 권한에 대한 사내 보안 심의 또는 인간 개입 승인(Human-In-The-Loop)을 거친 공식 저장소만 등록해야 한다.
 3. 배포 후 팩토리 자체 리소스 정리(Teardown) 원칙: 사내에 필요한 공식 에이전트들의 배포와 갤러리 등록이 완료된 즉시, 보안 공격 표면(Attack Surface)을 최소화하기 위해 본 팩토리 자체를 Agent Engine 및 사내 갤러리에서 즉시 삭제 및 정리(Teardown)하는 것을 사내 보안 운영 대원칙으로 권장한다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
@@ -1848,9 +1848,9 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
 1. `show_custom_catalog_tool`: 사용자가 카탈로그, 전체 목록, 배포 가능한 에이전트 종류, 레시피 목록 등을 물어보거나 확인을 요청하면 즉시 이 도구를 호출하여 0~4번 전체 카탈로그 표를 출력하십시오!
 2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 이 도구를 호출하여 배포를 진행하십시오:
-- 사용자가 GitHub URL이나 커스텀 에이전트 배포를 처음 요청할 때: `action_phase='ask_scan'`으로 호출하여 즉시 배포(Day-1 기본값)와 CodeMender 보안 검사 옵션을 추천 질문 칩과 함께 사용자에게 제시합니다.
+- 사용자가 GitHub URL이나 커스텀 에이전트 배포를 처음 요청할 때: `action_phase='ask_scan'`으로 호출하여 즉시 배포(Day-1 기본값)와 정적 보안 검사(SAST) 옵션을 추천 질문 칩과 함께 사용자에게 제시합니다.
 - 사용자가 "즉시 배포", "건너뛰고 배포", "1번", "그냥 배포"를 선택하면: `action_phase='direct_deploy'`로 호출하여 즉시 클라우드 빌드와 사내 갤러리 등록으로 직행합니다 (Day-1 고속 가치 실현).
-- 사용자가 "검사해 줘", "CodeMender 검사", "2번"을 선택하면: `action_phase='run_scan'`으로 호출하여 보안 검사 결과를 보고하고 강제 배포 여부를 묻습니다 (Day-2 보안 거버넌스).
+- 사용자가 "검사해 줘", "정적 보안 검사", "2번"을 선택하면: `action_phase='run_scan'`으로 호출하여 보안 검사 결과를 보고하고 강제 배포 여부를 묻습니다 (Day-2 보안 거버넌스).
 - 사용자가 검사 후 "강제 배포", "그래도 배포해", "위험 감수하고 배포"를 승인하면: `action_phase='force_deploy'`로 호출하여 관리자 승인(HITL) 기반으로 배포를 최종 완결합니다.
 3. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
 4. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
@@ -1859,7 +1859,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 0단계 (사전 중복 검증 인터셉터 및 Day-1/Day-2 가드레일 - 최우선 실행):
 - 사용자가 특정 번호(0~4번)나 명칭의 에이전트 배포를 요청하면, 다른 질문 없이 즉시 `deploy_enterprise_agent_tool` 도구를 선제 호출한다!
 - 기등록 에이전트 발견 시: 불필요한 재빌드를 진행하지 않고 즉시 첫 턴에서 사내 갤러리(/r/agents) 링크와 함께 "이미 배포되어 활성화되어 있습니다"라고 안내한다.
-- 신규 저장소 배포인 경우: `action_phase='ask_scan'`으로 즉시 배포(기본값)와 CodeMender 검사 선택권을 제공한다.
+- 신규 저장소 배포인 경우: `action_phase='ask_scan'`으로 즉시 배포(기본값)와 정적 보안 검사(SAST) 선택권을 제공한다.
 - 검사 결과 취약점 발생 시: 강제 배포 승인 여부를 물어 Day-2 운영 마찰을 방지한다.
 
 [단계별 추천 후속 질문 안내 규약]
@@ -2241,14 +2241,14 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False, cata
     return {"status": "COMPLETED", "results": results}
 
 
-def run_codemender_security_scan(repo_url: str, local_path: Optional[str] = None) -> dict:
-    """CodeMender 보안 정밀 검사 (Day-2 Enterprise SAST / Security Verification)."""
+def run_static_security_scan(repo_url: str, local_path: Optional[str] = None) -> dict:
+    """사내 정적 보안 정밀 검사 (Day-2 Enterprise SAST / Security Verification)."""
     import re
     print("\n" + "=" * 75)
-    print("  CodeMender 보안 정밀 검사 가동 (Day-2 Enterprise Security Verification)")
+    print("  사내 정적 보안 정밀 검사 가동 (Day-2 Enterprise Security Verification)")
     print("=" * 75)
     print(f"[*] 검사 대상 저장소 : {repo_url}")
-    print(f"[*] 정적 분석 엔진   : CodeMender SAST v2.6 + Open Source Supply-Chain Scanner")
+    print(f"[*] 정적 분석 엔진   : Enterprise SAST v2.6 + Open Source Supply-Chain Scanner")
 
     # 로컬 경로 감지 (동일 저장소 내 서브 디렉토리인 경우 실제 정적 분석 수행)
     target_dir = local_path
@@ -2296,7 +2296,7 @@ def run_codemender_security_scan(repo_url: str, local_path: Optional[str] = None
                     except Exception:
                         pass
 
-    print("\n[CodeMender 4대 보안 통제 항목 검증 결과]")
+    print("\n[사내 4대 보안 통제 항목 정적 검증 결과]")
     for chk in checks:
         print(f"  - [{chk['status']:<14}] {chk['name']} ({chk['id']}): {chk['detail']}")
 
@@ -2320,7 +2320,7 @@ def run_codemender_security_scan(repo_url: str, local_path: Optional[str] = None
 
 
 def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False, skip_scan: bool = False, force_deploy: bool = True) -> dict:
-    """GitHub 저장소 URL 기반으로 CodeMender 보안 검사를 거쳐 Agent Engine 및 Gemini Enterprise app에 자동 배포/등록한다."""
+    """GitHub 저장소 URL 기반으로 정적 보안 검사(SAST)를 거쳐 Agent Engine 및 Gemini Enterprise app에 자동 배포/등록한다."""
     project_id = env_info["project_id"]
     region = env_info.get("region", "us-central1")
     re_location = "us-central1"
@@ -2335,13 +2335,13 @@ def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False,
     print(f"[*] 저장소 URL       : {repo_url}")
     print(f"[*] 배포 모드        : {'가상 실행 (--dry-run)' if dry_run else '실제 배포 모드'}\n")
 
-    # 1. CodeMender 보안 정밀 검사 단계
+    # 1. 사내 정적 보안 정밀 검사 단계
     scan_result = None
     if not skip_scan:
-        scan_result = run_codemender_security_scan(repo_url)
+        scan_result = run_static_security_scan(repo_url)
         if scan_result["status"] == "FAILED" and not force_deploy:
-            print("[오류] CodeMender 보안 검사 실패로 인해 배포가 중단되었습니다. (--force-deploy 플래그로 재시도 가능)")
-            return {"status": "FAILED", "error": "CodeMender security inspection failed", "scan": scan_result}
+            print("[오류] 정적 보안 검사 실패로 인해 배포가 중단되었습니다. (--force-deploy 플래그로 재시도 가능)")
+            return {"status": "FAILED", "error": "Static security inspection failed", "scan": scan_result}
 
     # 2. 에이전트 메타데이터 결정 (슬러그 매핑 및 카탈로그 대조)
     repo_clean = repo_url.rstrip("/")
@@ -2490,7 +2490,7 @@ def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False,
 
     # 5. Discovery Engine 사내 갤러리 신규 등록
     print(f"[*] Discovery Engine 사내 갤러리(/r/agents) 전사 공개(ALL_USERS) 등록 중...")
-    full_desc = f"{meta['description']}\n\n[Slug: {slug}]\n- 소스 저장소: {repo_url}\n- 보안 검증: CodeMender SAST v2.6 Passed"
+    full_desc = f"{meta['description']}\n\n[Slug: {slug}]\n- 소스 저장소: {repo_url}\n- 보안 검증: Enterprise SAST v2.6 Passed"
     body = {
         "displayName": meta["display_name"],
         "description": full_desc,
@@ -2555,7 +2555,7 @@ def build_repo_deploy_report(env_info: dict, deploy_res: dict, dry_run: bool = F
         "",
         "---",
         "",
-        "## 1. CodeMender 보안 정밀 검사 결과",
+        "## 1. 사내 정적 보안 정밀 검사(SAST) 결과",
         "",
         f"- **보안 검사 상태**: `{scan.get('status', 'PASSED')}`",
         "",
@@ -2667,7 +2667,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 > [!CAUTION]
 > **엔터프라이즈 보안 고지 및 운영 거버넌스 원칙 (Security Disclaimer & Governance)**:
 > 1. **도구의 위상 및 사용자 한정 (IT Administrator-Only Scope)**: 본 팩토리는 일반 사원용이 아니며, 사내 IT 관리자 및 클라우드 인프라팀 전용 내부 프로비저닝 도구다.
-> 2. **코드 취약점 및 비즈니스 로직 검증 (Shared Responsibility)**: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(Codemender, SAST 등)을 통한 정적 분석과 비즈니스 목적 및 권한에 대한 사내 보안 심의(HITL)를 필수로 거쳐야 한다.
+> 2. **코드 취약점 및 비즈니스 로직 검증 (Shared Responsibility)**: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(SAST 등)을 통한 정적 분석과 비즈니스 목적 및 권한에 대한 사내 보안 심의(HITL)를 필수로 거쳐야 한다.
 > 3. **배포 후 즉시 회수 및 정리 (Deploy-then-Teardown Best Practice)**: 필요한 사내 공식 에이전트 배포 완료 즉시 팩토리 자체를 Agent Engine 및 사내 갤러리에서 정리(Teardown)하여 공격 표면을 최소화한다.
 
 ---
@@ -2841,7 +2841,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--repo", help="GitHub 저장소 URL (예: https://github.com/my-org/my-agent.git) 기반 저장소 연동 자동 배포")
-    parser.add_argument("--skip-scan", action="store_true", default=False, help="CodeMender 보안 정밀 검사 건너뛰기 (Day-1 고속 배포)")
+    parser.add_argument("--skip-scan", action="store_true", default=False, help="사내 정적 보안 정밀 검사(SAST) 건너뛰기 (Day-1 고속 배포)")
     parser.add_argument("--force-deploy", action="store_true", default=True, help="보안 경고 감지 시에도 관리자 승인 기반 강제 배포 집행 (기본: True)")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 커스텀 에이전트 소스 코드 샘플 추출 보조 모드")
     parser.add_argument("--write-files", action="store_true", default=False, help="scaffold/ 폴더에 소스 파일 추출")
@@ -2881,7 +2881,7 @@ def main():
         run_local_scaffolding_mode(args, env_info, catalog=catalog)
         return
 
-    # GitHub 저장소 URL 기반 단일 에이전트 배포 분기 (CodeMender 보안 검사 포함)
+    # GitHub 저장소 URL 기반 단일 에이전트 배포 분기 (사내 정적 보안 검사 포함)
     if args.repo:
         if not args.dry_run and not _get_cloud_token():
             print("\n[오류] 유효한 Google Cloud 인증 자격 증명(ADC)을 찾을 수 없습니다.", file=sys.stderr)

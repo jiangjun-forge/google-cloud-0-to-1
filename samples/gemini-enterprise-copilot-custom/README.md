@@ -25,7 +25,7 @@ All contents, designs, and code examples are subject to change, modification, or
 >    - 본 커스텀 에이전트 팩토리(Custom Agent Factory)는 일반 임직원이나 개별 개발자가 임의로 에이전트를 전사 배포하는 범용 도구가 아니며, 사내 클라우드 인프라팀 및 IT 관리자(IT Administrators)가 사내 표준 에이전트를 프로비저닝하기 위해 활용하는 **내부 관리자 전용 프로비저닝 도구**다.
 > 2. **Day-1 신속 배포와 Day-2 보안 거버넌스의 양립 (Shared Responsibility & HITL)**:
 >    - **Day-1 고속 가치 실현**: GitHub URL 하나로 신속하게 에이전트를 빌드 및 배포하는 빠른 시작(Fast-path 즉시 배포)을 기본값으로 제공하여 초기 온보딩 및 시연 생산성을 뒷받침한다.
->    - **Day-2 운영 마찰 해소 (2단계 대화형 보안 인터셉터)**: 실제 사내 프로덕션 운영 단계에서는 빌드 전 CodeMender 보안 정밀 검사를 선택적으로 수행할 수 있으며, 취약점이나 경고가 발견되더라도 무조건 빌드를 차단하여 운영 파이프라인을 마비시키지 않고 관리자가 위험을 인지한 상태에서 강제 배포(Force Deploy)를 집행할 수 있는 인간 개입 승인(Human-In-The-Loop) 가드레일을 제공한다.
+>    - **Day-2 운영 마찰 해소 (2단계 대화형 보안 인터셉터)**: 실제 사내 프로덕션 운영 단계에서는 빌드 전 정적 보안 정밀 검사(SAST)를 선택적으로 수행할 수 있으며, 취약점이나 경고가 발견되더라도 무조건 빌드를 차단하여 운영 파이프라인을 마비시키지 않고 관리자가 위험을 인지한 상태에서 강제 배포(Force Deploy)를 집행할 수 있는 인간 개입 승인(Human-In-The-Loop) 가드레일을 제공한다.
 > 3. **배포 후 즉시 회수 및 정리 원칙 (Deploy-then-Teardown Best Practice)**:
 >    - 팩토리 에이전트 자체를 Gemini Enterprise app 환경에 상시 상주형(Always-on)으로 유지할 경우, 불필요한 공격 표면(Attack Surface)이 노출되거나 미승인 에이전트 배포 창구로 악용될 위험이 있다.
 >    - 따라서 사내에 필요한 공식 에이전트(BigQuery Data Agent, Admin Copilot 등)의 생성, 배포 및 사내 갤러리 등록이 완료된 즉시 **본 커스텀 에이전트 팩토리 자체는 Agent Engine 및 사내 갤러리에서 즉시 삭제/정리(Teardown)하는 것을 사내 보안 운영 대원칙으로 권장**한다.

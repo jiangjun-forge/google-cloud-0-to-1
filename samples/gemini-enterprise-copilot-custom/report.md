@@ -1,6 +1,6 @@
 # Gemini Enterprise 커스텀 에이전트 팩토리 배포 보고서 (gemini-enterprise-copilot-custom)
 
-- **배포 일시**: 2026-10-26 12:55:56 UTC
+- **배포 일시**: 2026-10-26 13:21:42 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Custom Agent Factory (사내 커스텀 에이전트 팩토리)`
@@ -9,7 +9,7 @@
 > [!CAUTION]
 > **엔터프라이즈 보안 고지 및 운영 거버넌스 원칙 (Security Disclaimer & Governance)**:
 > 1. **도구의 위상 및 사용자 한정 (IT Administrator-Only Scope)**: 본 팩토리는 일반 사원용이 아니며, 사내 IT 관리자 및 클라우드 인프라팀 전용 내부 프로비저닝 도구다.
-> 2. **코드 취약점 및 비즈니스 로직 검증 (Shared Responsibility)**: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(Codemender, SAST 등)을 통한 정적 분석과 비즈니스 목적 및 권한에 대한 사내 보안 심의(HITL)를 필수로 거쳐야 한다.
+> 2. **코드 취약점 및 비즈니스 로직 검증 (Shared Responsibility)**: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(SAST 등)을 통한 정적 분석과 비즈니스 목적 및 권한에 대한 사내 보안 심의(HITL)를 필수로 거쳐야 한다.
 > 3. **배포 후 즉시 회수 및 정리 (Deploy-then-Teardown Best Practice)**: 필요한 사내 공식 에이전트 배포 완료 즉시 팩토리 자체를 Agent Engine 및 사내 갤러리에서 정리(Teardown)하여 공격 표면을 최소화한다.
 
 ---
