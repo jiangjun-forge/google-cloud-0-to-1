@@ -58,7 +58,7 @@ flowchart TB
    - *"사내에 등록된 테스트용/미사용 에이전트 목록 스캔해 줘"*
    - *"테스트 에이전트들 일괄 비활성화(DISABLED) 처리해 줘"*
    - *"특정 에이전트 전사 공유(ALL_USERS) 승인 또는 비공개(PRIVATE) 회수해 줘"*
-   - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 30초 싱크 가이드 알려 줘"*
+   - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 자동 싱크 가이드 알려 줘"*
    - *"사내 도메인(`example-corp.com`) 선점 충돌 해결을 위한 Cloud Identity 온보딩 절차 알려 줘"*
    - *"외부 마켓플레이스 차단 및 사내 승인 에이전트 강제 조직 정책 가이드 보여 줘"*
 

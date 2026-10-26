@@ -1105,7 +1105,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
 
 [다중 데이터 소스 인스턴스 스캐폴딩 및 중복 허용 원칙 (Multi-Source Instance Policy)]
 - 사내 환경에서는 동일한 커넥터 종류(예: Jira, Confluence, Google Drive, Salesforce 등)라 하더라도 부서별 또는 목적별(예: '개발팀 Jira' vs '인사팀 Jira', '전사 공용 Drive' vs '재무팀 보안 Drive')로 서로 다른 엔터프라이즈 데이터 소스를 연결해야 합니다.
-- 따라서 커넥터 종류가 같다는 이유로 스캐폴딩 생성을 임의로 차단하거나 거부하지 않으며, 각각 독립된 데이터 저장소 식별자(Data Store ID)와 인스턴스 매니페스트로 다중 스캐폴딩 생성을 완벽히 지원합니다.
+- 따라서 커넥터 종류가 같다는 이유로 스캐폴딩 생성을 임의로 차단하거나 거부하지 않으며, 각각 독립된 데이터 저장소 식별자(Data Store ID)와 인스턴스 매니페스트로 다중 스캐폴딩 생성을 독립적으로 지원합니다.
 - 사용자가 동일한 종류의 SaaS 연동을 다시 요청하더라도, 기존 인스턴스와 충돌하지 않도록 고유한 데이터 소스 접미사(예: jira-dev, jira-hr)를 부여하여 새로운 매니페스트를 자율 생성하십시오.
 
 [핵심 단계별 인터뷰 절차]

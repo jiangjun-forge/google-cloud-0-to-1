@@ -728,7 +728,7 @@ EOF
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
-# Cloud Logging to BigQuery 원클릭 30초 감사 로그 싱크 자동 구축 스크립트
+# Cloud Logging to BigQuery 원클릭 감사 로그 싱크 자동 구축 스크립트
 
 set -euo pipefail
 
@@ -971,7 +971,7 @@ flowchart TB
    - *"사내에 등록된 테스트용/미사용 에이전트 목록 스캔해 줘"*
    - *"테스트 에이전트들 일괄 비활성화(DISABLED) 처리해 줘"*
    - *"특정 에이전트 전사 공유(ALL_USERS) 승인 또는 비공개(PRIVATE) 회수해 줘"*
-   - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 30초 싱크 가이드 알려 줘"*
+   - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 자동 싱크 가이드 알려 줘"*
    - *"사내 도메인(`{domain}`) 선점 충돌 해결을 위한 Cloud Identity 온보딩 절차 알려 줘"*
    - *"외부 마켓플레이스 차단 및 사내 승인 에이전트 강제 조직 정책 가이드 보여 줘"*
 
@@ -1036,7 +1036,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
     display_name = "GE In-Chat Admin Copilot (사내 어드민 코파일럿)"
-    description = "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 30초 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿"
+    description = "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 자동 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿"
 
     labels = {
         "managed-by": "google-cloud-0-to-1",
@@ -1132,7 +1132,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
 **추천 후속 질문:**
 1. 에이전트 관리 콘솔 딥링크 확인
 2. 좀비 에이전트 적발 SQL 쿼리 조회
-3. BigQuery 로그 싱크 30초 셋업 가이드
+3. BigQuery 로그 싱크 자동 셋업 가이드
 - 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
 [소통 원칙]
@@ -1695,7 +1695,7 @@ def deploy_admin_copilot_engine(env_info: dict, dry_run: bool = False) -> dict:
             {"text": "사내 등록된 테스트/미사용 에이전트 목록 스캔하고 비활성화(DISABLED) 처리해 줘"},
             {"text": "사내 GE App에 연결된 데이터 커넥터(Data Store) 목록 조회해 줘"},
             {"text": "사내 에이전트가 100개가 넘는데 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘"},
-            {"text": "Cloud Logging 감사 로그를 BigQuery로 30초 만에 자동 연결하는 스크립트 줘"},
+            {"text": "Cloud Logging 감사 로그를 BigQuery로 자동 연결하는 스크립트 줘"},
             {"text": "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?"},
         ],
         "adkAgentDefinition": {
