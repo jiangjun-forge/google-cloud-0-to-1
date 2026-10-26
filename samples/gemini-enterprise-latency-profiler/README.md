@@ -14,19 +14,19 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 엔터프라이즈(Gemini Enterprise) 파이프라인 구간별 지연 시간 분석기 (`gemini-enterprise-latency-profiler`)
+# 제미나이 엔터프라이즈(GE app) vs 버텍스 AI(Vertex AI) 지연 시간 및 플래너 궤적 분석기 (`gemini-enterprise-latency-profiler`)
 
-엔터프라이즈 생성형 AI 파이프라인에서 발생하는 체감 지연 시간(Latency)의 원인을 전송 네트워크(DNS, TCP, TLS), 보안 가드레일(Model Armor, Sensitive Data Protection), 컨텍스트 증강(Search Grounding), 순수 LLM 추론(TTFT, 토큰 생성 속도) 구간별로 분해 계측하여 워터폴(Waterfall) 차트 및 병목 최적화 권고안을 제공하는 실측 진단 도구다. (As of 2026-10-17)
+사내 엔터프라이즈 GE app(Gemini Enterprise app)의 공식 `streamAssist` 스트리밍 대화 엔드포인트와 버텍스 AI(Vertex AI) 순수 제미나이(Gemini) 파운데이션 모델의 `streamGenerateContent` 엔드포인트를 실측하여, 체감 초기 응답 지연(TTFT), 전체 E2E 완료 시간, 내부 플래너 궤적(Planner Steps), RAG 검색 및 거버넌스 오버헤드(Delta)를 정밀 계측하고 워터폴(Waterfall) 차트 및 궤적 리포트를 제공하는 실무 진단 도구다. (As of 2026-10-26)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
-- [ ] 사내 엔터프라이즈 제미나이 앱이나 버텍스 AI(Vertex AI) 기반 서비스가 일반 컨슈머 웹앱(`gemini.google.com`) 대비 지연 시간이 발생하는 원인을 정밀 분석하고 개선하고자 하는 경우
-- [ ] 지연 시간의 원인이 모델 자체의 추론 속도 문제인지, 보안 가드레일(Model Armor)의 동기 검사 오버헤드인지 객관적인 데이터로 입증해야 하는 경우
-- [ ] 구글 검색 그라운딩(Search Grounding) 또는 사내 지식 검색(RAG) 도입으로 인해 추가되는 지연 시간을 구간별(Hop-by-hop)로 정량화해야 하는 경우
-- [ ] 첫 번째 토큰 도달 시간(TTFT: Time To First Token)과 출력 스트리밍 전송 속도(TPS)를 분리 측정하여 UI/UX 렌더링 병목을 진단해야 하는 경우
+- [ ] 사내 엔터프라이즈 GE app 대화창(웹 UI)의 초기 응답 속도(TTFT)가 순수 Gemini API 호출 대비 지연되는 근본 원인을 정밀 분석하고 입증해야 하는 경우
+- [ ] 지연 시간의 원인이 모델 자체의 추론 지연인지, 사내 데이터스토어/웹 그라운딩 검색 및 어시스턴트 플래닝(Dolphin Planner) 오버헤드인지 객관적 궤적으로 규명해야 하는 경우
+- [ ] 첫 번째 스트리밍 토큰 도달 시간(체감 TTFT)과 전체 답변 스트리밍 완료 시간을 분리 측정하여 UI/UX 렌더링 병목을 진단해야 하는 경우
+- [ ] 사내 GE app의 내부 실행 단계(QueryStep, PlanStep, Search, Model Generation)별 소요 시간 타임라인을 정밀 추적(Trace)해야 하는 경우
 - [ ] 온프레미스 전용선, VPC-SC, Private Service Connect(PSC) 등 사내 프라이빗 네트워크 경로의 TCP/TLS 핸드셰이크 오버헤드를 실측하고자 하는 경우
 
 ---
@@ -50,16 +50,36 @@ python diagnose.py --dry-run
 
 **터미널 진단 출력 미리보기:**
 ```text
-신뢰 스택 세부 진단 및 권고안:
-============================================================================================
-* HOP-01 [네트워크 전송 (DNS, TCP, TLS)] - 138.5 ms (7.9%)
-  - 원인 분석: 클라이언트 단말에서 asia-northeast3 엔드포인트까지의 네트워크 악수 및 TLS 협상 시간
-  - 최적화안: VPC 내부 Private Service Connect (PSC) 전용선 경유로 RTT를 단축하거나 글로벌 애니캐스트 활용 권장
-* HOP-02 [Model Armor 보안 가드레일] - 562.0 ms (32.0%)
-  - 원인 분석: 프롬프트 인젝션, 탈옥, Sensitive Data Protection (SDP) 민감 정보 실시간 인그레스 스캔 오버헤드
-  - 최적화안: 모든 필터를 동기 실행하지 않고 필요도가 낮은 규칙의 비동기 감사 분리 또는 필터 신뢰도 임계치 튜닝 필요
-* HOP-03 [구글 검색 그라운딩 (Grounding)] - 325.4 ms (18.6%)
-  - 원인 분석: 실시간 구글 검색 쿼리 실행, 결과 파싱, 인라인 컨텍스트 주입에 소요된 추가 지연 시간
+[1] Gemini Enterprise App (streamAssist) 완결형 엔터프라이즈 구간별 지연 시간 (총 소요: 15,364.7 ms)
+------------------------------------------------------------------------------------------------
+구간 ID    | 계층           | 소요 시간 (비중)           | 워터폴 차트
+------------------------------------------------------------------------------------------------
+HOP-01   | 전송 계층        |   112.5 ms ( 0.7%)   | [                                    ] 네트워크 전송 (DNS, TCP, TLS)
+HOP-02   | 엔터프라이즈       |  6520.4 ms (42.4%)   | [===============                     ] GE App 플래너 분석 및 사내 RAG / 그라운딩 검색
+HOP-03   | 모델 추론        |  2244.0 ms (14.6%)   | [=====                               ] 거버넌스 가드레일 통과 및 첫 토큰 생성 (TTFT)
+HOP-04   | 토큰 생성        |  6487.8 ms (42.2%)   | [===============                     ] 스트리밍 텍스트 전송 및 추천 질문 합성
+------------------------------------------------------------------------------------------------
+
+[2] 엔드유저 초기 응답 지연(TTFT) 및 완결 E2E 소요 시간 1:1 대조군 분석:
+================================================================================================
+계측 지표                      | GE App (StreamAssist)  | Vertex AI Gemini     | 오버헤드 (Delta)
+------------------------------------------------------------------------------------------------
+첫 청크 도달 (체감 TTFT)          |     8876.9 ms          |     3149.5 ms        |    +5727.4 ms
+전체 E2E 소요 시간 (Total)       |    15364.7 ms          |     3344.5 ms        |   +12020.2 ms
+스트리밍 전송 시간                 |     6487.8 ms          |      195.0 ms        |    +6292.8 ms
+================================================================================================
+
+[3] GE App 내부 플래너 실행 궤적 상세 타임라인 (총 6단계):
+------------------------------------------------------------------------------------------------
+단계     | 유형         | 경과 시간        | 구간 델타        | 수행 내용 및 미리보기
+------------------------------------------------------------------------------------------------
+1      | QueryStep  |      0.0 ms  |      0.0 ms  | 사내 보안 규정 요약 및 주요 수칙 3가지를 알려줘.
+2      | PlanStep   |   1933.4 ms  |   1933.4 ms  | Formulating retrieval query for security g
+3      | PlanStep   |   3773.2 ms  |   1839.8 ms  | Processing retrieved documents from enterp
+4      | PlanStep   |   6626.2 ms  |   2853.0 ms  | Structuring answer with security grounding
+5      | PlanStep   |   8876.9 ms  |   2250.7 ms  | 안녕하세요! 사내 자산과 중요 정보를 안전하게 보호하기 위한...
+6      | PlanStep   |  15364.7 ms  |   6487.8 ms  | 추천 질문: [오늘 해야 할 일 확인], [최근 수신 이메일 요약] 등
+------------------------------------------------------------------------------------------------
 ```
 
 ### 2) 실제 사내 인프라 실시간 진단
@@ -78,34 +98,32 @@ python diagnose.py
 ```mermaid
 flowchart TD
     subgraph Layer1["1. 사용자 및 벤치마크 계층 (User Interaction)"]
-        User["사내 임직원 업무 단말기"] -->|"실제 프롬프트 요청"| GEApp["Gemini Enterprise app"]
-        Engineer["성능 / AI 엔지니어"] -->|"1. 구간별 실측 프로파일링"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
+        User["사내 임직원 업무 대화창"] -->|"실제 프롬프트 질의"| GEApp["Gemini Enterprise app<br/>(웹 UI 포털)"]
+        Engineer["성능 / AI 엔지니어"] -->|"1. E2E 실측 프로파일링"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
     end
 
     subgraph Layer2["2. 전송 네트워크 및 보안 경계 (Network & Security Boundary)"]
         PSC["Private Service Connect / 전송 관문<br/>(DNS 해석 + TCP 443 + TLS)"]
-        Armor["Model Armor 보안 가드레일<br/>(프롬프트 살균 & 탈옥 검사)"]
+        IAM["엔터프라이즈 세션 & IAM 거버넌스<br/>(사용자 ACL 및 세션 바인딩)"]
     end
 
-    subgraph Layer3["3. 프로파일링 계측 런타임 (Profiling Engine)"]
-        Profiler["구간별 정밀 타이머 엔진<br/>- Network RTT 계측<br/>- Guardrail 지연 계측<br/>- TTFT / 토큰 생성 속도(TPS)"]
-        Waterfall["워터폴(Waterfall) 분석기<br/>(최대 병목 구간 판정)"]
-        Profiler --> Waterfall
+    subgraph Layer3["3. 어시스턴트 플래너 런타임 (Assistant Engine Runtime)"]
+        Planner["Dolphin Planner 엔진<br/>- 쿼리 의도 분석(QueryStep)<br/>- 멀티턴 플래닝(PlanStep)"]
+        Grounding["사내 지식 & 웹 그라운딩<br/>- Discovery Engine Data Store 검색<br/>- Google Search Grounding"]
+        Planner --> Grounding
     end
 
     subgraph Layer4["4. 대상 생성형 AI 인프라 (Target AI Infrastructure)"]
-        Search["Vertex AI Search<br/>(사내 RAG 컨텍스트 증강)"]
-        Cache["Prompt Caching<br/>(컨텍스트 캐시 슬롯)"]
-        Model["Gemini 3.8 Flash<br/>(글로벌/서울 파운데이션 모델 서빙)"]
+        Gemini["Vertex AI Gemini 3.8 Flash<br/>- 첫 토큰 생성(TTFT)<br/>- 스트리밍 토큰 청크 수신"]
+        Baseline["Vertex AI Direct API<br/>(1:1 대조군 파이프라인)"]
     end
 
-    CLI -->|"2. 네트워크 계측"| PSC
-    PSC -->|"3. 보안 필터 실측"| Armor
-    Armor -->|"4. RAG 검색 실측"| Search
-    Search -->|"5. 캐시 적중 여부"| Cache
-    Cache -->|"6. 첫 토큰 스트리밍(TTFT)"| Model
-    Model -->|"생성 완료"| Profiler
-    Waterfall -->|"7. 병목 최적화 리포트"| Engineer
+    CLI -->|"2. 네트워크 RTT 계측"| PSC
+    PSC -->|"3. streamAssist 호출"| IAM
+    IAM -->|"4. 플래너 궤적 추적"| Planner
+    Grounding -->|"5. 그라운딩 컨텍스트 주입"| Gemini
+    Gemini -->|"6. 스트리밍 답변 완료"| CLI
+    CLI -.->|"1:1 비교 대조"| Baseline
 
     classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
     classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
@@ -113,22 +131,24 @@ flowchart TD
     classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
 
     class User,GEApp,Engineer,CLI portal;
-    class PSC,Armor security;
-    class Profiler,Waterfall runtime;
-    class Search,Cache,Model backend;
+    class PSC,IAM security;
+    class Planner,Grounding runtime;
+    class Gemini,Baseline backend;
 ```
 
 ---
 ## 4. 조치 가이드 및 권장 설정
 
-1. **Model Armor 가드레일 지연 완화**:
-   - 실시간 인스펙션 오버헤드가 과도할 경우, 불필요하게 높은 민감도 설정을 튜닝하거나 응답 검사(Egress Filtering)를 스트리밍 후처리 미들웨어에서 비동기 감사로 전환한다.
+1. **사내 데이터스토어 인덱스 캐싱 및 청크 최적화**:
+   - 데이터스토어 벡터 검색 시간이 2초를 초과하는 경우, 문서 청크 크기를 500자 내외로 재조정하고 메타데이터 필터링 인덱스를 추가하여 검색 레이턴시를 단축한다.
 
-2. **순수 추론 시간 단축 (Prompt Caching 및 PT 도입)**:
-   - 반복되는 시스템 지침이나 사내 가이드라인 문서가 긴 경우, Vertex AI 프롬프트 캐싱(Context Caching)을 적용하여 첫 토큰 지연(TTFT)을 최대 80% 절감한다.
-   - 프로덕션 환경의 예측 가능한 베이스로드 확보를 위해 Provisioned Throughput(PT)을 도입하여 멀티 테넌트 큐잉 지연을 제거한다.
+2. **불필요한 웹 그라운딩 선택적 제어**:
+   - 사내 전용 인트라넷 질의의 경우 외부 Google Search Grounding을 비활성화하여 불필요한 외부 웹 크롤링/파싱 지연(약 2~3초)을 제거한다.
 
-3. **엔드투엔드 네트워크 RTT 최적화**:
+3. **엔드유저 체감 지연(Perceived Latency) UX 완화**:
+   - GE App은 첫 토큰이 나오기 전까지 플래닝 및 검색을 수행하므로, 프론트엔드 UI 대화창에 첫 청크 수신 전 "사내 규정 및 문서를 검색하고 있습니다..." 상태 인디케이터를 능동적으로 표시하도록 설정한다.
+
+4. **엔드투엔드 네트워크 RTT 최적화**:
    - 사내 클라이언트와 구글 백본망 간의 통신 구간을 최적화하기 위해 Private Service Connect(PSC) 엔드포인트를 구축하여 퍼블릭 인터넷 경유에 따른 패킷 지연을 방어한다.
 
 ---
@@ -136,12 +156,10 @@ flowchart TD
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
-본 도구 구동을 위해 필요한 최소 IAM 권한은 다음과 같다.
-
 | 권한 역할 | 역할 명칭 | 필요 사유 |
 | :--- | :--- | :--- |
-| `roles/aiplatform.user` | Vertex AI 사용자 | Vertex AI Gemini 스트리밍 API 호출 및 TTFT 실측 |
-| `roles/modelarmor.admin` (또는 뷰어) | Model Armor 관리자 | Model Armor 검사 엔드포인트 호출 및 필터링 지연 계측 |
+| `roles/discoveryengine.editor` (또는 뷰어) | Discovery Engine 관리자/뷰어 | GE App `streamAssist` 호출 및 엔진/어시스턴트 상태 조회 |
+| `roles/aiplatform.user` | Vertex AI 사용자 | 1:1 대조군 Vertex AI Gemini 스트리밍 API 호출 및 TTFT 실측 |
 | `roles/monitoring.viewer` | 모니터링 뷰어 | 엔드포인트 지연 메트릭 조회 |
 
 ---
@@ -152,37 +170,9 @@ flowchart TD
 - [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
 - [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
-```text
-============================================================================================
- Vertex AI Gemini API vs Gemini Enterprise App (Gemini Enterprise app) 완결형 파이프라인 지연 시간 비교 리포트
- 프로젝트: example-corp | 리전: asia-northeast3 | 모델: gemini-3.8-flash
- 테스트 프롬프트: "사내 정보보안 가이드라인의 핵심 원칙을 알려줘."
- ※ 참고: Gemini Enterprise app은 웹 UI 접근이 아닌 Discovery Engine 엔드포인트 직접 호출과
-         Model Armor 가드레일 체인을 완결 결합하여 사내 엔터프라이즈 RAG 파이프라인을 모사함.
-============================================================================================
-
-[1] Gemini Enterprise App (Gemini Enterprise app) 완결형 파이프라인 구간별 지연 시간 (총 소요: 4,785.4 ms)
---------------------------------------------------------------------------------------------
-구간 ID    | 계층           | 소요 시간 (비중)           | 워터폴 차트
---------------------------------------------------------------------------------------------
-HOP-01   | 전송 계층        |    61.8 ms ( 1.3%)   | [                                    ] 네트워크 전송 (DNS, TCP, TLS)
-HOP-02   | 보안 통제        |   654.4 ms (13.7%)   | [=====                               ] Model Armor 프롬프트 가드레일 (인그레스 스캔)
-HOP-03   | 엔터프라이즈       |  2181.8 ms (45.6%)   | [================                    ] GE 사내 데이터스토어 검색 및 ACL 인덱스 서빙
-HOP-04   | 모델 추론        |  1265.5 ms (26.4%)   | [=========                           ] RAG 그라운딩 기반 LLM 답변 요약 및 생성
-HOP-05   | 보안 통제        |   621.9 ms (13.0%)   | [====                                ] Model Armor 응답 검사 (이그레스 민감정보 SDP 스캔)
---------------------------------------------------------------------------------------------
-
-[2] 엔드유저 초기 응답 지연(TTFT) 및 완결 E2E 소요 시간 비교 분석:
-============================================================================================
-  * Vertex AI Gemini API 첫 토큰 수신 (TTFT) :    720.5 ms (스트리밍 즉시 수신)
-  * Vertex AI Gemini API 전체 응답 완료 시간  :   1840.2 ms
-  * Gemini Enterprise App 완결 E2E 소요 시간  :   4785.4 ms (보안 가드레일 + 사내 RAG)
---------------------------------------------------------------------------------------------
-  * 1) 첫 토큰 수신 시점 차이 : Gemini Enterprise app 파이프라인에서 약 6.6배 추가 시간 소요
-       (선행 조건: Model Armor 인스펙션 및 사내 인덱스 검색 완료 후 토큰 생성 착수)
-  * 2) 전체 E2E 완료 시간 차이 : Gemini Enterprise app 파이프라인에서 약 2.6배 소요 (+2945.2 ms)
-============================================================================================
-```
+### 실무 실측 인사이트: 순수 Gemini API vs GE App 대화창
+- **순수 버텍스 AI(Vertex AI) API**: 프롬프트 수신 즉시 LLM 추론을 개시하므로 **약 3초 내외**에 첫 스트리밍 토큰이 화면에 표시된다.
+- **Gemini Enterprise app**: 사용자의 질문 의도를 분석하고, 사내 데이터스토어와 웹 검색을 수행하며, 사내 IAM 권한 및 출처 각주를 검증하는 어시스턴트 플래너(Dolphin Planner)가 동기식으로 선행 구동된다. 이로 인해 첫 토큰 수신까지 **약 8~9초**가 소요되는 것은 결함이 아니라 **엔터프라이즈 신뢰 및 환각 방지를 위한 필수 거버넌스 비용**이다.
 
 ---
 ## 7. 리소스 정리 (Teardown) 안내
