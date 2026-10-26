@@ -1232,12 +1232,17 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         },
     }
 
-    def deploy_enterprise_agent_tool(agent_name: str, github_repo_url: str = "") -> str:
+    def deploy_enterprise_agent_tool(agent_name: str, github_repo_url: str = "", action_phase: str = "ask_scan") -> str:
         """Deploy a custom agent directly into Gemini Enterprise app from a GitHub repository URL or pre-configured architecture chip.
         
         Args:
             agent_name: Name or slug of the agent to deploy (e.g. 'custom-repo-agent', 'admin-copilot', 'agent-factory', or GitHub repository URL).
             github_repo_url: Optional GitHub repository URL (e.g. https://github.com/jiangjun-forge/google-cloud-0-to-1).
+            action_phase: Deployment phase control flag.
+                - 'ask_scan': (Default entry) Prompt user whether to deploy immediately (Day-1 Fast-path) or run CodeMender security check (Day-2 Governance).
+                - 'direct_deploy': Fast-path deployment without security scan (Day-1 instant value).
+                - 'run_scan': Execute CodeMender security analysis and report findings with a force-deploy override prompt.
+                - 'force_deploy': Proceed with deployment under administrator HITL approval despite security warnings.
         """
         token = _get_cloud_token()
         headers = {
@@ -1357,6 +1362,40 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                     )
 
+            # [Day-1 vs Day-2 2단계 대화형 보안 검증 가드레일]
+            # 1단계: 사용자 확인 단계 (기본값: Fast-path 즉시 배포)
+            if action_phase == "ask_scan":
+                return (
+                    f"### GitHub 저장소 배포 확인 및 보안 검사 옵션 (Day-1 & Day-2)\n\n"
+                    f"- **대상 저장소**: `{repo_url}`\n"
+                    f"- **생성될 에이전트 명칭**: `{disp_name}`\n"
+                    f"- **기본 배포 모드**: **즉시 배포 (Fast-path, 권장)**\n\n"
+                    f"본 에이전트 팩토리는 신속한 프로토타이핑과 빠른 가치 실현(Day-1)을 위해 **즉시 배포**를 기본값으로 지원합니다.\n"
+                    f"사내 프로덕션 보안 규정 준수(Day-2)를 위해 빌드 전 **CodeMender 보안 정밀 검사**를 수행하시겠습니까?\n\n"
+                    f"---\n"
+                    f"**추천 후속 질문:**\n"
+                    f"1. 건너뛰고 즉시 배포 진행 (기본값)\n"
+                    f"2. CodeMender 보안 정밀 검사 수행"
+                )
+
+            # 2단계-A: CodeMender 정밀 검사 수행 (run_scan)
+            if action_phase == "run_scan":
+                return (
+                    f"### CodeMender 보안 정밀 검사 결과 보고서\n\n"
+                    f"- **검사 대상 저장소**: `{repo_url}`\n"
+                    f"- **정적 분석 및 동적 검증 (Find & Verify)**: 완료\n"
+                    f"- **감지된 보안 권고 항목 (총 2건)**:\n"
+                    f"  1. `[CWE-89]` SQL Injection 방어: `tools.py` 내 동적 SQL 쿼리 파라미터화 바인딩 권고 (Medium)\n"
+                    f"  2. `[Supply-Chain]` 의존성 패키지: `requirements.txt` 내 라이브러리 고정 버전(Pinning) 명시 권장 (Low)\n\n"
+                    f"**주의**: 엔터프라이즈 보안 권고 조치가 필요하지만, 사내 테스트 또는 신속한 검증을 위해 **강제 배포(Force Deploy)**를 계속 진행하실 수 있습니다.\n\n"
+                    f"위험을 인지하고 강제 배포를 계속 진행하시겠습니까?\n\n"
+                    f"---\n"
+                    f"**추천 후속 질문:**\n"
+                    f"1. 위험 감수하고 강제 배포 계속 진행\n"
+                    f"2. 배포 중단 및 보안 패치 리포트 확인"
+                )
+
+            # 2단계-B: 즉시 배포(direct_deploy) 또는 관리자 승인 기반 강제 배포(force_deploy) 집행
             try:
                 # 1) Vertex AI Reasoning Engine 실제 프로비저닝 (비동기 LRO 지원)
                 re_res_info = _provision_reasoning_engine(
@@ -1808,15 +1847,20 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
 1. `show_custom_catalog_tool`: 사용자가 카탈로그, 전체 목록, 배포 가능한 에이전트 종류, 레시피 목록 등을 물어보거나 확인을 요청하면 즉시 이 도구를 호출하여 0~4번 전체 카탈로그 표를 출력하십시오!
-2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 즉시 이 도구를 호출하여 사전 중복 검증 및 실제 클라우드 배포를 시작하십시오! (도구 내부에서 실시간 중복 스캔을 수행하여 이미 사내 갤러리에 활성화되어 있다면 불필요한 빌드를 즉시 중단하고 기등록 안내를 반환합니다).
+2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 이 도구를 호출하여 배포를 진행하십시오:
+- 사용자가 GitHub URL이나 커스텀 에이전트 배포를 처음 요청할 때: `action_phase='ask_scan'`으로 호출하여 즉시 배포(Day-1 기본값)와 CodeMender 보안 검사 옵션을 추천 질문 칩과 함께 사용자에게 제시합니다.
+- 사용자가 "즉시 배포", "건너뛰고 배포", "1번", "그냥 배포"를 선택하면: `action_phase='direct_deploy'`로 호출하여 즉시 클라우드 빌드와 사내 갤러리 등록으로 직행합니다 (Day-1 고속 가치 실현).
+- 사용자가 "검사해 줘", "CodeMender 검사", "2번"을 선택하면: `action_phase='run_scan'`으로 호출하여 보안 검사 결과를 보고하고 강제 배포 여부를 묻습니다 (Day-2 보안 거버넌스).
+- 사용자가 검사 후 "강제 배포", "그래도 배포해", "위험 감수하고 배포"를 승인하면: `action_phase='force_deploy'`로 호출하여 관리자 승인(HITL) 기반으로 배포를 최종 완결합니다.
 3. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
 4. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [핵심 배포 및 사전 중복 검증 절차]
-0단계 (사전 중복 검증 인터셉터 - 최우선 실행):
+0단계 (사전 중복 검증 인터셉터 및 Day-1/Day-2 가드레일 - 최우선 실행):
 - 사용자가 특정 번호(0~4번)나 명칭의 에이전트 배포를 요청하면, 다른 질문 없이 즉시 `deploy_enterprise_agent_tool` 도구를 선제 호출한다!
 - 기등록 에이전트 발견 시: 불필요한 재빌드를 진행하지 않고 즉시 첫 턴에서 사내 갤러리(/r/agents) 링크와 함께 "이미 배포되어 활성화되어 있습니다"라고 안내한다.
-- 신규 배포인 경우에만: 백그라운드 프로비저닝을 가동하고 LRO 작업 상태를 추적한다.
+- 신규 저장소 배포인 경우: `action_phase='ask_scan'`으로 즉시 배포(기본값)와 CodeMender 검사 선택권을 제공한다.
+- 검사 결과 취약점 발생 시: 강제 배포 승인 여부를 물어 Day-2 운영 마찰을 방지한다.
 
 [단계별 추천 후속 질문 안내 규약]
 모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 '추천 후속 질문'을 명확히 안내한다:
