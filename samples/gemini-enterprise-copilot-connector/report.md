@@ -1,6 +1,6 @@
 # Gemini Enterprise 데이터 커넥터 스캐폴더 배포 보고서 (gemini-enterprise-copilot-connector)
 
-- **배포 일시**: 2026-10-24 00:46:11 UTC
+- **배포 일시**: 2026-10-26 13:44:58 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)`

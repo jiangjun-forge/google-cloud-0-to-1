@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 데이터 커넥터 스캐폴더 (gemini-enterprise-copilot-connector)
 
-사내 클라우드 아키텍트 및 데이터 엔지니어가 지라(Jira), 컨플루언스(Confluence), 세일즈포스(Salesforce), 서비스나우(ServiceNow), 셰어포인트(SharePoint), 구글 드라이브(Google Drive), 빅쿼리(BigQuery) 등 다양한 사내 기간계 시스템의 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 데이터 저장소(Data Store) 구성 매니페스트와 시크릿 매니저(Secret Manager) 보안 볼트 연동 설정을 대화형으로 자율 생성해 주는 사내 커넥터 스캐폴더 엔지니어링 도구다. (As of 2026-10-17)
+구글 드라이브나 빅쿼리 같은 1P 자산은 콘솔에서 손쉽게 연결되나, 실제 기업 환경의 핵심 병목인 지라(Jira), 컨플루언스(Confluence), 세일즈포스(Salesforce), 서비스나우(ServiceNow), 셰어포인트(SharePoint), 워크데이(Workday), SAP 등 14대 엔터프라이즈 3P SaaS 시스템의 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 데이터 저장소(Data Store) 구성 매니페스트와 시크릿 매니저(Secret Manager) 보안 볼트 연동 설정을 대화형으로 자율 생성해 주는 사내 커넥터 스캐폴더 엔지니어링 도구다. (As of 2026-10-17)
 
 ---
 
@@ -48,7 +48,7 @@ GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여�
 # 기본 팩토리(붕어빵 틀) 가상 배포 시뮬레이션
 python diagnose.py --dry-run
 
-# 커넥터 매니페스트 합성 가상 검증 (1번: 그룹웨어 커넥터)
+# 14대 엔터프라이즈 3P SaaS 커넥터 매니페스트 합성 가상 검증 (1번: Confluence 커넥터)
 python diagnose.py --scaffold --chip 1 --dry-run
 
 # 자유 프롬프트 기반 맞춤형 시스템 커넥터 합성 가상 검증
@@ -69,14 +69,14 @@ python diagnose.py --scaffold --prompt "사내 하둡 HDFS 데이터 레이크 �
 [안내] 로컬 단일 커넥터 매니페스트 합성 보조 모드 가동
 
 [단계 1/3] 커넥터 칩 스펙 컴파일 중...
-  - 커넥터 명칭 : 사내 그룹웨어 전자결재 및 공지문 커넥터 (슬러그: gw-groupware-doc)
-  - 시스템 분류 : 그룹웨어 및 사내 포털
-  - 인증 방식   : API_KEY_OR_JWT
-  - ACL 동기화  : DOCUMENT_LEVEL_APPROVAL_LINE
+  - 커넥터 명칭 : Confluence Cloud 사내 지식 베이스 커넥터 (슬러그: collab-confluence-wiki)
+  - 시스템 분류 : 협업 도구 및 기술 문서
+  - 인증 방식   : OAUTH2_CLIENT_CREDENTIALS
+  - ACL 동기화  : SPACE_AND_PAGE_RESTRICTIONS
 
 [단계 2/3] Discovery Engine 매니페스트 및 보안 볼트 연동 스펙 합성 중...
-  - 생성된 Data Store ID : ds-gw-groupware-doc-sample-p
-  - Secret Manager 볼트 : connector-secret-gw-groupware-doc
+  - 생성된 Data Store ID : ds-collab-confluence-wiki-sample-p
+  - Secret Manager 볼트 : connector-secret-collab-confluence-wiki
 
 [단계 3/3] 서비스 계정 IAM 권한 및 Gemini Enterprise app 바인딩 진단 중...
   - 상태: PASS (Simulated) | 가상 실행 검증 완료
