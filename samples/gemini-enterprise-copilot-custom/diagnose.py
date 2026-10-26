@@ -1274,6 +1274,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             re_create_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
             pkl_uri = f"gs://{project_id}-agent-engine-staging/{gcs_prefix}/agent_engine.pkl"
             req_uri = f"gs://{project_id}-agent-engine-staging/{gcs_prefix}/requirements.txt"
+            import sys
+            py_ver = f"{sys.version_info.major}.{sys.version_info.minor}"
 
             payload = {
                 "displayName": target_display_name,
@@ -1282,7 +1284,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     "packageSpec": {
                         "pickleObjectGcsUri": pkl_uri,
                         "requirementsGcsUri": req_uri,
-                        "pythonVersion": "3.12",
+                        "pythonVersion": py_ver,
                     },
                     "deploymentSpec": {
                         "env": [
