@@ -1414,6 +1414,21 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
         except Exception:
             pass
 
+        # GE App에 adkAgentDefinition이 없으면 프로젝트 내 활성 Reasoning Engine 동적 탐색
+        if not factory_re_res:
+            try:
+                re_list_url = f"https://{re_location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{re_location}/reasoningEngines"
+                re_resp = requests.get(re_list_url, headers=headers, timeout=10)
+                if re_resp.ok:
+                    engines = re_resp.json().get("reasoningEngines", [])
+                    if engines:
+                        factory_re_res = engines[0].get("name", "")
+            except Exception:
+                pass
+
+        if not factory_re_res:
+            return "[오류] 바인딩할 활성 Agent Engine 리소스를 찾을 수 없습니다. 사내에 배포된 Agent Engine이 존재하는지 확인해 주십시오."
+
         prompts_list = [p.strip() for p in starter_prompts.split(",") if p.strip()] if starter_prompts else [
             f"{display_name}의 주요 기능을 알려 줘",
             "업무 처리 절차와 승인 결재선 확인해 줘",
@@ -1434,7 +1449,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
             "adkAgentDefinition": {
                 "toolSettings": {"toolDescription": full_desc},
                 "provisionedReasoningEngine": {
-                    "reasoningEngine": factory_re_res or f"projects/{project_id}/locations/us-central1/reasoningEngines/1287101780492025856"
+                    "reasoningEngine": factory_re_res
                 },
             },
         }
