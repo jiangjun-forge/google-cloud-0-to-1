@@ -9,7 +9,61 @@ version: "1.0.0"
 description: "Gemini Enterprise app 엔터프라이즈 어드민 거버넌스 및 관리 과제 카탈로그"
 admin_tasks:
   # ==========================================
-  # 1. 테넌트 도메인 및 계정 온보딩 (Tenant & Domain)
+  # 1. 에이전트 & 스킬 스프롤 거버넌스 (Sprawl Governance)
+  # ==========================================
+  - slug: "sprawl-ghost-agent-triage"
+    name: "60일 미사용 좀비 에이전트 전수 식별 및 보관 정리"
+    category: "에이전트 스프롤 거버넌스"
+    description: "임직원이 생성 후 방치한 수백 개 에이전트 중 60일 이상 호출 0건인 좀비 에이전트와 테스트용 임시 에이전트를 전수 식별하고 보관(Archive) 또는 폐기 대상을 추출한다."
+    primary_action: "60일 미호출 에이전트 필터링 및 일괄 보관 조치 쿼리 생성"
+    remediation_type: "BIGQUERY_AUDIT_AND_ARCHIVE"
+    default_scope: "ORG"
+
+  - slug: "sprawl-unapproved-skill-audit"
+    name: "미승인 스킬 및 외부 엔드포인트 도구 감사"
+    category: "에이전트 스프롤 거버넌스"
+    description: "사내 승인 화이트리스트에 없는 외부 웹훅, 미승인 도메인, 사설 REST API를 호출하는 임직원 임의 등록 스킬(Extensions 및 MCP 도구)을 전수 탐지하고 비활성화한다."
+    primary_action: "미인가 도구 호출 스킬 감사 및 비인가 엔드포인트 차단"
+    remediation_type: "SKILL_MANIFEST_AUDIT"
+    default_scope: "ORG"
+
+  - slug: "sprawl-agent-lifecycle-enforcer"
+    name: "퇴사자 및 부서 이동자 고아 에이전트 소유권 회수 및 이관"
+    category: "에이전트 스프롤 거버넌스"
+    description: "에이전트 생성자의 퇴사나 부서 이동으로 방치된 고아(Orphan) 에이전트를 감지하고, 부서 관리자나 중앙 서비스 계정으로 소유권을 재할당하는 생명주기 거버넌스를 처방한다."
+    primary_action: "비활성 계정 소유 에이전트 탐지 및 소유권 재지정 매니페스트 생성"
+    remediation_type: "LIFECYCLE_OWNERSHIP_TRANSFER"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 2. 사용량 및 텔레메트리 패턴 분석 (Usage & Telemetry)
+  # ==========================================
+  - slug: "telemetry-token-top10-ranking"
+    name: "부서별 계정별 토큰 소비량 톱 10 및 비용 급증 추적"
+    category: "사용량 및 텔레메트리 분석"
+    description: "복잡한 Cloud Logging 필터링 없이 BigQuery 감사 로그로 부서별, 임직원 계정별, 에이전트별 토큰 소비량 랭킹과 전주 대비 급증 패턴을 즉시 분석한다."
+    primary_action: "토큰 과소비 톱 10 계정 및 이상 급증 에이전트 집계 쿼리 실행"
+    remediation_type: "BIGQUERY_SQL_TELEMETRY"
+    default_scope: "ORG"
+
+  - slug: "telemetry-quota-exhaustion-tracer"
+    name: "429 할당량 고갈 에이전트 및 호출 집중 시간대 역추적"
+    category: "사용량 및 텔레메트리 분석"
+    description: "일일 풀링 쿼터 초과나 429 RESOURCE_EXHAUSTED 쓰로틀링 에러가 반복 발생하는 특정 에이전트와 피크 시간대 호출 트래픽 패턴을 역추적하고 쿼터 증설 및 속도 제한 가이드를 도출한다."
+    primary_action: "429 에러 발생 시점 및 특정 에이전트 호출 패턴 역추적 쿼리 도출"
+    remediation_type: "QUOTA_EXHAUSTION_DIAGNOSTIC"
+    default_scope: "ORG"
+
+  - slug: "telemetry-shadow-billing-guard"
+    name: "섀도우 AI Studio 결제 계정 연동 및 Overage 과금 방어"
+    category: "사용량 및 텔레메트리 분석"
+    description: "임직원이 회사 결제 계정으로 Google AI Studio에서 API 키를 발급하거나 유료 API를 직접 호출하는 섀도우 과금 누수를 차단하고 중간 관리자 권한 거버넌스를 진단한다."
+    primary_action: "AI Studio 프로젝트 결제 바인딩 감사 및 섀도우 API 키 차단"
+    remediation_type: "BILLING_GUARD_AND_IAM"
+    default_scope: "ORG"
+
+  # ==========================================
+  # 3. 테넌트 온보딩 및 네트워크 보안 (Tenant & Perimeter Security)
   # ==========================================
   - slug: "tenant-domain-onboarding"
     name: "사내 도메인 선점 충돌 및 Cloud Identity 온보딩"
@@ -19,9 +73,6 @@ admin_tasks:
     remediation_type: "DNS_AND_IDENTITY"
     default_scope: "ORG"
 
-  # ==========================================
-  # 2. 보안 거버넌스 및 마켓플레이스 통제 (Security & Governance)
-  # ==========================================
   - slug: "sec-marketplace-governance"
     name: "외부 마켓플레이스 차단 및 사내 승인 에이전트 통제"
     category: "보안 거버넌스 및 정책"
@@ -30,20 +81,6 @@ admin_tasks:
     remediation_type: "ORG_POLICY_AND_ENGINE_CONFIG"
     default_scope: "ORG"
 
-  # ==========================================
-  # 3. FinOps 라이선스 최적화 (FinOps & License)
-  # ==========================================
-  - slug: "finops-license-optimizer"
-    name: "부서별 라이선스 채택률 분석 및 유휴 라이선스 회수"
-    category: "FinOps 및 라이선스 관리"
-    description: "전사 배포된 라이선스의 부서별 실제 활성도 지표를 BigQuery 감사 로그로 집계하고, 30일 이상 미사용 임직원의 유휴 라이선스를 자동 식별 및 회수한다."
-    primary_action: "BigQuery 감사 로그 분석 및 Google Admin 라이선스 비할당 CLI"
-    remediation_type: "BIGQUERY_SQL_AND_ADMIN_CLI"
-    default_scope: "ORG"
-
-  # ==========================================
-  # 5. 네트워크 방화벽 및 코어 FQDN (Network & Proxy)
-  # ==========================================
   - slug: "net-firewall-fqdn"
     name: "사내망 프록시 허용용 Exact 15대 코어 FQDN 진단"
     category: "네트워크 및 프록시 보안"

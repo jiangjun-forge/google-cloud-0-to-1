@@ -41,14 +41,14 @@ custom_agents:
 - slug: gemini-enterprise-copilot-connector
   name: GE In-Chat Connector Scaffolder (기간계 데이터 커넥터 스캐폴더)
   category: 데이터 커넥터 및 지식 베이스
-  description: Gemini Enterprise 공식 1P(Google Drive, BigQuery, Cloud Storage) 및 3P(Jira, Confluence, Salesforce, ServiceNow, SharePoint) 커넥터 연동 매니페스트 및 ACL 동기화 스캐폴더
+  description: Gemini Enterprise 14대 엔터프라이즈 3P SaaS(Jira, Confluence, Salesforce, ServiceNow, SharePoint 등) 커넥터 연동 매니페스트 및 ACL 동기화 스캐폴더
   backend_tech: Agent Engine (ADK 2.11+) + Discovery Engine Data Store
   repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-copilot-connector
-  custom_placeholder_text: 연동하고 싶은 공식 커넥터 데이터 소스(1P: 드라이브/빅쿼리, 3P: Jira/Confluence/Salesforce)를 입력하세요...
+  custom_placeholder_text: "연동하고 싶은 3P SaaS 데이터 소스(Jira, Confluence, Salesforce, ServiceNow 등)를 입력하세요..."
   starter_prompts:
-  - 구글 드라이브 및 빅쿼리 1P 공식 데이터 커넥터 연동 매니페스트 작성해 줘
-  - Jira 및 Confluence 3P 공식 커넥터 설정과 ACL 동기화 구성해 줘
-  - Salesforce CRM 고객 데이터스토어 연동 매니페스트 스캐폴딩해 줘
+  - Jira 및 Confluence 3P 엔터프라이즈 커넥터 설정과 ACL 동기화 구성해 줘
+  - Salesforce CRM 및 ServiceNow 고객 데이터스토어 연동 매니페스트 스캐폴딩해 줘
+  - SharePoint 및 Workday 기업 기간계 데이터 커넥터 매니페스트 생성해 줘
   required_roles:
   - roles/aiplatform.user
   - roles/discoveryengine.editor

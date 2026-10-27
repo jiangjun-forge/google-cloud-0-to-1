@@ -12,13 +12,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 어드민 코파일럿 기술 상세 설계서 (TDD)
 
-본 문서는 사내 IT 어드민 및 클라우드 인프라 팀을 지원하기 위한 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 어드민 코파일럿 도구의 시스템 아키텍처, 5대 관리 칩 상세 설계, 인터페이스 규격 및 진단 로직을 정의한다.
+본 문서는 사내 IT 어드민 및 클라우드 인프라 팀을 지원하기 위한 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 어드민 코파일럿 도구의 시스템 아키텍처, 9대 관리 과제(스프롤 거버넌스 3종, 사용량 패턴 분석 3종, 테넌트 및 네트워크 보안 3종) 상세 설계, 인터페이스 규격 및 진단 로직을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사내 IT 어드민 및 클라우드 인프라 담당자가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 5대 관리 칩 중 하나를 선택하거나 질의를 입력하면, 에이전트 엔진(Agent Engine) 런타임이 사내 인프라 및 조직 정책 API를 진단하고 즉시 실행 가능한 복구 가이드를 도출한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사내 IT 어드민 및 클라우드 인프라 담당자가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 9대 관리 칩 중 하나를 선택하거나 질의를 입력하면, 에이전트 엔진(Agent Engine) 런타임이 사내 인프라 및 조직 정책 API를 진단하고 즉시 실행 가능한 복구 가이드를 도출한다.
 
 ```mermaid
 sequenceDiagram
@@ -62,7 +62,7 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (엔터프라이즈 어드민 과제 카탈로그 및 자유 프롬프팅) | **FR-01** (5대 어드민 카탈로그 및 자연어 프롬프트 처리기) | **NFR-01** (무의존성 단일 파이썬 실행) | `diagnose.py`, `catalog.yaml` |
+| **BR-01** (9대 엔터프라이즈 어드민 과제 카탈로그 및 자유 프롬프팅) | **FR-01** (9대 어드민 카탈로그 및 자연어 프롬프트 처리기) | **NFR-01** (무의존성 단일 파이썬 실행) | `diagnose.py`, `catalog.yaml` |
 | **BR-02** (거버넌스 및 마켓플레이스 차단) | **FR-02** (마켓플레이스 차단 정책 컴파일러) | **NFR-02** (사내 최소 권한 격리) | `diagnose.py` |
 | **BR-03** (라이선스 채택률 및 유휴 회수) | **FR-03** (BigQuery 활성도 분석 SQL 생성기) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` |
 | **BR-04** (Overage 과금 방어 및 결제 통제) | **FR-04** (Billing RBAC 및 쿼터 차단 명세) | **NFR-02**, **NFR-03** | `diagnose.py` |
@@ -79,8 +79,8 @@ sequenceDiagram
 
 ## 3. 기능 기술 요구 사항 명세 (Functional Requirements)
 
-### FR-01: 엔터프라이즈 어드민 과제 카탈로그 및 자유 프롬프팅
-- 사내 대표 5대 관리 과제(도메인 충돌 및 테넌트 온보딩, 외부 마켓플레이스 차단 거버넌스, 유휴 라이선스 회수, Overage 과금 방어, 사내망 Exact FQDN 진단) 프리셋을 제공한다.
+### FR-01: 9대 엔터프라이즈 어드민 과제 카탈로그 및 자유 프롬프팅
+- 사내 대표 9대 관리 과제(스프롤 거버넌스 3종, 사용량 패턴 분석 3종, 테넌트 및 네트워크 보안 3종) 프리셋을 제공한다.
 - 번호 선택뿐만 아니라 CLI `--prompt` 플래그 및 대화형 `0`번 선택을 통해 비정형 자연어 관리 이슈를 자율 진단하는 파이프라인을 제공한다.
 - 사내 기본 도메인 선점 오류 발생 시 임시 서브도메인 또는 Cloud Identity Free 테넌트 배포 절차를 안내하고, DNS TXT 레코드 기반 도메인 소유권 검증용 문자열을 생성한다.
 
@@ -116,7 +116,7 @@ sequenceDiagram
 
 ### FR-09: 선언적 어드민 레시피 아키텍처 및 케밥 케이스 슬러그 규약
 - 파이썬 코드 수정 없이 관리 과제를 독립적으로 확장 및 배포할 수 있도록 선언적 `catalog.yaml` 분리 구조를 지원한다.
-- 모든 과제 식별자는 `[domain]-[target]-[action]` 형태의 3단계 소문자 케밥 케이스(kebab-case) 표준을 준수한다 (예: `tenant-domain-onboarding`, `sec-marketplace-governance`, `finops-license-optimizer`, `finops-overage-guard`, `net-firewall-fqdn`).
+- 모든 과제 식별자는 `[domain]-[target]-[action]` 형태의 3단계 소문자 케밥 케이스(kebab-case) 표준을 준수한다 (예: `sprawl-ghost-agent-triage`, `telemetry-token-top10-ranking`, `tenant-domain-onboarding`, `sec-marketplace-governance`, `net-firewall-fqdn`).
 
 ### FR-10: 에어갭 환경 회복 탄력성을 위한 4계층 캐스케이드 로더
 - 카탈로그 탐색 시 4단계 우선순위(CLI `--catalog` > 로컬 `./catalog.yaml` > 원격 HTTP 엔드포인트 > 코드 내장 `FALLBACK_ADMIN_CATALOG`)를 엄격히 준수한다.
@@ -137,7 +137,7 @@ sequenceDiagram
 - 실제 자격 증명이나 개인 식별 정보(PII)의 평문 노출을 전면 차단한다.
 
 ### NFR-03: 결정론적 가상 실행(--dry-run) 지원
-- GCP 환경 연결 없이도 모의 데이터를 통해 5대 관리 영역의 진단 로직과 리포트 무결성을 신뢰성 있게 검증할 수 있도록 지원한다.
+- GCP 환경 연결 없이도 모의 데이터를 통해 9대 관리 영역의 진단 로직과 리포트 무결성을 신뢰성 있게 검증할 수 있도록 지원한다.
 
 ### NFR-04: 에어갭 환경 회복 탄력성 및 타임아웃 보장
 - 원격 카탈로그 조회 실패 또는 에어갭 폐쇄망 환경에서도 2.0초 이내에 내장 시드 레시피로 즉시 전환하여 자율 완결 동작을 유지한다.

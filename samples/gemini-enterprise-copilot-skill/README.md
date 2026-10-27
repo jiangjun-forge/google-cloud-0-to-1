@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 자율형 사내 스킬 팩토리 (gemini-enterprise-copilot-skill)
 
-제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 전자결재, 법인카드 경비 정산, 주 52시간 근태 관리, 보안성 심의 승인 등 사내 기간계 시스템을 직접 제어할 수 있는 엔터프라이즈 업무 스킬(Open Skills / SKILL.md) 카탈로그를 비개발자가 대화형 또는 자연어 자유 프롬프팅으로 자율 생성하고, Gemini Enterprise app Skills 목록에 원클릭으로 자동 프로비저닝 및 전사 배포할 수 있도록 지원하는 사내 스킬 팩토리 솔루션이다. (As of 2026-10-23)
+제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 전자결재, 법인카드 경비 정산, 주 52시간 근태 관리, 보안성 심의 승인 등 사내 기간계 시스템을 직접 제어할 수 있는 24대 엔터프라이즈 업무 스킬(8개 도메인, Open Skills / SKILL.md) 카탈로그를 비개발자가 대화형 또는 자연어 자유 프롬프팅으로 자율 생성하고, Gemini Enterprise app Skills 목록에 원클릭으로 자동 프로비저닝 및 전사 배포할 수 있도록 지원하는 사내 스킬 팩토리 솔루션이다. (As of 2026-10-23)
 
 ---
 

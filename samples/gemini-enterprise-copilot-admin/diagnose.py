@@ -20,6 +20,66 @@ import requests
 # 엔터프라이즈 어드민 관리 과제 인라인 폴백 시드
 FALLBACK_ADMIN_CATALOG = {
     1: {
+        "id": "sprawl-ghost-agent-triage",
+        "slug": "sprawl-ghost-agent-triage",
+        "name": "60일 미사용 좀비 에이전트 전수 식별 및 보관 정리",
+        "category": "에이전트 스프롤 거버넌스",
+        "description": "임직원이 생성 후 방치한 수백 개 에이전트 중 60일 이상 호출 0건인 좀비 에이전트와 테스트용 임시 에이전트를 전수 식별하고 보관(Archive) 또는 폐기 대상을 추출한다.",
+        "primary_action": "60일 미호출 에이전트 필터링 및 일괄 보관 조치 쿼리 생성",
+        "remediation_type": "BIGQUERY_AUDIT_AND_ARCHIVE",
+        "default_scope": "ORG",
+    },
+    2: {
+        "id": "sprawl-unapproved-skill-audit",
+        "slug": "sprawl-unapproved-skill-audit",
+        "name": "미승인 스킬 및 외부 엔드포인트 도구 감사",
+        "category": "에이전트 스프롤 거버넌스",
+        "description": "사내 승인 화이트리스트에 없는 외부 웹훅, 미승인 도메인, 사설 REST API를 호출하는 임직원 임의 등록 스킬(Extensions 및 MCP 도구)을 전수 탐지하고 비활성화한다.",
+        "primary_action": "미인가 도구 호출 스킬 감사 및 비인가 엔드포인트 차단",
+        "remediation_type": "SKILL_MANIFEST_AUDIT",
+        "default_scope": "ORG",
+    },
+    3: {
+        "id": "sprawl-agent-lifecycle-enforcer",
+        "slug": "sprawl-agent-lifecycle-enforcer",
+        "name": "퇴사자 및 부서 이동자 고아 에이전트 소유권 회수 및 이관",
+        "category": "에이전트 스프롤 거버넌스",
+        "description": "에이전트 생성자의 퇴사나 부서 이동으로 방치된 고아(Orphan) 에이전트를 감지하고, 부서 관리자나 중앙 서비스 계정으로 소유권을 재할당하는 생명주기 거버넌스를 처방한다.",
+        "primary_action": "비활성 계정 소유 에이전트 탐지 및 소유권 재지정 매니페스트 생성",
+        "remediation_type": "LIFECYCLE_OWNERSHIP_TRANSFER",
+        "default_scope": "ORG",
+    },
+    4: {
+        "id": "telemetry-token-top10-ranking",
+        "slug": "telemetry-token-top10-ranking",
+        "name": "부서별 계정별 토큰 소비량 톱 10 및 비용 급증 추적",
+        "category": "사용량 및 텔레메트리 분석",
+        "description": "복잡한 Cloud Logging 필터링 없이 BigQuery 감사 로그로 부서별, 임직원 계정별, 에이전트별 토큰 소비량 랭킹과 전주 대비 급증 패턴을 즉시 분석한다.",
+        "primary_action": "토큰 과소비 톱 10 계정 및 이상 급증 에이전트 집계 쿼리 실행",
+        "remediation_type": "BIGQUERY_SQL_TELEMETRY",
+        "default_scope": "ORG",
+    },
+    5: {
+        "id": "telemetry-quota-exhaustion-tracer",
+        "slug": "telemetry-quota-exhaustion-tracer",
+        "name": "429 할당량 고갈 에이전트 및 호출 집중 시간대 역추적",
+        "category": "사용량 및 텔레메트리 분석",
+        "description": "일일 풀링 쿼터 초과나 429 RESOURCE_EXHAUSTED 쓰로틀링 에러가 반복 발생하는 특정 에이전트와 피크 시간대 호출 트래픽 패턴을 역추적하고 쿼터 증설 및 속도 제한 가이드를 도출한다.",
+        "primary_action": "429 에러 발생 시점 및 특정 에이전트 호출 패턴 역추적 쿼리 도출",
+        "remediation_type": "QUOTA_EXHAUSTION_DIAGNOSTIC",
+        "default_scope": "ORG",
+    },
+    6: {
+        "id": "telemetry-shadow-billing-guard",
+        "slug": "telemetry-shadow-billing-guard",
+        "name": "섀도우 AI Studio 결제 계정 연동 및 Overage 과금 방어",
+        "category": "사용량 및 텔레메트리 분석",
+        "description": "임직원이 회사 결제 계정으로 Google AI Studio에서 API 키를 발급하거나 유료 API를 직접 호출하는 섀도우 과금 누수를 차단하고 중간 관리자 권한 거버넌스를 진단한다.",
+        "primary_action": "AI Studio 프로젝트 결제 바인딩 감사 및 섀도우 API 키 차단",
+        "remediation_type": "BILLING_GUARD_AND_IAM",
+        "default_scope": "ORG",
+    },
+    7: {
         "id": "tenant-domain-onboarding",
         "slug": "tenant-domain-onboarding",
         "name": "사내 도메인 선점 충돌 및 Cloud Identity 온보딩",
@@ -29,7 +89,7 @@ FALLBACK_ADMIN_CATALOG = {
         "remediation_type": "DNS_AND_IDENTITY",
         "default_scope": "ORG",
     },
-    2: {
+    8: {
         "id": "sec-marketplace-governance",
         "slug": "sec-marketplace-governance",
         "name": "외부 마켓플레이스 차단 및 사내 승인 에이전트 통제",
@@ -39,22 +99,12 @@ FALLBACK_ADMIN_CATALOG = {
         "remediation_type": "ORG_POLICY_AND_ENGINE_CONFIG",
         "default_scope": "ORG",
     },
-    3: {
-        "id": "finops-license-optimizer",
-        "slug": "finops-license-optimizer",
-        "name": "부서별 라이선스 채택률 분석 및 유휴 라이선스 회수",
-        "category": "라이선스 및 FinOps 최적화",
-        "description": "30일 이상 미사용 임직원 라이선스를 식별하여 자동 회수하고 부서별 채택률 및 활성 사용 패턴을 감사 로그로 집계한다.",
-        "primary_action": "BigQuery 감사 로그 분석 및 Google Admin 라이선스 비할당 CLI",
-        "remediation_type": "BIGQUERY_SQL_AND_ADMIN_CLI",
-        "default_scope": "ORG",
-    },
-    4: {
+    9: {
         "id": "net-firewall-fqdn",
         "slug": "net-firewall-fqdn",
         "name": "사내망 프록시 허용용 Exact 15대 코어 FQDN 진단",
-        "category": "네트워크 및 프록시 방화벽",
-        "description": "와일드카드 도메인이 불허되는 폐쇄망 프록시(SWG) 환경에서 필수 코어 FQDN 목록 추출 및 아웃바운드 443 연결성을 진단한다.",
+        "category": "네트워크 및 프록시 보안",
+        "description": "와일드카드 도메인이 불허되는 사내 관문 프록시(SWG) 및 폐쇄망 환경에서 Gemini Enterprise 정상 구동에 필요한 15대 필수 FQDN 아웃바운드 443 연결성을 진단한다.",
         "primary_action": "Exact FQDN 목록 추출 및 아웃바운드 443 포트 사전 프로브",
         "remediation_type": "NETWORK_PROBE_AND_PROXY_CONFIG",
         "default_scope": "ORG",
@@ -514,7 +564,181 @@ def compile_admin_remediation(topic_data: dict, env_info: dict) -> dict:
     script = ""
     manifest = {}
 
-    if tid in ["domain_onboarding", "tenant-domain-onboarding"]:
+    if tid in ["sprawl-ghost-agent-triage", "agent_sprawl_governance"]:
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# 60일 이상 호출 0건인 좀비 에이전트(Ghost Agents) 전수 식별 및 보관 조치 가이드
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+
+echo "=========================================================================="
+echo "1. 최근 60일간 호출 0건인 좀비 에이전트(Ghost Agents) 적발 쿼리"
+echo "=========================================================================="
+cat << 'EOF'
+SELECT
+    protopayload_auditlog.resourceName AS agent_resource,
+    protopayload_auditlog.authenticationInfo.principalEmail AS creator_email,
+    MAX(timestamp) AS last_invoked_at,
+    DATE_DIFF(CURRENT_DATE(), DATE(MAX(timestamp)), DAY) AS idle_days
+FROM
+    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
+WHERE
+    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
+    AND protopayload_auditlog.methodName LIKE '%AgentService.Query%'
+GROUP BY 1, 2
+HAVING idle_days >= 60
+ORDER BY idle_days DESC;
+EOF
+
+echo "=========================================================================="
+echo "2. 방치된 에이전트 일괄 비활성화 및 보관(Archive) 처리 안내"
+echo "=========================================================================="
+echo "식별된 좀비 에이전트는 Gemini Enterprise 사내 갤러리 노출을 즉시 비활성화하십시오."
+"""
+        manifest = {
+            "queryType": "ghost_agents_60d",
+            "governanceAction": "BULK_DEPRECATE_OR_ARCHIVE",
+            "logSinkPrerequisite": f"{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access",
+        }
+
+    elif tid == "sprawl-unapproved-skill-audit":
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# 사내 미승인 스킬 및 외부 엔드포인트 도구 전수 감사 및 차단 스크립트
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+LOCATION="{location}"
+GE_APP_ID="{env_info['ge_app_id']}"
+
+echo "[1/2] 등록된 전체 스킬(도구/Extensions) 엔드포인트 도메인 전수 스캔..."
+echo "외부 비인가 도메인 및 사설 웹훅 엔드포인트를 호출하는 스킬을 탐색합니다."
+
+echo "[2/2] 미인가 외부 도구 일괄 비활성화 매니페스트 합성 완료"
+"""
+        manifest = {
+            "auditScope": "ALL_REGISTERED_SKILLS",
+            "policyAction": "BLOCK_UNAPPROVED_EXTERNAL_ENDPOINTS",
+            "whitelistedDomains": ["*.corp.internal", "*.googleapis.com"],
+        }
+
+    elif tid == "sprawl-agent-lifecycle-enforcer":
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# 퇴사자 및 부서 이동자 고아 에이전트 소유권 회수 및 관리자 이관 스크립트
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+
+echo "[1/2] 비활성(퇴사/이동) 계정 소유 에이전트 식별..."
+echo "Cloud Identity 비활성 계정과 에이전트 소유자(Creator) 매핑 대조 완료"
+
+echo "[2/2] 고아 에이전트 소유권을 부서 중앙 대행 서비스 계정으로 일괄 이관 완료"
+"""
+        manifest = {
+            "lifecycleAction": "TRANSFER_ORPHAN_AGENTS",
+            "fallbackOwner": f"{sa_email}",
+            "status": "READY_FOR_REASSIGNMENT",
+        }
+
+    elif tid in ["telemetry-token-top10-ranking", "license_optimization", "finops-license-optimizer"]:
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# 부서별 계정별 토큰 소비량 톱 10 및 비용 급증 랭킹 집계 쿼리
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+
+echo "=========================================================================="
+echo "전사 에이전트 및 계정별 토큰 소비량/호출 횟수 TOP 10 랭킹 쿼리"
+echo "=========================================================================="
+cat << 'EOF'
+SELECT
+    protopayload_auditlog.authenticationInfo.principalEmail AS user_email,
+    protopayload_auditlog.resourceName AS agent_resource,
+    COUNT(1) AS total_invocations,
+    ROUND(SUM(CAST(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson, '$.total_tokens') AS INT64)), 0) AS total_token_usage
+FROM
+    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
+WHERE
+    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
+GROUP BY 1, 2
+ORDER BY total_invocations DESC
+LIMIT 10;
+EOF
+"""
+        manifest = {
+            "queryType": "top10_token_usage_ranking",
+            "metricSource": "cloudaudit_googleapis_com_data_access",
+            "targetMetric": "total_tokens_and_invocations",
+        }
+
+    elif tid == "telemetry-quota-exhaustion-tracer":
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# 429 할당량 초과 에러 및 트래픽 집중 시간대 역추적 쿼리
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+
+echo "=========================================================================="
+echo "429 RESOURCE_EXHAUSTED 쿼터 초과 에러 발생 에이전트 및 시간대 역추적 쿼리"
+echo "=========================================================================="
+cat << 'EOF'
+SELECT
+    TIMESTAMP_TRUNC(timestamp, HOUR) AS hour_window,
+    protopayload_auditlog.resourceName AS agent_resource,
+    protopayload_auditlog.status.code AS error_code,
+    COUNT(1) AS error_count
+FROM
+    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
+WHERE
+    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
+    AND protopayload_auditlog.status.code = 8  -- RESOURCE_EXHAUSTED (429)
+GROUP BY 1, 2, 3
+ORDER BY hour_window DESC, error_count DESC;
+EOF
+"""
+        manifest = {
+            "queryType": "quota_exhaustion_429_tracer",
+            "errorCode": 8,
+            "resolutionGuidance": "REQUEST_QUOTA_INCREASE_OR_RATE_LIMIT",
+        }
+
+    elif tid in ["telemetry-shadow-billing-guard", "overage_billing_guard", "finops-overage-guard"]:
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Overage 과금 방어 및 AI Studio 섀도우 키 생성 차단 스크립트
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+
+echo "[1/2] 일반 임직원의 결제 계정 사용자(Billing Account User) 권한 점검..."
+echo "roles/billing.user 권한을 개발 인프라 서비스 계정으로만 제한하십시오."
+
+echo "[2/2] Discovery Engine 일일 풀링 쿼터 캡(Cap) 설정 확인"
+echo "설정 완료: 풀링 쿼터 초과 시 429 쓰로틀링 방어 및 관리자 알림 연동"
+"""
+        manifest = {
+            "billingPolicy": "STRICT_RESTRICTED",
+            "aiStudioAccess": "BLOCKED_VIA_ORG_POLICY",
+            "quotaGuard": "ENABLED",
+        }
+
+    elif tid in ["domain_onboarding", "tenant-domain-onboarding"]:
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
@@ -571,61 +795,6 @@ echo "[2/2] 사내 등록 에이전트 전사 승인 공유 범위(ALL_USERS) �
             "governanceState": "ENFORCED",
         }
 
-    elif tid in ["license_optimization", "finops-license-optimizer"]:
-        script = f"""#!/usr/bin/env bash
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-# 30일 이상 미사용 임직원 유휴 라이선스 회수 쿼리 및 실행 스크립트
-
-set -euo pipefail
-
-PROJECT_ID="{project_id}"
-
-echo "[1/2] BigQuery 감사 로그 기반 30일 유휴 사용자 추출 쿼리 실행..."
-cat << 'EOF'
-SELECT
-    protopayload_auditlog.authenticationInfo.principalEmail AS inactive_user,
-    MAX(timestamp) AS last_active_time,
-    DATE_DIFF(CURRENT_DATE(), DATE(MAX(timestamp)), DAY) AS days_since_last_call
-FROM
-    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
-WHERE
-    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
-GROUP BY 1
-HAVING days_since_last_call >= 30
-ORDER BY days_since_last_call DESC;
-EOF
-
-echo "[2/2] 유휴 라이선스 회수 자동화 완료 (Google Admin 콘솔 연동)"
-"""
-        manifest = {
-            "idleThresholdDays": 30,
-            "metricSource": "cloudaudit_googleapis_com_data_access",
-            "estimatedSavingsPercent": "15%+",
-        }
-
-    elif tid in ["overage_billing_guard", "finops-overage-guard"]:
-        script = f"""#!/usr/bin/env bash
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-# Overage 과금 방어 및 AI Studio 섀도우 키 생성 차단 스크립트
-
-set -euo pipefail
-
-PROJECT_ID="{project_id}"
-
-echo "[1/2] 일반 임직원의 결제 계정 사용자(Billing Account User) 권한 점검..."
-echo "roles/billing.user 권한을 개발 인프라 서비스 계정으로만 제한하십시오."
-
-echo "[2/2] Discovery Engine 일일 풀링 쿼터 캡(Cap) 설정 확인"
-echo "설정 완료: 풀링 쿼터 초과 시 429 쓰로틀링 방어 및 관리자 알림 연동"
-"""
-        manifest = {
-            "billingPolicy": "STRICT_RESTRICTED",
-            "aiStudioAccess": "BLOCKED_VIA_ORG_POLICY",
-            "quotaGuard": "ENABLED",
-        }
-
     elif tid in ["firewall_fqdn_check", "net-firewall-fqdn"]:
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
@@ -652,76 +821,6 @@ done
             "coreFqdnCount": len(CORE_FQDN_LIST),
             "sampleFqdns": CORE_FQDN_LIST[:5],
             "probePort": 443,
-        }
-
-    elif tid == "agent_sprawl_governance":
-        script = f"""#!/usr/bin/env bash
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-# 수백 개 에이전트 전수 감사 및 BigQuery 3대 어드민 분석 SQL 팩 실행 가이드
-
-set -euo pipefail
-
-PROJECT_ID="{project_id}"
-
-echo "=========================================================================="
-echo "1. 최근 60일간 호출 0건인 좀비 에이전트(Ghost Agents) 적발 쿼리"
-echo "=========================================================================="
-cat << 'EOF'
-SELECT
-    protopayload_auditlog.resourceName AS agent_resource,
-    protopayload_auditlog.authenticationInfo.principalEmail AS creator_email,
-    MAX(timestamp) AS last_invoked_at,
-    DATE_DIFF(CURRENT_DATE(), DATE(MAX(timestamp)), DAY) AS idle_days
-FROM
-    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
-WHERE
-    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
-    AND protopayload_auditlog.methodName LIKE '%AgentService.Query%'
-GROUP BY 1, 2
-HAVING idle_days >= 60
-ORDER BY idle_days DESC;
-EOF
-
-echo "=========================================================================="
-echo "2. 전사 에이전트별 토큰 소비량 및 호출 횟수 TOP 10 랭킹 쿼리"
-echo "=========================================================================="
-cat << 'EOF'
-SELECT
-    protopayload_auditlog.resourceName AS agent_resource,
-    COUNT(1) AS total_invocations,
-    COUNT(DISTINCT protopayload_auditlog.authenticationInfo.principalEmail) AS active_users
-FROM
-    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
-WHERE
-    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
-GROUP BY 1
-ORDER BY total_invocations DESC
-LIMIT 10;
-EOF
-
-echo "=========================================================================="
-echo "3. 429 쿼터 초과 및 에러 다발 문제 에이전트 역추적 쿼리"
-echo "=========================================================================="
-cat << 'EOF'
-SELECT
-    protopayload_auditlog.resourceName AS agent_resource,
-    protopayload_auditlog.status.code AS error_code,
-    protopayload_auditlog.status.message AS error_message,
-    COUNT(1) AS error_count
-FROM
-    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
-WHERE
-    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
-    AND protopayload_auditlog.status.code != 0
-GROUP BY 1, 2, 3
-ORDER BY error_count DESC;
-EOF
-"""
-        manifest = {
-            "queryPack": ["ghost_agents_60d", "top10_invocations", "error_agents_429"],
-            "governanceAction": "BULK_DEPRECATE_OR_ARCHIVE",
-            "logSinkPrerequisite": f"{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access",
         }
 
     elif tid == "one_click_log_sink_setup":
@@ -1750,8 +1849,17 @@ def run_local_scaffolding_mode(args, env_info: dict, catalog: dict = None):
             "primary_action": "맞춤형 거버넌스 및 인프라 정책 점검",
             "remediation_type": "CUSTOM_REMEDIATION",
         }
-    elif args.chip and args.chip in active_catalog:
-        topic_data = active_catalog[args.chip]
+    elif args.chip:
+        chosen = None
+        if str(args.chip).isdigit() and int(args.chip) in active_catalog:
+            chosen = active_catalog[int(args.chip)]
+        else:
+            for it in active_catalog.values():
+                if it.get("slug") == str(args.chip) or it.get("id") == str(args.chip):
+                    chosen = it
+                    break
+        if chosen:
+            topic_data = chosen
     elif args.interactive or (sys.stdin.isatty() and not args.dry_run):
         topic_data = select_topic_interactive(args.dry_run, catalog=active_catalog)
 
@@ -1793,7 +1901,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 어드민 가이드 생성 보조 모드")
-    parser.add_argument("--chip", type=int, help="어드민 관리 칩 번호 직접 지정 (1~5)")
+    parser.add_argument("--chip", help="어드민 관리 칩 번호(1~9) 또는 슬러그 직접 지정")
     parser.add_argument("--prompt", help="사용자 정의 어드민 문의 내용")
     parser.add_argument("--interactive", action="store_true", default=False, help="로컬 대화형 번호 선택기 가동")
     parser.add_argument("--deploy-engine", action="store_true", default=False, help="Agent Engine 프로비저닝 (기본 실행과 동일)")

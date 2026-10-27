@@ -59,7 +59,7 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (엔터프라이즈 커넥터 및 자유 프롬프팅) | **FR-01** (엔터프라이즈 커넥터 카탈로그 및 선택기) | **NFR-01** (무의존성 단일 파이썬 실행) | `catalog.yaml`, `diagnose.py` |
+| **BR-01** (14대 엔터프라이즈 3P SaaS 커넥터 및 자유 프롬프팅) | **FR-01** (14대 엔터프라이즈 3P SaaS 커넥터 카탈로그 및 선택기) | **NFR-01** (무의존성 단일 파이썬 실행) | `catalog.yaml`, `diagnose.py` |
 | **BR-02** (보안 볼트 기반 자격 증명 연동) | **FR-02** (Secret Manager 보안 볼트 연동 빌더) | **NFR-02** (최소 권한 보안 격리) | `diagnose.py` |
 | **BR-03** (문서 레벨 ACL 및 사용자 매핑) | **FR-03** (문서 레벨 ACL 정책 컴파일러) | **NFR-02** (데이터 거버넌스 준수) | `diagnose.py` |
 | **BR-04** (동기화 주기 및 증분 색인) | **FR-04** (Discovery Engine Data Store 매니페스트 생성) | **NFR-01**, **NFR-03** | `diagnose.py` |
@@ -73,8 +73,8 @@ sequenceDiagram
 
 ## 3. 기능 기술 요구 사항 명세 (Functional Requirements)
 
-### FR-01: 엔터프라이즈 커넥터 카탈로그 및 파서
-- 그룹웨어 전자결재, Confluence, Jira, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery, SAP ERP, Workday, Slack, PostgreSQL/MySQL, 인트라넷 웹, GitHub, Cloud Storage 등 기업 실무에 대표적인 15대 표준 기간계 데이터 소스 프리셋을 제공한다.
+### FR-01: 14대 엔터프라이즈 3P SaaS 커넥터 카탈로그 및 파서
+- Confluence, Jira, SharePoint, OneDrive, Salesforce, ServiceNow, Workday, SAP S/4HANA, Slack, GitHub, GitLab, Zendesk, Box, HubSpot 등 기업 실무에서 가장 많이 쓰이는 14대 엔터프라이즈 3P SaaS 데이터 소스 프리셋을 제공한다.
 - 사용자가 CLI 인자(`--chip`, `--prompt`, `--catalog`) 또는 대화형 환경에서 번호로 선택할 수 있도록 지원하며, `0`번 선택 시 자유 프롬프트 직접 입력을 지원한다.
 
 ### FR-02: Secret Manager 보안 볼트 연동 빌더

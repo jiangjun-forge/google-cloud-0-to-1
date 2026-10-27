@@ -12,7 +12,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 데이터 커넥터 스캐폴더 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 클라우드 아키텍트 및 데이터 엔지니어가 사내 다양한 기업 기간계 저장소(Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery 등)의 비정형/정형 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 지원하는 데이터 커넥터 스캐폴더 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 클라우드 아키텍트 및 데이터 엔지니어가 사내 14대 엔터프라이즈 3P SaaS(Jira, Confluence, SharePoint, OneDrive, Salesforce, ServiceNow, Workday, SAP S/4HANA, Slack, GitHub, GitLab, Zendesk, Box, HubSpot)의 비정형/정형 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 지원하는 데이터 커넥터 스캐폴더 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 
@@ -35,7 +35,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 구분 | 핵심 비즈니스 목표 및 요구 명세 |
 | :--- | :--- | :--- |
-| **BR-01** | 엔터프라이즈 커넥터 카탈로그 및 자유 프롬프팅 | 사내 주요 기간계 시스템(그룹웨어, Confluence, Jira, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery, SAP ERP, Workday, Slack, PostgreSQL/MySQL, 인트라넷 웹, GitHub, Cloud Storage 등) 커넥터 프리셋을 제공하고, 사용자가 자유 프롬프트(`--prompt`)로 원하는 데이터 소스 연동 매니페스트를 자율 도출할 수 있어야 한다. |
+| **BR-01** | 14대 엔터프라이즈 3P SaaS 커넥터 카탈로그 및 자유 프롬프팅 | 사내 14대 엔터프라이즈 3P SaaS(Confluence, Jira, SharePoint, OneDrive, Salesforce, ServiceNow, Workday, SAP S/4HANA, Slack, GitHub, GitLab, Zendesk, Box, HubSpot) 커넥터 프리셋을 제공하고, 사용자가 자유 프롬프트(`--prompt`)로 원하는 데이터 소스 연동 매니페스트를 자율 도출할 수 있어야 한다. |
 | **BR-02** | 보안 볼트 기반 자격 증명 연동 | OAuth 2.0 클라이언트 시크릿, API 토큰 등 민감 자격 증명을 시크릿 매니저(Secret Manager)에 안전하게 암호화 보관하고 대행 서비스 계정에 최소 권한을 부여해야 한다. |
 | **BR-03** | 문서 레벨 ACL 및 사용자 매핑 가이드 | 원본 기간계 시스템의 권한 체계가 손상되지 않도록 문서 레벨 접근 제어(Document-level ACL) 및 Cloud Identity 계정 매핑 정책을 자동 판정해야 한다. |
 | **BR-04** | 동기화 주기 및 증분 색인 스케줄링 | 데이터 변경 빈도에 따라 1시간 단위 정기 동기화 또는 일일 배치 동기화 스케줄을 포함한 Discovery Engine Data Store 구성 매니페스트를 합성해야 한다. |
