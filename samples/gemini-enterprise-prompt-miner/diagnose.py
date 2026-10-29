@@ -322,7 +322,7 @@ def get_bigquery_embeddings(
         FROM ML.GENERATE_EMBEDDING(
           MODEL `{project_id}.{dataset_id}.{model_name}`,
           ({union_sql}),
-          STRUCT('CLUSTERING' AS task_type)
+          STRUCT('CLUSTERING' AS task_type, 512 AS output_dimensionality)
         )
         ORDER BY row_id ASC
         """

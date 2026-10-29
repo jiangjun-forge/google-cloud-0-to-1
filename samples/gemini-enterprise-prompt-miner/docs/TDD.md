@@ -73,8 +73,8 @@ sequenceDiagram
 
 ### 2) BigQuery 내장 임베딩 API 호출 규격
 * **함수 명**: `ML.GENERATE_EMBEDDING` (또는 `AI.GENERATE_EMBEDDING`)
-* **임베딩 모델**: BigQuery 원격 모델 (`text-embedding-005` 엔드포인트 연동)
-* **태스크 타입**: `STRUCT('CLUSTERING' AS task_type)`
+* **임베딩 모델**: BigQuery 원격 모델 (`text-multilingual-embedding-002` 엔드포인트 연동)
+* **태스크 타입 및 차원**: `STRUCT('CLUSTERING' AS task_type, 512 AS output_dimensionality)` (한국어 이커머스 질의의 과응집 및 과분산 방지)
 * **단일 파이프라인 장점**: 별도 Vertex AI SDK 의존성 없이 `google-cloud-bigquery` 단일 클라이언트로 완결.
 
 ### 3) K-Means++ 클러스터링 및 자율 적응형(Auto-K) 알고리즘 설계
