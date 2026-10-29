@@ -302,12 +302,13 @@ def get_bigquery_embeddings(
     session_texts: list[str],
     project_id: str,
     dataset_id: str = "gemini_logging",
-    model_name: str = "text_embedding_model"
+    model_name: str = "text_embedding_model",
+    location: str = "asia-northeast3"
 ) -> list[list[float]]:
     """BigQuery 내장 ML.GENERATE_EMBEDDING SQL 함수를 호출하여 벡터를 단일 BQ 파이프라인에서 일괄 추출한다."""
     try:
         from google.cloud import bigquery
-        client = bigquery.Client(project=project_id)
+        client = bigquery.Client(project=project_id, location=location)
 
         # 텍스트들을 BigQuery 인라인 UNION ALL 쿼리로 구성하여 ML.GENERATE_EMBEDDING 호출
         subqueries = []
@@ -636,7 +637,23 @@ def build_markdown_report(
         f"- **프라이버시 보호 적용**: 인라인 PII 마스킹 총 {total_pii_masked}건 집행 및 임직원 계정 100% 비식별화(Pseudonymization)",
         "",
         "---",
-        "",
+        ""
+    ]
+
+    if "모의 데이터" in mode_str or "--dry-run" in mode_str:
+        lines.extend([
+            "> [!NOTE]",
+            "> **가상 모의 분석 안내 (Dry-Run)**: 본 보고서는 사내 기능 체험 및 스모크 테스트를 위해 사전 탑재된 49건의 엔터프라이즈 표본 질의 데이터를 기반으로 생성된 시뮬레이션 결과입니다. 실제 사내 대화 로그 분석 시에는 `--project <PROJECT_ID>` 옵션으로 BigQuery 감사 로그를 직접 연결하십시오.",
+            ""
+        ])
+    else:
+        lines.extend([
+            "> [!IMPORTANT]",
+            f"> **사내 실환경 데이터 분석 안내**: 본 보고서는 대상 프로젝트(`{project_id}`)의 BigQuery 감사 로그 테이블에서 수집된 총 {total_raw_queries}건의 실제 질의 데이터를 바탕으로 분석된 실측 결과입니다.",
+            ""
+        ])
+
+    lines.extend([
         "## 1. 사내 도구 및 에이전트 전환 파이프라인 종합 대시보드",
         "",
         "임직원이 입력한 일상 질의 속에서 상투적 대분류를 탈피하고, 자체 완결적으로 구현 가능한 고해상도 마이크로 업무 자동화 자산 파이프라인을 도출했다:",
@@ -654,7 +671,7 @@ def build_markdown_report(
         "",
         "- **멀티 턴 대화 묶음 정제**: 단편적 질문 파편화를 방지하기 위해 동일 세션 내 사용자 후속 질의를 단일 업무 워크플로우 컨텍스트로 결합하여 임베딩 군집화 정확도를 극대화했다.",
         "- **인라인 PII 마스킹 내역**:"
-    ]
+    ])
 
     if pii_stats:
         for p_name, p_cnt in pii_stats.items():
@@ -889,8 +906,11 @@ def main():
     if args.dry_run or (not args.input and not os.getenv("GOOGLE_APPLICATION_CREDENTIALS") and not args.project):
         mode_str = "모의 데이터 가상 실행 (--dry-run)"
         raw_logs = MOCK_RAW_LOGS
-        print(f"[*] 모의 데이터셋 로드 완료: 총 {len(raw_logs)}건의 실제 질의 샘플")
-    elif args.input and os.path.exists(args.input):
+        print(f"[*] [가상 모의 분석 모드] 사전 탑재된 49건의 엔터프라이즈 표본 질의 데이터를 로드합니다.")
+    elif args.input:
+        if not os.path.exists(args.input):
+            print(f"[-] 지정한 입력 파일이 존재하지 않습니다: {args.input}", file=sys.stderr)
+            return
         mode_str = f"로컬 JSONL 파일 분석 ({args.input})"
         with open(args.input, "r", encoding="utf-8") as f:
             for line in f:
@@ -902,12 +922,15 @@ def main():
                     except json.JSONDecodeError:
                         continue
         print(f"[*] JSONL 파일 로드 완료: 총 {len(raw_logs)}건")
+        if not raw_logs:
+            print("[-] 파일 내에 유효한 'query' 필드를 포함한 로그가 없습니다.", file=sys.stderr)
+            return
     else:
         mode_str = f"BigQuery 실시간 감사 로그 분석 ({project_id}.{args.dataset})"
         print(f"[*] BigQuery 프롬프트 감사 로그 조회 중 ({project_id}.{args.dataset})...")
         try:
             from google.cloud import bigquery
-            client = bigquery.Client(project=project_id)
+            client = bigquery.Client(project=project_id, location=args.location)
             query = f"""
             SELECT JSON_EXTRACT_SCALAR(protopayload_auditlog.requestJson, '$.query') AS query,
                    protopayload_auditlog.authenticationInfo.principalEmail AS user_email,
@@ -931,11 +954,29 @@ def main():
                     "user_email": r.user_email,
                     "session_id": r.session_id
                 })
-            print(f"[*] BigQuery 조회 성공: 총 {len(raw_logs)}건의 사용자 질의 수집")
         except Exception as e:
-            print(f"[!] BigQuery 조회 실패 ({e}). 모의 데이터로 대체 실행한다.")
-            raw_logs = MOCK_RAW_LOGS
-            mode_str = "모의 데이터 자동 대체 실행"
+            print(f"\n[-] BigQuery 감사 로그 조회 실패: {e}")
+
+        if not raw_logs:
+            print("\n" + "=" * 76)
+            print("  [진단 결과] 대상 프로젝트에서 수집된 Gemini Enterprise 프롬프트 로그가 없습니다 (0건).")
+            print("=" * 76)
+            print("  * 가능한 원인:")
+            print(f"    1. `{project_id}.{args.dataset}` 데이터셋 또는 감사 로그 테이블이 존재하지 않습니다.")
+            print("    2. Cloud Logging의 Data Access 감사 로그가 BigQuery로 자동 내보내기(Sink)되지 않았습니다.")
+            print(f"    3. 최근 {args.days}일 동안 임직원의 검색/질의 활동이 없었습니다.")
+            print("\n  * 실환경 조치 가이드:")
+            print("    1) Cloud Logging -> BigQuery 감사 로그 싱크(Sink) 생성:")
+            print(f"       gcloud logging sinks create gemini-audit-sink \\")
+            print(f"         bigquery.googleapis.com/projects/{project_id}/datasets/{args.dataset} \\")
+            print("         --log-filter='logName:\"logs/cloudaudit.googleapis.com%2Fdata_access\" AND protoPayload.serviceName=\"discoveryengine.googleapis.com\"' \\")
+            print(f"         --project={project_id}")
+            print("\n    2) 사전 탑재된 49건의 모의 질의셋으로 기능 및 리포트를 먼저 체험해 보시려면:")
+            print("       python diagnose.py --dry-run")
+            print("=" * 76)
+            return
+
+        print(f"[*] BigQuery 조회 성공: 총 {len(raw_logs)}건의 실제 사용자 질의 수집")
 
     # 2. 프라이버시 보호 및 멀티 턴 세션 묶음 처리
     sessions, pii_stats = group_conversation_sessions(
@@ -962,7 +1003,7 @@ def main():
     if args.dry_run or mode_str.startswith("모의 데이터"):
         vectors = [get_mock_embedding(t) for t in session_texts]
     else:
-        vectors = get_bigquery_embeddings(session_texts, project_id=project_id, dataset_id=args.dataset)
+        vectors = get_bigquery_embeddings(session_texts, project_id=project_id, dataset_id=args.dataset, location=args.location)
     print("  - 임베딩 벡터 생성 완료.")
 
     # 5. K-Means++ 군집화
