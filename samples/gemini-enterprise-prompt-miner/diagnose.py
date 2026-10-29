@@ -302,10 +302,10 @@ def get_bigquery_embeddings(
     session_texts: list[str],
     project_id: str,
     dataset_id: str = "gemini_logging",
-    model_name: str = "text_embedding_model",
+    model_name: str = "text_multilingual_embedding_002",
     location: str = "asia-northeast3"
 ) -> list[list[float]]:
-    """BigQuery 내장 ML.GENERATE_EMBEDDING SQL 함수를 호출하여 벡터를 단일 BQ 파이프라인에서 일괄 추출한다."""
+    """BigQuery 내장 ML.GENERATE_EMBEDDING SQL 함수를 호출하여 한국어 text-multilingual-embedding-002 기반 512차원 벡터를 일괄 추출한다."""
     try:
         from google.cloud import bigquery
         client = bigquery.Client(project=project_id, location=location)
@@ -875,6 +875,7 @@ def main():
     parser.add_argument("--project", default="", help="BigQuery 감사 로그 및 내장 임베딩 연동용 GCP 프로젝트 ID")
     parser.add_argument("--dataset", default="gemini_logging", help="BigQuery 프롬프트 감사 로그 데이터세트 ID")
     parser.add_argument("--location", default="asia-northeast3", help="BigQuery 데이터세트 리전 (기본값: asia-northeast3)")
+    parser.add_argument("--model", default="text_multilingual_embedding_002", help="BigQuery 내장 임베딩 모델 이름 (기본값: text_multilingual_embedding_002)")
     parser.add_argument("--clusters", default="auto", help="도출할 업무 군집 수 K (기본값: auto - 모수 기반 자율 계산, 숫자 지정 가능)")
     parser.add_argument("--days", type=int, default=30, help="분석 대상 최근 기간 일수 (기본값: 30)")
     parser.add_argument("--input", default="", help="로컬 JSONL 파일 경로 (생략 시 BigQuery 또는 모의 데이터 사용)")
@@ -1003,7 +1004,13 @@ def main():
     if args.dry_run or mode_str.startswith("모의 데이터"):
         vectors = [get_mock_embedding(t) for t in session_texts]
     else:
-        vectors = get_bigquery_embeddings(session_texts, project_id=project_id, dataset_id=args.dataset, location=args.location)
+        vectors = get_bigquery_embeddings(
+            session_texts,
+            project_id=project_id,
+            dataset_id=args.dataset,
+            model_name=args.model,
+            location=args.location
+        )
     print("  - 임베딩 벡터 생성 완료.")
 
     # 5. K-Means++ 군집화

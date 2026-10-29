@@ -144,9 +144,34 @@ flowchart TD
 
 ---
 
-## 4. 사내 거버넌스 4대 필수 표준 라벨링
+## 4. 조치 가이드 및 권장 설정
 
-BigQuery 로그 데이터세트 및 관련 클라우드 인프라 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+### 1) Cloud Logging -> BigQuery 감사 로그 싱크 설정
+Gemini Enterprise app의 사용자 대화 및 검색 질의를 BigQuery로 자동 적재하기 위해 로그 싱크를 생성한다:
+```bash
+gcloud logging sinks create gemini-audit-sink \
+  bigquery.googleapis.com/projects/${PROJECT_ID}/datasets/gemini_logging \
+  --log-filter='logName:"logs/cloudaudit.googleapis.com%2Fdata_access" AND protoPayload.serviceName="discoveryengine.googleapis.com"' \
+  --project=${PROJECT_ID}
+```
+
+### 2) BigQuery 한국어 임베딩 원격 모델 DDL 등록
+BigQuery 내장 SQL에서 한국어 전용 임베딩 모델을 호출하기 위해 Vertex AI 원격 모델을 등록한다:
+```sql
+-- 1. Vertex AI 외부 연결 생성
+CREATE OR REPLACE CONNECTION `asia-northeast3.vertex-ai-conn`
+OPTIONS (type = 'CLOUD_RESOURCE');
+
+-- 2. text-multilingual-embedding-002 원격 모델 생성
+CREATE OR REPLACE MODEL `gemini_logging.text_multilingual_embedding_002`
+REMOTE WITH CONNECTION `asia-northeast3.vertex-ai-conn`
+OPTIONS (
+  ENDPOINT = 'text-multilingual-embedding-002'
+);
+```
+
+### 3) 사내 거버넌스 4대 필수 표준 라벨링
+BigQuery 데이터세트 및 관련 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-prompt-miner`
 - `env`: `sample` (또는 `poc`)
@@ -154,17 +179,41 @@ BigQuery 로그 데이터세트 및 관련 클라우드 인프라 리소스 생�
 
 ---
 
-## 5. 콘솔 링크 조치 가이드
+## 5. 사전 준비 사항 (필요 IAM 권한)
 
-- **Gemini Enterprise 관리 콘솔**: ( https://gemini.google.com )
-- **BigQuery Studio 콘솔**: ( https://console.cloud.google.com/bigquery )
-- **Cloud Logging 로그 라우터 콘솔**: ( https://console.cloud.google.com/logs/router )
+| 역할 (Role) | 역할 ID | 부여 사유 |
+| :--- | :--- | :--- |
+| **BigQuery Job 사용자** | `roles/bigquery.jobUser` | BigQuery SQL 쿼리 및 내장 임베딩 함수 실행 권한 |
+| **BigQuery 데이터 뷰어** | `roles/bigquery.dataViewer` | 프롬프트 감사 로그 테이블 읽기 권한 |
+| **Vertex AI 사용자** | `roles/aiplatform.user` | 원격 임베딩 모델 호출 권한 (사내 원격 모델 사용 시) |
+| **서비스 사용량 소비자** | `roles/serviceusage.serviceUsageConsumer` | BigQuery 및 Vertex AI 프로젝트 API 할당량 소비 권한 |
 
 ---
 
-## 6. 자원 정리 안내 (Teardown)
+## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
-본 도구는 상주 인프라 비용이 발생하지 않는 분석 실행기다.
+### 1) 한국어 특화 임베딩 모델 (`text-multilingual-embedding-002`)
+* **한국어 언어학적 특성 보존**: 영어 중심 모델(`text-embedding-005`)과 달리, 구글 클라우드 공식 GA 다국어 임베딩 모델인 `text-multilingual-embedding-002`는 한국어의 복잡한 교착어 형태소 결합, 종결 어미 변형, 사내 이커머스/도메인 전문 어휘를 의미 손실 없이 포착한다.
+* **SQL 네이티브 실행**: 복잡한 클라이언트 SDK 의존성 없이 빅쿼리 `ML.GENERATE_EMBEDDING` 단일 함수로 대량의 텍스트를 초당 수만 건 단위로 신속하게 벡터화한다.
+
+### 2) 벡터 차원 최적화 트레이드오프: 512차원 스위트 스폿 (MRL)
+Matryoshka 표현 학습(Matryoshka Representation Learning, MRL)을 활용한 벡터 차원 축소 시, 군집화 성능과 계산 비용 간의 트레이드오프가 존재한다:
+* **저차원(128~256차원)의 한계 (과도한 응집, Over-cohesion)**:
+  - 심한 정보 압축 손실로 인해 서로 다른 도메인 질의(예: '정산 문의' vs '결제 장애 복구') 간의 각도가 좁아져, 상이한 업무들이 소수의 거대 덩어리(Blob)로 뭉개지는 현상이 발생한다.
+* **고차원(768 풀 차원)의 한계 (과도한 분산, Over-dispersion)**:
+  - 고차원 유클리드 공간의 '차원의 저주(Curse of Dimensionality)'로 인해 질의들이 의미 공간 전체에 균등하게 흩어져 유의미한 군집을 형성하지 못하고 노이즈로 흩어진다.
+* **스위트 스폿 (512차원)**:
+  - 512차원은 군집 간 분리도(Separation)와 군집 내 응집도(Cohesion)를 균형 있게 만족하여, 사내 마이크로 업무를 10~30개 단위로 가장 정밀하게 분화해내는 엔터프라이즈 최적 차원이다.
+
+### 3) 멀티 턴 세션 묶음 및 인라인 PII 살균 엔진
+* **세션 워크플로우 보존**: 사용자의 2~3턴 후속 질의가 문맥 없이 쪼개져 잡음 군집으로 왜곡되는 현상을 차단하기 위해, `session_id`를 기준으로 단일 대화 스레드를 하나의 업무 컨텍스트로 병합한 후 임베딩을 수행한다.
+* **인라인 무손실 PII 살균**: 주민등록번호, 계좌번호, 휴대전화번호, 이메일, 신용카드, IP 주소를 인라인 정규식 엔진으로 실시간 마스킹하고 사용자 계정을 가명(`emp-xxxx`) 처리하여 개인정보보호 컴플라이언스를 완벽히 준수한다.
+
+---
+
+## 7. 리소스 정리 (Teardown) 안내
+
+본 도구는 상주 인프라 비용이 발생하지 않는 일회성 진단 실행기다.
 더 이상 분석 보고서가 필요하지 않을 경우 로컬 산출물만 정리한다:
 ```bash
 rm -f report.md prompts.jsonl
