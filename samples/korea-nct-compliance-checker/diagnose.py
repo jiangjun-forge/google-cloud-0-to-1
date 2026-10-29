@@ -159,7 +159,7 @@ def get_mock_check_results(region: str) -> list[dict]:
 def run_gcloud_json(cmd: list[str]) -> dict | list | None:
     """gcloud 명령어를 JSON 출력 모드로 실행한다."""
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        res = subprocess.run(cmd, capture_output=True, text=True, check=True, stdin=subprocess.DEVNULL)
         return json.loads(res.stdout)
     except Exception:
         return None

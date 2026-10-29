@@ -165,7 +165,7 @@ def get_mock_kms_data() -> Dict[str, Any]:
 def run_gcloud_json(cmd: List[str]) -> Optional[Any]:
     """gcloud 명령어를 실행하고 JSON 결과를 반환한다."""
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        res = subprocess.run(cmd, capture_output=True, text=True, check=True, stdin=subprocess.DEVNULL)
         return json.loads(res.stdout)
     except Exception:
         return None

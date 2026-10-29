@@ -56,7 +56,6 @@ def get_billing_account(project_id: str):
   """프로젝트에 바인딩된 빌링 계정 ID를 조회한다."""
   code, stdout, _ = run_cmd([
       "gcloud",
-      "beta",
       "billing",
       "projects",
       "describe",
