@@ -4,7 +4,7 @@
 """Drive Marketing Content Pipeline - Comprehensive Test Suite & Local Runner
 
 5대 파일 린(Lean) 표준을 준수하면서 파이프라인의 모든 비즈니스 로직과 엔터프라이즈 강건성을
-로컬 터미널에서 100% 모의(Mock) 및 실시간 검증하는 자체 완결적 테스트 수이트다.
+로컬 터미널에서 자체 모의(Mock) 및 실시간 검증하는 자체 완결적 테스트 수이트다.
 
 지원 모드:
   1. --scenario (또는 --dry-run): 마케터 5단계 전체 업무 흐름 및 에셋 보존 E2E 시나리오 검증 (2초 완료)

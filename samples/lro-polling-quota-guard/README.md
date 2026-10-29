@@ -134,7 +134,7 @@ flowchart TD
 
 2. **비동기 큐 분리 아키텍처 전환 (엔터프라이즈 권장)**:
    - 클라이언트에서 `operation.result()` 블로킹 대기를 제거하고, `operation.operation.name`을 Cloud Tasks 또는 Pub/Sub에 발행 후 즉시 응답을 종료한다.
-   - 단일 백그라운드 워커가 정기적으로 작업 상태를 일괄 점검하여 쿼터 소진을 원천 차단한다.
+   - 단일 백그라운드 워커가 정기적으로 작업 상태를 일괄 점검하여 불필요한 쿼터 소진을 방지한다.
 
 3. **필수 할당량 상향 요청 (QIR)**:
    - 콘솔 경로: IAM & Admin > Quotas ( https://console.cloud.google.com/iam-admin/quotas )

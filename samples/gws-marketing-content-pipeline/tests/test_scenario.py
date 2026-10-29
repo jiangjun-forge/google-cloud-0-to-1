@@ -4,7 +4,7 @@
 """Drive Marketing Content Pipeline - Marketer E2E Scenario Tests.
 
 마케터의 5단계 전체 업무 흐름 및 에셋 보존, SPEC 기반 타깃 페르소나 자동 합성 시나리오를
-로컬에서 100% 모의(Mock) 검증하는 테스트 모듈이다.
+로컬에서 자체 모의(Mock) 검증하는 테스트 모듈이다.
 """
 
 import os

@@ -247,7 +247,7 @@ custom_polling = polling.DEFAULT_POLLING.with_delay(
 # 2. 비동기 LRO 작업 제출
 # operation = client.{svc['job_method'].lower()}(request=request)
 
-# 3. 커스텀 폴링 객체를 주입하여 완료 대기 (429 원천 차단)
+# 3. 커스텀 폴링 객체를 주입하여 완료 대기 (429 과도한 호출 방지)
 result = operation.result(polling=custom_polling, timeout=3600)
 ```
 """)
@@ -266,7 +266,7 @@ result = operation.result(polling=custom_polling, timeout=3600)
 def build_markdown_report(
     res: Dict[str, Any], project_id: str, location: str, dry_run: bool
 ) -> str:
-    """터미널 진단 결과와 완벽히 동기화된 마크다운 리포트를 생성한다."""
+    """터미널 진단 결과를 반영한 마크다운 리포트를 생성한다."""
     svc = res["service_meta"]
     job_rpm = res["concurrency"]
     job_limit = res["job_quota_rpm"]
@@ -334,7 +334,7 @@ custom_polling = polling.DEFAULT_POLLING.with_delay(
 # 2. 비동기 LRO 작업 제출
 # operation = client.{svc['job_method'].lower()}(request=request)
 
-# 3. 커스텀 폴링 객체를 주입하여 완료 대기 (429 원천 차단)
+# 3. 커스텀 폴링 객체를 주입하여 완료 대기 (429 과도한 호출 방지)
 result = operation.result(polling=custom_polling, timeout=3600)
 ```
 

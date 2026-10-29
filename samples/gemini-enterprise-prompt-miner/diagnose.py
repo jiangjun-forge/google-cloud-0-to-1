@@ -430,7 +430,7 @@ DOMAIN_SIGNATURES = [
         "keywords": ["세금계산서", "역발행", "전표", "홈택스"],
         "title": "세금계산서 역발행 및 매입전표 발행 프로세스",
         "category": "회계 및 세무 지원 (Finance/Tax)",
-        "3r_fit": "최고 (규칙성 100%, 검색 집약성 95%)",
+        "3r_fit": "매우 높음 (규칙성 100%, 검색 집약성 95%)",
         "recommended_asset": "API 도구 (세금계산서 자동 역발행 연동 Tool)",
         "asset_type": "tool",
         "instructions": "월말 셀러 정산 마감 데이터와 사업자 등록번호를 검증하고 홈택스 규격 전표를 자동 생성하여 ERP로 전송한다."
@@ -439,7 +439,7 @@ DOMAIN_SIGNATURES = [
         "keywords": ["타임아웃", "서킷", "체크아웃", "504"],
         "title": "간편결제 타임아웃 롤백 및 결제 승인 실패 보정",
         "category": "결제 플랫폼 엔지니어링 (Payment Backend)",
-        "3r_fit": "최고 (반복성 85%, 규칙성 95%)",
+        "3r_fit": "매우 높음 (반복성 85%, 규칙성 95%)",
         "recommended_asset": "자율 에이전트 (결제 트랜잭션 자율 롤백 복구 Agent)",
         "asset_type": "autonomous-agent",
         "instructions": "PG사 승인 실패 로그를 감지하고 멱등성 키(Idempotency Key)를 기반으로 결제 취소 웹훅을 자동 재시도하며 슬랙 경보를 발행한다."
@@ -448,7 +448,7 @@ DOMAIN_SIGNATURES = [
         "keywords": ["주문서", "미생성", "주문 생성", "장바구니"],
         "title": "결제 승인 후 주문서 미생성 건 복구 및 정합성 보정",
         "category": "주문 시스템 엔지니어링 (Order Backend)",
-        "3r_fit": "최고 (규칙성 95%, 반복성 90%)",
+        "3r_fit": "매우 높음 (규칙성 95%, 반복성 90%)",
         "recommended_asset": "자율 에이전트 (주문 파이프라인 정합성 복구 Agent)",
         "asset_type": "autonomous-agent",
         "instructions": "결제 완료 후 주문서 생성 큐에서 누락된 트랜잭션을 실시간 격리하고 주문 데이터를 역보정 생성한 후 고객 안내 알림을 트리거한다."
@@ -520,7 +520,7 @@ DOMAIN_SIGNATURES = [
         "keywords": ["안전 재고", "WMS", "발주서", "SKU"],
         "title": "물류 창고 안전 재고 미달 품목 실시간 확인 및 추가 발주",
         "category": "공급망 관리 및 물류 (SCM/Logistics)",
-        "3r_fit": "최고 (반복성 95%, 규칙성 95%)",
+        "3r_fit": "매우 높음 (반복성 95%, 규칙성 95%)",
         "recommended_asset": "API 도구 (WMS 재고 연동 및 자동 발주 Tool)",
         "asset_type": "tool",
         "instructions": "WMS 창고별 실시간 가용 재고를 모니터링하여 안전 재고 임계치 미달 시 공급업체 발주서(PO)를 자동 드래프트하고 알림을 보낸다."
@@ -634,7 +634,7 @@ def build_markdown_report(
         f"- **원시 수집 질의 수**: {total_raw_queries}건",
         f"- **분석 단위 대화 세션 수**: {total_sessions}개 세션" + (" (멀티 턴 묶음 분석 적용)" if group_multi_turn else " (단일 턴 개별 분석)"),
         f"- **도출된 3R 마이크로 업무 군집 수**: {len(clusters)}개 영역 (자율 적응형 Auto-K)",
-        f"- **프라이버시 보호 적용**: 인라인 PII 마스킹 총 {total_pii_masked}건 집행 및 임직원 계정 100% 비식별화(Pseudonymization)",
+        f"- **프라이버시 보호 적용**: 인라인 PII 마스킹 총 {total_pii_masked}건 집행 및 임직원 계정 비식별화(Pseudonymization)",
         "",
         "---",
         ""

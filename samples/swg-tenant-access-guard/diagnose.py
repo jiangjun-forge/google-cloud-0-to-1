@@ -229,7 +229,7 @@ def print_text_report(report: Dict[str, Any]) -> None:
 
 
 def build_markdown_report(report: Dict[str, Any], is_dry_run: bool) -> str:
-    """터미널 진단 결과와 완벽히 동기화된 마크다운 리포트를 생성한다."""
+    """터미널 진단 결과를 반영한 마크다운 리포트를 생성한다."""
     mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 (Live)"
     lines = [
         "# 사내 관문 SWG 헤더 및 Context-Aware Access 인가 진단 리포트 (swg-tenant-access-guard)",

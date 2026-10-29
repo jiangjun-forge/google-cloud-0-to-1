@@ -152,7 +152,7 @@ gcloud compute instance-groups managed create [MIG_NAME] \
 
 ### 4단계: 상업적 유연성(Flex CUD) 포트폴리오 전환
 - 특정 머신 패밀리(N2 등)에 고착된 자원 기반 CUD(Resource-based CUD)는 신규 머신(N4, C4, C4A) 전환 시 할인이 단절된다.
-- 전 리전, 전 머신 패밀리에 교차 적용되는 금액 기반 Flex CUD(Flexible Committed Use Discounts)를 결합하여 인프라 유연성과 FinOps 할인을 동시 보장한다.
+- 전 리전, 전 머신 패밀리에 교차 적용되는 금액 기반 Flex CUD(Flexible Committed Use Discounts)를 결합하여 인프라 유연성과 FinOps 할인을 함께 도모한다.
 - 지속 사용 할인(CUD) 공식 문서 ( https://cloud.google.com/docs/cuds )
 
 ### 5단계: (선택 사항) Fluid Compute 크로스 리전 네트워킹 구성

@@ -25,7 +25,7 @@ All contents, designs, and code examples are subject to change, modification, or
 3. **인프라 설정 오류(Misconfiguration)**: 외부 웹 검색 도구 연동 시 Egress 차단, 서비스 계정 JSON 키 외부 유출, 레거시 TLS 허용 등 침해 사고로 직결되는 보안 허점이 상존한다.
 
 ### 1.3 프로젝트 목표
-Google Cloud 인프라 상에서 금융 당국의 1단계 특례 기준에 부합하는 **9대 핵심 기술적 보안 통제(Technical Controls) 전수(Full-Set)**를 자동으로 진단하고, 결격 항목에 대한 구체적 처방 CLI 명령어를 제공함으로써 금융권 고객의 혁신 금융 서비스 심사 통과 기간을 획기적으로 단축한다.
+Google Cloud 인프라 상에서 금융 당국의 1단계 특례 기준에 부합하는 **9대 핵심 기술적 보안 통제(Technical Controls) 전수(Full-Set)**를 자동으로 진단하고, 결격 항목에 대한 구체적 처방 CLI 명령어를 제공함으로써 금융권 고객의 혁신 금융 서비스 심사 준비를 체계적으로 지원한다.
 
 ---
 

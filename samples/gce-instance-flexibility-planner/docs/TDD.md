@@ -94,7 +94,7 @@ sequenceDiagram
 - 본 도구는 읽기 전용 진단 스크립트로서 `roles/compute.viewer` 및 `roles/container.viewer` 권한만 요구하며 운영 중인 클러스터나 인스턴스를 무단 변경하지 않는다.
 
 ### NFR-02: 순수 파이썬 단일 실행 및 크로스 플랫폼 지원
-- 외부 복잡한 도구 설치 없이 `python diagnose.py` 직접 실행 체계로 단일화하며 Linux, macOS, Cloud Shell 환경에서 100% 호환된다.
+- 외부 복잡한 도구 설치 없이 `python diagnose.py` 직접 실행 체계로 단일화하며 Linux, macOS, Cloud Shell 환경에서 원활하게 호환된다.
 
 ### NFR-03: 가상 실행 모드 (--dry-run) 및 비식별화
 - 실제 GCP 호출 없이도 사전 시뮬레이션 데이터를 통해 1초 내에 검증 가능하며, 모의 실행 시 사내 실환경 프로젝트 ID 노출을 방지하기 위해 가명(`sample-project-id`)을 적용한다.

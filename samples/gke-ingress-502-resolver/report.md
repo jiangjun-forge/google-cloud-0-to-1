@@ -65,7 +65,7 @@
        timeoutSec: 30  # 백엔드 서버 Keepalive 타임아웃보다 작게 유지
        healthCheck:
          type: HTTP
-         requestPath: /healthz  # Pod Readiness Probe와 100% 일치
+         requestPath: /healthz  # Pod Readiness Probe와 일치
          port: 8080
      ---
      # Service 애노테이션 추가:

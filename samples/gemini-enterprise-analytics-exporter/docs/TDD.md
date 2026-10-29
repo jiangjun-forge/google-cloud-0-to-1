@@ -83,4 +83,4 @@ sequenceDiagram
 | **NFR-01** | **최소 IAM 권한 준수** | 진단에 필요한 최소 권한(`roles/bigquery.dataEditor, roles/bigquery.jobUser`)만을 요구하며, 불필요한 쓰기 권한을 강제하지 않는다. |
 | **NFR-02** | **비대화형 환경 호환성 (CI/CD Ready)** | `sys.stdin.isatty()` 검증을 통해 백그라운드 태스크나 CI/CD 파이프라인 실행 시 입력 대기(Hang) 없이 안전하게 기본 후보를 채택한다. |
 | **NFR-03** | **민감 정보 비식별화 및 보안 규약** | 소스 코드 및 문서 내에 실제 프로젝트 ID나 개인 식별 정보(PII)를 하드코딩하지 않으며, 모든 외부 참조 링크는 Bare URL 괄호 병기 원칙을 준수한다. |
-| **NFR-04** | **표준 리소스 라벨링 규약 준수** | 리소스 생성 가이드 및 CLI 명령어에 4대 필수 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-analytics-exporter`, `env=sample`, `created-by=customer-engineer`)을 100% 온전히 포함한다. |
+| **NFR-04** | **표준 리소스 라벨링 규약 준수** | 리소스 생성 가이드 및 CLI 명령어에 4대 필수 표준 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-analytics-exporter`, `env=sample`, `created-by=customer-engineer`)을 누락 없이 포함한다. |

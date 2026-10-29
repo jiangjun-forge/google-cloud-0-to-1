@@ -365,7 +365,7 @@ def analyze_and_report(data: Dict[str, Any], is_dry_run: bool) -> None:
         print(f"       timeoutSec: {lb_timeout}  # 백엔드 서버 Keepalive 타임아웃보다 작게 유지")
         print("       healthCheck:")
         print("         type: HTTP")
-        print(f"         requestPath: {recommended_hc_path}  # Pod Readiness Probe와 100% 일치")
+        print(f"         requestPath: {recommended_hc_path}  # Pod Readiness Probe와 일치")
         print(f"         port: {probe.get('gcp_health_check_port', 8080)}")
         print("     ---")
         print(f"     # Service 애노테이션 추가:")
@@ -503,7 +503,7 @@ def build_markdown_report(
             f"       timeoutSec: {lb_timeout}  # 백엔드 서버 Keepalive 타임아웃보다 작게 유지\n"
             f"       healthCheck:\n"
             f"         type: HTTP\n"
-            f"         requestPath: {recommended_hc_path}  # Pod Readiness Probe와 100% 일치\n"
+            f"         requestPath: {recommended_hc_path}  # Pod Readiness Probe와 일치\n"
             f"         port: {probe.get('gcp_health_check_port', 8080)}\n"
             f"     ---\n"
             f"     # Service 애노테이션 추가:\n"

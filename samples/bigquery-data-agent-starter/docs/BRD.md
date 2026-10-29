@@ -61,7 +61,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 분류 | 상세 요구 사항 |
 | :--- | :--- | :--- |
-| **NFR-01** | 완전 독립성 (Zero Dependency) | 타 모듈이나 외부 라이브러리 의존 없이 100% 자체 완결적으로 동작한다. |
+| **NFR-01** | 완전 독립성 (Zero Dependency) | 타 모듈이나 외부 라이브러리 의존 없이 자체 완결적으로 동작한다. |
 | **NFR-02** | 비파괴성 및 안전성 | `--dry-run` 모드는 실제 GCP 리소스 변경 없이 모든 DDL/DML, GDA 페이로드, A2A Agent Card를 사전 출력하여야 한다. |
 | **NFR-03** | 식별 정보 비식별화 | 모든 코드와 샘플 데이터는 특정 기업명을 배제하고 표준 가명(`cymbal_gold`)만을 사용한다. |
 | **NFR-04** | FinOps 자원 추적성 | 워크숍 실습 인프라가 사내 비용 관리 시스템에서 자동 식별될 수 있도록 표준 메타데이터 태깅을 강제한다. |

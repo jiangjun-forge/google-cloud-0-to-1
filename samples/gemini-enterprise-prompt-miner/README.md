@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 프롬프트 마이너 (gemini-enterprise-prompt-miner)
 
-제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 누적된 사용자 질의(Prompt) 로그를 빅쿼리(BigQuery)에서 수집하고, 인라인 PII 마스킹과 멀티 턴 대화 세션 묶음 정제를 거쳐 빅쿼리 내장 임베딩(`ML.GENERATE_EMBEDDING`) 및 자율 적응형(Auto-K) 군집화를 통해 임직원의 실제 3R(반복성 Repetitive, 규칙성 Rule-based, 검색 집약성 Retrieval-heavy) 마이크로 업무를 발굴하고 사내 API 도구(`Tool`) 및 검색/자율 에이전트(`RAG / Autonomous Agent`) 전환 파이프라인을 100% 자동 도출하는 엔터프라이즈 실무 도구다. (As of 2026-10-29)
+제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 누적된 사용자 질의(Prompt) 로그를 빅쿼리(BigQuery)에서 수집하고, 인라인 PII 마스킹과 멀티 턴 대화 세션 묶음 정제를 거쳐 빅쿼리 내장 임베딩(`ML.GENERATE_EMBEDDING`) 및 자율 적응형(Auto-K) 군집화를 통해 임직원의 실제 3R(반복성 Repetitive, 규칙성 Rule-based, 검색 집약성 Retrieval-heavy) 마이크로 업무를 발굴하고 사내 API 도구(`Tool`) 및 검색/자율 에이전트(`RAG / Autonomous Agent`) 전환 파이프라인을 자동 도출하는 엔터프라이즈 실무 도구다. (As of 2026-10-29)
 
 ---
 
@@ -207,7 +207,7 @@ Matryoshka 표현 학습(Matryoshka Representation Learning, MRL)을 활용한 �
 
 ### 3) 멀티 턴 세션 묶음 및 인라인 PII 살균 엔진
 * **세션 워크플로우 보존**: 사용자의 2~3턴 후속 질의가 문맥 없이 쪼개져 잡음 군집으로 왜곡되는 현상을 차단하기 위해, `session_id`를 기준으로 단일 대화 스레드를 하나의 업무 컨텍스트로 병합한 후 임베딩을 수행한다.
-* **인라인 무손실 PII 살균**: 주민등록번호, 계좌번호, 휴대전화번호, 이메일, 신용카드, IP 주소를 인라인 정규식 엔진으로 실시간 마스킹하고 사용자 계정을 가명(`emp-xxxx`) 처리하여 개인정보보호 컴플라이언스를 완벽히 준수한다.
+* **인라인 무손실 PII 살균**: 주민등록번호, 계좌번호, 휴대전화번호, 이메일, 신용카드, IP 주소를 인라인 정규식 엔진으로 실시간 마스킹하고 사용자 계정을 가명(`emp-xxxx`) 처리하여 개인정보보호 컴플라이언스를 준수하도록 돕는다.
 
 ---
 

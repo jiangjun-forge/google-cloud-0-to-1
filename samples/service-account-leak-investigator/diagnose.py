@@ -272,7 +272,7 @@ def build_markdown_report(
     days: int,
     is_dry_run: bool,
 ) -> str:
-    """터미널 진단 결과와 완벽히 동기화된 마크다운 리포트를 생성한다."""
+    """터미널 진단 결과를 반영한 마크다운 리포트를 생성한다."""
     mode_str = "모의 실행 (Dry-run)" if is_dry_run else "실제 환경 (Live)"
     lines = [
         "# 유출 의심 서비스 계정 감사 로그 역추적 및 침해 진단 리포트 (service-account-leak-investigator)",

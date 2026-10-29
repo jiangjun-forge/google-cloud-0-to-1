@@ -49,7 +49,7 @@ custom_polling = polling.DEFAULT_POLLING.with_delay(
 # 2. 비동기 LRO 작업 제출
 # operation = client.batchrecognize(request=request)
 
-# 3. 커스텀 폴링 객체를 주입하여 완료 대기 (429 원천 차단)
+# 3. 커스텀 폴링 객체를 주입하여 완료 대기 (429 과도한 호출 방지)
 result = operation.result(polling=custom_polling, timeout=3600)
 ```
 

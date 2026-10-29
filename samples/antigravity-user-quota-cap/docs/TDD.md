@@ -78,7 +78,7 @@ sequenceDiagram
 - 대규모 개발 조직 전수 조사를 위한 Cloud Logging Log Analytics (BigQuery Linked Dataset) 표준 집계 SQL 쿼리를 제공한다.
 
 ### FR-04: 마크다운 진단 리포트 (report.md) 자동 생성 및 덮어쓰기
-- 진단 실행 시 터미널 출력과 완벽히 동기화된 마크다운 리포트를 자동 생성하여 FinOps 및 인프라 부서 보고서로 활용하도록 지원한다.
+- 진단 실행 시 터미널 출력을 반영한 마크다운 리포트를 자동 생성하여 FinOps 및 인프라 부서 보고서로 활용하도록 지원한다.
 
 ---
 

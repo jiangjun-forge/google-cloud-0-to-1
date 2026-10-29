@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Vertex AI 임베딩 모델의 MRL(Matryoshka Representation Learning) 기능을 활용하여 기준 최고 차원(768d)과 축소 대상 차원들(512d, 256d, 128d)의 검색 정확도(Top-1/Top-3 Recall, MRR) 및 인덱스 RAM/스토리지 절감량을 1분 만에 비교 분석한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Vertex AI 임베딩 모델의 MRL(Matryoshka Representation Learning) 기능을 활용하여 기준 최대 차원(768d)과 축소 대상 차원들(512d, 256d, 128d)의 검색 정확도(Top-1/Top-3 Recall, MRR) 및 인덱스 RAM/스토리지 절감량을 1분 만에 비교 분석한다.
 
 ```mermaid
 sequenceDiagram
@@ -46,7 +46,7 @@ sequenceDiagram
     rect rgb(255, 245, 240)
     note right of Report: 3단계: 트레이드오프 분석 및 최적 티어 처방
     CLI->>Report: generate_markdown_report(QualityMetrics)
-    Report->>Report: Tier 1(초절감: 128d), Tier 2(균형: 256d), Tier 3(최고 정밀: 512d) 처방
+    Report->>Report: Tier 1(초절감: 128d), Tier 2(균형: 256d), Tier 3(고정밀: 512d) 처방
     Report-->>DS: 종합 비교표 및 report.md 생성
     end
 ```

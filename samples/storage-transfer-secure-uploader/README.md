@@ -107,7 +107,7 @@ flowchart TD
     STSAgentPool ==>|"TLS 1.3 암호화 스트리밍 전송"| STSControlPlane
     STSControlPlane --> SecureBucket
     CloudKMS -.->|"CMEK 봉투 암호화 적용"| SecureBucket
-    BucketPolicy -.->|"공개 접근 원천 차단"| SecureBucket
+    BucketPolicy -.->|"공개 접근 차단"| SecureBucket
     SecureBucket --> VertexAIMultimodal
 ```
 
