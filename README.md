@@ -27,7 +27,7 @@ All contents, designs, and code examples are subject to change, modification, or
 │   └── skills/                                 # 43개 시나리오별 Autopilot 및 핸즈온 가이드
 ├── LICENSE                                     # Apache-2.0 오픈소스 라이선스
 ├── README.md                                   # 프로젝트 전체 개요 및 아키텍처 안내서
-└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (44개)
+└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (45개)
     ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
     ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
     ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 Gemini Enterprise app 선택 연동)
@@ -52,6 +52,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gemini-enterprise-governance-guard/     # 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단
     ├── gemini-enterprise-latency-profiler/     # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
     ├── gemini-enterprise-overage-guard/        # Overage 과금 방어, AI Studio API 키 차단 및 Billing RBAC 가드
+    ├── gemini-enterprise-prompt-miner/         # 프롬프트 로그 기반 3R 마이크로 업무 발굴 및 스킬/에이전트 전환 파이프라인 분석
     ├── gemini-enterprise-usage-by-account/     # Gemini Enterprise app 공식 로깅 기반 계정별 토큰 사용량 및 지연시간 분석
     ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
     ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단
