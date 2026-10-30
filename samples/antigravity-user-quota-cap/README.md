@@ -170,7 +170,7 @@ ORDER BY
 
 ### 4단계: 엔터프라이즈 운영 자동화(Batch Job) 및 4대 필수 라벨링 규약
 본 진단기는 읽기 전용 분석 도구다. 15분 주기 자동 캡 차단 및 매일 자정 복구를 영구 스케줄링하려면 클라우드 스케줄러(Cloud Scheduler)와 클라우드 런(Cloud Run) 잡 또는 클라우드 펑션(Cloud Functions)을 연동하여 정기 배치 파이프라인으로 구성 및 배포할 수 있다.
-사내 거버넌스 준수를 위해 배치 리소스 생성 시 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=antigravity-user-quota-cap,env=sample`)을 필수로 주입한다.
+사내 거버넌스 준수를 위해 배치 리소스 생성 시 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=antigravity-user-quota-cap,env=sample,created-by=customer-engineer`)을 필수로 주입한다.
 
 ---
 ## 5. 사전 준비 사항 (필요 IAM 권한)

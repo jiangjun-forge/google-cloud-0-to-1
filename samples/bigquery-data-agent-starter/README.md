@@ -137,6 +137,14 @@ flowchart TD
 
 진단 결과 리포트(`report.md`)의 권장 조치 사항을 참조하여 설정을 반영한다.
 
+### GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+- 사내 거버넌스 및 자원 식별, 비용 추적을 위해 관련 클라우드 리소스 생성 시 4대 표준 라벨을 필수로 주입한다:
+  - `managed-by`: `google-cloud-0-to-1`
+  - `scenario`: `bigquery-data-agent-starter`
+  - `env`: `sample`
+  - `created-by`: `customer-engineer`
+- gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-starter,env=sample,created-by=customer-engineer`
+
 ---
 
 ## 5. 사전 준비 사항 (필요 IAM 권한)

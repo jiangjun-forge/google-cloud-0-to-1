@@ -155,6 +155,16 @@ flowchart TD
    - 악성 프롬프트 인젝션 방어 필터를 활성화하고 주민등록번호(`KOREA_RESIDENT_REGISTRATION_NUMBER`) 가명 처리 템플릿을 등록한다.
 
 ---
+### GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
+- 사내 거버넌스 및 자원 식별, 비용 추적을 위해 관련 클라우드 리소스 생성 시 4대 표준 라벨을 필수로 주입한다:
+  - `managed-by`: `google-cloud-0-to-1`
+  - `scenario`: `korea-regulatory-perimeter-guard`
+  - `env`: `sample`
+  - `created-by`: `customer-engineer`
+- gcloud CLI 예시: `--labels=managed-by=google-cloud-0-to-1,scenario=korea-regulatory-perimeter-guard,env=sample,created-by=customer-engineer`
+
+---
+
 ## 5. 사전 준비 사항 (필요 IAM 권한)
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
