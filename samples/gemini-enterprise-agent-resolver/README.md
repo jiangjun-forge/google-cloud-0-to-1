@@ -28,18 +28,31 @@ Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 
 - [ ] Gemini Enterprise Agent Registry에 커스텀 에이전트 등록 시 필수 서비스 에이전트(`service-[NUM]@gcp-sa-discoveryengine.iam.gserviceaccount.com`)에 `roles/aiplatform.user` 역할이 부여되지 않아 에이전트 호출이 실패한다.
 - [ ] VPC Service Controls(VPC-SC) 서비스 경계가 설정된 환경에서 두 프로젝트 간 API 호출이 차단되어 에이전트 목록 검색 및 추론이 불가능하다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: Gemini Enterprise 어드민, 클라우드 IAM 보안팀, 멀티 프로젝트 아키텍트 및 거버넌스 리드
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 타 프로젝트나 타 조직에 호스팅된 커스텀 에이전트(Agent Engine)를 Gemini Enterprise app에 연동할 때 원인 불명의 권한 오류가 발생하는 문제
+  2. 조직 정책 `constraints/iam.allowedPolicyMemberDomains`(DRS)에 의해 교차 프로젝트 서비스 계정 권한 부여가 차단되는 보안 충돌
+  3. VPC Service Controls(VPC-SC) 보안 경계로 인해 프로젝트 간 Agent Engine API 호출이 차단되어 에이전트가 응답하지 않는 장애
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Gemini Enterprise 테넌트 프로젝트와 대상 에이전트 프로젝트 간의 교차 IAM 역할(`roles/aiplatform.user`), 도메인 제한 공유(DRS) 조직 정책 상태 및 VPC-SC 인그레스 규칙을 종합 진단하여 즉시 해결 가능한 복구 스크립트를 제공한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 양방향 IAM 권한 충족 여부, DRS 정책 제한 상태, VPC-SC 격리 검증 및 연동 상태 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 크로스 프로젝트 연동 진단서, 교차 권한 복구 gcloud 명령어, DRS 예외 태그 정책 및 VPC-SC 인그레스 규칙 명세 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **교차 프로젝트 IAM 바인딩 명령어**: GE 서비스 에이전트에 에이전트 호출 권한을 부여하는 명령<br/>• **DRS 조직 정책 예외 바인딩 스크립트**: 승인된 프로젝트 간 권한 부여를 허용하는 태그 정책<br/>• **VPC-SC 인그레스/이그레스 허용 룰 JSON**: 보안 경계를 통과하여 에이전트를 호출하는 인그레스 규칙 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,7 +74,15 @@ Agent Engine IAM 권한 바인딩              CRITICAL     에이전트 프로�
 Agent Engine 리소스 식별자 규격              PASS         유효한 Agent Engine ID 형식 확인 완료 (8492049182740192841)
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

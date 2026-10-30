@@ -40,18 +40,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **Gemini Enterprise app 사내 갤러리 등록 병목**: 배포된 에이전트를 전사 임직원이 쓰는 Gemini Enterprise app 카탈로그에 등록하는 매니페스트 구성 및 IAM 권한 검증에 실패하는 경우
 - [ ] **보안 및 서비스 계정 최소 권한 통제 부재**: 에이전트 실행 환경에 과도한 관리자 권한을 부여하여 보안 감사에 지적받거나 VPC-SC 경계 격리에 실패하는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 사내 소프트웨어 엔지니어, 풀스택 개발자, 엔터프라이즈 클라우드 아키텍트 및 IT 관리자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 사내 BigQuery, ERP, 모니터링 등 복잡한 비즈니스 로직을 결합한 High-code 커스텀 에이전트를 구축하고 배포하는 절차가 번거로운 문제
+  2. GitHub 저장소에 있는 에이전트 코드를 Agent Engine 런타임으로 패키징하고 Gemini Enterprise app에 등록하는 데 수많은 CLI 명령이 요구되는 현상
+  3. 일반 사용자가 임의로 위험한 코드를 배포하지 못하도록 관리자 승인(HITL) 및 보안 검증(SAST) 거버넌스를 강제하기 어려운 문제
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 사내 4대 대표 프리셋과 임의 GitHub 저장소 URL을 바탕으로 Agent Engine 패키징을 원클릭 스캐폴딩하고, 2단계 대화형 보안 검증(SAST)을 거쳐 전사 사내 갤러리(`/r/agents`)에 안전하게 자동 배포 및 등록하는 공장을 제공한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 저장소 클론 상태, 의존성 패키징 결과, Agent Engine LRO 프로비저닝 진행률 및 사내 갤러리 바인딩 결과 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 커스텀 에이전트 아키텍처 보고서, 배포된 Agent Engine 리소스 URI, 서비스 계정 IAM 명세 및 자원 회수 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **배포된 프로덕션 Agent Engine**: 사내 웹 대화창에서 바로 구동되는 완전 관리형 커스텀 에이전트<br/>• **선언적 커스텀 레시피 (`catalog.yaml`)**: 사내 대표 에이전트 템플릿을 코드 없이 확장하는 명세서<br/>• **2단계 배포 거버넌스 팩**: 즉시 배포(Fast-path)와 정밀 보안 검사를 제어하는 관리자 가드레일 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트, 리전 및 실시간 Gemini Enterprise App 목록을 감지하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -90,7 +103,15 @@ python diagnose.py --scaffold --prompt "사내 하둡 감사" --dry-run
 [성공] 마크다운 진단 보고서가 저장되었습니다: report.md
 ```
 
-### 2) 실제 사내 인프라 실시간 진단 및 배포
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트, 리전 및 실시간 Gemini Enterprise App 목록을 감지하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단 및 배포
 ```bash
 python diagnose.py
 ```

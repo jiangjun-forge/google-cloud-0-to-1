@@ -27,18 +27,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **통일 클라이언트 전환**: AI Studio 환경과 버텍스 AI(Vertex AI) 환경에서 각각 파편화되어 사용되던 코드를 최신 `google-genai` 단일 클라이언트로 일원화하고자 할 때
 - [ ] **레거시 코드 자가 감사**: 프로젝트 내 파이썬 스크립트, 배시 스크립트, 주피터 노트북(`.ipynb`) 전반에 걸쳐 잔존하는 구형 SDK 호출 위치를 전수 조사하고자 할 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 소프트웨어 엔지니어, 백엔드 개발자, AI 서비스 운영팀 및 코드베이스 아키텍트
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 과거에 분파되었던 구형 SDK(`google.generativeai` 또는 `vertexai.generative_models`)가 레포지토리에 혼재되어 유지보수성이 저하되는 문제
+  2. 구글 공식 단일 표준 SDK인 `google-genai`의 최신 기능(Live API, 최신 모델 파라미터 등)을 활용하지 못하는 레거시 기술 부채
+  3. 대규모 모노레포나 수십 개 마이크로서비스에서 레거시 SDK 호출 부위를 수작업으로 찾고 마이그레이션 코드를 작성하는 공수 부담
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 지정된 디렉터리 내 파이썬 소스 코드를 정적 분석(AST/Regex)하여 레거시 SDK import 및 클래스 호출 라인을 1초 만에 전수 스캔하고, 최신 `google-genai` 표준 코드로의 1:1 마이그레이션 가이드를 제공한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 스캔된 파일 수, 검출된 레거시 호출 수, 파일별 위험 라인 번호 및 사용된 구형 모듈 요약 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 레거시 기술 부채 분석서, 파일별 상세 마이그레이션 전/후 비교 코드, 의존성 교체 가이드 및 최신 SDK 호출 규격 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **1:1 코드 변환 예제 스니펫**: 구형 `GenerativeModel`을 `genai.Client()`로 전환하는 정형 코드<br/>• **의존성 업데이트 명령어**: `requirements.txt` 내 패키지를 `google-genai`로 교체하는 가이드<br/>• **CI/CD 정적 검사 연동 가이드**: 레거시 SDK 신규 유입을 차단하는 GitHub Actions 린터 설정 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -60,7 +73,15 @@ python diagnose.py --dry-run
     코드: genai.configure(api_key=os.environ['GEMINI_API_KEY'])
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

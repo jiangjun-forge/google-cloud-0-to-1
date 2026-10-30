@@ -29,18 +29,31 @@ GKE 클러스터의 파드가 정상 기동 중임에도 외부 또는 내부 HT
 - [ ] GCP 헬스 체크 프로브 대역(`35.191.0.0/16`, `130.211.0.0/22`)의 인그레스 방화벽 차단 여부를 점검하려는 경우
 - [ ] 백엔드 웹 서버(Node.js, Express, Tomcat, Gunicorn, Nginx)의 유휴 커넥션 Keepalive 타임아웃과 GCP 로드 밸런서의 백엔드 타임아웃 간 역전 현상을 교차 검증하려는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 쿠버네티스 엔지니어, GKE 인프라 운영자, SRE/DevOps 팀 및 마이크로서비스 아키텍트
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. GKE 파드는 정상 Running 상태임에도 외부/내부 HTTP(S) 로드 밸런서에서 간헐적 또는 전면적으로 502 Bad Gateway를 반환하는 문제
+  2. 로드 밸런서 헬스 체크 방화벽 차단, 백엔드 프로브 경로 불일치, NEG Readiness Gate 미충족, Keepalive 타임아웃 역전 등 복합 원인 규명의 난해함
+  3. GKE와 GCP Cloud Load Balancing 간의 비동기 상태 불일치로 인해 배포 직후 트래픽이 유실되는 장애
+- **본 솔루션의 해결 방식 (Solution)**:
+  - GKE 클러스터와 Cloud Load Balancing 간의 4계층 상호작용 체인을 교차 진단하여 502 Bad Gateway의 4대 근본 원인을 1분 만에 규명하고, 복구용 `BackendConfig` YAML 및 방화벽 허용 명령어를 자동 도출한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 헬스 체크 방화벽, 프로브 경로 정합성, NEG Readiness 상태, Keepalive 타임아웃 4대 영역별 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 502 오류 체인 정밀 역추적 보고서, 원인별 기술 메커니즘 분석, BackendConfig 및 방화벽 즉시 조치 YAML |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **GKE BackendConfig 복구 매니페스트**: 헬스 체크 경로와 타임아웃을 정상 동기화하는 k8s YAML<br/>• **GCP 로드 밸런서 헬스 체크 방화벽 명령어**: 구글 프로브 IP 대역을 허용하는 gcloud 명령<br/>• **웹 프레임워크 Keepalive 튜닝 가이드**: LB 타임아웃보다 길게 설정하는 Nginx/Node.js/Python 설정 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ python diagnose.py --dry-run
 [3] 단계별 즉시 복구 가이드 및 맞춤형 YAML:
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

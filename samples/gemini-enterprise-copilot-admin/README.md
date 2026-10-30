@@ -33,18 +33,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **Overage 추가 과금 및 섀도우 키 우려**: 일일 풀링 쿼터 초과에 따른 과금 누수나 임직원의 AI Studio 유료 API 키 발급을 통제해야 하는 경우
 - [ ] **폐쇄망 프록시 와일드카드 차단**: 사내 보안망 정책상 와일드카드 도메인 허용이 불가하여 15대 코어 FQDN의 정확한 목록이 필요한 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: Gemini Enterprise 사내 IT 어드민, CISO/정보보안팀, 클라우드 거버넌스 담당자 및 시스템 관리자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 도메인 선점 충돌, 외부 미승인 마켓플레이스 에이전트 난립, 유휴 라이선스 누수 등 5대 관리 과제가 복잡하게 얽혀 있는 문제
+  2. 사내망 보안 정책상 와일드카드 도메인이 차단되어 Gemini Enterprise app 코어 FQDN 통신이 막히는 장애
+  3. 임직원의 일일 쿼터 초과 시 발생하는 서비스 중단과 Google AI Studio를 통한 섀도우 과금 누수를 통제하지 못하는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 어드민 5대 핵심 과제(도메인 충돌, 마켓플레이스 차단, 유휴 라이선스, Overage 방어, 사내망 FQDN)를 대화형 인터뷰로 자율 진단하고, Agent Engine 기반으로 배포하여 Gemini Enterprise app 사내 갤러리(`/r/agents`)에 등록 가능한 관리자 코파일럿을 구축한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 5대 어드민 관리 영역 진단 결과, 보안 결함 지표, Agent Engine 프로비저닝 상태 및 사내 갤러리 바인딩 요약 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 전사 어드민 거버넌스 종합 보고서, 영역별 표준 조치 가이드, 조직 정책 설정 명령어 및 사내망 방화벽 허용 FQDN 명세 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Agent Engine 리소스 등록**: 사내 갤러리에 직결 바인딩되는 어드민 전용 지능형 코파일럿<br/>• **조직 정책 일괄 강제 스크립트**: 외부 마켓플레이스 차단 및 AI Studio 키 발급 제한 gcloud 명령<br/>• **사내망 방화벽 허용 FQDN 20종 리스트**: 보안팀 제출용 공식 아웃바운드 443 허용 목록 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트, 리전 및 실시간 Gemini Enterprise App 목록을 감지하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -85,7 +98,15 @@ python diagnose.py --scaffold --prompt "사내 하둡 감사" --dry-run
 ===========================================================================
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트, 리전 및 실시간 Gemini Enterprise App 목록을 감지하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

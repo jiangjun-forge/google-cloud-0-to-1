@@ -27,18 +27,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **실시간 예산 알림 연동**: 단순 이메일 알림을 넘어 Pub/Sub 메시징 큐로 실시간 예산 초과 이벤트를 수신하여 사내 슬랙이나 모니터링 시스템과 연동하고자 할 때
 - [ ] **사전 파이프라인 모의 검증**: 실제 과금이나 서비스 중단 없이 예산 초과 이벤트 페이로드와 차단 로직이 정상 작동하는지 가상 시뮬레이션으로 테스트하고자 할 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 FinOps 리드, 인프라 운영팀, 결제 계정 관리자 및 SRE 엔지니어
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 개발자의 코드 버그나 악의적인 호출 폭증으로 인해 수 시간 만에 수천만 원의 Gemini API 비용이 폭증하는 사고 위험
+  2. GCP 예산 알림이 이메일로만 발송되어 야간이나 주말에 담당자가 확인하지 못해 골든타임을 놓치는 문제
+  3. 예산 초과 시 수동 개입 없이 자동으로 API 호출을 차단하는 안전 아키텍처(Circuit Breaker)의 부재
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Billing 예산 알림과 Cloud Pub/Sub, Cloud Functions 2세대를 결합하여, 예산 임계치(90% 또는 100%) 도달 시 실시간 알림을 발송하고 Service Usage API를 통해 Gemini API 쿼터를 자동으로 0으로 차단하는 안전망을 검증 및 시뮬레이션한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 프로젝트 결제 계정 연동 상태, Pub/Sub 토픽 및 Cloud Functions 배포 명세, 가상 예산 초과 이벤트 검증 결과 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 비용 폭증 자동 차단 아키텍처 설계서, Cloud Functions 2세대 자동 차단 파이썬 코드, 배포 CLI 명령어 및 Teardown 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **자동 차단 파이썬 핸들러 (`main.py`)**: 쿼터를 0으로 즉시 조정하는 서버리스 함수 소스 코드<br/>• **Cloud Functions 2세대 배포 스크립트**: Pub/Sub 트리거 및 4대 필수 라벨이 주입된 gcloud 명령<br/>• **예산 알림 Pub/Sub 연동 가이드**: Cloud Billing 콘솔에서 웹훅 알림을 구성하는 정형 절차서 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -60,7 +73,15 @@ python diagnose.py --dry-run
 ========================================================================
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] Google Cloud 계정 인증(`accounts.google.com`, `auth.cloud.google.com`) 단계에서 세션이 만료되거나 무한 리다이렉트가 발생한다.
 - [ ] Private Service Connect(PSC) 내부망을 구성했으나 일부 필수 공개 FQDN에 대한 외부 DNS 해독 및 TCP 443 아웃바운드가 누락되어 있다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 기업 네트워크 보안팀, 방화벽 관리자, 사내 관문 프록시(SWG) 운영자 및 인프라 엔지니어
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 사내망 보안 규정상 와일드카드 도메인(`*.google.com`) 등록이 엄격히 불허되어 개별 FQDN 목록이 필수적인 문제
+  2. Gemini Enterprise 구동에 필요한 인증, 코어 API, 정적 에셋, 스트리밍 엔드포인트 중 일부가 누락되어 웹 대화창이 멈추는 장애
+  3. 보안팀 방화벽 승인 요청 시 필요한 아웃바운드 443 포트 대상 FQDN 전수 목록을 수작업으로 파악하느라 일정이 지연되는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Gemini Enterprise 정상 구동에 필수적인 20대 핵심 코어 API, 계정 인증, 정적 CDN 에셋의 DNS 해석 및 아웃바운드 443(TLS) 연결성을 1분 만에 일괄 진단하고 보안팀 제출용 방화벽 허용 명세를 자동 생성한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 20개 FQDN별 카테고리, DNS 해석 IP, 443 TLS 핸드셰이크 성공 여부, RTT 지연시간 및 연결성 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 사내망 네트워크 통신 적합성 보고서, 차단된 FQDN 목록, 방화벽 정책 등록용 정형 표 및 SWG 프록시 허용 명세서 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **보안팀 제출용 방화벽 허용 FQDN 명세**: 복붙 가능한 20대 공식 FQDN 목록<br/>• **사내 관문 프록시(SWG) 룰셋 규격**: 와일드카드 없이 개별 도메인을 등록하는 프록시 정책<br/>• **네트워크 연결성 모니터링 스크립트**: 주기적으로 사내망 연결성을 검증하는 자동 헬스체크 도구 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ Core API         eu-discoveryengine.googleapis.com          OK     OK       32.5
 Core API         content-discoveryengine.googleapis.com     OK     OK       32.5       [정상]
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

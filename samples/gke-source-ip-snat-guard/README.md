@@ -29,18 +29,31 @@ GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 
 - [ ] Client IP 보존을 위해 `externalTrafficPolicy: Local`로 변경했으나, 노드별 파드 수가 불균등하여 특정 파드로 트래픽이 쏠리는 심각한 부하 불균형(Pod Hotspotting)이 발생한다.
 - [ ] GKE Weighted Load Balancing 애너테이션 부재로 인해 파드가 없는 노드로 유입된 트래픽의 헬스체크 실패 및 드롭 현상이 일어난다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: GKE 클러스터 어드민, 보안 감사관, 네트워크 엔지니어 및 백엔드 개발자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Passthrough NLB를 경유하여 파드로 인입되는 트래픽의 실제 클라이언트 IP가 kube-proxy의 2-Hop SNAT으로 인해 노드 IP로 변조/유실되는 문제
+  2. 출발지 IP 유실로 인해 보안 감사업무(감사 로그, 차단 정책, FSI 규제)와 지리적 접근 제어가 마비되는 현상
+  3. **`externalTrafficPolicy**: `externalTrafficPolicy: Local` 설정 시 발생하는 파드 간 트래픽 부하 불균등(Pod Hotspotting) 및 드롭 위험
+- **본 솔루션의 해결 방식 (Solution)**:
+  - GKE 서비스 매니페스트와 NLB 구성을 분석하여 kube-proxy 2-Hop SNAT 위험과 부하 불균등 위험을 교차 진단하고, 클라이언트 원본 IP를 온전히 보존하면서 트래픽을 균등 분산하는 최적 k8s 서비스 매니페스트를 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 서비스별 NLB 유형, externalTrafficPolicy 모드, 노드당 파드 분포, SNAT 유실 위험 및 핫스팟 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | Client IP 보존 아키텍처 진단서, 2-Hop SNAT 메커니즘 분석, 패치용 k8s 서비스 매니페스트 및 보안 감사 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Client IP 보존 k8s 매니페스트**: `externalTrafficPolicy: Local`이 적용된 최적 서비스 YAML<br/>• **파드 안티-어피니티(Anti-affinity) 템플릿**: 노드별 파드 부하 불균등을 방지하는 배포 매니페스트<br/>• **GKE 감사 로깅 검증 쿼리**: 보존된 출발지 IP가 Cloud Logging에 정상 기록되는지 확인하는 SQL |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ billing/payment-api-service        Internal Passthrough NLB Local        3노드
 [발견된 주요 네트워크 결함 및 권고 조치]
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

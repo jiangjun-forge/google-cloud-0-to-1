@@ -28,18 +28,31 @@ Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOU
 - [ ] GPU(H100, A100, L4) 대규모 프로젝트를 위해 Future Reservation을 생성했으나, 콘솔에서 제출(Submit)을 누락하여 `DRAFTING` 상태로 방치되어 있을 때
 - [ ] Future Reservation의 최소 리드 타임(120시간 / 5일)을 지키지 못해 구글 용량 팀 심사에서 거절되거나 서비스 론칭이 지연될 위험이 있을 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 컴퓨트 인프라 관리자, 클라우드 용량 기획자(Capacity Planner), FinOps 리드 및 CISO
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 대규모 할인 약정(CUD)을 체결했음에도 물리적 하드웨어 예약(Reservation)이 결합되지 않아 피크 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 장애 발생
+  2. 생성해 둔 예약(Reservation)이 실제 인스턴스에 매핑되지 않고 유휴 상태로 방치되어 비용만 이중 지출되는 문제
+  3. 신규 대규모 워크로드 배포 전 Future Reservation(FR)을 신청해 두고 승인/제출 단계를 누락하여 오픈 당일 용량을 확보하지 못하는 사고
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Audit Logs에서 용량 부족 실패 이력을 추적하고, CUD 약정액 대비 물리적 Reservation 확보율, 활성 예약의 실제 VM 매핑률 및 Future Reservation의 미제출(DRAFTING) 상태를 일괄 진단하여 즉시 복구 명령어를 도출한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | CUD 대비 예약 커버리지 비율, 유휴 예약 목록, FR 제출 대기 건수 및 용량 고갈 위험 등급 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 컴퓨트 용량 정합성 보고서, 존별 예약 매핑 현황, 미제출 Future Reservation 승인 명령어 및 공유 예약 설정 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Future Reservation 즉시 제출 명령어**: 드래프트 상태의 예약을 공식 활성화하는 gcloud 명령<br/>• **공유 예약(Shared Reservation) 구성 스크립트**: 복수 프로젝트 간 예약을 유연하게 공유하는 정책<br/>• **용량 부족 감사 알림 정책**: `ZONE_RESOURCE_POOL_EXHAUSTED` 발생 시 실시간 알림 파이프라인 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -59,7 +72,15 @@ GKE ComputeClass(CCC) 및 MIG instanceSelections 다중 머신 유연성을 동�
 [안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/gce-reservation-guard/report.md
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

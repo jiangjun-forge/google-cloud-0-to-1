@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] `all-traffic` 옵션 설정 후 Cloud NAT 미구성으로 인해 외부 공용 API(결제 게이트웨이, 서드파티 웹훅) 통신이 차단되는 장애를 진단해야 하는 경우
 - [ ] 서브넷의 Private Google Access(PGA) 설정 누락으로 클라우드 스토리지(Cloud Storage), 빅쿼리(BigQuery) 등 구글 사설 API 호출이 실패하는 원인을 규명하려는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 네트워크 관리자, 보안 엔지니어, Cloud Run 서비스 운영자 및 솔루션 아키텍트
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 기존 Serverless VPC Access 커넥터의 처리량 병목, 스케일링 지연 및 고정 인스턴스 요금으로 인한 인프라 비용 누수
+  2. Direct VPC Egress 전환 시 서브넷 가용 IP 부족으로 서비스 배포가 실패하거나 IP 고갈이 발생하는 문제
+  3. Private Google Access 미활성화 또는 Cloud NAT 라우팅 누락으로 인해 사내망 통신이나 외부 API 호출이 차단되는 장애
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 프로젝트 내 모든 활성 Cloud Run 서비스의 Egress 유형(Direct VPC vs 커넥터), 연결된 서브넷의 가용 IP 잔여량, PGA 활성화 및 Cloud NAT 기본 경로 정합성을 1분 만에 일괄 진단하고 즉시 전환 명령어를 도출한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 서비스별 Egress 모드, 서브넷 IP 가용률, Private Google Access 상태 및 네트워크 연결성 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 서비스별 네트워크 설정 상세 분석, 커넥터 제거 시 비용 절감액 계산, IP 대역 확장 가이드 및 전환 gcloud 명령어 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Direct VPC Egress 전환 명령어**: 커넥터를 대체하는 `--network`, `--subnet`, `--vpc-egress` 설정<br/>• **서브넷 확장 및 PGA 활성화 스크립트**: 가용 IP 확보 및 사설 구글 액세스 강제 명령어<br/>• **기존 Serverless 커넥터 삭제 명령어**: 유휴 커넥터 리소스 회수를 통한 즉각적인 비용 절감 가이드 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ python diagnose.py --dry-run
   * Private Google Access: 비활성화 (경고)
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

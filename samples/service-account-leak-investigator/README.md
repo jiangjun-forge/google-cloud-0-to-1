@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 유출된 서비스 계정이 `Cloud Storage`, `BigQuery`, `Cloud IAM` 등 핵심 자원에서 데이터 탈취나 권한 상승을 시도했는지 즉시 확인해야 하는 경우
 - [ ] 장기 서비스 계정 키를 전면 폐기하고 안전한 Workload Identity Federation 체계로 전환하고자 하는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 사내 침해사고 대응팀(CERT/CSIRT), CISO, 보안 운영 센터(SOC) 및 IAM 관리자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. GitHub 공개 저장소나 외부 협력사로 서비스 계정 정적 키(JSON)가 유출되었을 때 악용 여부를 신속히 파악하기 어려운 문제
+  2. 유출된 키가 언제, 어떤 IP에서, 어떤 민감 API(BigQuery 데이터 반출, VM 생성 등)를 호출했는지 타임라인 재구성이 지연되는 사고
+  3. 키를 무조건 즉시 삭제했다가 연계된 프로덕션 핵심 서비스까지 중단되는 2차 운영 장애 위험
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Audit Logs를 전수 스캔하여 유출된 서비스 계정 키의 고유 Key ID 기반 호출 이력, 출발지 IP, 실행 액션을 타임라인으로 재구성하고, 위험 키 비활성화 및 Workload Identity Federation(WIF) 전환 안전 가이드를 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 유출 의심 키 ID, 최근 호출 건수, 호출 출발지 IP 목록, 비정상 활동 감지 여부 및 침해 위험 등급 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 서비스 계정 침해 사고 정밀 포렌식 보고서, 시간대별 호출 타임라인, 비정상 API 호출 분석 및 긴급 격리 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **위험 키 즉시 비활성화 명령어**: 프로덕션 복구를 염두에 두고 임시 중단하는 gcloud 명령<br/>• **Workload Identity Federation 전환 템플릿**: 정적 키 발급을 영구 제거하는 AWS/GitHub Actions WIF 설정<br/>• **비정상 위치/IP 접근 탐지 Cloud Monitoring 알림**: 해외 IP 호출 시 긴급 경보를 트리거하는 정책 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,7 +74,15 @@ data-pipeline-sa a1b2c3d4e5f6...    2026-05-15   ACTIVE   침해 의심 시점 �
 발생 시각                    계정              서비스        메서드             호출 IP           위험도
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

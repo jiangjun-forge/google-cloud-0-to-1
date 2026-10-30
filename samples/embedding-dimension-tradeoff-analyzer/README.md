@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 빅쿼리(BigQuery) Vector Search 또는 버텍스 AI Vector Search 도입 전 인프라 용량 및 비용 최적화를 위한 정량적 근거 보고서가 필요한 경우
 - [ ] 모바일 또는 실시간 지연 시간 민감 워크로드에서 유사도 계산 레이턴시를 3배 이상 단축하려는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: AI/ML 엔지니어, 데이터 과학자, 시맨틱 검색 아키텍트 및 벡터 DB 관리자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 임베딩 벡터를 풀 차원(768d)으로 유지함에 따라 Vector Search 인덱스 RAM 비용과 스토리지 요금이 기하급수적으로 증가하는 문제
+  2. 차원을 축소(512d, 256d, 128d)할 경우 자사 도메인 데이터에서 검색 적중률(Recall)과 랭킹 품질(MRR)이 얼마나 손실되는지 사전 측정 불가
+  3. 한국어 및 다국어 환경에서 영어 특화 모델 대비 언어학적 특성을 반영한 최적 임베딩 모델 선정이 어려운 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Vertex AI `text-multilingual-embedding-002` 모델의 MRL(Matryoshka Representation Learning)을 활용하여 사내 표본 코퍼스를 대상으로 768d 대비 512d, 256d, 128d 축소 시의 정확도 손실률, 레이턴시 단축 배수, 인덱스 용량 절감량을 1분 만에 비교 분석한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 차원별 Top-1/Top-3 Recall, MRR, 평균 지연시간, 100만 건 기준 RAM 절감량 및 티어 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | MRL 차원 축소 벤치마크 결과서, 차원별 트레이드오프 분석 그래프 데이터, 한국어 모델 선정 가이드 및 프로덕션 적용 코드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **사내 실데이터 적용 파이썬 코드**: `google-genai` SDK 기반 `output_dimensionality` 주입 템플릿<br/>• **3대 최적 티어링 권고안**: Tier 1(초절감 128d), Tier 2(균형 256d/512d), Tier 3(고정밀 768d)<br/>• **Vector Search 인덱스 최적화 사양**: 축소된 차원에 맞춘 인덱스 엔드포인트 프로비저닝 가이드 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ python diagnose.py --dry-run
   - 1,000,000건 기준 인덱스 메모리(RAM): 0.596 GB
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

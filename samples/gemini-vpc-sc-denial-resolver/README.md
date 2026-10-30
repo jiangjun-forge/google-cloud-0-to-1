@@ -27,18 +27,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **거부 원인 규명 곤란**: 일반적인 클라이언트 에러 메시지만으로는 수신 규칙(Ingress Rule) 누락인지, 상이한 경계 분리인지 판단하기 어려울 때
 - [ ] **VPC-SC 감사 추적 및 즉각 해결**: Cloud Logging의 보안 정책 감사 로그(`cloudaudit.googleapis.com/policy`)를 역추적하여 고유 거부 ID(UUID)와 원인별 해결책을 즉시 확보하고자 할 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 보안 엔지니어, 네트워크 아키텍트, VPC-SC 운영자 및 인프라 보안팀
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Gemini 및 Vertex AI API 호출 시 발생하는 VPC Service Controls 보안 경계 차단(Perimeter Denial) 에러의 난해한 에러 메시지
+  2. 수많은 감사 로그 속에서 정확한 차단 사유(네트워크 불일치, 서비스 계정 미등록, 소스 IP 차단 등)를 수작업으로 역추적하는 데 소요되는 시간
+  3. 보안 경계 수정을 위해 보안팀에 요청할 정확한 인그레스/이그레스 규칙 명세를 도출하지 못해 프로젝트가 중단되는 문제
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Audit Logs에서 최근 7일간의 VPC-SC 위반 로그를 정밀 파싱하여 거부 사유 코드별(SERVICE_PERIMETER_VIOLATION) 근본 원인을 규명하고, 즉시 복구 가능한 네트워크 수신 허용 규칙(Ingress Rules) 명세를 자동 산출한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 차단 시각, 주체 계정, 대상 서비스, 거부 사유 코드, 보안 경계 이름 및 네트워크 차단 요약 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | VPC-SC 차단 이벤트 전수 역추적 보고서, 거부 사유별 기술적 원인 분석, 보안팀 제출용 수신 규칙 YAML 및 적용 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **VPC-SC 인그레스 규칙 YAML**: 차단된 주체와 네트워크를 선별 허용하는 정밀 수신 정책<br/>• **gcloud 액세스 정책 업데이트 명령어**: 보안 경계에 정책을 즉시 반영하는 CLI 명령어<br/>• **사내 승인 네트워크 대역 검증 가이드**: 온프렘 및 사내 VPC 서브넷 대조 명세서 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -60,7 +73,15 @@ python diagnose.py --dry-run
   - 거부 사유 코드: NO_MATCHING_INGRESS_POLICY
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

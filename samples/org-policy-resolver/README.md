@@ -27,18 +27,31 @@ GCP 환경에서 자원 생성 또는 권한 변경 시 발생하는 조직 정�
 - [ ] **위반된 정확한 조직 정책 ID 규명**: 에러 메시지가 길거나 복잡하여 정확히 어떤 조직 정책(`constraints/...`)에 걸렸는지 신속히 파악하기 어려울 때
 - [ ] **테스트/개발 프로젝트 단위의 안전한 정책 해제**: 전사 정책을 훼손하지 않고 해당 프로젝트에 한해 신속히 예외를 적용할 수 있는 `gcloud resource-manager org-policies disable-enforce` 명령어를 즉시 확보하고자 할 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 인프라 관리자, 중앙 거버넌스 팀, DevOps 엔지니어 및 프로젝트 운영자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 리소스 생성이나 IAM 권한 변경 시 조직 정책 제약 조건(Constraints)에 의해 거부되었으나 정확한 제약 ID를 모르는 문제
+  2. 개발 환경이나 테스트 프로젝트에서 긴급히 리소스를 띄워야 하는데 상위 조직 정책에 막혀 작업이 중단되는 현상
+  3. 수많은 실패 로그 속에서 어떤 주체가 어떤 제약 조건을 위반했는지 감사 로그를 일일이 분석하는 데 소요되는 시간 낭비
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Audit Logs에서 최근 7일간의 조직 정책 위반 실패 이벤트를 정밀 역추적하여 위반된 제약 조건 ID(예: `compute.requireShieldedVm`, `iam.disableServiceAccountKeyCreation`)를 규명하고 프로젝트 레벨 우회/복구 명령어를 도출한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 위반 시각, 실패 주체, 요청 서비스, 실행 실패 액션, 검출된 제약 조건 ID 및 조치 명령 요약 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 조직 정책 위반 전수 감사 보고서, 제약 조건별 기술적 영향도 분석, 프로젝트 레벨 복구 gcloud 명령어 세트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **원클릭 조직 정책 우회 gcloud 명령어**: 프로젝트 레벨에서 안전하게 제약을 해제하는 명령어<br/>• **조직 정책 정합성 검증 스크립트**: 상위 조직 정책 상속 상태를 점검하는 gcloud 명령<br/>• **거버넌스 준수 리소스 생성 가이드**: 조직 제약을 준수하면서 리소스를 프로비저닝하는 표준 템플릿 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -60,7 +73,15 @@ python diagnose.py --dry-run
   - 실제 오류 내용  : Operation denied by organization policy: constraints/iam.disableServiceAccountKeyCreation violated
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

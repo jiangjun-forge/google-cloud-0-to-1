@@ -30,18 +30,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 대규모 배치/분석 작업에서 단일 머신 요청이 실패하여 전체 파이프라인이 중단되거나 지연된다.
 - [ ] 자원 기반 CUD(Resource-based CUD) 약정에 묶여 최신 고성능 머신(N4, C4, C4A Axion)이나 GPU 인스턴스로 인프라를 유연하게 이전하지 못하고 있다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 인프라 아키텍트, GKE 플랫폼 엔지니어, FinOps 리드 및 시스템 운영자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 특정 머신 타입(C2, N2 등)이나 단일 존에 인프라가 고착되어 하드웨어 용량 부족(`ZONE_RESOURCE_POOL_EXHAUSTED`) 시 서비스 배포가 중단되는 위험
+  2. GKE 노드 풀이 특정 인스턴스 패밀리만 지원하여 스팟/온디맨드 인스턴스 확보 실패 시 파드가 Pending 상태로 적체되는 문제
+  3. 자원 기반 약정(Resource-based CUD)에 묶여 최신 머신 타입(N4, C4 등)으로의 마이그레이션이 제한되고 유연성이 결여되는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - GKE 클러스터 및 Compute Engine 인스턴스 구성을 분석하여, GKE Custom ComputeClass(CCC)의 다중 머신 전환 정책과 Compute Engine Regional MIG의 `instanceSelections` 순위 기반 분산 배포 정책을 자동 설계한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 노드 풀별 인스턴스 고착도, 가용 존 분산 상태, 머신 패밀리 스톡아웃 위험 지표 및 대체 인스턴스 목록 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 인프라 유연성 진단서, GKE CCC YAML 매니페스트, Regional MIG 인스턴스 선택 JSON 규격 및 Flex CUD 전환 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **GKE Custom ComputeClass 매니페스트**: 우선순위 머신 패밀리 목록이 정의된 YAML<br/>• **Regional MIG instanceSelections JSON**: Compute Engine 대체 머신 랭킹 구성 정책<br/>• **bulkInsert API 프로비저닝 템플릿**: 대규모 단기 배치 연산 워커 자동 확보 스크립트 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -59,7 +72,15 @@ python diagnose.py --dry-run
 [안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/gce-instance-flexibility-planner/report.md
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

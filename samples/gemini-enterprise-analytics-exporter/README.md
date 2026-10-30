@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 보안 및 규정 준수(Compliance) 목적으로 계정별 사용 빈도와 활동 등급(High, Moderate, Low, Dormant)을 체계적으로 분류하여 감사 리포트를 제출해야 한다.
 - [ ] Cloud Identity 및 Google Workspace 관리자 콘솔에서 사용자별 지표를 일일이 수동 집계하는 데 과도한 공수가 발생하며 BigQuery 자동 파이프라인이 부재하다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 엔터프라이즈 IT 기획팀, C-Level 경영진, 클라우드 FinOps 리드 및 Workspace/GE 어드민
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 전사에 배포된 수백~수천 개의 Gemini Enterprise 라이선스 중 실제 누가 얼마나 자주 사용하는지 파악하지 못하는 깜깜이 운영
+  2. 퇴사자나 직무 이동으로 인해 60일 이상 사용하지 않는 유휴 라이선스가 방치되어 매월 수백~수천만 원의 라이선스 비용이 낭비되는 현상
+  3. 부서별/사용자별 채택률(Adoption Rate)을 정량적으로 증명하지 못해 차년도 AI 예산 확보 및 라이선스 재계약 의사 결정이 지연되는 문제
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Logging의 감사 로그를 기반으로 사용자별 활성 일수, 세션 수, 질의 빈도를 집계하여 유휴 라이선스 회수 대상을 식별하고, 라이선스 사용 현황을 지속 추적할 수 있는 BigQuery 데이터셋 DDL 및 회수 자동화 명세를 생성한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 전체 라이선스 수, 활성 사용자 비율, 60일 이상 유휴 라이선스 수 및 예상 월간 회수 절감액 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 부서별 채택률 매트릭스, 유휴 라이선스 회수 대상자 명단, BigQuery 적재 스키마 DDL 및 라이선스 재할당 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **BigQuery 분석 데이터셋 DDL**: 감사 로그를 누적 분석하기 위한 스키마 및 뷰 정의 SQL<br/>• **유휴 라이선스 일괄 회수 CSV/명령어**: Admin 콘솔 또는 디렉터리 API를 통한 미사용 라이선스 해제 명세<br/>• **채택률 Looker Studio 대시보드 템플릿**: 경영진 보고용 실시간 부서별 활용도 시각화 쿼리 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,7 +74,15 @@ choi.eunji@company.com         Marketing              12           140        Mo
 jung.homin@company.com         Marketing              0            0          Dormant    [회수 권고]
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **문서 레벨 권한(ACL) 유실 우려**: 원본 SaaS의 사용자별 열람 권한이 동기화되지 않아 권한 없는 사용자에게 기밀 정보가 노출될 위험이 있는 경우
 - [ ] **동기화 주기 및 증분 색인 미흡**: 변경 데이터가 실시간 또는 정기적으로 반영되지 않아 AI 에이전트가 과거 정보를 바탕으로 잘못된 답변을 생성하는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 엔터프라이즈 데이터 엔지니어, 사내 기간계 시스템 관리자, 솔루션 아키텍트 및 보안팀
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Jira, Confluence, Salesforce, ServiceNow 등 사내 기간계 저장소를 Gemini Enterprise app에 연결하기 위한 데이터스토어 구성이 복잡한 문제
+  2. 기간계 시스템 API 인증 토큰을 안전하게 보호하지 못해 소스 코드에 키가 하드코딩되거나 자격 증명이 유출되는 보안 위험
+  3. 원본 시스템의 문서 레벨 접근 권한(ACL)과 Cloud Identity 사용자 매핑 정책이 누락되어 비인가자가 대외비 문서를 조회하는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 대화형 추천 칩을 통해 대상 시스템(Jira, Confluence, GDrive 등)을 선택하면 문서 레벨 ACL 동기화 설정, Secret Manager 보안 볼트 연동 및 Discovery Engine Data Store 프로비저닝 명세를 자동 생성하고 사내 갤러리에 바인딩한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 선택된 시스템 커넥터 유형, Secret Manager 볼트 바인딩 상태, 데이터 저장소 생성 매니페스트 및 등록 결과 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 데이터 커넥터 아키텍처 보고서, Secret Manager 시크릿 저장 가이드, Discovery Engine Data Store 구성 매니페스트 및 동기화 스케줄 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **데이터스토어 프로비저닝 매니페스트**: 기간계 시스템별 증분 색인 및 ACL 매핑 JSON<br/>• **Secret Manager 연동 템플릿**: API 토큰과 OAuth 자격 증명을 안전하게 관리하는 볼트 구성<br/>• **사내 검색 엔진 원클릭 바인딩**: 생성된 데이터스토어를 Gemini Enterprise app에 연결하는 API 명세 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트, 리전 및 실시간 Gemini Enterprise App 목록을 감지하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -88,7 +101,15 @@ python diagnose.py --scaffold --prompt "사내 하둡 HDFS 데이터 레이크 �
 ===========================================================================
 ```
 
-### 2) 실제 사내 인프라 실시간 진단 및 팩토리 프로비저닝
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트, 리전 및 실시간 Gemini Enterprise App 목록을 감지하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단 및 팩토리 프로비저닝
 ```bash
 # 팩토리 메타 에이전트 프로비저닝 및 사내 갤러리(/r/agents) 전사 등록
 python diagnose.py

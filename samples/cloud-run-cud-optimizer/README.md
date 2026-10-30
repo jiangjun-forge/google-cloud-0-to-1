@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **과다 약정(Over-commitment) 공포**: 추천 수치보다 크게 약정하고 싶으나, 비수기나 트래픽 감소 시 스케일 인되어 약정 금액 밑으로 떨어져 유휴 비용(돈 낭비)을 지불할까 우려하여 의사 결정이 지연된다.
 - [ ] **사전 최적화 부재**: CPU 상시 할당(Always allocated), 유휴 min-instances, 낮은 Concurrency 등 서비스 구성 최적화가 선행되지 않은 상태에서 CUD를 약정하여 불필요한 인프라 비용까지 1~3년간 고정 약정하는 오류가 발생한다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 서버리스 인프라 담당자, 클라우드 FinOps 리드, 재무 관리자 및 Cloud Run 운영자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Cloud Run의 급격한 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 피크 트래픽을 오판하여 과소 약정(Under-commitment)을 권고하는 문제
+  2. 3개월 사용량 변동폭을 고려하지 않고 약정을 체결했다가 유휴 시간대 낭비가 발생하거나 온디맨드 초과 요금이 청구되는 현상
+  3. 약정 체결 전 CPU 유휴 할당, 동시성 튜닝, 최소 인스턴스 등 사전 최적화 기회를 놓쳐 비효율적인 비용 구조가 고착화되는 문제
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Monitoring의 90일 시계열 사용량 데이터를 추출하여 주간/월간 최저 바닥선(Trough)을 수학적으로 산출하고, 과소 약정 트랩을 우회하는 안전한 Compute Flexible CUD 약정액과 사전 인프라 최적화 가이드를 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 90일 최저/평균/피크 사용량, 추천 약정액($/hour), 예상 월간 절감액 및 ROI 지표 요약 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 시간대별 사용량 분포 차트, Flexible CUD 추천 산출 근거, Cloud Run 사전 최적화 체크리스트 및 구매 실행 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **약정 구매 실행 파라미터**: GCP 결제 콘솔 입력용 시간당 약정 금액($/hr) 및 기간(1년/3년)<br/>• **Cloud Run 최적화 배포 옵션**: `--cpu-throttling`, `--concurrency`, `--min-instances` 최적 파라미터<br/>• **FinOps 거버넌스 라벨링 규약**: CUD 비용 추적을 위한 4대 필수 라벨 가이드 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,7 +74,15 @@ python diagnose.py --dry-run
 - 콘솔 추천 수용 시    : 1년 약정 $1,861.50 | 3년 약정 $3,066.00
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

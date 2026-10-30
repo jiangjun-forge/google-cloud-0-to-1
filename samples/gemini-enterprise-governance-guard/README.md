@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 일반 사용자가 에이전트 플로우에서 검증되지 않은 외부 서드파티 스킬을 임의로 연결하여 워크플로우를 생성하지 못하도록 차단해야 한다.
 - [ ] Microsoft Entra ID와 Google Cloud Workforce Identity Federation(WIF)을 연동하여 SSO 로그인 시 클레임 속성 매핑 누락으로 인해 HTTP 400 Bad Request 에러가 발생한다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 사내 CISO, 정보보호 담당자, Gemini Enterprise 어드민 및 엔터프라이즈 보안 아키텍트
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 임직원들이 검증되지 않은 외부 공개 에이전트 마켓플레이스에 접근하여 사내 기밀 프롬프트를 전송할 위험
+  2. 사내 IT팀이 승인한 커스텀 에이전트만 사용하도록 강제하는 중앙 통제 거버넌스 부재
+  3. Microsoft Entra ID(구 Azure AD) 연동 Workforce Identity Federation(WIF) SSO 환경에서 발생하는 400 인증 오류
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Gemini Enterprise 환경에서 외부 마켓플레이스 차단 설정, 사내 승인 커스텀 에이전트 강제 정책, 미승인 도구 체이닝 위험 및 Entra ID WIF SSO 매핑 상태를 1분 만에 자동 진단하고 복구 처방을 제공한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 마켓플레이스 차단 여부, 승인 에이전트 강제 상태, WIF SSO 400 인증 에러 원인 및 종합 거버넌스 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 전사 AI 거버넌스 감사 보고서, 마켓플레이스 차단 가이드, 승인 에이전트 레지스트리 명세 및 Entra ID WIF 복구 스크립트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **외부 마켓플레이스 전면 차단 조직 정책**: 승인되지 않은 외부 에이전트 접근을 제한하는 정책<br/>• **Microsoft Entra ID WIF 속성 매핑 JSON**: SSO 400 에러를 해결하는 `google.subject` 매핑 설정<br/>• **사내 승인 에이전트 화이트리스트 명세**: 전사 임직원에게만 노출할 공인 에이전트 레지스트리 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,7 +74,15 @@ Gemini Enterprise 애플리케이션 거버넌스 진단 리포트 (default-ente
 Workforce Identity SSO 인증        CRITICAL     WIF 풀 속성 매핑에 필수 클레임(attribute.user_email, attribute.display_name)이 누락되어 Entra ID 로그인 시 HTTP 400 오류 발생
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

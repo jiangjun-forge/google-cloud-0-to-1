@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 일반 임직원이 Google AI Studio에 회사 공식 계정으로 로그인한 뒤, 회사 Cloud Billing이 연결된 GCP 프로젝트를 선택하여 API 키(`AIzaSy...`)를 발급하고 `generativelanguage.googleapis.com`을 호출하면 종량제(Pay-as-you-go)로 전사 결제 계정에 비용이 청구됨.
 - [ ] 계열사 중간 관리자에게 `roles/billing.admin` 또는 `roles/billing.user` 권한이 부여될 경우, 승인되지 않은 유료 프로젝트를 임의로 생성하거나 결제 계정에 연결하여 통제되지 않는 인프라 비용을 발생시킴.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 FinOps 리드, Gemini Enterprise 어드민, 계열사 IT 총괄 및 재무 관리자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 일일 풀링 쿼터(Daily Pooling Quota) 소진 시 전사 임직원의 프롬프트 질의가 당일 자정까지 전면 쓰로틀링되는 업무 중단 위험
+  2. 임직원이 Google AI Studio에서 회사 결제 계정을 무단 선택하여 고비용 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수
+  3. 계열사 중간 관리자에게 과도한 결제 관리자(`roles/billing.admin`) 권한이 부여되어 전사 비용 거버넌스가 무너지는 문제
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 에디션별 일일 풀링 쿼터 소진율과 Overage 과금 토글 상태를 실시간 진단하고, 계열사 프로젝트 내 Google AI Studio 키 발급 차단 조직 정책 및 계열사 OU 한정 맞춤형 결제 RBAC 가이드를 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 일일 쿼터 소진율(%), 오버리지 활성화 상태, AI Studio 위험 프로젝트 수 및 결제 권한 과다 부여 계정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 쿼터 고갈 및 과금 누수 분석서, 일일 쓰로틀링 방어 설정, AI Studio 차단 조직 정책 명령어 및 계열사 RBAC 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **AI Studio 키 발급 차단 조직 정책**: `generativelanguage.googleapis.com` 호출을 제한하는 정책<br/>• **오버리지 안전 임계치 알림 정책**: 일일 쿼터 80% 도달 시 어드민에게 자동 통보하는 모니터링 설정<br/>• **계열사 OU 전용 결제 역할 명세**: `roles/billing.admin`을 대체하는 최소 권한 맞춤 역할 DDL |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ python diagnose.py --dry-run
 * Gemini Enterprise Standard
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

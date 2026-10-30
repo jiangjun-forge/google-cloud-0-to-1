@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 트래픽 버스트 시 4분(240초) 동안 신규 TCP SYN 패킷이 유실되는 DPA 확장 지연(NET-AV-2)이 의심될 때
 - [ ] `minPortsPerVm=64` 기본 설정 상태에서 동시 아웃바운드 연결 수가 병목에 도달했는지 확인하고 싶을 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 네트워크 엔지니어, SRE/DevOps 팀, GKE 인프라 운영자 및 시스템 아키텍트
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. GKE 파드나 VM에서 외부 결제/인증 API 호출 시 간헐적으로 원인 불명의 타임아웃과 연결 실패가 발생하는 문제
+  2. 동적 포트 할당(Dynamic Port Allocation) 확장 지연과 포트 고갈 드롭(OUT_OF_RESOURCES)이 대시보드에 명확히 표출되지 않는 사일런트 장애
+  3. 최소 할당 포트와 커널 소켓 재시도 파라미터를 경험에 의존하여 임의 설정하다가 재고갈 또는 IP 낭비를 초래하는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Monitoring의 Cloud NAT 7일간 실측 지표를 분석하여 동적 포트 할당 지연율과 자원 고갈 패킷 드롭을 교차 검증하고, 파드 동시성 트래픽에 최적화된 최소 할당 포트 및 Linux 커널 FIN 타임아웃 최적화 파라미터를 자동 도출한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | Cloud NAT 게이트웨이별 포트 할당률, 패킷 드롭 건수, 고갈 위험 등급 및 권장 최소 포트 수치 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 7일간 시계열 지표 분석 결과, 트래픽 피크 대비 권장 포트 계산 근거, gcloud 설정 명령어 및 커널 튜닝 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Cloud NAT 최적화 gcloud 명령어**: `--min-ports-per-vm` 및 정적 IP 확충 설정<br/>• **Linux 커널 소켓 튜닝 스크립트**: `tcp_fin_timeout` 및 `tcp_tw_reuse` 파라미터 적용 가이드<br/>• **GKE 노드 풀 네트워크 정책 매니페스트**: 대량 아웃바운드 트래픽 분산 매니페스트 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,12 +74,20 @@ python diagnose.py --dry-run
     --enable-dynamic-port-allocation --min-ports-per-vm=256 --max-ports-per-vm=2048
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```
 > [!NOTE]
-> 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. 특정 리전이나 라우터를 명시하려면 `--region asia-northeast3 --router cr-prod-asia-northeast3 --nat nat-gw-prod-main` 플래그를 추가한다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)
+> 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. 특정 리전이나 라우터를 명시하려면 환경 변수 또는 .env 파일에 기재한다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만  실행 후 수정)
 
 ---
 

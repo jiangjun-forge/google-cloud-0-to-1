@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 멀티 클러스터 제어를 위해 GKE Enterprise에 타 클라우드 GPU 워커 노드를 등록할 경우 발생하는 vCPU 관리 라이선스 과금을 회피하고 싶을 때 ( https://cloud.google.com/anthos/pricing )
 - [ ] 특정 GPU 클러스터 장애 시 전체 시스템으로 장애가 전파되지 않도록 글로벌 Anycast VIP 기반 1:1 플랫 직결 및 서킷 브레이커(이상치 탐지)를 신속하게 검증하고 싶을 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: AI 인프라 플랫폼 엔지니어, 멀티 클러스터 쿠버네티스 아키텍트, SRE 리드 및 분산 서빙 엔지니어
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 다중 리전 및 멀티 클라우드에 분산된 수십 개 GPU/TPU GKE 클러스터 간 트래픽 중계를 위해 복잡한 Istio 풀 메시(Full-mesh)를 운영하는 관리 부담
+  2. 계층형 게이트웨이 중계로 인한 추가 네트워크 홉과 TTFT(첫 토큰 지연 시간) 레이턴시 증가로 AI 서빙 품질 저하
+  3. GKE Fleet 라이선스 비용 및 메시 컨트롤 플레인의 장애 전파로 인한 시스템 전체 불안정성
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Global External Application Load Balancer(ALB)와 Hybrid/Internet NEG를 결합한 1홉 플랫 직결 L7 제어 평면 8대 규칙을 점검하고, 리전 및 온프렘을 아우르는 초저지연 단일 진입점 아키텍처를 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 다중 클러스터 연결성, L7 백엔드 서비스 구성, 가중치 기반 라우팅, 헬스 체크 상태 및 8대 규칙 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 멀티 클러스터 제어 평면 진단서, 1홉 플랫 아키텍처 설계도, Global ALB 생성 gcloud 명령어 및 트래픽 분산 매니페스트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Global External ALB 프로비저닝 스크립트**: 다중 클러스터 백엔드를 하나로 묶는 gcloud 명령<br/>• **Hybrid/Internet NEG 등록 매니페스트**: 타 리전/온프렘 쿠버네티스 엔드포인트 직결 설정<br/>• **가중치 기반 트래픽 분할(Canary) 규칙**: GPU 클러스터 간 부하를 동적으로 배분하는 URL 맵 명세 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ CHK-01   | 제어 평면 구조       | [PASS]   | 다계층 메시 중계 배�
          * 권장 조치   : 추가 조치 불필요 (현재 아키텍처 양호)
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

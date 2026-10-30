@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 제미나이 엔터프라이즈 앱에 올리지 않고 BigQuery Studio 내에서 단독(Standalone)으로 Data Agent를 쓰는 부서와, 제미나이 엔터프라이즈 앱에 직결 게시하려는 전사 배포 조직 모두를 하나의 워크숍 키트로 지원해야 하는 경우
 - [ ] 별도의 GCP 과금이나 권한 부여 전, 가상 실행(`--dry-run`)으로 전체 SQL DDL/DML과 에이전트 시스템 지침, A2A Agent Card 명세를 사전 검토하고자 하는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 빅쿼리 엔지니어, 엔터프라이즈 AI 아키텍트, 데이터 분석가 및 핸즈온 워크숍 운영자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 핸즈온 세션 중 참석자마다 상이한 데이터 준비 상태와 권한 설정으로 인해 실습 초반에 시간이 지체되는 문제
+  2. 별도의 커스텀 컨테이너 빌드나 유휴 VM 인프라를 띄우느라 복잡한 배포 파이프라인과 추가 인프라 비용이 발생하는 문제
+  3. BigQuery Studio 단독(Standalone) 활용 부서와 Gemini Enterprise app 전사 연동 부서 간의 배포 규격이 파편화된 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 명령어 한 줄(`--setup-demo`)로 4개 테이블로 구성된 스몰셋(`cymbal_gold`)을 10초 만에 프로비저닝하고, 구글 1P 완전 관리형 GDA `dataAgents` REST API를 통해 원클릭(`--deploy-agent`)으로 데이터 에이전트를 생성하며 A2A 표준 규격 기반으로 사내 갤러리에 직결 연동한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 스몰셋 테이블 적재 현황, 시맨틱 뷰 생성 결과, GDA Data Agent 리소스 경로 및 A2A 카드 발급 요약 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 45분 워크숍 타임라인, 스몰셋 DDL/DML 명세, GDA REST 페이로드, A2A Agent Card 및 Studio/GE 연동 단계별 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **A2A 표준 에이전트 카드 (`a2a_agent_card.json`)**: Gemini Enterprise app 및 Studio 연동 표준 프로토콜 규격<br/>• **시맨틱 뷰 DDL**: 에이전트 질의 정확도를 극대화하는 `v_cymbal_retail_semantic` 뷰<br/>• **원클릭 배포 REST 호출문**: 구글 1P 테넌트에 에이전트를 등록하는 curl/gcloud 명세 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ python diagnose.py --dry-run
  [45분 핸즈온 워크숍 역할 분담 타임라인 (GDA 완전 관리형 골든 아키텍처)]
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

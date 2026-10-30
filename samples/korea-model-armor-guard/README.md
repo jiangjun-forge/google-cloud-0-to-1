@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 서울 리전에서 Model Armor가 Sensitive Data Protection(SDP)만 정식 지원하므로, 인젝션 방어 및 안전성 필터 동작을 위해 별도의 로컬 가드레일 계층을 수립하여 보완해야 하는 경우다.
 - [ ] SDP 템플릿 설정 시 주민등록번호(`KOREA_RRN`), 여권번호(`KOREA_PASSPORT`), 운전면허번호, 외국인등록번호, 사업자등록번호 등 한국 전용 민감 정보(Korea-specific InfoTypes)가 누락되어 비식별화 처리가 누락된다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: AI 애플리케이션 보안 엔지니어, CISO, LLM 파이프라인 개발자 및 데이터 프라이버시 담당자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 대한민국 서울 리전(`asia-northeast3`)의 Model Armor 템플릿이 프롬프트 인젝션 및 악성 URL 검사를 지원하지 않아 발생하는 보안 사각지대
+  2. 글로벌 엔드포인트로 우회할 경우 프롬프트 텍스트가 해외로 이전되어 국내 데이터 레지던시 규정을 위반하는 딜레마
+  3. 한국형 고유식별정보(주민등록번호, 계좌번호 등)를 사내망에서 온전히 마스킹하지 못해 개인정보보호법 위반 위험에 노출되는 문제
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 서울 리전 Model Armor의 지원 필터와 제약 사항을 진단하고, 서울 리전 로컬 Sensitive Data Protection(SDP) 인라인 살균과 프라이빗 하이브리드 가드레일을 결합한 데이터 주권 충족 온소일(On-Soil) 방어 아키텍처를 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 서울 리전 Model Armor 필터 지원 현황, 보안 사각지대 판정, SDP 템플릿 연동 상태 및 권장 아키텍처 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 서울 리전 가드레일 제약 정밀 분석서, 데이터 국외 이전 리스크 소명, 한국형 SDP 템플릿 DDL 및 하이브리드 파이프라인 코드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **한국형 SDP 인스펙션 템플릿 생성 명령어**: 주민번호/계좌번호를 탐지하는 `fsi-korea-pii-filter`<br/>• **온소일(On-Soil) 하이브리드 가드레일 코드**: 서울 리전 내에서 사전 살균 후 모델을 호출하는 파이썬 모듈<br/>• **Model Armor 바인딩 매니페스트**: Vertex AI 엔드포인트와 Model Armor를 안전하게 결합하는 설정 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,7 +74,15 @@ ma-template-hybrid-hardened      asia-northeast3    6            DISABLED       
 [발견된 주요 컴플라이언스 결함 및 처방 조치]
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 사내 GE app의 내부 실행 단계(QueryStep, PlanStep, Search, Model Generation)별 소요 시간 타임라인을 정밀 추적(Trace)해야 하는 경우
 - [ ] 온프레미스 전용선, VPC-SC, Private Service Connect(PSC) 등 사내 프라이빗 네트워크 경로의 TCP/TLS 핸드셰이크 오버헤드를 실측하고자 하는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: AI 애플리케이션 개발자, 성능 엔지니어, SRE 팀 및 엔터프라이즈 AI 아키텍트
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Gemini Enterprise 웹 대화창이나 커스텀 에이전트의 답변 생성이 느릴 때, 정확히 어느 구간에서 지연이 발생하는지 알 수 없는 문제
+  2. 네트워크 전송, 보안 가드레일(Model Armor), 검색 컨텍스트 증강(Grounding), 순수 LLM 추론 시간의 비중을 분리하지 못하는 병목
+  3. 직접 호출(Vertex AI SDK) 대비 Gemini Enterprise app의 플래너(Planner) 단계 오버헤드를 정량적으로 실측하지 못하는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 실제 실시간 스트리밍 질의를 수행하여 전송 네트워크(DNS, TCP, TLS), 보안 가드레일, 검색 그라운딩, 순수 LLM 추론(TTFT, 토큰 생성 속도) 구간별 소요 시간을 밀리초(ms) 단위로 분해 계측하고 워터폴 차트와 최적화 권고안을 제시한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 구간별 소요 시간(ms), 백분율 비중(%), TTFT(첫 토큰 지연), 토큰/초 처리 속도 및 워터폴 ASCII 차트 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | E2E 지연 시간 분해 분석서, 구간별 성능 병목 원인 진단, Direct API vs GE App 비교표 및 최적화 처방전 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **구간별 병목 개선 권고안**: DNS 캐싱, TCP Keepalive, Grounding 청크 튜닝 및 모델 선택 가이드<br/>• **스트리밍 최적화 클라이언트 코드**: TTFT를 극대화하는 `streamAssist` / `streamGenerateContent` 모듈<br/>• **레이턴시 SLO 모니터링 알림 정책**: 3초 이상 지연 발생 시 관리자 알림을 트리거하는 메트릭 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -82,7 +95,15 @@ HOP-04   | 토큰 생성        |  6487.8 ms (42.2%)   | [===============       
 ------------------------------------------------------------------------------------------------
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

@@ -29,18 +29,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **API 토큰 및 자격 증명 평문 노출 위험**: 임직원이 시스템 연동을 위해 웹훅 URL이나 API 키를 프롬프트에 평문으로 하드코딩하여 보안 사고 위험이 발생하는 경우
 - [ ] **조회와 변경 작업의 무분별한 실행 위험**: 단순 데이터 조회와 데이터베이스 수정/결재 승인 작업을 동일한 권한으로 처리하여 비인가 결재나 데이터 오염이 우려되는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 백엔드 개발자, 시스템 통합(SI) 엔지니어, 사내 도구 개발자 및 에이전트 빌더
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 에이전트가 사내 시스템(Google Sheets, Slack, Jira, ERP 등)을 호출할 도구(Tool/Extension)를 제작할 때 반복적인 보일러플레이트 코드가 발생하는 문제
+  2. 외부 API 호출용 인증 토큰이나 웹훅 URL이 안전한 Secret Manager 보안 볼트와 연동되지 않아 보안 심의를 통과하지 못하는 문제
+  3. 미승인 도구가 무분별하게 에이전트에 체이닝되어 사내 데이터 유출이나 예기치 않은 시스템 변경 사고가 발생하는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 8대 사내 시스템(시트, 슬랙, 지라, 노션, ERP 등)에 특화된 도구 템플릿을 대화형 인터뷰로 선택하고, Secret Manager 보안 볼트와 Agent Platform 도구 규격을 결합하여 사내 승인된 도구 자산을 원클릭 스캐폴딩 및 등록한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 선택된 시스템 도구 템플릿, OpenAPI 스키마 유효성, Secret Manager 시크릿 경로 및 도구 등록 상태 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 도구 상세 설계 보고서, OpenAPI 3.0 엔터프라이즈 스키마, 파이썬 함수 호출 래퍼 코드 및 보안 권한 명세서 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **OpenAPI 3.0 표준 도구 매니페스트**: 에이전트가 함수 호출(Function Calling)에 활용할 JSON 규격<br/>• **Secret Manager 보안 볼트 주입 모듈**: API 키와 비밀번호를 런타임에 안전하게 복호화하는 래퍼<br/>• **사내 도구 레지스트리 등록 명세**: 사내 승인 도구 카탈로그에 도구를 등재하는 거버넌스 규격 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트, 리전 및 실시간 Gemini Enterprise App 목록을 감지하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -73,7 +86,15 @@ python diagnose.py --dry-run
 ===========================================================================
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트, 리전 및 실시간 Gemini Enterprise App 목록을 감지하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

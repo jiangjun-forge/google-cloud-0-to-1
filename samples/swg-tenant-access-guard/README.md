@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **외부 타사 GCP 조직 우회 접속**: 사내 승인 계정이라 할지라도 개인이 생성한 외부 GCP 프로젝트나 타사 테넌트로 접속하여 사내 자산을 반출하는 위험.
 - [ ] **비인가 단말기 접근**: 사내 관리자 계정 탈취 시 외부 미인가 개인 PC나 모바일 기기에서 클라우드 콘솔에 접속하는 문제.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 사내 보안 엔지니어, 관문 프록시(SWG) 운영자, 모바일/단말기 보안팀 및 금융권 CISO
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 사내 임직원이 회사 관문 프록시(SWG)를 경유하면서 개인 Google 계정이나 외부 테넌트에 로그인하여 사내 자료를 유출하는 위험
+  2. 사내 SWG에서 Google 계정 테넌트 제한 HTTP 헤더(`X-GoogApps-Allowed-Domains`)가 올바르게 주입되고 있는지 검증하기 어려운 문제
+  3. 사내 승인 인가 단말기(Corp Device)가 아닌 개인 단말기에서 클라우드 콘솔에 접근하는 것을 제로 트러스트로 통제하지 못하는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 사내 관문 프록시(SWG)의 HTTP 테넌트 제한 헤더 주입 상태와 Google Workspace/Cloud Identity의 Context-Aware Access(CAA) 인가 단말기 접근 통제 정책을 종합 진단하여 금융보안원 가이드라인 충족 여부를 판정한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | SWG 테넌트 헤더 주입 여부, 허용 도메인 목록, Context-Aware Access 단말기 인가 레벨 및 보안 적합성 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 테넌트 접근 통제 진단 보고서, SWG 프록시 헤더 설정 가이드, Context-Aware Access 기기 인가 정책 매니페스트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **SWG 프록시 헤더 주입 설정 가이드**: Squid/BlueCoat/Zscaler용 테넌트 제한 설정 스니펫<br/>• **Context-Aware Access 정책 매니페스트**: 회사 지급 인증 단말기만 접근을 허용하는 기기 정책 JSON<br/>• **테넌트 우회 이상 접속 감사 쿼리**: 비인가 도메인 로그인 시도를 추적하는 Cloud Identity 감사 SQL |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,7 +74,15 @@ python diagnose.py --dry-run
    필요 권장값: eyJyZXNvdXJjZXMiOlsib3JnYW5pemF0aW9ucy8xMjM0NTY3ODkwMTIiXSwib3B0aW9ucyI6InN0cmljdCJ9
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

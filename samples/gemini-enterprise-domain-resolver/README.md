@@ -27,18 +27,31 @@ Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의�
 - [ ] Gemini Enterprise는 Google Workspace(Gmail, 구글 드라이브(Google Drive), 구글 독스(Google Docs))와는 완전히 별개의 독립 제품이므로, 고가의 Workspace 라이선스 없이 무료 `Cloud Identity Free` 계정만으로 전사 배포하고자 하는 경우
 - [ ] 과거 임직원이 회사 이메일 주소로 구글 무료 서비스(Google Workspace Essentials Starter 등)에 개별 가입하여 도메인이 비관리(Unmanaged) 상태로 선점되어 이를 중앙 거버넌스로 편입해야 하는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: Google Workspace 어드민, 클라우드 인프라 팀, 기업 IT 기획자 및 Identity 관리자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Gemini Enterprise app 도입 시 이미 타 부서나 개인이 사내 도메인으로 비인가 계정을 생성해 두어 도메인 선점 충돌이 발생하는 문제
+  2. 도메인 충돌로 인해 전사 테넌트 생성 단계에서 에러가 발생하여 PoC 및 본 계약 일정이 수주 이상 지연되는 현상
+  3. 유료 Google Workspace 라이선스 없이 Gemini Enterprise app 단독 도입을 위한 Cloud Identity Free 계정 구성 절차가 복잡한 문제
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 사내 도메인의 Cloud Identity 테넌트 점유 상태 및 미관리 계정(Unmanaged Accounts) 충돌 여부를 1분 만에 진단하고, 도메인 소유권 DNS TXT 인증 및 Cloud Identity Free 기반 테넌트 안착 가이드를 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 도메인 선점 상태, DNS TXT 레코드 인증 여부, 미관리 계정 수 및 테넌트 배포 준비도 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 도메인 충돌 근본 원인 분석서, DNS 레코드 설정 가이드, 미관리 계정 강제 회수/초대 절차 및 Cloud Identity Free 배포 매뉴얼 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **DNS 도메인 소유권 검증 레코드**: 네임서버 등록용 `google-site-verification` TXT 레코드 값<br/>• **미관리 사용자 계정 전환 가이드**: 개인 계정을 사내 관리형 계정으로 흡수하는 단계별 절차서<br/>• **Cloud Identity Free 프로비저닝 링크**: 추가 라이선스 비용 없이 테넌트를 활성화하는 직결 링크 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -60,7 +73,15 @@ Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 및 Cloud Ide
 * 식별된 미관리 사용자 계정 수: 8명
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

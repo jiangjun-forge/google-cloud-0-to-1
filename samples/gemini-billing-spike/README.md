@@ -27,18 +27,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **감사 로그 부재**: "누가 호출했는지" 확인하려 했으나, 빅쿼리(BigQuery) 감사 로그 내보내기나 데이터 액세스 감사 로그가 비활성화되어 있어 원인을 파악하기 어려울 때
 - [ ] **보안 유출 의심**: 개발자가 GitHub나 클라이언트 앱에 API 키 또는 서비스 계정 키를 실수로 노출했는지 신속히 점검하고자 할 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 FinOps 관리자, 보안 운영팀, 백엔드 개발 리드 및 클라우드 빌링 담당자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Gemini API 호출 요금이 전일 대비 수배 이상 급증했으나 데이터 액세스 감사 로그가 꺼져 있어 원인 규명이 불가능한 문제
+  2. 어떤 API 키가 유출되었는지, 특정 서비스 계정의 무한 루프인지, 사용자의 비정상 호출인지 분별하지 못해 API 전체를 차단해야 하는 위험
+  3. 비용 급증 시 실시간으로 과금 주체를 추적하고 즉시 무효화할 수 있는 안전한 격리 플레이북의 부재
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 데이터 액세스 감사 로그가 비활성화된 상태에서도 Cloud Monitoring의 기본 지표(`serviceruntime.googleapis.com`) 90일 시계열 데이터를 분석하여, 비용 급증을 유발한 특정 인증 수단(API 키, 서비스 계정, OAuth 자격 증명)을 규명하고 즉각적인 조치 가이드를 제공한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 90일간 API 호출 총량, 급증 시점, 인증 수단별 호출 비중(%) 및 과금 주체 식별 결과 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 시계열 트래픽 분석 차트, 급증 유발 주체 상세 소명, 위험 API 키/서비스 계정 비활성화 가이드 및 방어 아키텍처 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **위험 자격 증명 즉시 격리 명령어**: 문제의 API 키 삭제 및 서비스 계정 키 비활성화 gcloud 명령<br/>• **Cloud Billing 예산 알림 연동 가이드**: 지출 급증 시 Pub/Sub으로 실시간 경보를 전송하는 구성<br/>• **Gemini Request/Response 로깅 싱크**: 프롬프트 단위 추적을 위한 BigQuery 자동 로깅 설정 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -60,7 +73,15 @@ python diagnose.py --dry-run
 │  - serviceAccount:gemini-batch-sa@sample-proj.. :   13,050회 (  8.8%) │
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

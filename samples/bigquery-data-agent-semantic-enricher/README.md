@@ -30,18 +30,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] Dataplex 데이터 프로파일링(Null 비율, 고유값 목록, 최솟값 및 최댓값)이 수행되지 않아 유효하지 않은 조건절을 생성하는 경우
 - [ ] 수십 개 테이블의 메타데이터를 수작업으로 채우기 어려워 Data Agent 전사 확산이 지연되는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 데이터 엔지니어, 빅쿼리 분석가, 데이터 거버넌스 담당자 및 AI 솔루션 아키텍트
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. BigQuery Data Agent(자연어 기반 SQL 생성) 도입 시 테이블 및 컬럼 설명 부재로 인한 심각한 쿼리 환각(Hallucination) 및 테이블 오라우팅
+  2. Dataplex 데이터 프로파일링 통계(NULL 비율, 고유값 등)가 에이전트에 연동되지 않아 비효율적인 필터 조건과 엉뚱한 JOIN이 생성되는 문제
+  3. 사내 핵심 비즈니스 KPI 및 용어집(Glossary) 계산 공식이 누락되어 매출, 활성 사용자 등의 질의에 잘못된 집계 로직이 도출되는 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 대상 데이터셋의 테이블/컬럼 설명 충실도, Dataplex 프로파일링 연동 여부, Knowledge Catalog 비즈니스 용어집 바인딩 상태를 3단계로 점수화(0~100점)하고, 결손 메타데이터를 지능적으로 보강하는 SQL DDL 및 콘솔 조치 명령을 도출한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 테이블/컬럼 설명 충실도, 프로파일링 연동, 용어집 바인딩 3대 영역 점수 및 최종 시맨틱 준비도 점수 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 데이터셋 메타데이터 결손 전수 분석, 컬럼별 설명 보강 제안서, Dataplex 데이터 프로파일링 스캔 가이드 및 용어집 계산 공식 DDL |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **시맨틱 보강 DDL 스크립트**: 테이블/컬럼 주석을 즉시 반영하는 `ALTER TABLE ... SET OPTIONS` SQL<br/>• **Dataplex 데이터 프로파일링 가이드**: 메타데이터 카탈로그 자동 수집 작업 생성 명령어<br/>• **Knowledge Catalog 매핑 명세**: 비즈니스 용어집과 테이블 간 거버넌스 바인딩 가이드 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -63,7 +76,15 @@ historical_transactional_data       X (누락/부실)    0/22 (0%)      X (미�
 ------------------------------------------------------------------------------------------
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

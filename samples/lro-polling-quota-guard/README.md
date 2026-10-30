@@ -28,18 +28,31 @@ Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이
 - [ ] 파이썬 코드에서 `operation = client.some_batch_method(...)` 실행 후 `operation.result()`로 동기 블로킹 대기하고 있다.
 - [ ] 다수의 워커 스레드나 프로세스가 동시에 작업을 대기하면서 구글 클라이언트 SDK의 내부 폴링 주기로 인해 리전당 `operation_requests` 쿼터(기본 120~150 RPM)를 순식간에 초과하고 있다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 백엔드 개발자, 데이터 엔지니어, 비동기 파이프라인 운영팀 및 SRE 엔지니어
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Speech-to-Text, Document AI 등 비동기 LRO(Long-Running Operations) 파이프라인에서 작업 요청량은 정상인데 원인 불명의 429 장애 발생
+  2. Google API Core SDK의 `operation.result()` 내부 기본 폴링 루프가 1초 단위로 과도한 GetOperation 요청을 발생시켜 쿼터를 고갈시키는 숨겨진 원인
+  3. 작업 완료 대기 시 스레드가 블로킹되어 서버 자원이 낭비되고 동시 작업 확장성이 제한되는 아키텍처 결함
+- **본 솔루션의 해결 방식 (Solution)**:
+  - SDK 내부 기본 폴링 루프의 지수 백오프(`PollingCheck`) 커스텀 주입 기법을 적용하여 불필요한 GetOperation 호출을 차단하고, 동기식 블로킹 대기를 탈피한 비동기 분리(Cloud Tasks/PubSub) 엔터프라이즈 파이프라인을 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 작업 제출 RPM, SDK 기본 폴링 RPM, 할당량 대비 소진율, 429 고갈 위험 등급 및 최적 폴링 간격 요약 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 비동기 LRO 쿼터 고갈 분석 보고서, 커스텀 폴링 객체 주입 파이썬 코드, 비동기 큐 분리 아키텍처 및 QIR 상향 양식 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **커스텀 폴링 객체 주입 코드**: `initial=5.0`, `maximum=30.0` 지수 백오프가 적용된 파이썬 호출 모듈<br/>• **Cloud Tasks 연동 비동기 큐 파이프라인**: 블로킹 없이 작업 완료 상태를 분리 수집하는 워커 아키텍처<br/>• **LRO Quota 상향 요청 가이드**: GCP 콘솔을 통한 `operation_requests` 필수 증설 절차서 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -60,7 +73,15 @@ python diagnose.py --dry-run
 [안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/lro-polling-quota-guard/report.md
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

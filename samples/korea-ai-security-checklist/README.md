@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] 금융감독원/금융보안원 보안성 심의 또는 K-ISMS 심사를 앞두고, 클라우드 프로젝트의 실제 보안 설정(CMEK, Audit Logs, Bucket Lock)을 객관적으로 입증해야 할 때
 - [ ] 사내 도입 검토 초기 단계에 승인용 보안 보고서를 신속하게 확보하고자 할 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 엔터프라이즈 CISO, 사내 정보보호팀, 컴플라이언스 총괄, 공공/금융 보안 심의 담당자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 생성형 AI 도입 시 사내 보안팀 및 규제 기관(금융감독원, KISA 등)의 엄격한 보안성 심의 체크리스트를 수동으로 작성하는 데 수개월 소요
+  2. 고객 데이터 비학습(No-Training), 인적 검토 배제(No Human Review), ISO 42001 등 구글 클라우드 공식 보안 약관과 실제 인프라 설정의 정합성 입증 곤란
+  3. 서울 리전 데이터 레지던시 및 전송 암호화, CMEK 등 복잡한 기술적 통제 증적 자료를 체계적으로 수집하기 어려운 문제
+- **본 솔루션의 해결 방식 (Solution)**:
+  - 구글 공식 보안 약관(CDPA), 제3자 공인 인증(ISO 42001 등) 및 사내 실제 GCP 인프라 설정을 교차 대조하여, 국내 보안성 심의에 즉시 제출 가능한 20대 핵심 보안 체크리스트 완제품 소명서(`report.md`)를 자동 생성한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 20대 보안 항목별(거버넌스, 데이터 주권, 암호화, 네트워크, 감사로깅 등) 판정 상태(PASS/PARTIAL/FAIL) 요약 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | CISO 및 보안 심의 제출용 정규 완제품 소명서: 항목별 법적 근거, 구글 공식 소명 문구, 실측 증적 및 권고안 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **보안성 심의 제출용 마크다운 보고서**: 사내 정보보호위원회 결재 및 규제 기관 제출용 정형 문서<br/>• **결격 항목 즉시 보완 gcloud 명령어**: 감사 로그 활성화, VPC-SC 경계 등록 등 원클릭 조치 스크립트<br/>• **공식 보안 약관 및 인증서 딥링크**: 외부 감사관 소명용 CDPA 및 ISO 42001 공식 검증 링크 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -55,7 +68,15 @@ python diagnose.py --dry-run
 [안내] 복습 및 사내 보안팀 제출용 소명서가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/korea-ai-security-checklist/report.md
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

@@ -29,18 +29,31 @@ Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Sto
 - [ ] Discovery Engine 서비스 에이전트(`gcp-sa-discoveryengine`)에 스토리지 읽기 권한(`roles/storage.objectViewer`)이 누락되어 색인 동기화가 차단된 경우
 - [ ] Gemini 그라운딩 프로브 질의를 통해 검색 청크(Chunk) 품질과 신뢰도 점수(Grounding Score)를 사전 정량 평가하고자 하는 경우
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: RAG 파이프라인 엔지니어, AI 솔루션 아키텍트, 검색 엔진 관리자 및 데이터 관리팀
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. Cloud Storage 원본 문서와 Agent Platform Search(구 Vertex AI Search) 데이터 저장소 간의 색인 누락으로 답변 환각 발생
+  2. 문서 파서(Document Parser) 설정 오류로 표(Table)나 다단 레이아웃이 깨져 RAG 검색 정확도가 급격히 저하되는 문제
+  3. 스토리지 원본 데이터 변경 후 자동 동기화 스케줄이 누락되어 과거 버전의 문서가 계속 그라운딩되는 정합성 불일치
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Storage 원본 버킷과 Agent Platform Search 데이터 저장소 간의 문서 색인율, 청킹 설정, 고급 레이아웃 파서 적용 상태 및 일일 동기화 스케줄을 1분 만에 일괄 진단하고 최적화 가이드를 제공한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 데이터 저장소별 원본 문서 수, 색인 완료 문서 수, 색인율(%), 파서 유형, 청킹 설정 및 그라운딩 정합성 판정 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | RAG 데이터 정합성 정밀 진단서, 색인 누락 문서 목록, 고급 레이아웃 파서 활성화 명령어 및 자동 동기화 매니페스트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **고급 레이아웃 파서 적용 gcloud 명령어**: 표와 서식을 정밀하게 보존하는 디지털 파서 설정<br/>• **정기 증분 색인 동기화 스케줄 매니페스트**: Cloud Storage 변경 사항을 자동 반영하는 스케줄러<br/>• **그라운딩 품질 검증 평가 스크립트**: 테스트 질의를 던져 색인된 문서의 적중률을 측정하는 코드 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -62,7 +75,15 @@ python diagnose.py --dry-run
   * 검색 청크 수: 4개
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

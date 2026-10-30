@@ -24,18 +24,31 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클�
 - [ ] 개발자별로 일일 쿼터 상한(예: 500만 토큰)을 설정하고, 초과자를 식별하여 접근을 안전하게 일시 제어하고자 한다.
 - [ ] 구글 그룹(`group:`)이나 상위 조직 권한으로 부여된 사용자와 개별 바인딩(`user:`) 사용자를 구분하여 통제 가능 여부를 사전에 파악하고 싶다.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 사내 플랫폼 엔지니어, DevOps 리드, FinOps 관리자 및 Cloud IAM 관리자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 개발자별 Antigravity(데스크톱, CLI, IDE 확장) 토큰 소비량 및 호출 빈도를 추적하지 못해 특정 계정의 쿼터 독점과 예산 초과가 발생하는 문제
+  2. 일일/주간 상한 임계치(Cap)를 초과한 사용자를 수동으로 식별하고 권한을 회수하느라 운영 공수가 과다 소모되는 문제
+  3. 권한을 수동 박탈할 경우 익일 업무 재개 시 관리자가 다시 권한을 복구해 주어야 하는 관리 병목 현상
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Logging 인퍼런스 감사 로그를 분석하여 개발자별 토큰 소비량 및 쿼터 초과 여부를 자동 판정하고, 익일 자정(00:00 UTC) 자동 만료 조건부 IAM 마커 역할(`CustomAntigravityCapBlocked`)을 처방하여 무인 자율 복구 거버넌스를 구현한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 개발자별 호출수, 토큰 소모량, 초과 판정 상태 및 조건부 IAM 만료 명령어 요약 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 전사 사용량 지표, 쿼터 초과 계정별 상세 분석, Cloud Logging Log Analytics 표준 집계 SQL 및 자율 복구 처방전 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **조건부 만료 IAM 차단 명령어**: 익일 자정 자동 복구되는 `CustomAntigravityCapBlocked` 정책 적용<br/>• **Log Analytics SQL**: 수천 명 규모 개발 조직 전수 조사용 BigQuery 연동 쿼리<br/>• **자동화 파이프라인**: Cloud Scheduler 및 Cloud Run 연동 무인 쿼터 가드 구성 가이드 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -57,7 +70,15 @@ python diagnose.py --dry-run
 [1. 전사 Antigravity 사용량 및 쿼터 캡 요약 지표]
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

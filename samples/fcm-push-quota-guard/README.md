@@ -28,18 +28,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **재시도 폭풍(Retry Storm)과 지연 누적**: 실패한 요청에 대해 고정 지연 또는 즉시 무제한 재시도를 수행하여 FCM 인프라 쓰로틀링이 가중되고 알림이 제때 전달되지 않는 사고.
 - [ ] **기기 토큰 팬아웃 병목**: 단일 기기 토큰에 대한 개별 API 루프 호출로 인해 백엔드 연결 고갈 및 불필요한 네트워크 지연 초래.
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 모바일 앱 백엔드 엔지니어, 마케팅 플랫폼 운영자, SRE 팀 및 푸시 인프라 아키텍트
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 대규모 프로모션이나 긴급 공지 발송 시 FCM HTTP v1 API 다운스트림 할당량 초과로 429 Quota Exceeded 장애 및 메시지 유실 발생
+  2. 동시 발송 스레드가 제어되지 않아 일시적인 트래픽 스파이크로 인해 핵심 서비스 알림까지 연쇄 차단되는 문제
+  3. SDK 기본 재시도로 인해 쓰로틀링 상태에서 부하가 가중되어 쿼터 고갈 상태가 장기화되는 악순환
+- **본 솔루션의 해결 방식 (Solution)**:
+  - FCM HTTP v1 API 프로젝트 할당량 및 피크 발송량을 실시간 진단하고, 지수 백오프와 Full Jitter가 결합된 토큰 버킷 속도 제한(Token Bucket Rate Limiter) 복원력 패턴 및 콘솔 쿼터 증설 가이드를 처방한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | FCM 다운스트림 분당 쿼터, 피크 전송량, 소진율, 위험 등급 및 권장 속도 제한 파라미터 요약 표 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 피크 트래픽 병목 분석 보고서, 토큰 버킷 레이트 리미터 구현 예제, Full Jitter 재시도 로직 및 QIR 상향 양식 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **토큰 버킷 속도 제한 파이썬 코드**: 대량 푸시 발송 시 429 에러를 방지하는 버킷 제어 모듈<br/>• **Full Jitter 지수 백오프 재시도 템플릿**: 일시적 오류 발생 시 네트워크 부하를 분산하는 전송 핸들러<br/>• **FCM 할당량 상향 요청 가이드**: GCP 콘솔 쿼터 페이지를 통한 필수 지표 증설 절차서 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -61,7 +74,15 @@ python diagnose.py --dry-run
 4. [INFO] TOPIC_FANOUT_OPTIMIZATION
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```

@@ -27,18 +27,31 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **과도한 권한 부여(오버 그랜트) 방지**: 문제를 해결하겠다고 `roles/editor`나 `roles/owner`를 남발하지 않고 최소 권한 역할만 선별하여 안전하게 부여하고자 할 때
 - [ ] **감사 로그 기반의 즉각 처방**: Cloud Logging의 `cloudaudit.googleapis.com/data_access` 감사 로그를 분석하여 계정 형태(사용자 vs 서비스 계정)에 맞춘 gcloud 명령어를 원클릭으로 확보하고자 할 때
 
+
+### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
+- **대상 사용자 (Target)**: 클라우드 보안팀, IAM 관리자, 플랫폼 엔지니어 및 DevOps/SRE 담당자
+- **해결하는 핵심 문제 (Core Pain Points)**:
+  1. 배포 파이프라인이나 애플리케이션 실행 중 발생하는 403 Permission Denied 에러의 정확한 원인 권한을 즉시 파악하기 어려운 문제
+  2. 누락된 권한을 해결하기 위해 개발자에게 무분별하게 `roles/editor`나 `roles/owner` 같은 과다 권한을 임시 부여하는 보안 사고
+  3. 수많은 실패 로그 속에서 어떤 서비스 계정이 어떤 리소스에 접근하려다 실패했는지 역추적하는 데 소요되는 시간 낭비
+- **본 솔루션의 해결 방식 (Solution)**:
+  - Cloud Audit Logs에서 최근 403 권한 거부 실패 이벤트를 정밀 역추적하여 거부된 API 메서드와 권한명을 규명하고, 최소 권한 원칙(Least Privilege)에 입각한 구글 공식 IAM 역할 및 즉시 복구 gcloud 명령어를 도출한다.
+
+### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
+본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
+
+| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
+| :--- | :--- | :--- |
+| **① 터미널 콘솔 요약** | Visual CLI Table | 실패 시각, 호출 주체(Principal), 대상 리소스, 거부된 권한(Permission), 추천 최소 역할 및 해결 명령 요약 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 403 권한 거부 전수 감사 보고서, 거부 사유 상세 분석, 최소 권한 추천 근거 및 즉시 실행 가능한 gcloud 명령어 세트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **최소 권한 부여 gcloud 명령어**: 필요한 역할만 선별하여 추가하는 원클릭 복구 스크립트<br/>• **과다 권한 회수 및 롤백 가이드**: 임시 부여되었던 관리자 권한을 안전하게 제거하는 절차서<br/>• **IAM 정책 감사 로그 모니터링 룰**: 권한 거부 급증 시 실시간 알림을 트리거하는 모니터링 설정 |
+
 ---
 
 ## 2. 빠른 시작 (Quickstart)
 
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
-
-### 0) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
-사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
-```bash
-python diagnose.py --config
-```
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
@@ -60,7 +73,15 @@ python diagnose.py --dry-run
   - 실제 오류 내용: Permission 'aiplatform.endpoints.predict' denied on resource
 ```
 
-### 2) 실제 사내 인프라 실시간 진단
+
+### 2) 사내 환경 대화형 설정 (Config Wizard, 선택 사항)
+사내 활성 프로젝트 및 환경 설정을 대화형으로 탐색하여 `.env`에 자동 저장한다:
+```bash
+python diagnose.py --config
+```
+
+
+### 3) 실제 사내 인프라 실시간 진단
 ```bash
 python diagnose.py
 ```
