@@ -250,3 +250,6 @@ dataplex_glossary_terms*.yaml
 # CodeMender CLI Artifacts
 .cm_project
 .codemender/
+
+# Google Drive Sync Index SSOT Manifest
+.drive-index.yaml
