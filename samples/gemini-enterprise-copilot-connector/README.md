@@ -58,14 +58,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
 ```bash
-# 기본 팩토리(붕어빵 틀) 가상 배포 시뮬레이션
 python diagnose.py --dry-run
-
-# 14대 엔터프라이즈 3P SaaS 커넥터 매니페스트 합성 가상 검증 (1번: Confluence 커넥터)
-python diagnose.py --scaffold --chip 1 --dry-run
-
-# 자유 프롬프트 기반 맞춤형 시스템 커넥터 합성 가상 검증
-python diagnose.py --scaffold --prompt "사내 하둡 HDFS 데이터 레이크 커넥터" --dry-run
 ```
 
 **터미널 진단 출력 미리보기:**
@@ -111,11 +104,7 @@ python diagnose.py --config
 
 ### 3) 실제 사내 인프라 실시간 진단 및 팩토리 프로비저닝
 ```bash
-# 팩토리 메타 에이전트 프로비저닝 및 사내 갤러리(/r/agents) 전사 등록
 python diagnose.py
-
-# 또는 외부 선언적 카탈로그를 지정하여 대화형 선택기 가동
-python diagnose.py --scaffold --catalog catalog.yaml --interactive
 ```
 > [!NOTE]
 > 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)

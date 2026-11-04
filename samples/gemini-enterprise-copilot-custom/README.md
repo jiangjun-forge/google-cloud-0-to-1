@@ -23,9 +23,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > 
 > 1. **도구의 위상 및 사용자 한정 (IT Administrator-Only Scope)**:
 >    - 본 커스텀 에이전트 팩토리(Custom Agent Factory)는 일반 임직원이나 개별 개발자가 임의로 에이전트를 전사 배포하는 범용 도구가 아니며, 사내 클라우드 인프라팀 및 IT 관리자(IT Administrators)가 사내 표준 에이전트를 프로비저닝하기 위해 활용하는 **내부 관리자 전용 프로비저닝 도구**다.
-> 2. **Day-1 신속 배포와 Day-2 보안 거버넌스의 양립 (Shared Responsibility & HITL)**:
->    - **Day-1 고속 가치 실현**: GitHub URL 하나로 신속하게 에이전트를 빌드 및 배포하는 빠른 시작(Fast-path 즉시 배포)을 기본값으로 제공하여 초기 온보딩 및 시연 생산성을 뒷받침한다.
->    - **Day-2 운영 마찰 해소 (2단계 대화형 보안 인터셉터)**: 실제 사내 프로덕션 운영 단계에서는 빌드 전 정적 보안 정밀 검사(SAST)를 선택적으로 수행할 수 있으며, 취약점이나 경고가 발견되더라도 무조건 빌드를 차단하여 운영 파이프라인을 마비시키지 않고 관리자가 위험을 인지한 상태에서 강제 배포(Force Deploy)를 집행할 수 있는 인간 개입 승인(Human-In-The-Loop) 가드레일을 제공한다.
+> 2. **신속 배포와 정적 보안 검증의 균형 (Fast-path vs SAST & HITL)**:
+>    - **신속 배포 경로 (Fast-path 즉시 배포)**: GitHub URL 하나로 빠르게 에이전트를 빌드 및 배포하는 경로를 기본값으로 지원하여 초기 검증 생산성을 뒷받침한다.
+>    - **정적 보안 검증 및 관리자 승인 (2단계 대화형 보안 인터셉터)**: 실제 사내 프로덕션 운영 환경에서는 빌드 전 정적 보안 정밀 검사(SAST)를 선택적으로 수행할 수 있으며, 취약점이나 경고가 발견되더라도 무조건 빌드를 차단하여 파이프라인을 중단시키지 않고 관리자가 위험을 인지한 상태에서 강제 배포(Force Deploy)를 집행할 수 있는 인간 개입 승인(Human-In-The-Loop) 가드레일을 제공한다.
 > 3. **배포 후 즉시 회수 및 정리 원칙 (Deploy-then-Teardown Best Practice)**:
 >    - 팩토리 에이전트 자체를 Gemini Enterprise app 환경에 상시 상주형(Always-on)으로 유지할 경우, 불필요한 공격 표면(Attack Surface)이 노출되거나 미승인 에이전트 배포 창구로 악용될 위험이 있다.
 >    - 따라서 사내에 필요한 공식 에이전트(BigQuery Data Agent, Admin Copilot 등)의 생성, 배포 및 사내 갤러리 등록이 완료된 즉시 **본 커스텀 에이전트 팩토리 자체는 Agent Engine 및 사내 갤러리에서 즉시 삭제/정리(Teardown)하는 것을 사내 보안 운영 대원칙으로 권장**한다.
@@ -69,17 +69,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
 GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
 ```bash
-# 기본 팩토리(붕어빵 틀) 가상 실행
 python diagnose.py --dry-run
-
-# 코파일럿 패밀리 4대 커스텀 에이전트 칩 가상 검증 (1: 스킬 팩토리, 2: 노코드 팩토리, 3: 커넥터 스캐폴더, 4: 어드민 코파일럿)
-python diagnose.py --scaffold --chip 1 --dry-run
-
-# GitHub 저장소 URL 기반 커스텀 스캐폴딩 가상 검증
-python diagnose.py --scaffold --dry-run --repo https://github.com/example-corp/my-custom-agent.git
-
-# 자연어 자유 프롬프팅 기반 커스텀 에이전트 가상 검증
-python diagnose.py --scaffold --prompt "사내 하둡 감사" --dry-run
 ```
 
 **터미널 진단 출력 미리보기:**
@@ -118,26 +108,7 @@ python diagnose.py
 > [!NOTE]
 > 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)
 
-### 3) Google ADK CLI 활용법 (선택 사항)
-스캐폴딩된 에이전트 소스(`scaffold/`)는 구글 공식 Google ADK 표준 CLI 도구(`adk`)를 활용하여 로컬 실행 및 배포를 수행할 수 있다:
 
-```bash
-# 1. 스캐폴딩 디렉터리 추출
-python diagnose.py --write-files
-
-# 2. 로컬 터미널 대화형 디버깅 (adk run)
-cd scaffold
-adk run .
-
-# 3. 로컬 브라우저 대화형 플레이그라운드 구동 (adk web)
-adk web .
-
-# 4. Agent Engine 원클릭 배포 (adk deploy agent_engine)
-adk deploy agent_engine . \
-  --project="${PROJECT_ID}" \
-  --region="us-central1" \
-  --display_name="사내 커스텀 에이전트"
-```
 
 ---
 

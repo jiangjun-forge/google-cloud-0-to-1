@@ -101,17 +101,7 @@ python diagnose.py
 > [!NOTE]
 > 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)
 
-### 3) 선언적 스킬 레시피 카탈로그 지정 (선택 사항)
-사내 커스텀 카탈로그 파일이나 외부 URL 레시피를 로드하고자 할 때 `--catalog` 옵션을 지정한다:
-```bash
-python diagnose.py --dry-run --catalog ./catalog.yaml
-```
 
-### 4) 자연어 자유 프롬프팅 스킬 합성 (선택 사항)
-사내 비정형 고유 시스템 연동 요구 사항을 자연어로 직접 입력하여 OpenAPI 3.0 매니페스트를 즉시 합성한다:
-```bash
-python diagnose.py --dry-run --prompt "사내 결재 시스템(https://approval.example.com/api) 연동 및 Bearer 토큰 인증 기안문 상신 액션 스킬"
-```
 
 ---
 

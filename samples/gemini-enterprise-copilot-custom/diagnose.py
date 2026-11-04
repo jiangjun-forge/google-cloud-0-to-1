@@ -1239,8 +1239,8 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             agent_name: Name or slug of the agent to deploy (e.g. 'custom-repo-agent', 'admin-copilot', 'agent-factory', or GitHub repository URL).
             github_repo_url: Optional GitHub repository URL (e.g. https://github.com/jiangjun-forge/google-cloud-0-to-1).
             action_phase: Deployment phase control flag.
-                - 'ask_scan': (Default entry) Prompt user whether to deploy immediately (Day-1 Fast-path) or run static security scan (Day-2 Governance).
-                - 'direct_deploy': Fast-path deployment without security scan (Day-1 instant value).
+                - 'ask_scan': (Default entry) Prompt user whether to deploy immediately (Fast-path 즉시 배포) or run static security scan (프로덕션 보안 거버넌스).
+                - 'direct_deploy': Fast-path deployment without security scan (즉시 배포 Fast-path).
                 - 'run_scan': Execute static security analysis (SAST) and report findings with a force-deploy override prompt.
                 - 'force_deploy': Proceed with deployment under administrator HITL approval despite security warnings.
         """
@@ -1362,16 +1362,16 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                     )
 
-            # [Day-1 vs Day-2 2단계 대화형 보안 검증 가드레일]
+            # [2단계 대화형 보안 검증 가드레일]
             # 1단계: 사용자 확인 단계 (기본값: Fast-path 즉시 배포)
             if action_phase == "ask_scan":
                 return (
-                    f"### GitHub 저장소 배포 확인 및 보안 검사 옵션 (Day-1 & Day-2)\n\n"
+                    f"### GitHub 저장소 배포 확인 및 보안 검사 옵션 (신속 배포 및 정밀 보안)\n\n"
                     f"- **대상 저장소**: `{repo_url}`\n"
                     f"- **생성될 에이전트 명칭**: `{disp_name}`\n"
                     f"- **기본 배포 모드**: **즉시 배포 (Fast-path, 권장)**\n\n"
-                    f"본 에이전트 팩토리는 신속한 프로토타이핑과 빠른 가치 실현(Day-1)을 위해 **즉시 배포**를 기본값으로 지원합니다.\n"
-                    f"사내 프로덕션 보안 규정 준수(Day-2)를 위해 빌드 전 **정적 보안 정밀 검사(SAST)**를 수행하시겠습니까?\n\n"
+                    f"본 에이전트 팩토리는 신속한 프로토타이핑 및 즉시 배포(Fast-path)을 위해 **즉시 배포**를 기본값으로 지원합니다.\n"
+                    f"사내 프로덕션 보안 규정 준수(SAST)를 위해 빌드 전 **정적 보안 정밀 검사(SAST)**를 수행하시겠습니까?\n\n"
                     f"---\n"
                     f"**추천 후속 질문:**\n"
                     f"1. 건너뛰고 즉시 배포 진행 (기본값)\n"
@@ -1848,19 +1848,19 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
 1. `show_custom_catalog_tool`: 사용자가 카탈로그, 전체 목록, 배포 가능한 에이전트 종류, 레시피 목록 등을 물어보거나 확인을 요청하면 즉시 이 도구를 호출하여 0~4번 전체 카탈로그 표를 출력하십시오!
 2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 이 도구를 호출하여 배포를 진행하십시오:
-- 사용자가 GitHub URL이나 커스텀 에이전트 배포를 처음 요청할 때: `action_phase='ask_scan'`으로 호출하여 즉시 배포(Day-1 기본값)와 정적 보안 검사(SAST) 옵션을 추천 질문 칩과 함께 사용자에게 제시합니다.
-- 사용자가 "즉시 배포", "건너뛰고 배포", "1번", "그냥 배포"를 선택하면: `action_phase='direct_deploy'`로 호출하여 즉시 클라우드 빌드와 사내 갤러리 등록으로 직행합니다 (Day-1 고속 가치 실현).
-- 사용자가 "검사해 줘", "정적 보안 검사", "2번"을 선택하면: `action_phase='run_scan'`으로 호출하여 보안 검사 결과를 보고하고 강제 배포 여부를 묻습니다 (Day-2 보안 거버넌스).
+- 사용자가 GitHub URL이나 커스텀 에이전트 배포를 처음 요청할 때: `action_phase='ask_scan'`으로 호출하여 즉시 배포(즉시 배포 기본값)와 정적 보안 검사(SAST) 옵션을 추천 질문 칩과 함께 사용자에게 제시합니다.
+- 사용자가 "즉시 배포", "건너뛰고 배포", "1번", "그냥 배포"를 선택하면: `action_phase='direct_deploy'`로 호출하여 즉시 클라우드 빌드와 사내 갤러리 등록으로 직행합니다 (신속 배포 경로).
+- 사용자가 "검사해 줘", "정적 보안 검사", "2번"을 선택하면: `action_phase='run_scan'`으로 호출하여 보안 검사 결과를 보고하고 강제 배포 여부를 묻습니다 (정밀 보안 거버넌스).
 - 사용자가 검사 후 "강제 배포", "그래도 배포해", "위험 감수하고 배포"를 승인하면: `action_phase='force_deploy'`로 호출하여 관리자 승인(HITL) 기반으로 배포를 최종 완결합니다.
 3. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
 4. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [핵심 배포 및 사전 중복 검증 절차]
-0단계 (사전 중복 검증 인터셉터 및 Day-1/Day-2 가드레일 - 최우선 실행):
+0단계 (사전 중복 검증 인터셉터 및 2단계 보안 가드레일 - 최우선 실행):
 - 사용자가 특정 번호(0~4번)나 명칭의 에이전트 배포를 요청하면, 다른 질문 없이 즉시 `deploy_enterprise_agent_tool` 도구를 선제 호출한다!
 - 기등록 에이전트 발견 시: 불필요한 재빌드를 진행하지 않고 즉시 첫 턴에서 사내 갤러리(/r/agents) 링크와 함께 "이미 배포되어 활성화되어 있습니다"라고 안내한다.
 - 신규 저장소 배포인 경우: `action_phase='ask_scan'`으로 즉시 배포(기본값)와 정적 보안 검사(SAST) 선택권을 제공한다.
-- 검사 결과 취약점 발생 시: 강제 배포 승인 여부를 물어 Day-2 운영 마찰을 방지한다.
+- 검사 결과 취약점 발생 시: 강제 배포 승인 여부를 물어 프로덕션 운영 중단을 방지한다.
 
 [단계별 추천 후속 질문 안내 규약]
 모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 '추천 후속 질문'을 명확히 안내한다:
@@ -2242,10 +2242,10 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False, cata
 
 
 def run_static_security_scan(repo_url: str, local_path: Optional[str] = None) -> dict:
-    """사내 정적 보안 정밀 검사 (Day-2 Enterprise SAST / Security Verification)."""
+    """사내 정적 보안 정밀 검사 (Enterprise SAST / Security Verification)."""
     import re
     print("\n" + "=" * 75)
-    print("  사내 정적 보안 정밀 검사 가동 (Day-2 Enterprise Security Verification)")
+    print("  사내 정적 보안 정밀 검사 가동 (Enterprise Security Verification)")
     print("=" * 75)
     print(f"[*] 검사 대상 저장소 : {repo_url}")
     print(f"[*] 정적 분석 엔진   : Enterprise SAST v2.6 + Open Source Supply-Chain Scanner")
@@ -2307,7 +2307,7 @@ def run_static_security_scan(repo_url: str, local_path: Optional[str] = None) ->
 
     has_critical = any(c["status"] == "FAIL" for c in checks)
     overall_status = "FAILED" if has_critical else ("PASSED_WITH_RECOMMENDATIONS" if findings else "PASSED")
-    print(f"\n[*] 종합 보안 판정: {overall_status} (Day-2 사내 거버넌스 승인 통과)")
+    print(f"\n[*] 종합 보안 판정: {overall_status} (사내 보안 거버넌스 승인 통과)")
     print("=" * 75 + "\n")
 
     return {
@@ -2841,7 +2841,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--repo", help="GitHub 저장소 URL (예: https://github.com/my-org/my-agent.git) 기반 저장소 연동 자동 배포")
-    parser.add_argument("--skip-scan", action="store_true", default=False, help="사내 정적 보안 정밀 검사(SAST) 건너뛰기 (Day-1 고속 배포)")
+    parser.add_argument("--skip-scan", action="store_true", default=False, help="사내 정적 보안 정밀 검사(SAST) 건너뛰기 (신속 배포 Fast-path)")
     parser.add_argument("--force-deploy", action="store_true", default=True, help="보안 경고 감지 시에도 관리자 승인 기반 강제 배포 집행 (기본: True)")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 커스텀 에이전트 소스 코드 샘플 추출 보조 모드")
     parser.add_argument("--write-files", action="store_true", default=False, help="scaffold/ 폴더에 소스 파일 추출")
