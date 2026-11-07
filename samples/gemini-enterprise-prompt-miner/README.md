@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise 프롬프트 마이너 (gemini-enterprise-prompt-miner)
+# Gemini Enterprise 프롬프트 마이너: In-Chat Factory 상류 발굴 엔진 (gemini-enterprise-prompt-miner)
 
-제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 누적된 사용자 질의(Prompt) 로그를 빅쿼리(BigQuery)에서 수집하고, 인라인 PII 마스킹과 멀티 턴 대화 세션 묶음 정제를 거쳐 빅쿼리 내장 임베딩(`ML.GENERATE_EMBEDDING`) 및 자율 적응형(Auto-K) 군집화를 통해 임직원의 실제 3R(반복성 Repetitive, 규칙성 Rule-based, 검색 집약성 Retrieval-heavy) 마이크로 업무를 발굴하고 사내 API 도구(`Tool`) 및 검색/자율 에이전트(`RAG / Autonomous Agent`) 전환 파이프라인을 자동 도출하는 엔터프라이즈 실무 도구다. (As of 2026-10-29)
+`Gemini Enterprise In-Chat Factory`의 상류(Upstream) 업무 발굴 엔진으로, 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 누적된 사용자 질의(Prompt) 로그를 빅쿼리(BigQuery)에서 수집하고, 인라인 PII 마스킹과 멀티 턴 대화 세션 묶음 정제를 거쳐 빅쿼리 내장 임베딩(`ML.GENERATE_EMBEDDING`) 및 자율 적응형(Auto-K) 군집화를 통해 임직원의 실제 3R(반복성 Repetitive, 규칙성 Rule-based, 검색 집약성 Retrieval-heavy) 마이크로 업무를 발굴하여 `GE In-Chat Factory` 5대 모듈로 즉시 전환 가능한 사내 도구(`Tool`) 및 에이전트 명세를 자동 도출하는 엔터프라이즈 실무 도구다. (As of 2026-11-07)
 
 ---
 

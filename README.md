@@ -42,17 +42,17 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
     ├── gemini-enterprise-agent-resolver/       # 커스텀 에이전트 연동 권한 및 조직 정책 진단
     ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석
-    ├── gemini-enterprise-copilot-admin/        # 사내 IT 어드민 전담 코파일럿 및 7대 핵심 운영 과제 진단
-    ├── gemini-enterprise-copilot-agent/        # 자율형 사내 노코드 에이전트 팩토리 및 Gemini Enterprise app 대행 등록
-    ├── gemini-enterprise-copilot-connector/    # 사내 기간계 데이터 커넥터 팩토리 및 Data Store 바인딩
-    ├── gemini-enterprise-copilot-custom/       # 하이코드 커스텀 에이전트 스캐폴더 및 저장소 연동 자동 배포 도구
-    ├── gemini-enterprise-copilot-skill/        # 자율형 사내 스킬 팩토리 및 OpenAPI 도구 레지스트리 배포
+    ├── gemini-enterprise-factory-admin/        # [GE In-Chat Factory] 어드민 및 7대 운영 거버넌스 모듈
+    ├── gemini-enterprise-factory-agent/        # [GE In-Chat Factory] 대화형 노코드 에이전트 팩토리 모듈
+    ├── gemini-enterprise-factory-connector/    # [GE In-Chat Factory] 기간계 데이터 및 사내 MCP 커넥터 모듈
+    ├── gemini-enterprise-factory-custom/       # [GE In-Chat Factory] 하이코드 커스텀 에이전트 및 Agent Engine 배포 모듈
+    ├── gemini-enterprise-factory-skill/        # [GE In-Chat Factory] 사내 도구(Tools) 및 OpenAPI 스킬 팩토리 모듈
     ├── gemini-enterprise-domain-resolver/      # 사내 도메인 선점 충돌 진단 및 Cloud Identity 배포
     ├── gemini-enterprise-fqdn-checker/         # 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
     ├── gemini-enterprise-governance-guard/     # 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단
     ├── gemini-enterprise-latency-profiler/     # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
     ├── gemini-enterprise-overage-guard/        # Overage 과금 방어, AI Studio API 키 차단 및 Billing RBAC 가드
-    ├── gemini-enterprise-prompt-miner/         # 프롬프트 로그 기반 3R 마이크로 업무 발굴 및 스킬/에이전트 전환 파이프라인 분석
+    ├── gemini-enterprise-prompt-miner/         # [GE In-Chat Factory] 프롬프트 로그 기반 상류 마이크로 업무 발굴 엔진
     ├── gemini-enterprise-usage-by-account/     # Gemini Enterprise app 공식 로깅 기반 계정별 토큰 사용량 및 지연시간 분석
     ├── gemini-legacy-sdk-scanner/              # 구형 SDK 코드 정적 탐색 및 google-genai 전환 처방
     ├── gemini-quota-cost-alert/                # 예산 임계치 실시간 Pub/Sub 경보 및 쿼터 자동 차단

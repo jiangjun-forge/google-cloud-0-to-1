@@ -1,0 +1,70 @@
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+# It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+# All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+version: 2.0.0
+description: Gemini Enterprise In-Chat Factory 패밀리 4대 핵심 에이전트 카탈로그
+custom_agents:
+- slug: gemini-enterprise-factory-admin
+  name: GE In-Chat Admin Module (사내 어드민 거버넌스 모듈)
+  category: IT 어드민 및 인프라 거버넌스
+  description: 수백 개 에이전트 전수 감사(미사용 에이전트 적발), 감사 로그 자동 적재 및 사내 거버넌스 정책 통제 전담 모듈
+  backend_tech: Agent Engine (ADK 2.11+) + google-cloud-bigquery + google-cloud-logging
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-admin
+  custom_placeholder_text: 해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...
+  starter_prompts:
+  - 사내 에이전트 중 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘
+  - Cloud Logging 감사 로그를 BigQuery로 자동 연결하는 스크립트 줘
+  - GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+  - roles/logging.viewer
+  - roles/bigquery.admin
+- slug: gemini-enterprise-factory-agent
+  name: GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)
+  category: 노코드 부서별 에이전트 팩토리
+  description: 사내 비개발자 임직원을 위한 대화형 노코드 AI 에이전트 팩토리 에이전트
+  backend_tech: Agent Engine (ADK 2.11+) + Discovery Engine
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-agent
+  custom_placeholder_text: 만들고 싶은 사내 업무 에이전트 역할이나 페르소나를 입력하세요...
+  starter_prompts:
+  - 신규 입사자를 위한 인사 총무 온보딩 가이드 에이전트 생성해 줘
+  - 법인카드 경비 전표 규정 검토 및 반려 사유 안내 에이전트 만들어 줘
+  - 표준 계약서 검토 및 법무 질의응답 전담 에이전트 등록해 줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+- slug: gemini-enterprise-factory-connector
+  name: GE In-Chat Connector Scaffolder (기간계 데이터 커넥터 스캐폴더)
+  category: 데이터 커넥터 및 지식 베이스
+  description: Gemini Enterprise 14대 엔터프라이즈 3P SaaS(Jira, Confluence, Salesforce, ServiceNow, SharePoint 등) 커넥터 연동 매니페스트 및 ACL 동기화 스캐폴더
+  backend_tech: Agent Engine (ADK 2.11+) + Discovery Engine Data Store
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-connector
+  custom_placeholder_text: "연동하고 싶은 3P SaaS 데이터 소스(Jira, Confluence, Salesforce, ServiceNow 등)를 입력하세요..."
+  starter_prompts:
+  - Jira 및 Confluence 3P 엔터프라이즈 커넥터 설정과 ACL 동기화 구성해 줘
+  - Salesforce CRM 및 ServiceNow 고객 데이터스토어 연동 매니페스트 스캐폴딩해 줘
+  - SharePoint 및 Workday 기업 기간계 데이터 커넥터 매니페스트 생성해 줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+  - roles/secretmanager.secretAccessor
+- slug: gemini-enterprise-factory-skill
+  name: GE In-Chat Skill Factory (사내 스킬 팩토리 모듈)
+  category: 업무 도구 및 스킬 팩토리
+  description: 사내 비개발자 임직원을 위한 대화형 Open Skills / SKILL.md 도구 팩토리 에이전트
+  backend_tech: Agent Engine (ADK 2.11+) + OpenAPI 3.0
+  repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-skill
+  custom_placeholder_text: 생성하고 싶은 업무 연동 도구나 API를 입력하세요...
+  starter_prompts:
+  - 전자결재 품의 상신 및 승인 상태 조회 스킬 생성해 줘
+  - 법인카드 경비 전표 정산 및 승인 내역 조회 스킬 매니페스트 만들어 줘
+  - 주 52시간 근태 관리 및 휴가 신청 도구 바인딩 명세 작성해 줘
+  required_roles:
+  - roles/aiplatform.user
+  - roles/discoveryengine.editor
+  - roles/secretmanager.secretAccessor
