@@ -95,7 +95,7 @@ python diagnose.py
 본 도구는 사내 코드베이스의 구형 SDK 의존성을 정적 탐색하고 최신 `google-genai` 통일 SDK로 마이그레이션하는 4계층 토폴로지를 제공한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 사용자 및 소스 코드 계층 (Workspace Layer)"]
         Dev["사내 애플리케이션 개발자 / 엔지니어"] -->|"1. 코드베이스 정적 스캔 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
         Repo["로컬 저장소 / CI 파이프라인<br/>(*.py, *.sh, *.ipynb)"]

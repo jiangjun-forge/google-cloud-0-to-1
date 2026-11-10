@@ -95,7 +95,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Client Ingress (클라이언트 인그레스)"]
         BrowserClient["외부 웹 브라우저 / 모바일 앱 클라이언트"]
         DevOps["SRE / 클라우드 인프라 엔지니어"]

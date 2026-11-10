@@ -79,7 +79,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 런타임 서비스 흐름
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph L1["1. GE App 대화창"]
         User["임직원 / 아키텍트"] -->|"GitHub URL 또는 카탈로그 선택"| GEApp["Gemini Enterprise app<br/>웹 포털 (/r/agents)"]
     end

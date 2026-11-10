@@ -93,7 +93,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Worker Ingress (동시 비동기 작업 제출)"]
         direction TB
         ClientApp["클라이언트 앱 / 워커 프로세스<br/>(Speech, DocAI, Video, Translate)"]

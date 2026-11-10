@@ -95,7 +95,7 @@ python diagnose.py
 본 도구는 사내 도메인 선점 충돌(domain_in_use)을 진단하고 Cloud Identity Free 기반 테넌트 인수를 완결하는 4계층 시스템 토폴로지를 제공한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
         Admin["사내 IT 어드민 / 도메인 관리자"] -->|"1. 도메인 충돌 진단 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
     end

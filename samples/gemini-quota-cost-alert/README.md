@@ -95,7 +95,7 @@ python diagnose.py
 본 도구는 Cloud Billing 예산 임계치 도달 시 Pub/Sub과 Cloud Functions를 통해 Gemini API 쿼터를 자동으로 0으로 차단하는 4계층 서킷 브레이커 토폴로지를 제공한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 트래픽 및 진단 계층 (Traffic & Operation Layer)"]
         User["애플리케이션 / API 클라이언트"] -->|"Gemini API 호출"| Endpoint["Vertex AI / Gemini API 엔드포인트"]
         FinOps["FinOps 엔지니어 / 운영자"] -->|"1. 자동 차단 파이프라인 검증"| CLI["진단 컨트롤러<br/>(diagnose.py)"]

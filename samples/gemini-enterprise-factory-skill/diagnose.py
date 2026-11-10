@@ -975,7 +975,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 본 솔루션은 임직원이 복잡한 규격을 직접 작성하지 않고, GE App 채팅창에서 자연어 대화만으로 업무 스킬(`SKILL.md`)을 제작하여 `/r/skills`에 즉시 등록할 수 있도록 지원하는 **사내 스킬 팩토리(붕어빵 틀)**다:
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph L1["1. GE App 대화창"]
         U["임직원 / 부서 관리자"] -->|"자연어 스킬 생성 요청"| GE["Gemini Enterprise app<br/>(/r/agents)"]
     end

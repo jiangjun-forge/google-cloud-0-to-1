@@ -33,7 +33,7 @@ description: >-
 ## 1. 3단계 학습 워크플로우 한눈에 보기
 
 ```mermaid
-flowchart TD
+flowchart TB
     A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 커넥터 칩 및 매니페스트 무결성 검증"]
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
     C -->|원하는 SaaS 커넥터 칩 선택 및 ACL 매핑 합성| D["Discovery Engine Data Store 매니페스트 도출"]

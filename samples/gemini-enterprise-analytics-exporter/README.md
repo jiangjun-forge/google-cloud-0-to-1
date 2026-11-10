@@ -96,7 +96,7 @@ python diagnose.py
 본 도구는 Gemini Enterprise 사용자 활동 로그를 추출하여 유휴 라이선스를 식별하고 BigQuery에 정형 적재하는 4계층 시스템 토폴로지를 제공한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
         FinOpsUser["사내 IT 어드민 / FinOps 담당자"] -->|"1. 라이선스 최적화 진단 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]
         Dashboard["Looker Studio / 대시보드"]

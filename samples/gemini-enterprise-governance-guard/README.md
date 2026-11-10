@@ -96,7 +96,7 @@ python diagnose.py
 본 도구는 Gemini Enterprise 환경에서 외부 마켓플레이스 차단, 스킬 거버넌스 및 Entra ID WIF SSO 연동 상태를 4계층으로 분석하고 결함을 진단한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
         User["사내 임직원 (엔드유저)"] -->|"SSO 로그인 및 에이전트 접근"| GEApp["Gemini Enterprise app<br/>(웹 대화형 포털)"]
         SecAdmin["사내 CISO / 보안 거버넌스팀"] -->|"1. 거버넌스 감사 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]

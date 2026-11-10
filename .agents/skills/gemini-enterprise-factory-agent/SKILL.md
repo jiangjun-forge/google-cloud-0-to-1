@@ -33,7 +33,7 @@ description: >-
 ## 1. 3단계 학습 워크플로우 한눈에 보기
 
 ```mermaid
-flowchart TD
+flowchart TB
     A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 아키텍처 브리핑 및 매니페스트 검증"]
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
     C -->|추천 칩 선택 또는 커스텀 프롬프트 입력| D["실시간 검색 그라운딩 및 에이전트 지침 합성"]

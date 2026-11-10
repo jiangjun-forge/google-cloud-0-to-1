@@ -1,6 +1,6 @@
 # Gemini Enterprise 커스텀 에이전트 팩토리 배포 보고서 (gemini-enterprise-factory-custom)
 
-- **배포 일시**: 2026-11-10 01:49:22 UTC
+- **배포 일시**: 2026-11-10 02:26:54 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Custom Agent Factory (사내 커스텀 에이전트 팩토리)`

@@ -94,7 +94,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: Client & Campaign Ingress (마케팅 및 발송 요청)"]
         MarketingCampaign["대규모 마케팅 / 긴급 공지 발송 시스템"]
         PushOperator["모바일 서비스 운영자 / 인프라 엔지니어"]

@@ -902,7 +902,7 @@ def build_markdown_report(env_info: dict, topic_data: dict, artifacts: dict, dia
 - **조치 유형**: `{topic_data['remediation_type']}`
 
 ```mermaid
-flowchart TD
+flowchart TB
     Issue["{topic_data['name']}"] -->|"진단 및 거버넌스 분석"| Engine["어드민 거버넌스 모듈 엔진"]
     Engine -->|"자동 조치 가이드"| Script["조치 스크립트 실행"]
     Script -->|"정상 복구 및 최적화"| App["Gemini Enterprise App 정상 운영"]

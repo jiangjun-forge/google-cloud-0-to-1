@@ -95,7 +95,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: Global Client Ingress (글로벌 인그레스)"]
         GlobalUsers["전 세계 AI/LLM 클라이언트 트래픽"]
         SingleVIP["단일 Anycast 글로벌 고정 IPv4/IPv6 VIP"]

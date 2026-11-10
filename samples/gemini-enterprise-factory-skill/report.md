@@ -1,6 +1,6 @@
 # Gemini Enterprise 사내 스킬 팩토리 배포 보고서 (gemini-enterprise-factory-skill)
 
-- **배포 일시**: 2026-11-10 01:49:21 UTC
+- **배포 일시**: 2026-11-10 02:26:52 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Skill Factory (사내 스킬 팩토리)`
@@ -25,7 +25,7 @@
 본 솔루션은 임직원이 복잡한 규격을 직접 작성하지 않고, GE App 채팅창에서 자연어 대화만으로 업무 스킬(`SKILL.md`)을 제작하여 `/r/skills`에 즉시 등록할 수 있도록 지원하는 **사내 스킬 팩토리(붕어빵 틀)**다:
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph L1["1. GE App 대화창"]
         U["임직원 / 부서 관리자"] -->|"자연어 스킬 생성 요청"| GE["Gemini Enterprise app<br/>(/r/agents)"]
     end

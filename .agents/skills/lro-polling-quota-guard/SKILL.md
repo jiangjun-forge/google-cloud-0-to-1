@@ -13,7 +13,7 @@ Google Cloud 비동기 장기 실행 작업(LRO) 파이프라인에서 발생하
 ## 1. 3단계 학습 워크플로우 한눈에 보기
 
 ```mermaid
-flowchart TD
+flowchart TB
     A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 서비스별 LRO 폴링 부하 및 429 위험도 브리핑"]
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
     C -->|README 가이드에 따라 직접 입력| D["서비스 및 동시성 지정 사내 프로젝트 실측 점검"]

@@ -94,7 +94,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: Enterprise Client & Ingress (사내 단말기 및 트래픽 유입)"]
         direction TB
         CorpDevice["사내 인가 업무용 단말기<br/>(Chrome Enterprise Core / Endpoint)"]

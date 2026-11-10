@@ -94,7 +94,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Traffic Ingress (호출 계층)"]
         SeoulUsers["국내 사용자 트래픽 (서울 기준 인그레스)"]
         InfraOps["인프라 아키텍트 / AI 엔지니어"]

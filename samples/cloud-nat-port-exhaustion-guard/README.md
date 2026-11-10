@@ -94,7 +94,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Workload Ingress (내부 워크로드)"]
         GKEPods["GKE 파드 / 컨테이너 워크로드"]
         GCEInstances["Compute Engine VM 인스턴스"]

@@ -94,7 +94,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Application Ingress (호출 계층)"]
         WorkloadApp["엔터프라이즈 애플리케이션 / 데이터 파이프라인"]
         SecOps["보안 관리자 / CISO 거버넌스 팀"]

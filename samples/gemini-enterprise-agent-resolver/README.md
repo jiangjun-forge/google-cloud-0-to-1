@@ -96,7 +96,7 @@ python diagnose.py
 본 도구는 Gemini Enterprise 웹 앱(Project A)과 타 프로젝트/조직의 커스텀 에이전트(Project B) 간 크로스 연동 토폴로지를 4계층으로 분석하고 차단 요소를 실시간 진단한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
         User["사내 임직원 / 인프라 관리자"] -->|"1. 커스텀 에이전트 호출 / CLI 진단"| GEApp["Gemini Enterprise app<br/>(웹 대화형 포털 /r/agents)"]
         CLI["진단 컨트롤러<br/>(diagnose.py)"]

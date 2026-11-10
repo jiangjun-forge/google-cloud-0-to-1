@@ -95,7 +95,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1 ["Layer 1: User & Interaction Layer"]
         Emp["사내 임직원 (전사 사용자)"]
         Portal["Gemini Enterprise app<br/>(웹 대화창 /r/agents)"]

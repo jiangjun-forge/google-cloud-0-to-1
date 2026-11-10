@@ -33,7 +33,7 @@ description: >-
 ## 1. 3단계 학습 워크플로우 한눈에 보기
 
 ```mermaid
-flowchart TD
+flowchart TB
     A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 공식 로깅 집계 브리핑 및 SQL 검증"]
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
     C -->|Gemini Enterprise app 공식 로깅 활성화 및 데이터세트 지정| D["BigQuery 실제 로그 쿼리 및 계정별 토큰 집계"]

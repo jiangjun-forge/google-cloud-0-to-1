@@ -1,6 +1,6 @@
 # Gemini Enterprise 어드민 거버넌스 모듈 배포 보고서 (gemini-enterprise-factory-admin)
 
-- **배포 일시**: 2026-11-10 01:49:22 UTC
+- **배포 일시**: 2026-11-10 02:26:54 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Admin Module (사내 어드민 거버넌스 모듈)`

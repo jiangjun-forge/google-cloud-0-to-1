@@ -93,7 +93,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: Identity & Caller Ingress (호출 주체 인그레스)"]
         Developer["개발자 사용자 계정 (user:developer@company.com)"]
         ServiceAccount["서비스 계정 (serviceAccount:app-sa@...)"]

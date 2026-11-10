@@ -95,7 +95,7 @@ python diagnose.py
 본 도구는 감사 로그 없이도 Cloud Monitoring 시스템 메트릭을 통해 비용 급증을 유발한 자격 증명(API 키, SA, OAuth)을 4계층으로 역추적한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 클라이언트 및 인입 계층 (Traffic Ingress Layer)"]
         Caller["외부 호출자 / 배치 잡 / 클라이언트 앱"] -->|"API 요청 (헤더에 인증 정보 포함)"| Endpoint["Google Cloud API 엔드포인트<br/>(Vertex AI / Generative Language API)"]
         FinOps["FinOps 엔지니어 / 관리자"] -->|"1. 비용 급증 진단 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]

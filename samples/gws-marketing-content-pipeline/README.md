@@ -73,7 +73,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Marketer Interface (사용자 인터페이스)"]
         Marketer["현업 마케터 / 캠페인 기획자"]
         SidebarUI["Google Sheets 전용 사이드바 제어 패널"]

@@ -97,7 +97,7 @@ python diagnose.py
 본 도구는 Gemini Enterprise 전사 환경의 숨겨진 비용 누수와 비인가 AI Studio 과금 리스크를 4계층으로 분석하고 차단한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 사용자 및 조직 계층 (User & Organization Layer)"]
         User["일반 임직원 (AI Studio 접근 시도)"]
         SubAdmin["계열사 / 부서 중간 관리자"]

@@ -97,7 +97,7 @@ python diagnose.py
 본 도구는 사내망 폐쇄 보안 환경에서 Gemini Enterprise App 연결성을 4계층으로 분석하고 차단 FQDN을 실시간 진단한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 사용자 인터랙션 계층 (User Interaction)"]
         User["사내 임직원 업무 단말기"] -->|"웹 포털 접속 (HTTPS 443)"| GEApp["Gemini Enterprise app"]
         NetAdmin["네트워크 / 보안 관리자"] -->|"1. FQDN 사전 프로브 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]

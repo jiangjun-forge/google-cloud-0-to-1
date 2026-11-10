@@ -95,7 +95,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Query Ingress (사용자 대화 및 그라운딩 질의)"]
         direction TB
         EndUser["사내 임직원 / AI 애플리케이션"]

@@ -146,7 +146,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1 ["Layer 1: 로그 수집 및 세션 묶음 레이어"]
         GE["Gemini Enterprise app<br/>(웹 대화창 /r/agents)"]
         LOG["Cloud Logging<br/>(Discovery Engine DATA_READ)"]

@@ -33,7 +33,7 @@ description: >-
 ## 1. 3단계 학습 워크플로우 한눈에 보기
 
 ```mermaid
-flowchart TD
+flowchart TB
     A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 프로비저닝 명세 및 리포트 무결성 검증"]
     B --> C["Stage 2: 실습 (Administrator Hands-on)"]
     C -->|어드민 과제 칩 선택 및 조치 가이드 도출| D["BigQuery 감사 SQL, 로그 싱크 및 콘솔 딥링크 확인"]

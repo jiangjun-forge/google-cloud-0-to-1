@@ -92,7 +92,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: Orchestration & Ingress (오케스트레이션)"]
         KubernetesPod["GKE 워크로드 파드 (Pending 방어)"]
         BatchJob["Compute Engine 대규모 배치/분석 작업"]

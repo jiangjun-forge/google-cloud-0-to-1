@@ -85,7 +85,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph UserLayer["1. GE App 채팅창 (User Interaction)"]
         User["현업 실무자 / 관리자<br/>(Zero GCP IAM)"] -->|"1. '주간 보고서 스킬 만들어 줘'"| GEChat["Gemini Enterprise app<br/>웹 대화창 (/r/agents)"]
     end

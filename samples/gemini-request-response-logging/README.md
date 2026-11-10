@@ -95,7 +95,7 @@ python diagnose.py
 본 도구는 별도 프록시 없이 파운데이션 모델 자체 설정을 통해 BigQuery로 요청/응답을 스트리밍 내보내는 4계층 토폴로지를 제공한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 트래픽 및 클라이언트 계층 (Traffic & Client Layer)"]
         ClientApp["사내 애플리케이션 / 챗봇 클라이언트"] -->|"1. Gemini API 추론 호출"| ModelEndpoint["Vertex AI 모델 엔드포인트"]
         Auditor["데이터 보안팀 / 감사관"] -->|"진단 및 토큰 분석 실행"| CLI["진단 컨트롤러<br/>(diagnose.py)"]

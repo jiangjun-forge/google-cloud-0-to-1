@@ -95,7 +95,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: Client Ingress & Raw Packets (클라이언트 인그레스)"]
         ExternalUser["외부 사용자 / 내부 클라이언트 (원본 Client IP 보유)"]
         SecOps["보안 감사관 / 인프라 엔지니어"]

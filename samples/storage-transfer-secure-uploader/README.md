@@ -93,7 +93,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: On-Premises & Ingress (온프렘 스토리지 및 STS 에이전트)"]
         direction TB
         OnPremMedia["온프레미스 NAS / SAN 스토리지<br/>(400GB+ 대용량 영상 파일)"]

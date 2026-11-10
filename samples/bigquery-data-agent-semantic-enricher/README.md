@@ -96,7 +96,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1 ["Layer 1: User & Interface Layer"]
         User["데이터 엔지니어 / AI 아키텍트"]
         CLI["진단 및 보강 컨트롤러<br/>(diagnose.py)"]

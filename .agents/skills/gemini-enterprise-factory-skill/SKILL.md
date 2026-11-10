@@ -29,7 +29,7 @@ description: >-
 ## 1. 워크플로우 한눈에 보기
 
 ```mermaid
-flowchart TD
+flowchart TB
     A["Stage 1: 가상 검증 (--dry-run)"] -->|환경 감지 및 페이로드 검증| B["Agent Engine 스펙 및 report.md 검증"]
     B --> C["Stage 2: 환경 설정 (--config)"]
     C -->|gcloud 환경 및 GE App 탐색| D[".env 자동 생성 및 대상 앱 확정"]

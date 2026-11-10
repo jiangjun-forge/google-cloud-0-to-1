@@ -90,7 +90,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Developer Ingress (개발자 인그레스)"]
         DeveloperIDE["개발자 워크스테이션 (VS Code / JetBrains IDE 확장)"]
         DeveloperCLI["Antigravity CLI 및 데스크톱 도구"]

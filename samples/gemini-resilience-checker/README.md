@@ -94,7 +94,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Client Ingress (호출 계층)"]
         ClientApp["엔터프라이즈 백엔드 앱 / CLI 진단자"]
         DevOps["개발팀 / DevOps 엔지니어"]

@@ -117,7 +117,7 @@ python diagnose.py
 본 도구는 엔터프라이즈 생성형 AI 호출 파이프라인의 전 구간 레이턴시를 4계층으로 분해하여 실측한다:
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["1. 사용자 및 벤치마크 계층 (User Interaction)"]
         User["사내 임직원 업무 대화창"] -->|"실제 프롬프트 질의"| GEApp["Gemini Enterprise app<br/>(웹 UI 포털)"]
         Engineer["성능 / AI 엔지니어"] -->|"1. E2E 실측 프로파일링"| CLI["진단 컨트롤러<br/>(diagnose.py)"]

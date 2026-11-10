@@ -94,7 +94,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: External Threats & Ingress (키 유출 및 외부 침해 의심)"]
         direction TB
         LeakedKey["유출된 영구 JSON 키<br/>(GitHub, 외부 협업 채널 노출)"]

@@ -92,7 +92,7 @@ python diagnose.py
 ## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TD
+flowchart TB
     subgraph Layer1["Layer 1: User & Workload Ingress (호출 계층)"]
         ProductionWorkload["엔터프라이즈 운영 워크로드 / AI 모델 서빙"]
         CapacityPlanner["인프라 아키텍트 / FinOps 관리자"]
