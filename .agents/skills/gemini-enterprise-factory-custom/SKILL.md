@@ -25,7 +25,7 @@ description: >-
 본 스킬은 사내 클라우드 아키텍트와 백엔드 엔지니어가 `gemini-enterprise-factory-custom` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
 **Audience**: `#Architect`, `#Developer`  
-**Concern**: `#Architecture`, `#Performance`, `#Security`  
+**Concern**: `#Architecture`, `#AgentEngine`  
 **Service**: `#AgentEngine`, `#AgentPlatform`, `#VertexAI`  
 
 ---

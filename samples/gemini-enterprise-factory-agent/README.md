@@ -27,17 +27,17 @@ All contents, designs, and code examples are subject to change, modification, or
 - [ ] **중앙 IT/인프라팀의 에이전트 제작 병목**: 현업 부서(인사, 재무, 마케팅, 고객 지원)마다 맞춤형 에이전트 제작 요청이 쏟아져 담당자가 수작업으로 지침과 도구를 세팅하느라 본연의 인프라 업무가 마비된 경우
 - [ ] **비개발자 임직원의 백지 증후군(Blank Canvas Syndrome)**: 일반 직원이 에이전트를 직접 만들고 싶어도 빈 프롬프트 창에서 어떤 지침(Instructions), 가드레일, 업무 절차를 적어야 할지 몰라 포기하는 경우
 - [ ] **임직원 GCP IAM 권한 부여 불가**: 일반 직원에게 에이전트 생성을 위한 구글 클라우드(Google Cloud) 콘솔 접근 권한이나 프로젝트 편집자(Editor) 권한을 부여할 수 없어 자급자족이 불가능한 경우
-- [ ] **섀도우 에이전트(Shadow Agent) 및 보안 유출 공포**: 직원들이 검증되지 않은 프롬프트로 에이전트를 만들어 개인 식별 정보(PII)나 사내 기밀이 외부로 새어나갈까 봐 에이전트 생성을 전면 통제하고 있는 경우
+- [ ] **에이전트 지침 품질 편차 및 제작 창구 분산**: 직원마다 개별 작성한 프롬프트 품질 편차가 크고, 표준 지침과 추천 질문(Starter Prompts) 형식이 통일되지 않는 경우
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
 - **대상 사용자 (Target)**: 사내 현업 실무자(인사, 재무, 마케팅, IT 지원 등), 비개발자 임직원 및 사내 자동화 추진팀
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. 현업 부서마다 맞춤형 에이전트 제작 요청이 쏟아져 중앙 IT팀의 개발 병목이 발생하고 본연의 업무가 마비되는 문제
-  2. 일반 직원이 에이전트를 만들고 싶어도 빈 프롬프트 창에서 어떤 지침(Instructions)과 가드레일을 적어야 할지 모르는 백지 증후군
-  3. 일반 직원에게 GCP 콘솔 권한을 줄 수 없어 섀도우 에이전트 생성이나 보안 유출을 우려해 생성을 전면 통제하는 현상
+  2. 일반 직원이 에이전트를 만들고 싶어도 빈 프롬프트 창에서 어떤 지침(Instructions)을 적어야 할지 모르는 백지 증후군
+  3. 일반 직원에게 GCP 콘솔 권한이 없더라도 Gemini Enterprise app 채팅창 안에서 표준 양식으로 에이전트를 생성/공유할 수 있는 창구 부재
 - **본 솔루션의 해결 방식 (Solution)**:
-  - 일반 임직원에게 GCP IAM 권한이 전무(Zero Permission)하더라도, 대행 서비스 계정 기반의 대화형 인터뷰와 추천 칩을 통해 사내 표준 가드레일이 주입된 노코드 맞춤 에이전트를 자율 생성하고 사내 갤러리에 등록하는 팩토리를 제공한다.
+  - 일반 임직원에게 GCP IAM 권한이 전무(Zero Permission)하더라도, 대행 서비스 계정 기반의 대화형 인터뷰와 추천 칩을 통해 사내 표준 지침이 반영된 노코드 맞춤 에이전트를 자율 생성하고 사내 갤러리에 등록하는 팩토리를 제공한다.
 
 ### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
 본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
@@ -45,8 +45,8 @@ All contents, designs, and code examples are subject to change, modification, or
 | 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 선택된 업무 도메인, 인터뷰 기반 추천 지침, Agent Engine 빌드 상태 및 사내 갤러리(`/r/agents`) 등록 결과 |
-| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 에이전트 시스템 지침 전문, 보안 가드레일 주입 명세, 에이전트 슬러그 및 사내 공유 범위(`ALL_USERS`) 보고서 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **프로비저닝된 커스텀 에이전트**: Gemini Enterprise app 웹 챗창에서 `@멘션`으로 호출 가능한 맞춤 에이전트<br/>• **선언적 에이전트 카탈로그 (`catalog.yaml`)**: 코드 수정 없이 14대 업무 도메인 팩을 확장하는 레시피<br/>• **대행 서비스 계정 보안 샌드박스**: 최소 권한으로 안전하게 에이전트를 호스팅하는 런타임 환경 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 에이전트 시스템 지침 전문, 추천 질문(Starter Prompts) 명세, 에이전트 슬러그 및 사내 공유 범위(`ALL_USERS`) 보고서 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **프로비저닝된 커스텀 에이전트**: Gemini Enterprise app 웹 챗창에서 `@멘션`으로 호출 가능한 맞춤 에이전트<br/>• **선언적 에이전트 카탈로그 (`catalog.yaml`)**: 코드 수정 없이 14대 업무 도메인 팩을 확장하는 레시피<br/>• **대행 서비스 계정 실행 환경**: Zero IAM 임직원을 대신해 에이전트를 등록하는 런타임 환경 |
 
 ---
 
@@ -116,46 +116,30 @@ python diagnose.py
 
 ```mermaid
 flowchart TB
-    subgraph Client["1. 사용자 인터랙션 계층 (User Layer)"]
+    subgraph Client["1. 사용자 인터랙션 (Gemini Enterprise app)"]
         User["현업 실무자 / 비개발자<br/>(권한: Zero GCP IAM)"] -->|"1. 업무 자동화 아이디어 입력"| GEApp["Gemini Enterprise app<br/>웹 대화형 포털 (/r/agents)"]
     end
 
-    subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
-        SA["전용 대행 서비스 계정<br/>(ge-agent-factory-sa)<br/>- roles/discoveryengine.editor"]
+    subgraph Runtime["2. Agent Engine 호스팅 런타임"]
+        GEApp -->|"2. 대화형 인터뷰 세션 인입"| Engine["Agent Engine 런타임<br/>(ResilientAdkApp / gemini-3.8-flash)"]
+        Catalog["14대 업무 도메인 추천 칩 카탈로그"] --- Engine
+        Tools["register_nocode_agent_tool<br/>(대행 SA: ge-agent-factory-sa)"] --> Engine
     end
 
-    subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
-        GEApp -->|"2. 대화형 인터뷰 세션 인입"| Engine["Agent Engine 런타임<br/>(관리형 gVisor 격리 컨테이너)"]
-        
-        subgraph InsideEngine["런타임 내부 구조"]
-            Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
-            ADK["Google ADK 에이전트<br/>(gemini-3.8-flash)"]
-            Catalog["10대 산업별 추천 칩 카탈로그"]
-            Tools["내장 도구 세트<br/>- register_nocode_agent_tool<br/>- list_deployed_agents_tool"]
-            Wrapper --> ADK
-            ADK --- Catalog
-            ADK --> Tools
-        end
-        Engine --- InsideEngine
+    subgraph Gallery["3. GE App 사내 갤러리 등록"]
+        Tools -->|"3. Discovery Engine API 호출<br/>(adkAgentDefinition 등록)"| DiscEng["Discovery Engine<br/>(사내 에이전트 레지스트리)"]
+        DiscEng -->|"4. 사내 갤러리(/r/agents) 즉시 배포"| Result["사내 승인 노코드 에이전트"]
     end
 
-    subgraph Backend["4. 구글 클라우드 백엔드 인프라 (Target Services)"]
-        Tools -->|"3. SA 자격 증명(ADC)으로<br/>noCodeAgentDefinition 등록"| DiscEng["Discovery Engine<br/>(사내 에이전트 레지스트리)"]
-        DiscEng -->|"4. 사내 갤러리(/r/agents) 등록 완결"| Gallery["사내 승인 노코드 에이전트"]
-    end
-
-    SA -.->|"ADC 신원 주입"| Engine
-    Gallery -->|"5. 전사 동료 임직원 업무 활용"| GEApp
+    Result -->|"5. 전사 동료 임직원 업무 활용"| GEApp
 
     classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
-    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
     classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
     classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
 
     class User,GEApp portal;
-    class SA security;
-    class Engine,Wrapper,ADK,Catalog,Tools runtime;
-    class DiscEng,Gallery backend;
+    class Engine,Catalog,Tools runtime;
+    class DiscEng,Result backend;
 ```
 
 ---

@@ -146,24 +146,24 @@ FALLBACK_AGENT_CATALOG = {
         "instructions_summary": "최종 법률 자문은 사내 법무팀의 고유 권한임을 명시하되, 불리한 독소 조항이나 법률상 필수 조항 누락을 1차적으로 안전하게 걸러낸다.",
     },
     7: {
-        "id": "sec-compliance-officer",
-        "slug": "sec-compliance-officer",
-        "title": "정보보호 및 망 분리 규정 질의 에이전트",
-        "name": "정보보호 및 망 분리 규정 질의 에이전트",
-        "category": "정보보호 및 보안",
-        "description": "사내 정보보안 수칙, 망 분리 반출입 절차, 외부 오픈소스 소프트웨어 인가 기준, 개인정보 처리 동의 가이드를 제공한다.",
-        "mention_handle": "@sec-compliance-officer",
-        "slash_command": "/sec-compliance-officer",
-        "target_users": "전사 임직원 및 개발/인프라팀",
-        "core_compliance": "개인정보보호법, 전자금융감독규정, 정보통신망법",
+        "id": "training-lnd-guide",
+        "slug": "training-lnd-guide",
+        "title": "사내 직무 교육 및 역량 개발 가이드 에이전트",
+        "name": "사내 직무 교육 및 역량 개발 가이드 에이전트",
+        "category": "교육 및 역량 개발",
+        "description": "임직원 직무 교육 과정 추천, 외부 세미나 수강 신청, 자격증 응시료 지원 기준 및 의무 교육 이수 현황 확인을 안내한다.",
+        "mention_handle": "@training-lnd-guide",
+        "slash_command": "/training-lnd-guide",
+        "target_users": "전사 임직원 및 인재개발팀",
+        "core_compliance": "사내 임직원 교육 훈련 규정 및 역량 개발 지원 기준",
         "default_scope": "ORG",
         "starter_prompts": [
-            "내부망 PC에서 외부 개발 소스코드 반입 신청 절차 알려줘",
-            "고객 개인식별정보(PII) 포함 데이터 마스킹 표준 규정 확인해줘",
-            "상용 소프트웨어 설치 시 CISO 보안성 검토 신청 방법 안내해줘",
-            "생성형 AI 서비스 사용 시 사내 기밀 유출 방지 3대 가이드라인 보여줘",
+            "직무 관련 외부 교육비 및 자격증 응시료 환급 한도 알려줘",
+            "클라우드 및 생성형 AI 사내 필수 교육 과정 로드맵 안내해줘",
+            "분기별 직무 세미나 수강 신청 및 수료증 등록 방법 설명해줘",
+            "신규 팀장 보임 시 이수해야 하는 리더십 필수 교육 목록 보여줘",
         ],
-        "instructions_summary": "철저한 컴플라이언스 준수 원칙 하에 사내 보안 규정과 망 분리 승인 프로세스를 단호하고 명료하게 안내한다.",
+        "instructions_summary": "임직원의 직무 역량 성장을 돕기 위해 사내외 교육 과정 신청 절차와 교육비 지원 기준을 친절하고 명료하게 안내한다.",
     },
     8: {
         "id": "it-helpdesk-responder",
@@ -324,7 +324,7 @@ def load_agent_catalog(catalog_path: str = None) -> dict:
     for target in candidates:
         if not target:
             continue
-        # 원격 URL 처리 (2.0초 타임아웃 적용하여 사내 방화벽 행 방지)
+        # 원격 URL 처리 (2.0초 타임아웃 적용하여 네트워크 지연 방지)
         if target.startswith("http://") or target.startswith("https://"):
             try:
                 req = urllib.request.Request(target, headers={"User-Agent": "GE-Agent-Factory/1.0"})
@@ -739,7 +739,7 @@ def select_chip_interactive(dry_run: bool, catalog: dict = None):
             "mention_handle": "@custom-agent-helper",
             "category": "사용자 직접 정의",
             "target_users": "사내 관련 부서 임직원",
-            "core_compliance": "사내 정보보호 규정 및 표준 보안 가이드라인",
+            "core_compliance": "사내 표준 업무 가이드라인",
             "starter_prompts": [
                 f"{custom_title}의 주요 지원 범위를 알려줘",
                 "관련 업무 진행 시 필수 제출 서류 및 규정을 확인해줘",
@@ -759,12 +759,12 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
     slug = chip.get("slug", "custom-agent-helper")
     mention_handle = chip.get("mention_handle", f"@{slug}")
     target_users = chip.get("target_users", "전사 임직원")
-    compliance = chip.get("core_compliance", "사내 보안 규정")
+    compliance = chip.get("core_compliance", "사내 표준 업무 규정")
 
     # 검색 그라운딩 모의/실제 수집 요약
     search_grounding_summary = (
-        f"2026년 최신 '{compliance}' 법령 개정안, 식약처/금융보안원/고용노동부 고시 및 "
-        f"사내 엔터프라이즈 거버넌스 표준 절차를 검색 그라운딩으로 실시간 수집 완료함."
+        f"2026년 최신 '{compliance}' 가이드라인 및 "
+        f"사내 표준 업무 절차를 검색 그라운딩으로 실시간 수집 완료함."
     )
 
     # 기본 또는 선언적 카탈로그 스타터 질문 추출
@@ -801,7 +801,7 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
    - 자동 승인 가능 항목과 관리자 결재 필요 항목을 명확히 구분하여 안내한다.
    - 필요한 경우 표준 서식 양식을 제공하고 정식 접수 번호를 안내한다.
 
-# ENTERPRISE GUARDRAILS (엔터프라이즈 거버넌스 및 보안 수칙)
+# WORKPLACE GUIDELINES (표준 운영 수칙)
 - **무학습 원칙(No-Training)**: 본 대화의 모든 질의 및 응답 데이터는 AI 모델 재학습에 일절 사용되지 않는다.
 - **개인 식별 정보(PII) 보호**: 주민등록번호, 계좌 비밀번호, 개인 인증키 등 민감 식별 정보의 입력을 요구하거나 응답에 노출하지 않는다.
 - **환각 방지(Hallucination Guard)**: 확실하지 않거나 사내 문서에 명시되지 않은 사항은 추측하여 답변하지 않고, 사실 관계를 명확히 밝힌다.
@@ -972,7 +972,7 @@ def build_markdown_report(env_info: dict, iam_diag: dict, meta_manifest: dict, s
 | **메타 에이전트 매니페스트** | `READY` | `@에이전트 팩토리` 시스템 지침 및 등록 도구(Tool) 구성 완료 |
 | **추천 칩 인터뷰 엔진** | `READY` | 10대 산업 및 부서별 25개 고유 시드 칩 카탈로그 내장 |
 | **실시간 검색 그라운딩 엔진** | `READY` | 2026년 최신 법령/규정 실시간 보강 및 5대 골든 지침 합성 준비 완료 |
-| **임직원 자율 등록 보안 모델** | `ENFORCED` | 무권한(Zero IAM) 임직원 대행 등록 및 Private 기본 공개 범위 강제 |
+| **임직원 자율 제작 대행 모델** | `ENFORCED` | 무권한(Zero IAM) 임직원 대행 등록 및 사내 갤러리 공유 지원 |
 
 ---
 
@@ -1742,7 +1742,7 @@ def run_local_scaffolding_mode(args, env_info: dict):
             "mention_handle": "@custom-agent-helper",
             "category": "사용자 직접 정의",
             "target_users": "사내 관련 부서 임직원",
-            "core_compliance": "사내 정보보호 규정 및 표준 보안 가이드라인",
+            "core_compliance": "사내 표준 업무 가이드라인",
             "starter_prompts": [
                 f"{args.prompt}의 주요 지원 범위를 알려줘",
                 "관련 업무 진행 시 필수 제출 서류 및 규정을 확인해줘",

@@ -1,11 +1,11 @@
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Gemini Enterprise 어드민 거버넌스 모듈 진단 및 관리 가이드 도구 (gemini-enterprise-factory-admin).
+"""Gemini Enterprise 어드민 거버넌스 모듈 배포 및 관리 가이드 도구 (gemini-enterprise-factory-admin).
 
-사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는
-5대 핵심 관리 과제(도메인 충돌, 거버넌스 통제, 라이선스 회수, Overage 과금 방어, 사내망 FQDN)를
-대화형으로 진단하고 즉시 해결할 수 있는 조치 스크립트와 가이드를 자동 생성한다.
+사내 IT 어드민 및 운영 팀이 Gemini Enterprise app 채팅창에서 에이전트 및 데이터 저장소 현황 조회,
+테스트 에이전트 일괄 상태/공유 제어, BigQuery 감사 SQL 및 로그 싱크 가이드를 즉시 활용할 수 있도록
+어드민 전담 모듈을 Agent Engine에 배포하고 GE App 사내 갤러리(/r/agents)에 등록한다.
 """
 
 import argparse
@@ -70,43 +70,43 @@ FALLBACK_ADMIN_CATALOG = {
         "default_scope": "ORG",
     },
     6: {
-        "id": "telemetry-shadow-billing-guard",
-        "slug": "telemetry-shadow-billing-guard",
-        "name": "섀도우 AI Studio 결제 계정 연동 및 Overage 과금 방어",
+        "id": "telemetry-adoption-license-audit",
+        "slug": "telemetry-adoption-license-audit",
+        "name": "부서별 활성 사용자 추이 및 30일 미사용 유휴 계정 분석",
         "category": "사용량 및 텔레메트리 분석",
-        "description": "임직원이 회사 결제 계정으로 Google AI Studio에서 API 키를 발급하거나 유료 API를 직접 호출하는 섀도우 과금 누수를 차단하고 중간 관리자 권한 거버넌스를 진단한다.",
-        "primary_action": "AI Studio 프로젝트 결제 바인딩 감사 및 섀도우 API 키 차단",
-        "remediation_type": "BILLING_GUARD_AND_IAM",
+        "description": "BigQuery 감사 로그로 Gemini Enterprise app 활성 사용자(DAU/MAU)를 집계하고 30일 이상 호출 이력이 없는 미사용 계정을 식별한다.",
+        "primary_action": "30일 이상 미호출 계정 및 부서별 활용률 집계 BigQuery SQL 생성",
+        "remediation_type": "BIGQUERY_SQL_TELEMETRY",
         "default_scope": "ORG",
     },
     7: {
-        "id": "tenant-domain-onboarding",
-        "slug": "tenant-domain-onboarding",
-        "name": "사내 도메인 선점 충돌 및 Cloud Identity 온보딩",
-        "category": "테넌트 및 도메인 관리",
-        "description": "사내 대표 도메인이 타 계정에 선점되어 Gemini Enterprise 활성화가 차단될 때, Cloud Identity Free 기반 테넌트 배포 및 DNS TXT 레코드 소유권 검증 절차를 진단한다.",
-        "primary_action": "DNS TXT 레코드 소유권 확인 및 임시 테넌트 배포",
-        "remediation_type": "DNS_AND_IDENTITY",
+        "id": "ops-audit-logsink-setup",
+        "slug": "ops-audit-logsink-setup",
+        "name": "Cloud Logging 감사 로그 BigQuery 자동 적재 싱크 구축",
+        "category": "GE 앱 운영 및 일괄 제어",
+        "description": "Discovery Engine 감사 로그를 BigQuery 전용 데이터셋으로 자동 라우팅하는 로그 싱크 및 권한 바인딩 절차를 구성한다.",
+        "primary_action": "BigQuery 데이터셋 생성 및 Cloud Logging 로그 라우터 싱크 스크립트 생성",
+        "remediation_type": "CLOUD_LOGGING_SINK_SETUP",
         "default_scope": "ORG",
     },
     8: {
-        "id": "sec-marketplace-governance",
-        "slug": "sec-marketplace-governance",
-        "name": "외부 마켓플레이스 차단 및 사내 승인 에이전트 통제",
-        "category": "보안 거버넌스 및 정책",
-        "description": "금융권 및 대기업 보안 규정에 따라 외부 공개 에이전트 마켓플레이스 접근을 전면 차단하고, 사내 검증 에이전트만 전사 갤러리(/r/agents)에 노출되도록 제어한다.",
-        "primary_action": "Discovery Engine 공유 범위 ALL_USERS 및 외부 마켓플레이스 토글 비활성화",
-        "remediation_type": "ORG_POLICY_AND_ENGINE_CONFIG",
+        "id": "ops-batch-state-cleanup",
+        "slug": "ops-batch-state-cleanup",
+        "name": "사내 갤러리 테스트 에이전트 일괄 비활성화 및 공유 범위 정리",
+        "category": "GE 앱 운영 및 일괄 제어",
+        "description": "사내 갤러리(/r/agents)에 누적된 테스트 또는 임시 에이전트를 키워드로 선별해 상태를 일괄 비활성화(DISABLED)하고 공유 범위(ALL_USERS/PRIVATE)를 조정한다.",
+        "primary_action": "대상 에이전트 선별 조회 및 배치 상태/공유 범위 변경 가이드 생성",
+        "remediation_type": "AGENT_BATCH_CONTROL",
         "default_scope": "ORG",
     },
     9: {
-        "id": "net-firewall-fqdn",
-        "slug": "net-firewall-fqdn",
-        "name": "사내망 프록시 허용용 Exact 15대 코어 FQDN 진단",
-        "category": "네트워크 및 프록시 보안",
-        "description": "와일드카드 도메인이 불허되는 사내 관문 프록시(SWG) 및 폐쇄망 환경에서 Gemini Enterprise 정상 구동에 필요한 15대 필수 FQDN 아웃바운드 443 연결성을 진단한다.",
-        "primary_action": "Exact FQDN 목록 추출 및 아웃바운드 443 포트 사전 프로브",
-        "remediation_type": "NETWORK_PROBE_AND_PROXY_CONFIG",
+        "id": "ops-console-deeplink-guide",
+        "slug": "ops-console-deeplink-guide",
+        "name": "Gemini Enterprise, 데이터 커넥터 및 Agent Platform 관리 콘솔 딥링크",
+        "category": "GE 앱 운영 및 일괄 제어",
+        "description": "복잡한 콘솔 메뉴 탐색 없이 GE App 에이전트 목록, 데이터 저장소(Data Stores), Agent Platform 런타임, BigQuery 관리 화면으로 즉시 이동한다.",
+        "primary_action": "대상 프로젝트 및 GE App 기준 관리 콘솔 직접 딥링크 생성",
+        "remediation_type": "CONSOLE_NAVIGATION_GUIDE",
         "default_scope": "ORG",
     },
 }
@@ -199,24 +199,6 @@ def load_admin_catalog(catalog_path: str = None) -> dict:
             pass
 
     return FALLBACK_ADMIN_CATALOG
-
-CORE_FQDN_LIST = [
-    "accounts.google.com",
-    "oauth2.googleapis.com",
-    "discoveryengine.googleapis.com",
-    "aiplatform.googleapis.com",
-    "generativelanguage.googleapis.com",
-    "cloudresourcemanager.googleapis.com",
-    "iam.googleapis.com",
-    "secretmanager.googleapis.com",
-    "storage.googleapis.com",
-    "bigquery.googleapis.com",
-    "logging.googleapis.com",
-    "monitoring.googleapis.com",
-    "fonts.googleapis.com",
-    "fonts.gstatic.com",
-    "www.gstatic.com",
-]
 
 
 def load_env_file():
@@ -485,30 +467,26 @@ def resolve_environment(args) -> dict:
     project_id = args.project or os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or get_gcloud_config("project") or "sample-project-id"
     if args.dry_run:
         project_id = "sample-project-id"
-    elif not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
-        persist_env_value("PROJECT_ID", project_id, dry_run=args.dry_run)
-
-    location = args.location or os.environ.get("LOCATION") or "global"
-
-    ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
-    if not ge_app_id:
-        if args.dry_run:
-            ge_app_id = "default"
-        else:
+        ge_app_id = "sample-ge-app-id"
+    else:
+        if not os.environ.get("PROJECT_ID") and project_id != "sample-project-id":
+            persist_env_value("PROJECT_ID", project_id, dry_run=args.dry_run)
+        ge_app_id = args.ge_app_id or os.environ.get("GE_APP_ID")
+        if not ge_app_id:
             candidates = discover_ge_app_engines(project_id)
             ge_app_id = select_ge_app_id(project_id, candidates, dry_run=args.dry_run)
             if ge_app_id:
                 persist_env_value("GE_APP_ID", ge_app_id, dry_run=args.dry_run)
 
+    location = args.location or os.environ.get("LOCATION") or "global"
+
     sa_email = args.sa or os.environ.get("ADMIN_SERVICE_ACCOUNT") or f"ge-admin-sa@{project_id}.iam.gserviceaccount.com"
-    domain = args.domain or os.environ.get("CUSTOMER_DOMAIN") or "example-corp.com"
 
     return {
         "project_id": project_id,
         "location": location,
         "ge_app_id": ge_app_id,
         "service_account": sa_email,
-        "customer_domain": domain,
     }
 
 
@@ -557,7 +535,6 @@ def compile_admin_remediation(topic_data: dict, env_info: dict) -> dict:
     project_id = env_info["project_id"]
     location = env_info["location"]
     ge_app_id = env_info["ge_app_id"]
-    domain = env_info["customer_domain"]
     sa_email = env_info["service_account"]
     tid = topic_data["id"]
 
@@ -716,114 +693,41 @@ EOF
             "resolutionGuidance": "REQUEST_QUOTA_INCREASE_OR_RATE_LIMIT",
         }
 
-    elif tid in ["telemetry-shadow-billing-guard", "overage_billing_guard", "finops-overage-guard"]:
+    elif tid == "telemetry-adoption-license-audit":
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
-# Overage 과금 방어 및 AI Studio 섀도우 키 생성 차단 스크립트
+# 부서별 활성 사용자 추이 및 30일 미사용 유휴 계정 집계 BigQuery SQL
 
 set -euo pipefail
 
 PROJECT_ID="{project_id}"
 
-echo "[1/2] 일반 임직원의 결제 계정 사용자(Billing Account User) 권한 점검..."
-echo "roles/billing.user 권한을 개발 인프라 서비스 계정으로만 제한하십시오."
-
-echo "[2/2] Discovery Engine 일일 풀링 쿼터 캡(Cap) 설정 확인"
-echo "설정 완료: 풀링 쿼터 초과 시 429 쓰로틀링 방어 및 관리자 알림 연동"
+echo "=========================================================================="
+echo "최근 30일 이상 미사용 계정 및 월간 활성 사용자(MAU) 집계 쿼리"
+echo "=========================================================================="
+cat << 'EOF'
+SELECT
+    protopayload_auditlog.authenticationInfo.principalEmail AS user_email,
+    MAX(timestamp) AS last_active_at,
+    DATE_DIFF(CURRENT_DATE(), DATE(MAX(timestamp)), DAY) AS idle_days,
+    COUNT(1) AS total_queries
+FROM
+    `{project_id}.gemini_logging.cloudaudit_googleapis_com_data_access`
+WHERE
+    protopayload_auditlog.serviceName = 'discoveryengine.googleapis.com'
+GROUP BY 1
+HAVING idle_days >= 30
+ORDER BY idle_days DESC;
+EOF
 """
         manifest = {
-            "billingPolicy": "STRICT_RESTRICTED",
-            "aiStudioAccess": "BLOCKED_VIA_ORG_POLICY",
-            "quotaGuard": "ENABLED",
+            "queryType": "adoption_and_30d_idle_users",
+            "metricSource": "cloudaudit_googleapis_com_data_access",
+            "idleThresholdDays": 30,
         }
 
-    elif tid in ["domain_onboarding", "tenant-domain-onboarding"]:
-        script = f"""#!/usr/bin/env bash
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-# 도메인 충돌 해결 및 Cloud Identity Free 테넌트 온보딩 스크립트
-
-set -euo pipefail
-
-DOMAIN="{domain}"
-PROJECT_ID="{project_id}"
-
-echo "[1/3] 사내 도메인({domain}) DNS TXT 검증 레코드 생성 안내"
-echo "DNS 공급자(가비아, 후이즈, Route53 등)에 아래 TXT 레코드를 추가하십시오:"
-echo "호스트: @"
-echo "값    : google-site-verification=SAMPLE_TOKEN_{project_id[:6]}"
-
-echo "[2/3] Cloud Identity Free 계정 생성 및 관리자 지정 확인"
-echo "Cloud Identity 관리 콘솔: ( https://admin.google.com/ )"
-
-echo "[3/3] Gemini Enterprise 테넌트 바인딩 확인"
-echo "테넌트 활성화 상태: READY"
-"""
-        manifest = {
-            "domain": domain,
-            "verificationMethod": "DNS_TXT",
-            "token": f"google-site-verification=SAMPLE_TOKEN_{project_id[:6]}",
-            "status": "ACTION_REQUIRED_DNS",
-        }
-
-    elif tid in ["marketplace_governance", "sec-marketplace-governance"]:
-        script = f"""#!/usr/bin/env bash
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-# 외부 에이전트 마켓플레이스 차단 및 사내 승인 에이전트 강제 스크립트
-
-set -euo pipefail
-
-PROJECT_ID="{project_id}"
-LOCATION="{location}"
-GE_APP_ID="{env_info['ge_app_id']}"
-
-echo "[1/2] 외부 공개 에이전트 마켓플레이스 비활성화 중..."
-curl -X PATCH \\
-    -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
-    -H "Content-Type: application/json; charset=utf-8" \\
-    -H "X-Goog-User-Project: ${{PROJECT_ID}}" \\
-    -d '{{"marketplaceConfig": {{"enablePublicMarketplace": false}}}}' \\
-    "https://discoveryengine.googleapis.com/v1alpha/projects/${{PROJECT_ID}}/locations/${{LOCATION}}/collections/default_collection/engines/${{GE_APP_ID}}?updateMask=marketplaceConfig"
-
-echo "[2/2] 사내 등록 에이전트 전사 승인 공유 범위(ALL_USERS) 강제 적용 완료"
-"""
-        manifest = {
-            "marketplaceConfig": {"enablePublicMarketplace": False},
-            "sharingPolicy": {"defaultScope": "ALL_USERS", "allowExternalSharing": False},
-            "governanceState": "ENFORCED",
-        }
-
-    elif tid in ["firewall_fqdn_check", "net-firewall-fqdn"]:
-        script = f"""#!/usr/bin/env bash
-# Copyright 2026 Google LLC. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-# 폐쇄망 프록시 허용용 Exact 15대 코어 FQDN 아웃바운드 443 프로브 스크립트
-
-set -euo pipefail
-
-FQDN_LIST=(
-    "accounts.google.com"
-    "discoveryengine.googleapis.com"
-    "aiplatform.googleapis.com"
-    "generativelanguage.googleapis.com"
-    "secretmanager.googleapis.com"
-)
-
-echo "=== 사내 관문 프록시 Exact FQDN 연결성 점검 ==="
-for fqdn in "${{FQDN_LIST[@]}}"; do
-    echo -n "점검 중: ${{fqdn}}:443 ... "
-    nc -z -w 3 "${{fqdn}}" 443 && echo "OK" || echo "BLOCKED (사내 방화벽 확인 필요)"
-done
-"""
-        manifest = {
-            "coreFqdnCount": len(CORE_FQDN_LIST),
-            "sampleFqdns": CORE_FQDN_LIST[:5],
-            "probePort": 443,
-        }
-
-    elif tid == "one_click_log_sink_setup":
+    elif tid in ["ops-audit-logsink-setup", "one_click_log_sink_setup"]:
         script = f"""#!/usr/bin/env bash
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
@@ -837,7 +741,11 @@ SINK_NAME="ge-audit-log-sink"
 REGION="asia-northeast3"
 
 echo "[1/3] BigQuery 감사 로그 전용 데이터셋 생성 (${{DATASET}})..."
-bq --project_id="${{PROJECT_ID}}" --location="${{REGION}}" mk --dataset "${{PROJECT_ID}}:${{DATASET}}" || true
+bq --project_id="${{PROJECT_ID}}" --location="${{REGION}}" mk --dataset \\
+    --label=managed-by:google-cloud-0-to-1 \\
+    --label=scenario:gemini-enterprise-factory-admin \\
+    --label=env:sample \\
+    "${{PROJECT_ID}}:${{DATASET}}" || true
 
 echo "[2/3] Cloud Logging 로그 라우터 싱크 생성..."
 gcloud logging sinks create "${{SINK_NAME}}" \\
@@ -864,6 +772,72 @@ echo "==========================================================================
             "consoleDirectDeeplink": f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}",
         }
 
+    elif tid == "ops-batch-state-cleanup":
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# 사내 갤러리 테스트 에이전트 조회 및 일괄 상태(DISABLED)/공유 범위(PRIVATE) 전환 가이드
+
+set -euo pipefail
+
+PROJECT_ID="{project_id}"
+LOCATION="{location}"
+GE_APP_ID="{env_info['ge_app_id']}"
+BASE_URL="https://discoveryengine.googleapis.com/v1alpha/projects/${{PROJECT_ID}}/locations/${{LOCATION}}/collections/default_collection/engines/${{GE_APP_ID}}/assistants/default_assistant/agents"
+
+echo "[1/2] 등록된 에이전트 목록 조회 중..."
+curl -s -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
+    -H "X-Goog-User-Project: ${{PROJECT_ID}}" \\
+    "${{BASE_URL}}" | head -c 500
+echo ""
+
+echo "[2/2] 특정 에이전트 일괄 비활성화(DISABLED) PATCH 예시 (AGENT_ID 치환):"
+echo "curl -X PATCH -H 'Authorization: Bearer \$(gcloud auth print-access-token)' -H 'Content-Type: application/json' -d '{{\"state\": \"DISABLED\"}}' \"${{BASE_URL}}/<AGENT_ID>?updateMask=state\""
+"""
+        manifest = {
+            "geAppId": ge_app_id,
+            "supportedBatchStates": ["ENABLED", "DISABLED"],
+            "supportedSharingScopes": ["ALL_USERS", "PRIVATE"],
+            "consoleDirectDeeplink": f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}",
+        }
+
+    elif tid == "ops-console-deeplink-guide":
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Gemini Enterprise 및 Agent Platform 주요 관리 콘솔 딥링크 모음
+
+echo "1. Agent Platform Runtimes: https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"
+echo "2. GE App 에이전트 목록: https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"
+echo "3. GE App 데이터 저장소(Data Stores): https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/data-stores?project={project_id}"
+echo "4. Cloud Logging 로그 라우터: https://console.cloud.google.com/logs/router?project={project_id}"
+echo "5. BigQuery 감사 로그 분석: https://console.cloud.google.com/bigquery?project={project_id}"
+"""
+        manifest = {
+            "agentPlatformRuntimes": f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}",
+            "geAgentList": f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}",
+            "geDataStores": f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/data-stores?project={project_id}",
+            "logRouter": f"https://console.cloud.google.com/logs/router?project={project_id}",
+            "bigQuery": f"https://console.cloud.google.com/bigquery?project={project_id}",
+        }
+
+    else:
+        script = f"""#!/usr/bin/env bash
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Gemini Enterprise 맞춤형 어드민 점검 안내
+
+echo "대상 프로젝트: {project_id}"
+echo "대상 GE App ID: {ge_app_id}"
+echo "요청 과제: {topic_data['name']}"
+"""
+        manifest = {
+            "topicId": tid,
+            "projectId": project_id,
+            "geAppId": ge_app_id,
+            "status": "READY",
+        }
+
     return {
         "remediation_script": script,
         "manifest": manifest,
@@ -881,7 +855,9 @@ def diagnose_admin_environment(topic_data: dict, env_info: dict, dry_run: bool) 
     sa_email = env_info["service_account"]
     required_roles = [
         "roles/discoveryengine.admin",
-        "roles/resourcemanager.organizationAdmin",
+        "roles/aiplatform.user",
+        "roles/logging.configWriter",
+        "roles/bigquery.dataViewer",
     ]
 
     if dry_run:
@@ -954,8 +930,8 @@ flowchart TD
 
 - **실행 서비스 계정**: `{sa_email}`
 - **필수 역할 바인딩**:
-  - `roles/discoveryengine.admin`: Discovery Engine 엔터프라이즈 거버넌스 제어
-  - `roles/resourcemanager.organizationAdmin`: 조직 정책(Org Policy) 및 도메인 바인딩
+  - `roles/discoveryengine.admin`: Gemini Enterprise app 에이전트 및 데이터 저장소 조회/배치 제어
+  - `roles/aiplatform.user`: Agent Engine 프로비저닝 및 실행
 - **진단 상세**: {diag['detail']}
 
 ---
@@ -972,10 +948,10 @@ flowchart TD
 
 ## 6. 콘솔 링크 조치 가이드
 
-- **Google Admin 관리 콘솔**: ( https://admin.google.com/ )
-- **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
-- **Google Cloud 결제(Billing) 콘솔**: ( https://console.cloud.google.com/billing )
-- **Cloud DNS 및 도메인 콘솔**: ( https://console.cloud.google.com/net-services/dns/zones )
+- **Agent Platform Runtimes 콘솔**: ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
+- **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines?project={project_id} )
+- **Cloud Logging 로그 라우터 콘솔**: ( https://console.cloud.google.com/logs/router?project={project_id} )
+- **BigQuery 감사 로그 분석 콘솔**: ( https://console.cloud.google.com/bigquery?project={project_id} )
 
 ---
 
@@ -984,8 +960,7 @@ flowchart TD
 본 진단 및 모의 실행 완료 후 테스트용 정책이나 임시 리소스를 정리하려면 아래 가이드를 준수한다:
 
 ```bash
-# 1. 임시 DNS TXT 검증 레코드 정리 (DNS 관리 포털에서 삭제)
-# 2. 테스트용 서비스 계정 정리
+# 테스트용 서비스 계정 정리
 gcloud iam service-accounts delete "{sa_email}" --project="{project_id}" --quiet
 ```
 """
@@ -998,13 +973,11 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
         ge_app_id = "sample-ge-app-id"
         re_uri = f"projects/{project_id}/locations/us-central1/reasoningEngines/simulated-admin-factory-engine"
         sa_email = f"ge-admin-sa@{project_id}.iam.gserviceaccount.com"
-        domain = "example-corp.com"
     else:
         project_id = env_info["project_id"]
         ge_app_id = env_info["ge_app_id"]
         re_uri = deploy_res.get("reasoning_engine", "N/A")
         sa_email = env_info["service_account"]
-        domain = env_info.get("customer_domain", "example-corp.com")
 
     status = deploy_res.get("status", "UNKNOWN")
     display_name = deploy_res.get("display_name", "GE In-Chat Admin Module (사내 어드민 거버넌스 모듈)")
@@ -1027,19 +1000,19 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 | **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
 | **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
-| **내장 실행 도구** | `7종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `batch_delete_agents_tool`, `get_admin_audit_queries_tool` |
+| **내장 실행 도구** | `8종 완비` | `get_admin_console_deeplinks_tool`, `list_deployed_agents_tool`, `list_connected_datastores_tool`, `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `batch_delete_agents_tool`, `get_admin_audit_queries_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
 
 ## 2. 팩토리 에이전트 아키텍처 및 어드민 운영 흐름
 
-본 솔루션은 사내 IT 어드민 및 인프라 담당자가 복잡한 수십 개 GCP/GE 콘솔 메뉴를 일일이 뒤지지 않고, GE App 채팅창에서 자연어 대화만으로 전사 에이전트 전수 감사, BigQuery 로그 싱크 가이드, 도메인 충돌 해결 및 거버넌스 정책(붕어빵 처방)을 즉시 생성 및 수행할 수 있도록 지원하는 **사내 전담 어드민 거버넌스 모듈(붕어빵 틀)**이다:
+본 솔루션은 사내 IT 어드민 및 운영 담당자가 복잡한 GCP/GE 콘솔 메뉴를 일일이 탐색하지 않고, GE App 채팅창에서 자연어 대화만으로 등록 에이전트 및 데이터 저장소 현황 조회, 테스트 에이전트 일괄 상태/공유 제어, BigQuery 감사 SQL 및 로그 싱크 가이드를 즉시 실행할 수 있도록 지원하는 **사내 전담 어드민 거버넌스 모듈(붕어빵 틀)**이다:
 
 ```mermaid
 flowchart TB
     subgraph Dev["1. 엔지니어링 & 프로비저닝"]
-        A["인프라 / IT 총괄 엔지니어"] -->|"python diagnose.py"| B["어드민 거버넌스 모듈 팩토리<br/>(diagnose.py)"]
+        A["인프라 / IT 운영 엔지니어"] -->|"python diagnose.py"| B["어드민 거버넌스 모듈 팩토리<br/>(diagnose.py)"]
         B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
     end
 
@@ -1049,7 +1022,7 @@ flowchart TB
     end
 
     subgraph Portal["3. 전사 IT 어드민 인터페이스"]
-        E -->|"대화형 어드민 콘솔 제공"| F["사내 IT 어드민<br/>(보안 / 거버넌스 담당자)"]
+        E -->|"대화형 어드민 콘솔 제공"| F["사내 IT 어드민 / 운영 담당자"]
         F -->|"자연어 운영 및 감사 질의"| E
         E -->|"에이전트 감사 / 로그 쿼리 도구 호출"| D
         D -->|"감사 결과 & 콘솔 딥링크 반환"| E
@@ -1070,12 +1043,12 @@ flowchart TB
    - *"사내에 등록된 테스트용/미사용 에이전트 목록 스캔해 줘"*
    - *"테스트 에이전트들 일괄 비활성화(DISABLED) 처리해 줘"*
    - *"특정 에이전트 전사 공유(ALL_USERS) 승인 또는 비공개(PRIVATE) 회수해 줘"*
+   - *"사내 GE App에 연결된 데이터 커넥터(Data Store) 목록 조회해 줘"*
    - *"Gemini Enterprise 감사 로그를 BigQuery로 내보내는 자동 싱크 가이드 알려 줘"*
-   - *"사내 도메인(`{domain}`) 선점 충돌 해결을 위한 Cloud Identity 온보딩 절차 알려 줘"*
-   - *"외부 마켓플레이스 차단 및 사내 승인 에이전트 강제 조직 정책 가이드 보여 줘"*
+   - *"GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?"*
 
-3. **코파일럿 에이전트 자율 동작**:
-   - 어드민 거버넌스 모듈이 내장된 `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `list_deployed_agents_tool`, `get_admin_audit_queries_tool`, `get_admin_console_deeplinks_tool`을 호출하여 에이전트 확산(Sprawl) 배치 거버넌스 및 실시간 현황 감사, 1클릭 복구 gcloud 명령어를 제공한다.
+3. **어드민 모듈 자율 동작**:
+   - 어드민 거버넌스 모듈이 내장된 `list_deployed_agents_tool`, `list_connected_datastores_tool`, `filter_and_inspect_sprawl_agents_tool`, `batch_update_agents_state_tool`, `batch_update_agents_sharing_tool`, `batch_delete_agents_tool`, `get_admin_audit_queries_tool`, `get_admin_console_deeplinks_tool`을 호출하여 에이전트 확산(Sprawl) 배치 거버넌스 및 실시간 현황 감사, 콘솔 딥링크를 제공한다.
 
 ---
 
@@ -1094,7 +1067,7 @@ flowchart TB
 - **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
 - **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
 - **Cloud Logging 로그 싱크 콘솔**: BigQuery 로그 라우터 싱크 관리 ( https://console.cloud.google.com/logs/router?project={project_id} )
-- **조직 정책 콘솔**: 에이전트 도메인 제한 공유 조직 정책 관리 ( https://console.cloud.google.com/iam-admin/orgpolicies?project={project_id} )
+- **BigQuery 감사 로그 분석 콘솔**: BigQuery 감사 데이터셋 및 SQL 실행 ( https://console.cloud.google.com/bigquery?project={project_id} )
 
 ---
 
@@ -1135,7 +1108,7 @@ def deploy_admin_governor_engine(env_info: dict, dry_run: bool = False) -> dict:
     staging_bucket = f"gs://{project_id}-agent-engine-staging"
 
     display_name = "GE In-Chat Admin Module (사내 어드민 거버넌스 모듈)"
-    description = "수백 개 에이전트 전수 감사(좀비 에이전트 적발), 자동 BigQuery 로그 싱크, GCP 콘솔 길잡이 및 GE 어드민 7대 과제 전담 코파일럿"
+    description = "사내 에이전트 및 데이터 저장소 현황 조회, 테스트 에이전트 일괄 상태/공유 제어, BigQuery 감사 SQL 및 관리 콘솔 딥링크를 제공하는 GE 어드민 거버넌스 모듈"
 
     labels = {
         "managed-by": "google-cloud-0-to-1",
@@ -1180,7 +1153,7 @@ def deploy_admin_governor_engine(env_info: dict, dry_run: bool = False) -> dict:
     )
 
     instruction = f"""당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 거버넌스 모듈(Admin Governance Module)' 마스터 에이전트입니다.
-사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 7대 핵심 관리 과제(수백 개 에이전트 스프롤 관리 헬, 원클릭 BigQuery 감사 로그 싱크 구축, GCP 콘솔 3단계 길잡이, 도메인 충돌 및 테넌트 온보딩, 외부 마켓플레이스 차단 거버넌스, 부서별 라이선스 채택률 및 유휴 라이선스 회수, Overage 과금 방어 및 AI Studio 키 차단, 폐쇄망 프록시 허용용 Exact 15대 코어 FQDN 진단)를 대화형으로 자율 진단하고 즉시 실행 가능한 조치 스크립트와 콘솔 딥링크를 제공합니다.
+사내 IT 어드민 및 운영 팀이 Gemini Enterprise app 운영 중 직면하는 핵심 관리 과제(등록 에이전트 및 데이터 저장소 현황 조회, 테스트/미사용 에이전트 일괄 상태 및 공유 범위 제어, BigQuery 감사 SQL 및 Cloud Logging 싱크 가이드, 관리 콘솔 딥링크 안내)를 대화형으로 조회하고 즉시 실행 가능한 조치 스크립트와 콘솔 딥링크를 제공합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
@@ -1199,17 +1172,16 @@ def deploy_admin_governor_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 주요 콘솔 딥링크:
   * Agent Platform Runtimes 콘솔 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
   * Gemini Enterprise 에이전트 목록 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
+  * Gemini Enterprise 데이터 저장소(Data Stores) 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/data-stores?project={project_id} )
   * Gemini Enterprise 전체 엔진 목록 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines?project={project_id} )
   * BigQuery Studio SQL 콘솔 ( https://console.cloud.google.com/bigquery?project={project_id} )
   * Cloud Logging 로그 라우터 콘솔 ( https://console.cloud.google.com/logs/router?project={project_id} )
   * IAM 및 서비스 계정 관리 콘솔 ( https://console.cloud.google.com/iam-admin/iam?project={project_id} )
-  * 조직 정책(Org Policy) 거버넌스 콘솔 ( https://console.cloud.google.com/iam-admin/orgpolicies?project={project_id} )
-  * Cloud Billing 결제 관리 콘솔 ( https://console.cloud.google.com/billing )
   * Gemini Enterprise 사내 웹 포털 ( https://gemini.google.com/app/{ge_app_id} )
   * Gemini Enterprise 사내 에이전트 갤러리 ( https://gemini.google.com/app/{ge_app_id}/r/agents )
 
 [장착된 실제 실행 도구 (Tools)]
-당신에게는 관리자 업무를 즉시 지원할 수 있는 강력한 사내 거버넌스 실행 도구가 장착되어 있습니다:
+당에게는 관리자 업무를 즉시 지원할 수 있는 강력한 사내 거버넌스 실행 도구가 장착되어 있습니다:
 1. `get_admin_console_deeplinks_tool`: GCP 콘솔 딥링크를 질의하거나 바로가기 링크를 요구할 때 즉시 호출하여 클릭 가능한 딥링크 표를 출력하십시오.
 2. `list_deployed_agents_tool`: 사내에 등록된 전체 활성 에이전트 및 스킬 목록(유형별: 커스텀 에이전트, 스킬, 노코드)과 콘솔 직접 링크를 실시간 조회할 때 호출하십시오.
 3. `list_connected_datastores_tool`: 사내 Gemini Enterprise app에 연결된 데이터 저장소(Data Store / 기간계 커넥터: Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, Cloud Storage, BigQuery 등) 현황과 바인딩 상태를 실시간 조회할 때 호출하십시오.
@@ -1240,22 +1212,20 @@ def deploy_admin_governor_engine(env_info: dict, dry_run: bool = False) -> dict:
 """
 
     def get_admin_console_deeplinks_tool(category: str = "") -> str:
-        """Get direct GCP console deep links for Gemini Enterprise app, Agent Platform, BigQuery, IAM, and Billing.
+        """Get direct GCP console deep links for Gemini Enterprise app, Agent Platform, BigQuery, Cloud Logging, and IAM.
 
         Args:
-            category: Optional filter (e.g. 'agent', 'logging', 'iam', 'billing', 'all').
+            category: Optional filter (e.g. 'agent', 'datastore', 'logging', 'iam', 'all').
         """
         links = [
             ("Agent Platform Runtimes 콘솔", f"https://console.cloud.google.com/agent-platform/runtimes?project={project_id}"),
             ("Gemini Enterprise 에이전트 목록 콘솔", f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id}"),
+            ("Gemini Enterprise 데이터 커넥터 (Data Stores) 콘솔", f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/data-stores?project={project_id}"),
             ("Gemini Enterprise 전체 엔진 목록", f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines?project={project_id}"),
             ("BigQuery Studio 감사 로그 데이터셋", f"https://console.cloud.google.com/bigquery?project={project_id}"),
             ("Cloud Logging 로그 라우터 (Sink) 콘솔", f"https://console.cloud.google.com/logs/router?project={project_id}"),
             ("IAM 및 관리자 권한 콘솔", f"https://console.cloud.google.com/iam-admin/iam?project={project_id}"),
             ("서비스 계정 관리 콘솔", f"https://console.cloud.google.com/iam-admin/serviceaccounts?project={project_id}"),
-            ("조직 정책 (Org Policy) 콘솔", f"https://console.cloud.google.com/iam-admin/orgpolicies?project={project_id}"),
-            ("Cloud Billing 결제 관리 콘솔", "https://console.cloud.google.com/billing"),
-            ("Gemini Enterprise 데이터 커넥터 (Data Stores) 콘솔", f"https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/data-stores?project={project_id}"),
             ("Gemini Enterprise 사내 임직원 웹 포털", f"https://gemini.google.com/app/{ge_app_id}"),
             ("Gemini Enterprise 사내 에이전트 갤러리", f"https://gemini.google.com/app/{ge_app_id}/r/agents"),
         ]
@@ -1789,7 +1759,7 @@ def deploy_admin_governor_engine(env_info: dict, dry_run: bool = False) -> dict:
         "description": description,
         "state": "ENABLED",
         "sharingConfig": {"scope": "ALL_USERS"},
-        "customPlaceholderText": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
+        "customPlaceholderText": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, 데이터 커넥터 조회, BigQuery 로깅, 콘솔 딥링크 등)를 입력하세요...",
         "starterPrompts": [
             {"text": "사내 등록된 테스트/미사용 에이전트 목록 스캔하고 비활성화(DISABLED) 처리해 줘"},
             {"text": "사내 GE App에 연결된 데이터 커넥터(Data Store) 목록 조회해 줘"},
@@ -1896,7 +1866,6 @@ def main():
     parser.add_argument("--location", help="Vertex AI / Discovery Engine 리전 (기본: global)")
     parser.add_argument("--ge-app-id", help="Gemini Enterprise App 인스턴스 ID")
     parser.add_argument("--sa", help="어드민 실행 대행 서비스 계정 이메일")
-    parser.add_argument("--domain", help="사내 도메인 명칭 (예: example-corp.com)")
     parser.add_argument("--catalog", help="선언적 어드민 카탈로그 파일 경로 (catalog.yaml) 또는 원격 URL")
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
@@ -1927,7 +1896,6 @@ def main():
     print(f"[*] 활성 프로젝트    : {env_info['project_id']}")
     print(f"[*] 배포 리전        : {env_info['location']}")
     print(f"[*] 대상 GE App ID   : {env_info['ge_app_id']}")
-    print(f"[*] 사내 대상 도메인 : {env_info['customer_domain']}")
     print(f"[*] 실행 서비스 계정 : {env_info['service_account']}")
     print(f"[*] 실행 모드        : {'가상 실행 (--dry-run)' if args.dry_run else '실제 프로비저닝 모드'}")
 

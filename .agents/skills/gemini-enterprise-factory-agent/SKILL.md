@@ -24,9 +24,9 @@ description: >-
 
 본 스킬은 사내 엔지니어와 실무자가 `gemini-enterprise-factory-agent` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
-**Audience**: `#Architect`, `#Developer`, `#FinOps`, `#SecOps`  
-**Concern**: `#Compliance`, `#IAM`, `#Security`  
-**Service**: `#AgentPlatform`, `#GeminiAPI`  
+**Audience**: `#Architect`, `#Developer`, `#BusinessUser`  
+**Concern**: `#NoCode`, `#InChat`, `#Productivity`  
+**Service**: `#AgentPlatform`, `#GeminiEnterprise`  
 
 ---
 
@@ -90,7 +90,7 @@ python diagnose.py --dry-run --prompt "사내 특허 출원 절차 및 선행 �
 ### Step 3.1 실제 Gemini Enterprise app 배포 (선택 사항)
 실제 사내 Gemini Enterprise app 웹 포털에 메타 에이전트를 등록하고자 할 경우 수행한다:
 ```bash
-python diagnose.py --publish
+python diagnose.py
 ```
 
 ### Step 3.2 자원 정리 (Teardown)

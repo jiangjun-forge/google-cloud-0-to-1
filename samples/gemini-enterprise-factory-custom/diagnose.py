@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import requests
 
-# 엔터프라이즈 코파일럿 패밀리 4대 커스텀 에이전트 인라인 폴백 시드 (알파벳순)
+# 엔터프라이즈 4대 커스텀 에이전트 인라인 폴백 시드 (알파벳순)
 FALLBACK_CUSTOM_CATALOG = {
     1: {
         "id": "factory-admin-governor",
@@ -26,7 +26,7 @@ FALLBACK_CUSTOM_CATALOG = {
         "title": "GE In-Chat Admin Module (사내 어드민 거버넌스 모듈)",
         "name": "GE In-Chat Admin Module",
         "category": "IT 어드민 및 인프라 거버넌스",
-        "description": "수백 개 에이전트 전수 감사(미사용 에이전트 적발), 감사 로그 자동 적재 및 사내 거버넌스 정책 통제 전담 코파일럿",
+        "description": "사내 에이전트 전수 조회(미사용 에이전트 식별), 감사 로그 BigQuery 적재 및 GE 운영 지원 모듈",
         "backend_tech": "Agent Engine (ADK 2.11+) + google-cloud-bigquery + google-cloud-logging",
         "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-admin",
         "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
@@ -71,17 +71,17 @@ FALLBACK_CUSTOM_CATALOG = {
             "Jira 및 Confluence 3P 공식 커넥터 설정과 ACL 동기화 구성해 줘",
             "Salesforce CRM 고객 데이터스토어 연동 매니페스트 스캐폴딩해 줘",
         ],
-        "tools_included": ["scaffold_connector_manifest", "sync_datastore_acl", "verify_secret_vault"],
-        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/secretmanager.secretAccessor"],
+        "tools_included": ["scaffold_connector_manifest", "sync_datastore_acl", "check_connector_status"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
     },
     4: {
         "id": "factory-skill-registry",
         "slug": "gemini-enterprise-factory-skill",
-        "title": "GE In-Chat Skill Factory (사내 스킬 팩토리 코파일럿)",
+        "title": "GE In-Chat Skill Factory (사내 스킬 팩토리)",
         "name": "GE In-Chat Skill Factory",
         "category": "업무 도구 및 스킬 팩토리",
         "description": "사내 비개발자 임직원을 위한 대화형 Open Skills / SKILL.md 도구 팩토리 에이전트",
-        "backend_tech": "Agent Engine (ADK 2.11+) + OpenAPI 3.0",
+        "backend_tech": "Agent Engine (ADK 2.11+) + skillAgentDefinition",
         "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-skill",
         "custom_placeholder_text": "생성하고 싶은 업무 연동 도구나 API를 입력하세요...",
         "starter_prompts": [
@@ -89,14 +89,14 @@ FALLBACK_CUSTOM_CATALOG = {
             "법인카드 경비 전표 정산 및 승인 내역 조회 스킬 매니페스트 만들어 줘",
             "주 52시간 근태 관리 및 휴가 신청 도구 바인딩 명세 작성해 줘",
         ],
-        "tools_included": ["create_skill_manifest", "validate_secret_binding", "register_skill_tool"],
-        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor", "roles/secretmanager.secretAccessor"],
+        "tools_included": ["create_skill_manifest", "package_skill_bundle", "register_skill_tool"],
+        "required_roles": ["roles/aiplatform.user", "roles/discoveryengine.editor"],
     },
 }
 
 CUSTOM_ARCHITECTURE_CATALOG = FALLBACK_CUSTOM_CATALOG
 
-# 4대 코파일럿 패밀리 상주형 커스텀 에이전트 목록
+# 4대 상주형 커스텀 에이전트 목록
 CURATED_ENTERPRISE_AGENTS = [
     {
         "slug": item["slug"],
@@ -972,12 +972,6 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 - **Gemini Enterprise app 인스턴스**: `{ge_app_id}`
 - **선택 아키텍처**: `{chip_data['id']}` ({chip_data['title']})
 
-> [!CAUTION]
-> **엔터프라이즈 보안 고지 및 운영 거버넌스 원칙 (Security Disclaimer & Governance)**:
-> 1. **도구의 위상 및 사용자 한정 (IT Administrator-Only Scope)**: 본 팩토리는 일반 사원용이 아니며, 사내 IT 관리자 및 클라우드 인프라팀 전용 내부 프로비저닝 도구다.
-> 2. **코드 취약점 및 비즈니스 로직 검증 (Shared Responsibility)**: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(SAST 등)을 통한 정적 분석과 비즈니스 목적 및 권한에 대한 사내 보안 심의(HITL)를 필수로 거쳐야 한다.
-> 3. **배포 후 즉시 회수 및 정리 (Deploy-then-Teardown Best Practice)**: 필요한 사내 공식 에이전트 배포 완료 즉시 팩토리 자체를 Agent Engine 및 사내 갤러리에서 정리(Teardown)하여 공격 표면을 최소화한다.
-
 ---
 
 ## 1. 종합 진단 및 에이전트 빌드 상태 요약
@@ -1057,11 +1051,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ---
 
-## 8. 자원 정리 안내 (Teardown 및 거버넌스 원칙)
-
-> [!IMPORTANT]
-> **배포 후 팩토리 자체 리소스 정리 원칙 (Deploy-then-Teardown)**:
-> 사내 IT 관리자(IT Admin)가 사내에 필요한 공식 에이전트들을 모두 생성, 배포 및 사내 갤러리에 등록 완료한 후에는, 보안 공격 표면(Attack Surface)을 최소화하고 미승인 임의 에이전트의 난립을 방지하기 위해 **본 커스텀 에이전트 팩토리(Custom Agent Factory) 자체를 즉시 삭제/정리(Teardown)하는 것을 권장**한다. 배포된 자식 에이전트들은 독립된 Agent Engine 슬롯에서 영구 동작하므로 팩토리를 삭제해도 영향을 받지 않는다.
+## 8. 자원 정리 (Teardown) 안내
 
 본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
 
@@ -1137,7 +1127,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         simulated_re_id = "simulated-custom-factory-engine"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
         print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
-        print(f"  [2] 장착 도구: deploy_enterprise_agent_tool, list_deployed_agents_tool")
+        print(f"  [2] 장착 도구: show_custom_catalog_tool, deploy_enterprise_agent_tool, check_deployment_status_tool, list_deployed_agents_tool")
         print(f"  [3] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
         ensure_reasoning_engine_service_agent_permissions(project_id, "", dry_run=True)
         return {
@@ -1172,11 +1162,11 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         credentials=creds,
     )
 
-    # 챗창에서 실제 배포를 집행하는 ChatOps 실행 도구 정의 (코파일럿 패밀리 4대 커스텀 에이전트)
+    # 챗창에서 실제 배포를 집행하는 ChatOps 실행 도구 정의 (4대 커스텀 에이전트)
     preset_agents_spec = {
         "factory-skill-registry": {
             "slug": "factory-skill-registry",
-            "display_name": "사내 스킬 팩토리 코파일럿 (Skill Factory)",
+            "display_name": "사내 스킬 팩토리 (Skill Factory)",
             "description": "사내 비개발자 임직원을 위한 대화형 Open Skills / SKILL.md 도구 팩토리 에이전트",
             "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-skill",
             "custom_placeholder_text": "생성하고 싶은 업무 연동 도구나 API를 입력하세요...",
@@ -1185,7 +1175,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 "법인카드 경비 전표 정산 및 승인 내역 조회 스킬 매니페스트 만들어 줘",
                 "주 52시간 근태 관리 및 휴가 신청 도구 바인딩 명세 작성해 줘",
             ],
-            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 스킬 팩토리 코파일럿(Skill Factory)' 마스터 에이전트입니다.
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 스킬 팩토리(Skill Factory)' 마스터 에이전트입니다.
 사내 비개발자 임직원을 위한 대화형 Open Skills 및 도구 매니페스트를 자율 생성합니다.""",
         },
         "factory-agent-generator": {
@@ -1219,30 +1209,26 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "factory-admin-governor": {
             "slug": "factory-admin-governor",
             "display_name": "사내 어드민 거버넌스 모듈 (Admin Governance Module)",
-            "description": "수백 개 에이전트 전수 감사(미사용 에이전트 적발), 감사 로그 자동 적재 및 사내 거버넌스 정책 통제 전담 코파일럿",
+            "description": "사내 에이전트 전수 조회(미사용 에이전트 식별), 감사 로그 BigQuery 적재 및 GE 운영 지원 모듈",
             "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-admin",
-            "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, BigQuery 로깅, 콘솔 위치, 라이선스, 과금 등)를 입력하세요...",
+            "custom_placeholder_text": "해결하고 싶은 GE 관리자 이슈(에이전트 관리, 데이터스토어 현황, BigQuery 로깅, 콘솔 위치 등)를 입력하세요...",
             "starter_prompts": [
                 "사내 에이전트 중 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘",
                 "Cloud Logging 감사 로그를 BigQuery로 자동 연결하는 스크립트 줘",
                 "GCP 콘솔에서 GE Admin 에이전트 목록 페이지 어디로 들어가야 해?",
             ],
-            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 거버넌스 코파일럿' 마스터 에이전트입니다.
+            "instruction": """당신은 Google Cloud 및 Gemini Enterprise app 환경의 전사 '사내 어드민 거버넌스 모듈' 마스터 에이전트입니다.
 사내 IT 어드민 및 클라우드 인프라 팀이 Gemini Enterprise app 운영 중 직면하는 거버넌스 과제를 대화형으로 자율 진단하고 조치 가이드를 제공합니다.""",
         },
     }
 
-    def deploy_enterprise_agent_tool(agent_name: str, github_repo_url: str = "", action_phase: str = "ask_scan") -> str:
+    def deploy_enterprise_agent_tool(agent_name: str, github_repo_url: str = "", action_phase: str = "direct_deploy") -> str:
         """Deploy a custom agent directly into Gemini Enterprise app from a GitHub repository URL or pre-configured architecture chip.
         
         Args:
             agent_name: Name or slug of the agent to deploy (e.g. 'custom-repo-agent', 'admin-module', 'agent-factory', or GitHub repository URL).
-            github_repo_url: Optional GitHub repository URL (e.g. https://github.com/jiangjun-forge/google-cloud-0-to-1).
-            action_phase: Deployment phase control flag.
-                - 'ask_scan': (Default entry) Prompt user whether to deploy immediately (Fast-path 즉시 배포) or run static security scan (프로덕션 보안 거버넌스).
-                - 'direct_deploy': Fast-path deployment without security scan (즉시 배포 Fast-path).
-                - 'run_scan': Execute static security analysis (SAST) and report findings with a force-deploy override prompt.
-                - 'force_deploy': Proceed with deployment under administrator HITL approval despite security warnings.
+            github_repo_url: Optional GitHub repository URL (e.g. https://github.com/example-corp/my-custom-agent).
+            action_phase: Deployment phase control flag (default: 'direct_deploy').
         """
         token = _get_cloud_token()
         headers = {
@@ -1342,7 +1328,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 
         # 2. GitHub 저장소 URL 기반 커스텀 에이전트 배포 분기 (0번 옵션)
         if norm in ("0", "0번") or "github" in norm or "깃" in norm or "레포" in norm or "저장소" in norm or "repo" in norm or "custom" in norm or "커스텀" in norm or github_repo_url:
-            repo_url = github_repo_url or "https://github.com/jiangjun-forge/google-cloud-0-to-1"
+            repo_url = github_repo_url or "https://github.com/example-corp/my-custom-agent"
             repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
             disp_name = repo_name  # 영문 슬러그 원형 유지
 
@@ -1362,40 +1348,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                         f"  - 안내: 추가 배포 없이 사내 갤러리(/r/agents)에서 즉시 대화하실 수 있습니다."
                     )
 
-            # [2단계 대화형 보안 검증 가드레일]
-            # 1단계: 사용자 확인 단계 (기본값: Fast-path 즉시 배포)
-            if action_phase == "ask_scan":
-                return (
-                    f"### GitHub 저장소 배포 확인 및 보안 검사 옵션 (신속 배포 및 정밀 보안)\n\n"
-                    f"- **대상 저장소**: `{repo_url}`\n"
-                    f"- **생성될 에이전트 명칭**: `{disp_name}`\n"
-                    f"- **기본 배포 모드**: **즉시 배포 (Fast-path, 권장)**\n\n"
-                    f"본 에이전트 팩토리는 신속한 프로토타이핑 및 즉시 배포(Fast-path)을 위해 **즉시 배포**를 기본값으로 지원합니다.\n"
-                    f"사내 프로덕션 보안 규정 준수(SAST)를 위해 빌드 전 **정적 보안 정밀 검사(SAST)**를 수행하시겠습니까?\n\n"
-                    f"---\n"
-                    f"**추천 후속 질문:**\n"
-                    f"1. 건너뛰고 즉시 배포 진행 (기본값)\n"
-                    f"2. 정적 보안 정밀 검사(SAST) 수행"
-                )
-
-            # 2단계-A: 정적 보안 정밀 검사 수행 (run_scan)
-            if action_phase == "run_scan":
-                return (
-                    f"### 사내 정적 보안 정밀 검사(SAST) 결과 보고서\n\n"
-                    f"- **검사 대상 저장소**: `{repo_url}`\n"
-                    f"- **정적 분석 및 동적 검증 (Find & Verify)**: 완료\n"
-                    f"- **감지된 보안 권고 항목 (총 2건)**:\n"
-                    f"  1. `[CWE-89]` SQL Injection 방어: `tools.py` 내 동적 SQL 쿼리 파라미터화 바인딩 권고 (Medium)\n"
-                    f"  2. `[Supply-Chain]` 의존성 패키지: `requirements.txt` 내 라이브러리 고정 버전(Pinning) 명시 권장 (Low)\n\n"
-                    f"**주의**: 엔터프라이즈 보안 권고 조치가 필요하지만, 사내 테스트 또는 신속한 검증을 위해 **강제 배포(Force Deploy)**를 계속 진행하실 수 있습니다.\n\n"
-                    f"위험을 인지하고 강제 배포를 계속 진행하시겠습니까?\n\n"
-                    f"---\n"
-                    f"**추천 후속 질문:**\n"
-                    f"1. 위험 감수하고 강제 배포 계속 진행\n"
-                    f"2. 배포 중단 및 보안 패치 리포트 확인"
-                )
-
-            # 2단계-B: 즉시 배포(direct_deploy) 또는 관리자 승인 기반 강제 배포(force_deploy) 집행
+            # Vertex AI Reasoning Engine 프로비저닝 및 Gemini Enterprise app 갤러리 등록 집행
             try:
                 # 1) Vertex AI Reasoning Engine 실제 프로비저닝 (비동기 LRO 지원)
                 re_res_info = _provision_reasoning_engine(
@@ -1465,7 +1418,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             except Exception as e:
                 return f"[예외 발생] 커스텀 에이전트 프로비저닝 실패: {str(e)}"
 
-        # 3. 프리셋 에이전트 타겟팅 (코파일럿 패밀리 4대 에이전트 및 번호 매핑)
+        # 3. 프리셋 에이전트 타겟팅 (4대 에이전트 및 번호 매핑)
         targets = []
         if norm in ("1", "1번") or "skill" in norm or "스킬" in norm or "도구" in norm:
             targets = ["factory-skill-registry"]
@@ -1482,7 +1435,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                     break
 
         if not targets:
-            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 대상: 1번(사내 스킬 팩토리 코파일럿), 2번(사내 노코드 에이전트 팩토리), 3번(기간계 데이터 커넥터 스캐폴더), 4번(사내 어드민 거버넌스 코파일럿), 또는 GitHub 저장소 주소"
+            return f"[오류] 알 수 없는 에이전트 명칭: '{agent_name}'. 배포 가능한 대상: 1번(사내 스킬 팩토리), 2번(사내 노코드 에이전트 팩토리), 3번(기간계 데이터 커넥터 스캐폴더), 4번(사내 어드민 거버넌스 모듈), 또는 GitHub 저장소 주소"
 
         # 4. 실시간 Reasoning Engine 동적 탐색 (하드코딩 ID 완전 배제)
         dynamic_engines = {}
@@ -1524,8 +1477,10 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
                 re_res_info = dynamic_engines.get(slug)
                 if not re_res_info:
                     gcs_prefix_map = {
-                        "gemini-enterprise-agent-factory": "ge_factory_agent_factory",
-                        "gemini-enterprise-admin-module": "ge_factory_admin_module",
+                        "factory-skill-registry": "ge_factory_skill_registry",
+                        "factory-agent-generator": "ge_factory_agent_factory",
+                        "factory-connector-scaffolder": "ge_factory_connector_scaffolder",
+                        "factory-admin-governor": "ge_factory_admin_module",
                     }
                     target_gcs_prefix = gcs_prefix_map.get(slug, "ge_factory_custom_agent_factory")
                     re_res_info = _provision_reasoning_engine(cfg["display_name"], cfg["description"], target_gcs_prefix)
@@ -1822,10 +1777,10 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
             "| 번호 | 아키텍처 명칭 | 분류 | 주요 역할 및 기능 | 표준 소스 저장소 |",
             "| :---: | :--- | :--- | :--- | :--- |",
             "| **0** | **자유 저장소 직접 배포** | 커스텀 빌드 | 사내 개발팀의 GitHub 저장소 URL 직접 연동 자동 빌드 | GitHub URL 직접 입력 |",
-            "| **1** | **사내 스킬 팩토리 코파일럿** | 도구 팩토리 | Open Skills / SKILL.md 기반 사내 업무 연동 도구 자율 생성 | `samples/gemini-enterprise-factory-skill` |",
+            "| **1** | **사내 스킬 팩토리** | 도구 팩토리 | Open Skills / SKILL.md 기반 사내 업무 연동 도구 자율 생성 | `samples/gemini-enterprise-factory-skill` |",
             "| **2** | **사내 노코드 에이전트 팩토리** | 에이전트 팩토리 | 비개발자 임직원 전용 사내 맞춤 AI 에이전트 대화형 제작 | `samples/gemini-enterprise-factory-agent` |",
             "| **3** | **기간계 데이터 커넥터 스캐폴더** | 데이터 연동 | Jira, Confluence, ERP 등 데이터스토어 연동 매니페스트 | `samples/gemini-enterprise-factory-connector` |",
-            "| **4** | **사내 어드민 거버넌스 코파일럿** | IT 거버넌스 | 좀비 에이전트 전수 적발, 감사 로그 BigQuery 싱크 및 거버넌스 | `samples/gemini-enterprise-factory-admin` |",
+            "| **4** | **사내 어드민 거버넌스 모듈** | IT 거버넌스 | 미사용 에이전트 전수 조회, 감사 로그 BigQuery 적재 및 운영 지원 | `samples/gemini-enterprise-factory-admin` |",
             "",
             "**배포 실행 안내**:",
             "원하시는 에이전트의 번호나 명칭(예: *'1번 배포해 줘'* 또는 *'사내 노코드 에이전트 팩토리 배포해 줘'*)을 말씀해 주시면 즉시 프로비저닝을 시작합니다.",
@@ -1835,11 +1790,6 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
     instruction = """당신은 Google Cloud 및 Agent Platform 아키텍트 전용 '커스텀 에이전트 팩토리(Custom Agent Factory)' 에이전트입니다.
 사내 데이터베이스(BigQuery) 및 클라우드 자산과 결합한 High-code 맞춤 에이전트를 원클릭으로 구축하고, 사용자가 제공한 GitHub 저장소(URL)를 바탕으로 빌드부터 Gemini Enterprise app 사내 갤러리 등록까지 완결하는 에이전트 자동 배포를 안내하고 실행합니다.
 
-[엔터프라이즈 보안 고지 및 운영 거버넌스 원칙 (Security Disclaimer & Governance)]
-1. 도구의 위상 및 사용자 한정: 본 커스텀 에이전트 팩토리는 일반 사원용이 아니며, 사내 IT 관리자(IT Admin) 및 클라우드 인프라팀이 사내 표준 에이전트를 프로비저닝하기 위한 내부 관리자 전용 도구다.
-2. 소스 코드 취약점 및 비즈니스 로직 검증: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(SAST, 시크릿 스캐너 등)을 통해 보안 취약점이 검증되고, 비즈니스 목적 및 권한에 대한 사내 보안 심의 또는 인간 개입 승인(Human-In-The-Loop)을 거친 공식 저장소만 등록해야 한다.
-3. 배포 후 팩토리 자체 리소스 정리(Teardown) 원칙: 사내에 필요한 공식 에이전트들의 배포와 갤러리 등록이 완료된 즉시, 보안 공격 표면(Attack Surface)을 최소화하기 위해 본 팩토리 자체를 Agent Engine 및 사내 갤러리에서 즉시 삭제 및 정리(Teardown)하는 것을 사내 보안 운영 대원칙으로 권장한다.
-
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
@@ -1847,27 +1797,21 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
 1. `show_custom_catalog_tool`: 사용자가 카탈로그, 전체 목록, 배포 가능한 에이전트 종류, 레시피 목록 등을 물어보거나 확인을 요청하면 즉시 이 도구를 호출하여 0~4번 전체 카탈로그 표를 출력하십시오!
-2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 이 도구를 호출하여 배포를 진행하십시오:
-- 사용자가 GitHub URL이나 커스텀 에이전트 배포를 처음 요청할 때: `action_phase='ask_scan'`으로 호출하여 즉시 배포(즉시 배포 기본값)와 정적 보안 검사(SAST) 옵션을 추천 질문 칩과 함께 사용자에게 제시합니다.
-- 사용자가 "즉시 배포", "건너뛰고 배포", "1번", "그냥 배포"를 선택하면: `action_phase='direct_deploy'`로 호출하여 즉시 클라우드 빌드와 사내 갤러리 등록으로 직행합니다 (신속 배포 경로).
-- 사용자가 "검사해 줘", "정적 보안 검사", "2번"을 선택하면: `action_phase='run_scan'`으로 호출하여 보안 검사 결과를 보고하고 강제 배포 여부를 묻습니다 (정밀 보안 거버넌스).
-- 사용자가 검사 후 "강제 배포", "그래도 배포해", "위험 감수하고 배포"를 승인하면: `action_phase='force_deploy'`로 호출하여 관리자 승인(HITL) 기반으로 배포를 최종 완결합니다.
+2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 `action_phase='direct_deploy'`로 즉시 호출하여 클라우드 빌드와 사내 갤러리 등록을 진행하십시오!
 3. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
 4. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 
 [핵심 배포 및 사전 중복 검증 절차]
-0단계 (사전 중복 검증 인터셉터 및 2단계 보안 가드레일 - 최우선 실행):
+0단계 (사전 중복 검증 인터셉터 - 최우선 실행):
 - 사용자가 특정 번호(0~4번)나 명칭의 에이전트 배포를 요청하면, 다른 질문 없이 즉시 `deploy_enterprise_agent_tool` 도구를 선제 호출한다!
 - 기등록 에이전트 발견 시: 불필요한 재빌드를 진행하지 않고 즉시 첫 턴에서 사내 갤러리(/r/agents) 링크와 함께 "이미 배포되어 활성화되어 있습니다"라고 안내한다.
-- 신규 저장소 배포인 경우: `action_phase='ask_scan'`으로 즉시 배포(기본값)와 정적 보안 검사(SAST) 선택권을 제공한다.
-- 검사 결과 취약점 발생 시: 강제 배포 승인 여부를 물어 프로덕션 운영 중단을 방지한다.
 
 [단계별 추천 후속 질문 안내 규약]
 모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 '추천 후속 질문'을 명확히 안내한다:
 ---
 **추천 후속 질문:**
 1. 배포 가능한 에이전트 카탈로그 보여 줘
-2. 사내 스킬 팩토리 코파일럿 배포해 줘
+2. 사내 스킬 팩토리 배포해 줘
 3. 사내 노코드 에이전트 팩토리 배포해 줘
 4. 사내 등록된 에이전트 목록 조회해 줘
 - 주의: 배포 진행 중인 상태일 때는 1번을 '배포 상태 확인해 줘'로 출력한다.
@@ -1980,7 +1924,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
         "customPlaceholderText": "GitHub 저장소 주소(https://github.com/...) 또는 배포할 에이전트를 입력하세요...",
         "starterPrompts": [
             {"text": "배포 가능한 에이전트 카탈로그 보여 줘"},
-            {"text": "사내 스킬 팩토리 코파일럿 배포해 줘"},
+            {"text": "사내 스킬 팩토리 배포해 줘"},
             {"text": "사내 등록된 에이전트 목록 조회해 줘"},
             {"text": "사내 노코드 에이전트 팩토리 배포해 줘"},
         ],
@@ -2241,86 +2185,8 @@ def deploy_curated_enterprise_agents(env_info: dict, dry_run: bool = False, cata
     return {"status": "COMPLETED", "results": results}
 
 
-def run_static_security_scan(repo_url: str, local_path: Optional[str] = None) -> dict:
-    """사내 정적 보안 정밀 검사 (Enterprise SAST / Security Verification)."""
-    import re
-    print("\n" + "=" * 75)
-    print("  사내 정적 보안 정밀 검사 가동 (Enterprise Security Verification)")
-    print("=" * 75)
-    print(f"[*] 검사 대상 저장소 : {repo_url}")
-    print(f"[*] 정적 분석 엔진   : Enterprise SAST v2.6 + Open Source Supply-Chain Scanner")
-
-    # 로컬 경로 감지 (동일 저장소 내 서브 디렉토리인 경우 실제 정적 분석 수행)
-    target_dir = local_path
-    if not target_dir:
-        repo_clean = repo_url.rstrip("/")
-        slug = repo_clean.split("/")[-1]
-        candidate_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), slug)
-        if os.path.isdir(candidate_dir):
-            target_dir = candidate_dir
-
-    findings = []
-    checks = [
-        {"id": "CWE-89", "name": "SQL Injection 파라미터화 바인딩", "status": "PASS", "detail": "동적 문자열 조작 없는 매개변수화 쿼리 구조 준수"},
-        {"id": "CWE-798", "name": "하드코딩된 API Key 및 시크릿 검사", "status": "PASS", "detail": "Secret Manager 및 ADC 인증 표준 준수"},
-        {"id": "Supply-Chain", "name": "의존성 패키지 버전 고정(Pinning)", "status": "PASS", "detail": "requirements.txt 라이브러리 고정 버전 명시 준수"},
-        {"id": "IAM/VPC-SC", "name": "최소 권한 대행 SA 및 데이터 경계 준수", "status": "PASS", "detail": "roles/aiplatform.user 및 roles/discoveryengine.editor 검증 통과"},
-    ]
-
-    if target_dir and os.path.isdir(target_dir):
-        print(f"[*] 로컬 소스 코드 경로 : {target_dir}")
-        for root, _, files in os.walk(target_dir):
-            for file in files:
-                if file.endswith(".py"):
-                    fpath = os.path.join(root, file)
-                    try:
-                        with open(fpath, "r", encoding="utf-8") as f:
-                            content = f.read()
-                            if re.search(r"AIza[0-9A-Za-z-_]{35}", content):
-                                findings.append(f"[CWE-798] {file} 내 Google API Key 하드코딩 의심 패턴 감지 (High)")
-                                checks[1]["status"] = "WARN"
-                                checks[1]["detail"] = "API Key 하드코딩 패턴 감지됨"
-                    except Exception:
-                        pass
-                elif file == "requirements.txt":
-                    fpath = os.path.join(root, file)
-                    try:
-                        with open(fpath, "r", encoding="utf-8") as f:
-                            for line in f:
-                                line = line.strip()
-                                if line and not line.startswith("#") and ">=" in line and "==" not in line:
-                                    findings.append(f"[Supply-Chain] {line}: 버전 미고정(>=)으로 인한 공급망 변조 위험 (Low)")
-                                    checks[2]["status"] = "RECOMMENDATION"
-                                    checks[2]["detail"] = "일부 라이브러리 고정 버전(==) 명시 권장"
-                                    break
-                    except Exception:
-                        pass
-
-    print("\n[사내 4대 보안 통제 항목 정적 검증 결과]")
-    for chk in checks:
-        print(f"  - [{chk['status']:<14}] {chk['name']} ({chk['id']}): {chk['detail']}")
-
-    if findings:
-        print("\n[감지된 보안 권고 사항]")
-        for f in findings:
-            print(f"  ! {f}")
-
-    has_critical = any(c["status"] == "FAIL" for c in checks)
-    overall_status = "FAILED" if has_critical else ("PASSED_WITH_RECOMMENDATIONS" if findings else "PASSED")
-    print(f"\n[*] 종합 보안 판정: {overall_status} (사내 보안 거버넌스 승인 통과)")
-    print("=" * 75 + "\n")
-
-    return {
-        "status": overall_status,
-        "repo_url": repo_url,
-        "target_dir": target_dir,
-        "checks": checks,
-        "findings": findings,
-    }
-
-
-def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False, skip_scan: bool = False, force_deploy: bool = True) -> dict:
-    """GitHub 저장소 URL 기반으로 정적 보안 검사(SAST)를 거쳐 Agent Engine 및 Gemini Enterprise app에 자동 배포/등록한다."""
+def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False) -> dict:
+    """GitHub 저장소 URL 기반으로 Agent Engine 및 Gemini Enterprise app에 자동 배포/등록한다."""
     project_id = env_info["project_id"]
     region = env_info.get("region", "us-central1")
     re_location = "us-central1"
@@ -2335,22 +2201,14 @@ def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False,
     print(f"[*] 저장소 URL       : {repo_url}")
     print(f"[*] 배포 모드        : {'가상 실행 (--dry-run)' if dry_run else '실제 배포 모드'}\n")
 
-    # 1. 사내 정적 보안 정밀 검사 단계
-    scan_result = None
-    if not skip_scan:
-        scan_result = run_static_security_scan(repo_url)
-        if scan_result["status"] == "FAILED" and not force_deploy:
-            print("[오류] 정적 보안 검사 실패로 인해 배포가 중단되었습니다. (--force-deploy 플래그로 재시도 가능)")
-            return {"status": "FAILED", "error": "Static security inspection failed", "scan": scan_result}
-
-    # 2. 에이전트 메타데이터 결정 (슬러그 매핑 및 카탈로그 대조)
+    # 1. 에이전트 메타데이터 결정 (슬러그 매핑 및 카탈로그 대조)
     repo_clean = repo_url.rstrip("/")
     slug = repo_clean.split("/")[-1].replace(".git", "")
     
     agent_presets = {
         "gemini-enterprise-factory-admin": {
             "display_name": "GE In-Chat Admin Module (사내 어드민 거버넌스 모듈)",
-            "description": "사내 IT 어드민 및 클라우드 인프라 팀을 위한 거버넌스, 유휴 라이선스 회수 및 BigQuery 감사 로그 자동화 코파일럿",
+            "description": "사내 에이전트 전수 조회(미사용 에이전트 식별), 감사 로그 BigQuery 적재 및 GE 운영 지원 모듈",
             "re_hint": "gemini-enterprise-factory-admin",
             "starter_prompts": [
                 "사내 에이전트 중 60일 미사용 좀비 에이전트 찾는 BigQuery 쿼리 줘",
@@ -2418,7 +2276,6 @@ def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False,
             "agent_id": f"simulated-{slug}-id",
             "reasoning_engine": f"projects/{project_id}/locations/{re_location}/reasoningEngines/simulated-{slug}",
             "repo_url": repo_url,
-            "scan": scan_result,
         }
 
     token = _get_cloud_token()
@@ -2490,7 +2347,7 @@ def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False,
 
     # 5. Discovery Engine 사내 갤러리 신규 등록
     print(f"[*] Discovery Engine 사내 갤러리(/r/agents) 전사 공개(ALL_USERS) 등록 중...")
-    full_desc = f"{meta['description']}\n\n[Slug: {slug}]\n- 소스 저장소: {repo_url}\n- 보안 검증: Enterprise SAST v2.6 Passed"
+    full_desc = f"{meta['description']}\n\n[Slug: {slug}]\n- 소스 저장소: {repo_url}"
     body = {
         "displayName": meta["display_name"],
         "description": full_desc,
@@ -2528,7 +2385,6 @@ def deploy_agent_from_repo(repo_url: str, env_info: dict, dry_run: bool = False,
         "state": agent_state,
         "reasoning_engine": bound_re,
         "repo_url": repo_url,
-        "scan": scan_result,
     }
 
 
@@ -2541,7 +2397,6 @@ def build_repo_deploy_report(env_info: dict, deploy_res: dict, dry_run: bool = F
     aid = deploy_res.get("agent_id", "N/A")
     re_eng = deploy_res.get("reasoning_engine", "N/A")
     repo_url = deploy_res.get("repo_url", "")
-    scan = deploy_res.get("scan") or {}
 
     lines = [
         f"# Gemini Enterprise 저장소 연동 커스텀 에이전트 배포 보고서",
@@ -2555,22 +2410,7 @@ def build_repo_deploy_report(env_info: dict, deploy_res: dict, dry_run: bool = F
         "",
         "---",
         "",
-        "## 1. 사내 정적 보안 정밀 검사(SAST) 결과",
-        "",
-        f"- **보안 검사 상태**: `{scan.get('status', 'PASSED')}`",
-        "",
-        "| 보안 통제 항목 | 식별자 | 상태 | 세부 내용 |",
-        "| :--- | :---: | :---: | :--- |",
-    ]
-
-    for chk in scan.get("checks", []):
-        lines.append(f"| {chk['name']} | `{chk['id']}` | `{chk['status']}` | {chk['detail']} |")
-
-    lines.extend([
-        "",
-        "---",
-        "",
-        "## 2. Gemini Enterprise app 사내 갤러리 등록 명세",
+        "## 1. Gemini Enterprise app 사내 갤러리 등록 명세",
         "",
         "| 항목 | 상태 | 세부 정보 |",
         "| :--- | :---: | :--- |",
@@ -2581,14 +2421,14 @@ def build_repo_deploy_report(env_info: dict, deploy_res: dict, dry_run: bool = F
         "",
         "---",
         "",
-        "## 3. 사내 거버넌스 4대 필수 표준 라벨",
+        "## 2. 사내 거버넌스 4대 필수 표준 라벨",
         "",
         "- `managed-by`: `google-cloud-0-to-1`",
         f"- `scenario`: `{slug}`",
         "- `env`: `sample`",
         "- `created-by`: `customer-engineer`",
         "",
-    ])
+    ]
 
     return "\n".join(lines)
 
@@ -2664,12 +2504,6 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 - **팩토리 에이전트**: `{display_name}`
 - **배포 상태**: `{status}`
 
-> [!CAUTION]
-> **엔터프라이즈 보안 고지 및 운영 거버넌스 원칙 (Security Disclaimer & Governance)**:
-> 1. **도구의 위상 및 사용자 한정 (IT Administrator-Only Scope)**: 본 팩토리는 일반 사원용이 아니며, 사내 IT 관리자 및 클라우드 인프라팀 전용 내부 프로비저닝 도구다.
-> 2. **코드 취약점 및 비즈니스 로직 검증 (Shared Responsibility)**: 배포 대상 GitHub 저장소는 사내 CI/CD 파이프라인(SAST 등)을 통한 정적 분석과 비즈니스 목적 및 권한에 대한 사내 보안 심의(HITL)를 필수로 거쳐야 한다.
-> 3. **배포 후 즉시 회수 및 정리 (Deploy-then-Teardown Best Practice)**: 필요한 사내 공식 에이전트 배포 완료 즉시 팩토리 자체를 Agent Engine 및 사내 갤러리에서 정리(Teardown)하여 공격 표면을 최소화한다.
-
 ---
 
 ## 1. 팩토리 에이전트(붕어빵 틀) 프로비저닝 결과 요약
@@ -2679,7 +2513,7 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 | **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
 | **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 환경 기준) |
-| **내장 실행 도구** | `2종 완비` | `deploy_enterprise_agent_tool`, `list_deployed_agents_tool` |
+| **내장 실행 도구** | `4종 완비` | `show_custom_catalog_tool`, `deploy_enterprise_agent_tool`, `check_deployment_status_tool`, `list_deployed_agents_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
@@ -2745,11 +2579,7 @@ flowchart TB
 
 ---
 
-## 6. 자원 정리 안내 (Teardown 및 거버넌스 원칙)
-
-> [!IMPORTANT]
-> **배포 후 팩토리 자체 리소스 정리 원칙 (Deploy-then-Teardown)**:
-> 사내 IT 관리자(IT Admin)가 사내에 필요한 공식 에이전트들을 모두 생성, 배포 및 사내 갤러리에 등록 완료한 후에는, 보안 공격 표면(Attack Surface)을 최소화하고 미승인 임의 에이전트의 난립을 방지하기 위해 **본 커스텀 에이전트 팩토리(Custom Agent Factory) 자체를 즉시 삭제/정리(Teardown)하는 것을 권장**한다. 배포된 자식 에이전트들은 독립된 Agent Engine 슬롯에서 영구 동작하므로 팩토리를 삭제해도 영향을 받지 않는다.
+## 6. 자원 정리 (Teardown) 안내
 
 본 솔루션 검증 후 테스트용으로 생성된 Agent Engine 런타임 및 등록된 에이전트를 정리하고자 할 경우 아래 명령을 수행한다:
 
@@ -2841,8 +2671,6 @@ def main():
     parser.add_argument("--dry-run", action="store_true", default=False, help="실제 배포 없이 가상 실행 검증")
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     parser.add_argument("--repo", help="GitHub 저장소 URL (예: https://github.com/my-org/my-agent.git) 기반 저장소 연동 자동 배포")
-    parser.add_argument("--skip-scan", action="store_true", default=False, help="사내 정적 보안 정밀 검사(SAST) 건너뛰기 (신속 배포 Fast-path)")
-    parser.add_argument("--force-deploy", action="store_true", default=True, help="보안 경고 감지 시에도 관리자 승인 기반 강제 배포 집행 (기본: True)")
     parser.add_argument("--scaffold", action="store_true", default=False, help="로컬 단일 커스텀 에이전트 소스 코드 샘플 추출 보조 모드")
     parser.add_argument("--write-files", action="store_true", default=False, help="scaffold/ 폴더에 소스 파일 추출")
     parser.add_argument("--chip", type=int, choices=[1, 2, 3, 4], help="커스텀 아키텍처 칩 번호 직접 지정 (1: 스킬 팩토리, 2: 노코드 팩토리, 3: 커넥터 스캐폴더, 4: 어드민 거버넌스 모듈)")
@@ -2881,7 +2709,7 @@ def main():
         run_local_scaffolding_mode(args, env_info, catalog=catalog)
         return
 
-    # GitHub 저장소 URL 기반 단일 에이전트 배포 분기 (사내 정적 보안 검사 포함)
+    # GitHub 저장소 URL 기반 단일 에이전트 배포 분기
     if args.repo:
         if not args.dry_run and not _get_cloud_token():
             print("\n[오류] 유효한 Google Cloud 인증 자격 증명(ADC)을 찾을 수 없습니다.", file=sys.stderr)
@@ -2893,8 +2721,6 @@ def main():
             args.repo,
             env_info,
             dry_run=args.dry_run,
-            skip_scan=args.skip_scan,
-            force_deploy=args.force_deploy,
         )
         report_content = build_repo_deploy_report(env_info, repo_res, dry_run=args.dry_run)
         save_markdown_report(report_content)

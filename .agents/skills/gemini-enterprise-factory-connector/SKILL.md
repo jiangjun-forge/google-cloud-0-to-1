@@ -17,16 +17,16 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-enterprise-factory-connector
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-factory-connector: Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive 등 기업 기간계 저장소를 Gemini Enterprise app에 연결하기 위한 데이터 저장소(Data Store) 매니페스트, Secret Manager 보안 볼트 연동 및 문서 레벨 ACL 동기화 설정을 대화형으로 자율 생성하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-factory-connector: Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive 등 기업 기간계 저장소를 Gemini Enterprise app에 연결하기 위한 데이터 저장소(Data Store) 매니페스트 및 문서 레벨 접근 제어(ACL) 동기화 설정을 대화형으로 자율 생성하는 도구다.
 ---
 
 # Gemini Enterprise 데이터 커넥터 팩토리 (`gemini-enterprise-factory-connector`) (Autopilot & Hands-on Guide)
 
 본 스킬은 사내 클라우드 아키텍트와 데이터 엔지니어가 `gemini-enterprise-factory-connector` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
-**Audience**: `#Architect`, `#Developer`, `#SecOps`  
-**Concern**: `#Architecture`, `#Compliance`, `#Security`  
-**Service**: `#AgentPlatform`, `#BigQuery`, `#CloudStorage`  
+**Audience**: `#Architect`, `#Developer`  
+**Concern**: `#Architecture`, `#DataIntegration`, `#GeminiEnterprise`  
+**Service**: `#AgentPlatform`, `#DiscoveryEngine`, `#GeminiEnterprise`  
 
 ---
 
@@ -34,9 +34,9 @@ description: >-
 
 ```mermaid
 flowchart TD
-    A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 8대 커넥터 칩 및 매니페스트 무결성 검증"]
+    A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 커넥터 칩 및 매니페스트 무결성 검증"]
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
-    C -->|원하는 SaaS 커넥터 칩 선택 및 보안 볼트 합성| D["Discovery Engine Data Store 매니페스트 도출"]
+    C -->|원하는 SaaS 커넥터 칩 선택 및 ACL 매핑 합성| D["Discovery Engine Data Store 매니페스트 도출"]
     D --> E["Stage 3: 복습 (Deep-dive & Cleanup)"]
     E -->|Gemini Enterprise app 바인딩 및 자원 정리| F["문서 레벨 ACL 검증 및 안전한 Teardown"]
 ```
@@ -57,8 +57,8 @@ python diagnose.py --dry-run
 
 ### Step 1.2 아키텍처 및 자가 검증 브리핑
 실행 완료 후 생성된 `report.md`를 바탕으로 다음 3가지를 명확히 보고한다:
-1. **커넥터 아키텍처**: Jira/Confluence/Salesforce 등 기간계 SaaS -> Secret Manager -> Discovery Engine Data Store
-2. **보안 및 ACL 모델**: Identity Mapping 및 문서 레벨 접근 제어(Document-level ACL) 정책
+1. **커넥터 아키텍처**: Jira/Confluence/Salesforce 등 기간계 SaaS -> Discovery Engine Data Store -> Gemini Enterprise app
+2. **ACL 및 계정 매핑 모델**: Identity Mapping 및 문서 레벨 접근 제어(Document-level ACL) 정책
 3. **Gemini Enterprise app 바인딩 페이로드**: `default_collection/engines` 연결 규격
 
 ---
@@ -95,7 +95,4 @@ curl -X POST \
     -H "Content-Type: application/json" \
     "https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_ID}/locations/${LOCATION}/collections/default_collection/engines/${GE_APP_ID}:unbindDataStore" \
     -d '{"dataStoreId": "ds-jira-connector"}'
-
-# Secret Manager 보안 볼트 정리
-gcloud secrets delete connector-secret-jira-connector --project="${PROJECT_ID}" --quiet
 ```

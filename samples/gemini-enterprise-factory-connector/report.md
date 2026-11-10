@@ -1,6 +1,6 @@
 # Gemini Enterprise 데이터 커넥터 스캐폴더 배포 보고서 (gemini-enterprise-factory-connector)
 
-- **배포 일시**: 2026-11-07 04:00:42 UTC
+- **배포 일시**: 2026-11-10 01:49:22 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)`
@@ -15,14 +15,14 @@
 | **에이전트 명칭** | `PROVISIONED` | `GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)` |
 | **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-connector-scaffolder-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
-| **내장 실행 도구** | `2종 완비` | `deploy_enterprise_connector_tool`, `list_deployed_agents_tool` |
+| **내장 실행 도구** | `2종 완비` | `bind_enterprise_datastore_tool`, `list_connected_datastores_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
 
 ## 2. 팩토리 에이전트 아키텍처 및 붕어빵 생산 흐름
 
-본 솔루션은 데이터 엔지니어가 복잡한 수동 매니페스트 작성이나 보안 볼트 바인딩 없이, GE App 채팅창에서 자연어 대화만으로 사내 기간계 데이터 커넥터를 자율 생산(붕어빵 생산)할 수 있도록 지원하는 **사내 커넥터 팩토리(붕어빵 틀)**다:
+본 솔루션은 데이터 엔지니어가 복잡한 수동 매니페스트 작성 없이, GE App 채팅창에서 자연어 대화만으로 사내 기간계 데이터 커넥터를 자율 생산(붕어빵 생산)할 수 있도록 지원하는 **사내 커넥터 팩토리(붕어빵 틀)**다:
 
 ```mermaid
 flowchart TB
@@ -40,7 +40,7 @@ flowchart TB
         E -->|"대화형 인터뷰 제공"| F["사내 데이터 실무자<br/>(엔지니어 / 관리자)"]
         F -->|"자연어 기간계 연동 요청"| E
         E -->|"커넥터 자동 생성 도구 호출"| D
-        D -->|"Data Store & Secret 생성"| G[("Discovery Engine Data Store<br/>Secret Manager 보안 볼트")]
+        D -->|"Data Store 생성 및 바인딩"| G[("Discovery Engine Data Store<br/>문서 레벨 ACL 동기화")]
     end
 ```
 
@@ -62,7 +62,7 @@ flowchart TB
 
 3. **팩토리 에이전트 자율 동작**:
    - 커넥터 스캐폴더 에이전트가 인증 방식, 동기화 주기, 문서 레벨 ACL 요구사항을 확인하고,
-   - 내장된 `deploy_enterprise_connector_tool`을 호출하여 Discovery Engine Data Store 및 Secret Manager 보안 볼트를 자동 구성한다.
+   - 내장된 `bind_enterprise_datastore_tool`을 호출하여 Discovery Engine Data Store 생성 및 Gemini Enterprise app 연결을 자동 구성한다.
 
 ---
 
@@ -81,7 +81,6 @@ flowchart TB
 - **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project=sample-project-id )
 - **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/sample-ge-app-id/agentic/agents?project=sample-project-id )
 - **Discovery Engine 데이터 저장소 콘솔**: 생성된 Data Store 목록 및 동기화 현황 ( https://console.cloud.google.com/gen-app-builder/data-stores?project=sample-project-id )
-- **Secret Manager 콘솔**: 커넥터 보안 자격 증명 볼트 관리 ( https://console.cloud.google.com/security/secret-manager?project=sample-project-id )
 
 ---
 

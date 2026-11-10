@@ -18,15 +18,14 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 아키텍트 또는 데이터 엔지니어가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 8대 기간계 데이터 소스(Jira, Confluence, Salesforce, Google Drive 등) 연결 요청을 입력하면, 에이전트 엔진(Agent Engine) 런타임이 시크릿 매니저(Secret Manager) 보안 볼트와 문서 레벨 ACL 매핑을 합성하고 디스커버리 엔진(Discovery Engine) 데이터 저장소(Data Store)를 사내 앱에 안전하게 직결 바인딩한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 아키텍트 또는 데이터 엔지니어가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 14대 기간계 데이터 소스(Jira, Confluence, Salesforce, Google Drive 등) 연결 요청을 입력하면, 에이전트 엔진(Agent Engine) 런타임이 인증 방식과 문서 레벨 ACL 매핑을 합성하고 디스커버리 엔진(Discovery Engine) 데이터 저장소(Data Store)를 사내 앱에 직결 바인딩한다.
 
 ```mermaid
 sequenceDiagram
     actor Arch as 아키텍트 / 데이터 엔지니어
     participant Portal as Gemini Enterprise (웹 포털)
     participant Engine as Agent Engine (AdkApp 샌드박스)
-    participant Tool as connector_scaffolder_tool
-    participant SecretMgr as Secret Manager (보안 볼트)
+    participant Tool as bind_enterprise_datastore_tool
     participant DiscEng as Discovery Engine REST API
 
     Arch->>Portal: "사내 Confluence 및 Jira 데이터 소스 연동 설정해 줘"
@@ -34,17 +33,15 @@ sequenceDiagram
     Engine->>Tool: execute(source="confluence_jira", auth_type="oauth2")
 
     rect rgb(240, 245, 255)
-    note right of Tool: 보안 자격 증명 볼트 및 ACL 정책 합성 단계
-    Tool->>SecretMgr: POST /secrets (CII 자격 증명 암호화 보관)
-    SecretMgr-->>Tool: Secret Version Resource Name 반환
+    note right of Tool: 인증 파라미터 및 ACL 정책 합성 단계
     Tool->>Tool: 문서 레벨 ACL 및 사용자 ID 매핑(Identity Mapping) 매니페스트 합성
     end
 
     rect rgb(240, 255, 245)
     note right of Tool: Discovery Engine 데이터 저장소 프로비저닝 및 앱 바인딩
-    Tool->>DiscEng: POST /dataStores (schema, secret_ref, sync_frequency)
+    Tool->>DiscEng: POST /dataStores (schema, connectorConfig, sync_frequency)
     DiscEng-->>Tool: DataStore ID 반환 (동기화 파이프라인 가동)
-    Tool->>DiscEng: POST /engines/{ge_app_id}/dataStores (엔진 직결 바인딩)
+    Tool->>DiscEng: POST /engines/{ge_app_id}:bindDataStore (엔진 직결 바인딩)
     DiscEng-->>Tool: 200 OK (바인딩 완료)
     end
 
@@ -60,11 +57,11 @@ sequenceDiagram
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
 | **BR-01** (14대 엔터프라이즈 3P SaaS 커넥터 및 자유 프롬프팅) | **FR-01** (14대 엔터프라이즈 3P SaaS 커넥터 카탈로그 및 선택기) | **NFR-01** (무의존성 단일 파이썬 실행) | `catalog.yaml`, `diagnose.py` |
-| **BR-02** (보안 볼트 기반 자격 증명 연동) | **FR-02** (Secret Manager 보안 볼트 연동 빌더) | **NFR-02** (최소 권한 보안 격리) | `diagnose.py` |
+| **BR-02** (인증 방식 및 대행 계정 연동 명세) | **FR-02** (OAuth 2.0 및 인증 설정 명세 빌더) | **NFR-02** (최소 권한 및 4대 라벨 준수) | `diagnose.py` |
 | **BR-03** (문서 레벨 ACL 및 사용자 매핑) | **FR-03** (문서 레벨 ACL 정책 컴파일러) | **NFR-02** (데이터 거버넌스 준수) | `diagnose.py` |
 | **BR-04** (동기화 주기 및 증분 색인) | **FR-04** (Discovery Engine Data Store 매니페스트 생성) | **NFR-01**, **NFR-03** | `diagnose.py` |
 | **BR-05** (Gemini Enterprise app 직결 바인딩) | **FR-05** (엔진 바인딩 API 및 CLI 명세 합성) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` |
-| **BR-06** (엔터프라이즈 보안 및 4대 라벨) | **FR-06** (IAM 권한 진단 및 report.md 생성) | **NFR-02**, **NFR-03** | `diagnose.py`, `report.md` |
+| **BR-06** (표준 라벨링 및 API 정합성) | **FR-06** (IAM 권한 진단 및 report.md 생성) | **NFR-02**, **NFR-03** | `diagnose.py`, `report.md` |
 | **BR-07** (선언적 레시피 및 케밥 케이스) | **FR-07** (4단계 캐스케이드 카탈로그 로더 및 검증기) | **NFR-05** (에어갭 무중단 회복 탄력성) | `catalog.yaml`, `diagnose.py` |
 | **BR-08** (에어갭 오프라인 회복 탄력성) | **FR-07** (4단계 캐스케이드 카탈로그 로더 및 검증기) | **NFR-05** (에어갭 무중단 회복 탄력성) | `diagnose.py` |
 | **BR-09** (다중 데이터 소스 스캐폴딩 및 충돌 방어) | **FR-08** (다중 데이터 소스 인스턴스 스캐폴딩 지원 및 식별자 충돌 방어) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` |
@@ -77,9 +74,9 @@ sequenceDiagram
 - Confluence, Jira, SharePoint, OneDrive, Salesforce, ServiceNow, Workday, SAP S/4HANA, Slack, GitHub, GitLab, Zendesk, Box, HubSpot 등 기업 실무에서 가장 많이 쓰이는 14대 엔터프라이즈 3P SaaS 데이터 소스 프리셋을 제공한다.
 - 사용자가 CLI 인자(`--chip`, `--prompt`, `--catalog`) 또는 대화형 환경에서 번호로 선택할 수 있도록 지원하며, `0`번 선택 시 자유 프롬프트 직접 입력을 지원한다.
 
-### FR-02: Secret Manager 보안 볼트 연동 빌더
-- 각 데이터 소스별 필요 자격 증명(OAuth 2.0 Client ID/Secret, API 토큰, 서비스 계정 키)을 시크릿 매니저(Secret Manager)에 보관하기 위한 시크릿 URI를 자동 합성한다.
-- 대행 서비스 계정에 `roles/secretmanager.secretAccessor` 역할을 최소 권한으로 바인딩하는 지침을 생성한다.
+### FR-02: OAuth 2.0 및 인증 설정 명세 빌더
+- 각 데이터 소스별 인증 방식(OAuth 2.0 Client Credentials, API Token, Service Account 등)에 필요한 파라미터 목록을 자동 합성한다.
+- 대행 서비스 계정에 `roles/discoveryengine.admin` 최소 권한을 바인딩하는 지침을 생성한다.
 
 ### FR-03: 문서 레벨 접근 제어(ACL) 및 계정 매핑 컴파일러
 - 원본 SaaS 사용자의 이메일과 사내 구글 워크스페이스(Google Workspace) / Cloud Identity 계정 간의 일치 여부를 매핑하는 사용자 식별 정책(Identity Mapping)을 명세한다.
@@ -93,8 +90,8 @@ sequenceDiagram
 - 생성된 데이터 저장소를 사내 Gemini Enterprise app의 `default_collection/engines/${GE_APP_ID}`에 즉시 바인딩할 수 있는 Discovery Engine API 요청 페이로드 및 `gcloud` CLI 명령어를 생성한다.
 
 ### FR-06: 서비스 계정 IAM 권한 진단 및 표준 리포트 자동 생성
-- 커넥터 실행 서비스 계정의 필수 역할(`roles/discoveryengine.admin`, `roles/secretmanager.secretAccessor`) 바인딩 상태를 점검한다.
-- 실행 완료 시 연동 매니페스트, 보안 설정, 콘솔 조치 가이드를 담은 `report.md`를 자동 생성 및 덮어쓴다.
+- 커넥터 실행 서비스 계정의 필수 역할(`roles/discoveryengine.admin`) 바인딩 상태를 점검한다.
+- 실행 완료 시 연동 매니페스트, ACL 동기화 설정, 콘솔 조치 가이드를 담은 `report.md`를 자동 생성 및 덮어쓴다.
 
 ### FR-07: 4단계 캐스케이드 카탈로그 로더 및 케밥 케이스 슬러그 검증
 - 외부 선언적 카탈로그 파일(`catalog.yaml`)을 파싱하여 동적으로 커넥터 목록을 적재한다.
@@ -118,7 +115,7 @@ sequenceDiagram
 ### NFR-01: 무의존성 및 순수 파이썬 단일 실행 원칙
 - 외부 쉘 스크립트에 의존하지 않고 크로스 플랫폼(Linux, macOS, Windows)에서 `python diagnose.py` 직접 실행만으로 동작한다.
 
-### NFR-02: 보안 및 4대 필수 라벨 준수
+### NFR-02: 최소 권한 및 4대 필수 라벨 준수
 - 모든 생성 매니페스트 및 리소스에 4대 필수 라벨(`managed-by=google-cloud-0-to-1`, `scenario=gemini-enterprise-factory-connector`, `env=sample`, `created-by=customer-engineer`)을 강제한다.
 - 실제 자격 증명이나 개인 식별 정보(PII)의 평문 노출을 전면 차단한다.
 

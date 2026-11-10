@@ -16,41 +16,17 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise In-Chat Factory: 어드민 및 거버넌스 모듈 (gemini-enterprise-factory-admin)
 
-`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 운영 거버넌스를 담당하는 도구로, 사내 IT 어드민 및 클라우드 인프라 팀이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 운영 중 직면하는 9대 핵심 관리 과제(에이전트 및 스킬 스프롤 거버넌스 3종, 사용량 및 텔레메트리 패턴 분석 3종, 테넌트 및 네트워크 보안 3종)를 대화창 내에서 신속 진단하고 자율 해결할 수 있도록 지원하는 사내 어드민 전담 모듈이다. (As of 2026-11-07)
+사내 IT 어드민과 운영 담당자가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 채팅창에서 사내 등록 에이전트 및 데이터 저장소(Data Store) 현황 조회, 테스트 에이전트 일괄 상태 변경/공유 범위 조정, BigQuery 감사 로그 분석 쿼리 및 로그 싱크 구성을 자연어로 즉시 처리하는 사내 어드민 전담 에이전트 배포 모듈이다. (As of 2026-11-10)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 엔터프라이즈 환경에서 Gemini Enterprise 도입 및 운영 중 다음과 같은 관리 이슈가 발생하고 있다면 본 솔루션 도입이 필요하다:
-- [ ] **에이전트 및 스킬 스프롤(Sprawl) 관리 한계**: 임직원들이 자율 생성한 수백 개 에이전트 및 도구 중 60일 이상 무호출 좀비 에이전트, 미승인 외부 엔드포인트를 호출하는 스킬, 퇴사자 고아 에이전트를 공식 콘솔에서 일일이 통제하기 어려운 경우
-- [ ] **Cloud Logging 검색 고통 없는 사용량 패턴 분석**: 부서별 토큰 소비량 톱 10 분석이나 429 할당량 초과 피크 시간대 추적 시 Cloud Logging 필터링 고통 없이 최적화된 BigQuery 감사 SQL 팩을 즉시 활용하고자 하는 경우
-- [ ] **GCP 콘솔 메뉴 미아**: Workspace나 온프레미스 어드민이 GCP 콘솔의 복잡한 GE Admin 메뉴 트리를 찾지 못해 설정 변경에 어려움을 겪는 경우
-- [ ] **감사 로그 BigQuery 연동 부재**: Cloud Logging에 쌓이는 데이터 액세스 로그를 BigQuery로 자동 적재하는 로그 싱크(Log Sink) 설정 방법을 모르는 경우
-- [ ] **도메인 선점 오류**: 사내 도메인이 타 계정이나 기존 조직에 선점되어 테넌트 프로비저닝이 중단된 경우
-- [ ] **외부 마켓플레이스 에이전트 차단 요구**: 보안 규정상 미승인 외부 에이전트 사용을 금지하고 사내 승인 에이전트만 전사 갤러리에 노출시켜야 하는 경우
-- [ ] **유휴 라이선스 비용 누수**: 전사 배포된 고가 라이선스 중 30일 이상 미사용 중인 임직원 라이선스를 식별하여 회수해야 하는 경우
-- [ ] **Overage 추가 과금 및 섀도우 키 우려**: 일일 풀링 쿼터 초과에 따른 과금 누수나 임직원의 AI Studio 유료 API 키 발급을 통제해야 하는 경우
-- [ ] **폐쇄망 프록시 와일드카드 차단**: 사내 보안망 정책상 와일드카드 도메인 허용이 불가하여 15대 코어 FQDN의 정확한 목록이 필요한 경우
-
-
-### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
-- **대상 사용자 (Target)**: Gemini Enterprise 사내 IT 어드민, CISO/정보보안팀, 클라우드 거버넌스 담당자 및 시스템 관리자
-- **해결하는 핵심 문제 (Core Pain Points)**:
-  1. 도메인 선점 충돌, 외부 미승인 마켓플레이스 에이전트 난립, 유휴 라이선스 누수 등 5대 관리 과제가 복잡하게 얽혀 있는 문제
-  2. 사내망 보안 정책상 와일드카드 도메인이 차단되어 Gemini Enterprise app 코어 FQDN 통신이 막히는 장애
-  3. 임직원의 일일 쿼터 초과 시 발생하는 서비스 중단과 Google AI Studio를 통한 섀도우 과금 누수를 통제하지 못하는 현상
-- **본 솔루션의 해결 방식 (Solution)**:
-  - `GE In-Chat Factory` 어드민 모듈로서 5대 핵심 과제(도메인 충돌, 마켓플레이스 차단, 유휴 라이선스, Overage 방어, 사내망 FQDN)를 대화형 인터뷰로 자율 진단하고, Agent Engine 기반으로 배포하여 Gemini Enterprise app 사내 갤러리(`/r/agents`)에 직결 등록 가능한 관리자 도구를 구축한다.
-
-### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
-본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
-
-| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
-| :--- | :--- | :--- |
-| **① 터미널 콘솔 요약** | Visual CLI Table | 5대 어드민 관리 영역 진단 결과, 보안 결함 지표, Agent Engine 프로비저닝 상태 및 사내 갤러리 바인딩 요약 |
-| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 전사 어드민 거버넌스 종합 보고서, 영역별 표준 조치 가이드, 조직 정책 설정 명령어 및 사내망 방화벽 허용 FQDN 명세 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Agent Engine 리소스 등록**: 사내 갤러리에 직결 바인딩되는 어드민 전용 지능형 코파일럿<br/>• **조직 정책 일괄 강제 스크립트**: 외부 마켓플레이스 차단 및 AI Studio 키 발급 제한 gcloud 명령<br/>• **사내망 방화벽 허용 FQDN 20종 리스트**: 보안팀 제출용 공식 아웃바운드 443 허용 목록 |
+사내 Gemini Enterprise app 운영 중 다음과 같은 관리 이슈가 발생하고 있다면 본 모듈을 적용한다:
+- [ ] **에이전트 및 스킬 스프롤(Sprawl) 정리 필요**: 임직원들이 생성한 다수의 에이전트 및 도구 중 테스트/임시 에이전트, 60일 이상 미호출 좀비 에이전트, 퇴사자 고아 에이전트를 키워드나 상태 조건으로 빠르게 선별해 일괄 비활성화(`DISABLED`)하거나 공유 범위(`ALL_USERS`/`PRIVATE`)를 조정해야 하는 경우
+- [ ] **데이터 커넥터 및 에이전트 현황 한눈에 파악**: GE App에 등록된 전체 에이전트, 스킬, 연결된 데이터 저장소(Data Store)와 관리 콘솔 직접 링크를 채팅창에서 바로 확인하고자 하는 경우
+- [ ] **사용량 텔레메트리 SQL 및 로그 싱크 부재**: Cloud Logging 필터를 일일이 작성하지 않고 부서별/계정별 토큰 소비량 톱 10, 429 할당량 초과 패턴, 60일 미사용 에이전트를 조회하는 BigQuery 감사 SQL과 로그 라우터 싱크(Log Sink) 구성 가이드를 바로 얻고자 하는 경우
+- [ ] **콘솔 메뉴 탐색 부담**: Workspace 또는 클라우드 운영 담당자가 Agent Platform, Discovery Engine, BigQuery, Log Router 관리 페이지 URL을 매번 찾지 않고 딥링크로 바로 이동하고자 하는 경우
 
 ---
 
@@ -60,7 +36,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
 
 ### 1) 모의 데이터 가상 실행 (Dry-Run)
-GCP API 호출 없이 내장된 가상 인프라 데이터로 정상 동작 여부를 즉시 검증한다:
+GCP API 호출 없이 내장된 가상 데이터로 프로비저닝 명세와 보고서 생성 동작을 즉시 검증한다:
 ```bash
 python diagnose.py --dry-run
 ```
@@ -70,11 +46,9 @@ python diagnose.py --dry-run
 ===========================================================================
   Gemini Enterprise 어드민 거버넌스 모듈 (gemini-enterprise-factory-admin)
 ===========================================================================
-[*] 사내 활성 Gemini Enterprise App 자동 감지: sample-ge-app-id
 [*] 활성 프로젝트    : sample-project-id
 [*] 배포 리전        : global
 [*] 대상 GE App ID   : sample-ge-app-id
-[*] 사내 대상 도메인 : example-corp.com
 [*] 실행 서비스 계정 : ge-admin-sa@sample-project-id.iam.gserviceaccount.com
 [*] 실행 모드        : 가상 실행 (--dry-run)
 
@@ -108,48 +82,33 @@ python diagnose.py
 
 ---
 
-## 3. 솔루션 아키텍처 및 런타임 서비스 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
 flowchart TB
-    subgraph Client["1. 사용자 인터랙션 계층 (User Layer)"]
-        AdminUser["사내 IT 어드민 / 인프라 팀"] -->|"1. 거버넌스 질의 및 관리 요청"| GEApp["Gemini Enterprise app<br/>웹 대화형 포털 (/r/agents)"]
+    subgraph Client["1. 사용자 인터랙션 (Gemini Enterprise 웹 포털)"]
+        AdminUser["사내 IT 어드민 / 운영 담당자"] -->|"1. 자연어 관리 및 감사 질의"| GEApp["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
     end
 
-    subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
-        SA["전용 어드민 서비스 계정<br/>(ge-admin-sa)<br/>- roles/discoveryengine.editor<br/>- roles/logging.viewer<br/>- roles/bigquery.user"]
+    subgraph Runtime["2. Agent Engine 호스팅 런타임 (Google ADK)"]
+        GEApp -->|"2. 어드민 세션 질의 전달"| Engine["Agent Engine<br/>(gemini-3.8-flash)"]
+        Engine -->|"3. 내장 어드민 도구 8종 실행"| Tools["목록 조회 / 배치 제어 / 감사 SQL / 콘솔 딥링크"]
     end
 
-    subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
-        GEApp -->|"2. 대화형 관리 세션 인입"| Engine["Agent Engine 런타임<br/>(관리형 gVisor 격리 컨테이너)"]
-        
-        subgraph InsideEngine["런타임 내부 구조"]
-            Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
-            ADK["Google ADK 에이전트<br/>(gemini-3.8-flash)"]
-            Tools["내장 관리 도구 7종<br/>- filter_and_inspect_sprawl_agents_tool<br/>- batch_update_agents_state_tool<br/>- batch_update_agents_sharing_tool<br/>- batch_delete_agents_tool<br/>- list_deployed_agents_tool<br/>- get_admin_audit_queries_tool<br/>- get_admin_console_deeplinks_tool"]
-            Wrapper --> ADK --> Tools
-        end
-        Engine --- InsideEngine
+    subgraph Backend["3. Gemini Enterprise 및 로그 백엔드"]
+        Tools -->|"4. 에이전트 및 Data Store 조회/제어"| DiscEng["Discovery Engine API<br/>(에이전트 레지스트리 & 커넥터)"]
+        Tools -->|"5. 감사 SQL 및 싱크 가이드 반환"| Audit["BigQuery 감사 데이터셋 & Cloud Logging"]
     end
 
-    subgraph Backend["4. 구글 클라우드 백엔드 인프라 (Target Services)"]
-        Tools -->|"3. 에이전트 카탈로그 실시간 점검"| DiscEng["Discovery Engine<br/>(사내 에이전트 레지스트리)"]
-        Tools -->|"4. 감사 로그 쿼리 및 분석 가이드"| BQ[("BigQuery 감사 데이터셋<br/>(cloudaudit_googleapis_com)")]
-        Tools -->|"5. 원클릭 운영 조치 딥링크 제공"| Consoles["GCP & Admin 콘솔<br/>(Agent Platform / IAM / Billing)"]
-    end
-
-    SA -.->|"ADC 신원 주입"| Engine
-    Tools -->|"6. 즉각 조치 가이드 및 리포트 반환"| GEApp
+    Tools -->|"6. 조치 결과 및 콘솔 딥링크 반환"| GEApp
 
     classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
-    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
     classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
     classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
 
     class AdminUser,GEApp portal;
-    class SA security;
-    class Engine,Wrapper,ADK,Tools runtime;
-    class DiscEng,BQ,Consoles backend;
+    class Engine,Tools runtime;
+    class DiscEng,Audit backend;
 ```
 
 ---
@@ -160,22 +119,18 @@ flowchart TB
 - **Gemini Enterprise 에이전트 목록 콘솔**: ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
 - **Cloud Logging 로그 라우터 콘솔**: ( https://console.cloud.google.com/logs/router )
 - **BigQuery 감사 로그 분석 콘솔**: ( https://console.cloud.google.com/bigquery )
-- **Google Admin 관리 콘솔**: ( https://admin.google.com/ )
-- **Google Cloud 결제(Billing) 콘솔**: ( https://console.cloud.google.com/billing )
-- **Cloud DNS 및 도메인 콘솔**: ( https://console.cloud.google.com/net-services/dns/zones )
 
 ---
 ## 5. 사전 준비 사항 (필요 IAM 권한)
 
-본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
-
-본 도구를 실행하고 어드민 정책을 점검 및 복구하기 위해 필요한 최소 IAM 역할은 다음과 같다:
+본 도구를 실행하고 어드민 거버넌스 모듈을 배포 및 운영하기 위해 필요한 최소 IAM 역할은 다음과 같다:
 
 | 역할 (Role) | 권한 및 용도 |
 | :--- | :--- |
-| `roles/discoveryengine.admin` | Discovery Engine 마켓플레이스 및 에이전트 공유 거버넌스 설정 |
-| `roles/resourcemanager.organizationAdmin` | 조직 정책(Org Policy) 및 도메인 바인딩 점검 |
-| `roles/billing.admin` (또는 `viewer`) | Overage 과금 방어 및 결제 계정 사용자 RBAC 감사 |
+| `roles/discoveryengine.admin` | Gemini Enterprise app 등록 에이전트, 데이터 저장소 조회 및 배치 상태/공유 제어 |
+| `roles/aiplatform.user` | Agent Engine 프로비저닝 및 사내 어드민 에이전트 런타임 실행 |
+| `roles/logging.configWriter` | 감사 로그 BigQuery 라우터 싱크(Log Sink) 구성 시 필요 |
+| `roles/bigquery.dataViewer` | BigQuery 감사 데이터셋 토큰 소비량 및 미사용 에이전트 SQL 조회 시 필요 |
 
 ---
 
@@ -185,7 +140,7 @@ flowchart TB
 - [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
 - [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
-에이전트 인프라 및 어드민 관리 리소스(BigQuery 데이터세트, 서비스 계정, Cloud Functions 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+에이전트 인프라 및 어드민 관리 리소스(BigQuery 데이터세트, 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-factory-admin`
 - `env`: `sample` (또는 `poc`)
@@ -194,10 +149,14 @@ flowchart TB
 ---
 ## 7. 리소스 정리 (Teardown) 안내
 
-본 진단 및 모의 실행 완료 후 테스트용 정책이나 임시 리소스를 정리하려면 아래 가이드를 준수한다:
+본 진단 및 배포 검증 완료 후 테스트용 Agent Engine 인스턴스나 등록된 에이전트를 정리하려면 아래 명령을 수행한다:
 
 ```bash
-# 1. 임시 DNS TXT 검증 레코드 정리 (DNS 관리 포털에서 삭제)
-# 2. 테스트용 서비스 계정 정리
-gcloud iam service-accounts delete "ge-admin-sa@${PROJECT_ID}.iam.gserviceaccount.com" --project="${PROJECT_ID}" --quiet
+# 1. Agent Engine 삭제 (리포트에 출력된 Reasoning Engine 리소스 경로 확인 후 실행)
+curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  "https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/us-central1/reasoningEngines/<ENGINE_ID>?force=true"
+
+# 2. Gemini Enterprise app 사내 갤러리 등록 해제
+curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  "https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_ID}/locations/global/collections/default_collection/engines/${GE_APP_ID}/assistants/default_assistant/agents/<AGENT_ID>"
 ```

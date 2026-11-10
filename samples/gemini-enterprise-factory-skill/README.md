@@ -14,39 +14,19 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Gemini Enterprise In-Chat Factory: 사내 도구 및 스킬 팩토리 모듈 (gemini-enterprise-factory-skill)
+# Gemini Enterprise In-Chat Factory: 사내 스킬 팩토리 모듈 (gemini-enterprise-factory-skill)
 
-`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 사내 기간계 도구(Tools) 및 API 확장을 담당하는 도구로, 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 에이전트가 손발처럼 호출하여 전자결재, 법인카드 경비 정산, 근태 관리 등 사내 기간계 시스템을 직접 제어할 수 있는 24대 엔터프라이즈 업무 스킬(Open Skills / SKILL.md) 카탈로그를 비개발자가 대화창 내에서 자율 생성하고, Gemini Enterprise app Skills 목록에 원클릭으로 자동 프로비저닝 및 전사 배포할 수 있도록 지원하는 사내 스킬 팩토리 모듈이다. (As of 2026-11-07)
+`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 사내 업무 스킬(Skills) 생성을 담당하는 도구로, 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 채팅창에서 현업 임직원이 반복적인 업무 절차, 보고서 양식, 검토 체크리스트를 담은 맞춤 스킬(`SKILL.md` / `skillAgentDefinition`)을 붕어빵 찍어내듯 대화형으로 생성하고 사내 스킬 갤러리(`/r/skills`)에 즉시 등록 및 공유할 수 있도록 지원하는 GE App 전용 스킬 팩토리다. (As of 2026-11-10)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
-사내 엔터프라이즈 에이전트 도입 후 다음과 같은 실무적 한계나 고민이 발생하고 있다면 본 솔루션 도입이 필요하다:
-- [ ] **에이전트의 단순 대화 한계**: 텍스트 질의응답을 넘어 구글 시트 행 추가, 슬랙 장애 알림 발송, 지라 티켓 발행 등 사내 시스템을 직접 조작하는 실무 액션(Action)이 필요한 경우
-- [ ] **비개발자 임직원의 OpenAPI 작성 불가**: 일반 직원이 사내 API를 에이전트 도구로 붙이고 싶어도 OpenAPI 3.0 스키마(JSON/YAML) 및 파라미터 규격을 작성할 줄 몰라 확장이 중단된 경우
-- [ ] **API 토큰 및 자격 증명 평문 노출 위험**: 임직원이 시스템 연동을 위해 웹훅 URL이나 API 키를 프롬프트에 평문으로 하드코딩하여 보안 사고 위험이 발생하는 경우
-- [ ] **조회와 변경 작업의 무분별한 실행 위험**: 단순 데이터 조회와 데이터베이스 수정/결재 승인 작업을 동일한 권한으로 처리하여 비인가 결재나 데이터 오염이 우려되는 경우
-
-
-### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
-- **대상 사용자 (Target)**: 백엔드 개발자, 시스템 통합(SI) 엔지니어, 사내 도구 개발자 및 에이전트 빌더
-- **해결하는 핵심 문제 (Core Pain Points)**:
-  1. 에이전트가 사내 시스템(Google Sheets, Slack, Jira, ERP 등)을 호출할 도구(Tool/Extension)를 제작할 때 반복적인 보일러플레이트 코드가 발생하는 문제
-  2. 외부 API 호출용 인증 토큰이나 웹훅 URL이 안전한 Secret Manager 보안 볼트와 연동되지 않아 보안 심의를 통과하지 못하는 문제
-  3. 미승인 도구가 무분별하게 에이전트에 체이닝되어 사내 데이터 유출이나 예기치 않은 시스템 변경 사고가 발생하는 현상
-- **본 솔루션의 해결 방식 (Solution)**:
-  - 8대 사내 시스템(시트, 슬랙, 지라, 노션, ERP 등)에 특화된 도구 템플릿을 대화형 인터뷰로 선택하고, Secret Manager 보안 볼트와 Agent Platform 도구 규격을 결합하여 사내 승인된 도구 자산을 원클릭 스캐폴딩 및 등록한다.
-
-### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
-본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
-
-| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
-| :--- | :--- | :--- |
-| **① 터미널 콘솔 요약** | Visual CLI Table | 선택된 시스템 도구 템플릿, OpenAPI 스키마 유효성, Secret Manager 시크릿 경로 및 도구 등록 상태 표 |
-| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 도구 상세 설계 보고서, OpenAPI 3.0 엔터프라이즈 스키마, 파이썬 함수 호출 래퍼 코드 및 보안 권한 명세서 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **OpenAPI 3.0 표준 도구 매니페스트**: 에이전트가 함수 호출(Function Calling)에 활용할 JSON 규격<br/>• **Secret Manager 보안 볼트 주입 모듈**: API 키와 비밀번호를 런타임에 안전하게 복호화하는 래퍼<br/>• **사내 도구 레지스트리 등록 명세**: 사내 승인 도구 카탈로그에 도구를 등재하는 거버넌스 규격 |
+Gemini Enterprise app 도입 후 현업에서 다음과 같은 상황이 발생하고 있다면 본 모듈이 적합하다:
+- [ ] **반복 업무 프롬프트 매번 재입력**: 주간 보고서 작성, 회의록 요약, 경비 규정 검토 등 자주 쓰는 업무 절차와 출력 형식을 매번 채팅창에 새로 입력하고 있는 경우
+- [ ] **팀 내 검증된 노하우 공유 한계**: 특정 직원이 만든 유용한 업무 프롬프트와 체크리스트를 부서원이나 전사 임직원이 `/스킬명`으로 바로 꺼내 쓰기 어려운 경우
+- [ ] **비개발자 임직원의 SKILL.md 작성 부담**: 일반 현업 담당자가 지침 구조, 트리거 조건, 출력 양식을 규격에 맞춰 직접 작성하기 막막해하는 경우
+- [ ] **GE App `/r/skills` 카탈로그 빠른 확충 필요**: 초기 데모(Day-1) 이후 고객사 실무(Day-2)에 바로 투입할 24종 이상의 표준 업무 스킬을 단시간 내 GE App에 채워 넣고 싶은 경우
 
 ---
 
@@ -66,10 +46,9 @@ python diagnose.py --dry-run
 ===========================================================================
   Gemini Enterprise 사내 스킬 팩토리 (gemini-enterprise-factory-skill)
 ===========================================================================
-[*] 사내 활성 Gemini Enterprise App 자동 감지: sample-ge-app-id
 [*] 활성 프로젝트    : sample-project-id
 [*] 대상 리전        : global
-[*] 대상 Gemini Enterprise App ID   : sample-ge-app-id
+[*] 대상 GE App ID   : sample-ge-app-id
 [*] 실행 서비스 계정 : ge-skill-invoker-sa@sample-project-id.iam.gserviceaccount.com
 [*] 실행 모드        : 가상 실행 (--dry-run)
 
@@ -94,114 +73,77 @@ python diagnose.py --config
 ```
 
 
-### 3) 실제 사내 인프라 실시간 진단
+### 3) 실제 사내 인프라 실시간 프로비저닝
 ```bash
 python diagnose.py
 ```
 > [!NOTE]
 > 앞서 `python diagnose.py --config`로 환경 설정을 저장했거나 gcloud 활성 설정을 그대로 활용할 경우 별도의 `.env` 생성 없이 즉시 실행할 수 있다. (환경 변수를 텍스트 에디터로 직접 수동 편집하고자 할 때만 `cp -n .env.example .env` 실행 후 수정)
 
-
-
 ---
 
-## 3. 솔루션 아키텍처 및 런타임 서비스 흐름
+## 3. 솔루션 아키텍처 및 처리 흐름
 
 ```mermaid
-flowchart TB
-    subgraph Client["1. 사용자 인터랙션 계층 (User Layer)"]
-        Developer["개발자 / 사내 운영팀"] -->|"1. 사내 연동 도구 요구사항 입력"| GEApp["Gemini Enterprise app<br/>웹 대화형 포털 (/r/agents)"]
+flowchart LR
+    subgraph UserLayer["1. GE App 채팅창 (User Interaction)"]
+        User["현업 실무자 / 관리자<br/>(Zero GCP IAM)"] -->|"1. '주간 보고서 스킬 만들어 줘'"| GEChat["Gemini Enterprise app<br/>웹 대화창 (/r/agents)"]
     end
 
-    subgraph Security["2. 보안 및 신원 경계 (Security & Identity Boundary)"]
-        SA["전용 스킬 대행 서비스 계정<br/>(ge-skill-invoker-sa)<br/>- roles/secretmanager.secretAccessor<br/>- roles/discoveryengine.editor"]
+    subgraph RuntimeLayer["2. 스킬 팩토리 런타임 (Agent Engine)"]
+        GEChat -->|"2. 대화형 생성 요청"| Engine["GE In-Chat Skill Factory<br/>(Google ADK + Gemini 3.8 Flash)"]
+        Engine -->|"3. 카탈로그·중복 체크 및<br/>SKILL.md 지침 합성"| Tools["내장 스킬 생성 도구<br/>- check_skill_duplicate_tool<br/>- deploy_enterprise_skill_tool<br/>- get_preset_skills_tool"]
     end
 
-    subgraph Runtime["3. 호스팅 런타임 계층 (Agent Engine / Vertex AI)"]
-        GEApp -->|"2. 대화형 스킬 생성 세션 인입"| Engine["Agent Engine 런타임<br/>(관리형 gVisor 격리 컨테이너)"]
-        
-        subgraph InsideEngine["런타임 내부 구조"]
-            Wrapper["ResilientAdkApp<br/>(Pydantic v2 회복성 래퍼)"]
-            ADK["Google ADK 에이전트<br/>(gemini-3.8-flash)"]
-            Compiler["Open Skills 규격 컴파일러<br/>(SKILL.md & OpenAPI 3.0)"]
-            Tools["내장 스킬 관리 도구 세트<br/>- deploy_enterprise_skill_tool<br/>- list_enterprise_skills_tool<br/>- get_preset_skills_tool"]
-            Wrapper --> ADK --> Compiler --> Tools
-        end
-        Engine --- InsideEngine
+    subgraph GEOutput["3. GE App 공식 스킬 갤러리 등록"]
+        Tools -->|"4. skillAgentDefinition 등록"| SkillsTab["Gemini Enterprise app<br/>공식 스킬 목록 (/r/skills)"]
+        SkillsTab -->|"5. 전사 임직원 즉시 호출"| Usage["채팅창에서 '/스킬명' 실행"]
     end
-
-    subgraph Backend["4. 구글 클라우드 백엔드 인프라 (Target Services)"]
-        Tools -->|"3. 웹훅 및 API 키 암호화 보관"| Vault["Secret Manager<br/>(보안 볼트)"]
-        Tools -->|"4. 사내 Agent Registry 등록"| Registry["Agent Registry / Tools 갤러리"]
-        Registry -->|"5. 전사 에이전트에 도구 바인딩"| TargetAgents["사내 Gemini Enterprise 에이전트"]
-    end
-
-    subgraph Systems["5. 사내 연동 시스템 (Target Systems)"]
-        ExternalSystems["Slack Webhook, Google Sheets API,<br/>사내 ERP / 모니터링 시스템"]
-        TargetAgents -.->|"실행 권한으로 API 호출"| ExternalSystems
-    end
-
-    SA -.->|"ADC 신원 주입"| Engine
-
-    classDef portal fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
-    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
-    classDef runtime fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
-    classDef backend fill:#fce8e6,stroke:#ea4335,stroke-width:2px;
-    classDef system fill:#f3e8fd,stroke:#9c27b0,stroke-width:2px;
-
-    class Developer,GEApp portal;
-    class SA security;
-    class Engine,Wrapper,ADK,Compiler,Tools runtime;
-    class Vault,Registry,TargetAgents backend;
-    class ExternalSystems system;
 ```
 
 ---
 
 ## 4. 조치 가이드 및 권장 설정
 
-- **Gemini Enterprise 웹 포털**: 사내 임직원 전용 대화형 포털 접속 및 스킬/도구 확인 ( https://gemini.google.com )
-- **Gemini Enterprise 관리자 콘솔**: 사내 등록된 도구(Tools) 및 에이전트 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
-- **Secret Manager 콘솔**: 사내 API 토큰 및 웹훅 URL 보안 볼트 관리 ( https://console.cloud.google.com/security/secret-manager )
-- **IAM 및 관리자 콘솔**: 스킬 대행 서비스 계정(`ge-skill-invoker-sa`) 역할 및 바인딩 상태 확인 ( https://console.cloud.google.com/iam-admin/iam )
+- **Gemini Enterprise 웹 포털**: 사내 갤러리(`/r/agents`)에서 스킬 팩토리 실행 및 `/r/skills` 확인 ( https://gemini.google.com )
+- **Gemini Enterprise 관리자 콘솔**: 등록된 스킬 및 에이전트 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
+- **Agent Platform Runtimes 콘솔**: 배포된 Agent Engine 런타임 상태 확인 ( https://console.cloud.google.com/agent-platform/runtimes )
 
 ---
+
 ## 5. 사전 준비 사항 (필요 IAM 권한)
 
-본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
-
-스킬 매니페스트 배포 및 에이전트 런타임 보안을 위해 필요한 최소 권한(Least Privilege) 구성은 다음과 같다:
+본 도구를 배포 및 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 | 역할 (Role) | 부여 대상 | 용도 및 최소 권한 세부 사항 |
 | :--- | :--- | :--- |
-| `roles/secretmanager.secretAccessor` | 스킬 실행 대행 SA (`ge-skill-invoker-sa`) | 런타임 시 사내 API 토큰 및 웹훅 URL 복호화 권한 |
-| `roles/discoveryengine.editor` | 관리자 실행 계정 | Gemini Enterprise app 도구 레지스트리에 신규 Tool 등록 및 메타데이터 관리 |
-| 권한 불필요 (Zero IAM) | 일반 현업 임직원 | Gemini Enterprise app 웹 포털 로그인 계정 외에 GCP 콘솔 권한 일절 불필요 |
+| `roles/aiplatform.user` | 배포 실행 계정 | Agent Engine 런타임 프로비저닝 및 모델 호출 |
+| `roles/discoveryengine.editor` | 배포 실행 계정 / 팩토리 런타임 | Gemini Enterprise app 내 팩토리 등록 및 `skillAgentDefinition` 생성 |
+| 권한 불필요 (Zero IAM) | 일반 현업 임직원 | Gemini Enterprise app 웹 포털 외에 GCP 콘솔 권한 불필요 |
 
 ---
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ### 관련 상세 설계 및 요구 사항 명세
-- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 성공 지표 및 요구 사항(BR-01~) 명세
+- [비즈니스 요구 사항 명세서 (BRD)](docs/BRD.md): 비즈니스 배경, 요구 사항(BR-01~) 명세
 - [기술 상세 설계서 (TDD)](docs/TDD.md): 시스템 아키텍처, 기능(FR-01~) 및 비기능(NFR-01~) 설계 명세
 
-사내 스킬 인프라 및 보안 볼트 리소스(Secret Manager 시크릿, 대행 서비스 계정 등) 생성 시 4대 표준 라벨을 반드시 적용한다:
+리소스 생성 시 4대 표준 라벨을 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-factory-skill`
 - `env`: `sample` (또는 `poc`)
 - `created-by`: `customer-engineer`
 
 ---
+
 ## 7. 리소스 정리 (Teardown) 안내
 
-본 솔루션 검증 후 테스트용으로 등록된 도구 매니페스트나 서비스 계정을 정리하고자 할 경우 아래 절차를 수행한다:
+검증 후 테스트용으로 등록된 스킬 팩토리 에이전트나 서비스 계정을 정리하려면 아래 절차를 수행한다:
 
-1. **대행 서비스 계정 삭제**:
+1. **Gemini Enterprise app 등록 스킬 및 팩토리 삭제**:
+   - Gemini Enterprise 관리자 콘솔 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )에서 등록된 팩토리 에이전트 또는 테스트 스킬을 선택하여 삭제한다.
+2. **대행 서비스 계정 삭제 (생성한 경우)**:
    ```bash
    gcloud iam service-accounts delete ge-skill-invoker-sa@${PROJECT_ID}.iam.gserviceaccount.com --quiet
-   ```
-2. **Secret Manager 테스트 시크릿 정리**:
-   ```bash
-   gcloud secrets delete workspace-service-account-key --quiet
    ```

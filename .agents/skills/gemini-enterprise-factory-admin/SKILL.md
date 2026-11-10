@@ -17,16 +17,16 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-enterprise-factory-admin
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-factory-admin: 사내 IT 어드민 및 인프라 팀을 위해 도메인 선점 충돌, 외부 마켓플레이스 차단 거버넌스, 유휴 라이선스 회수, Overage 과금 방어, 사내망 FQDN 허용 등 5대 관리 과제를 대화형으로 자율 진단하고 조치 가이드를 제공하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-enterprise-factory-admin: 사내 IT 어드민 및 운영 팀이 Gemini Enterprise app 채팅창에서 에이전트 및 데이터 저장소 현황 조회, 테스트 에이전트 일괄 상태/공유 제어, BigQuery 감사 SQL 및 로그 싱크 가이드를 즉시 실행하도록 전용 어드민 모듈을 배포하는 도구다.
 ---
 
-# Gemini Enterprise 어드민 코파일럿 (`gemini-enterprise-factory-admin`) (Autopilot & Hands-on Guide)
+# Gemini Enterprise 어드민 거버넌스 모듈 (`gemini-enterprise-factory-admin`) (Autopilot & Hands-on Guide)
 
 본 스킬은 사내 클라우드 아키텍트와 IT 어드민이 `gemini-enterprise-factory-admin` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 
-**Audience**: `#Architect`, `#FinOps`, `#SecOps`  
-**Concern**: `#Billing`, `#Compliance`, `#Security`  
-**Service**: `#AgentPlatform`, `#BigQuery`, `#CloudMonitoring`  
+**Audience**: `#Architect`, `#Admin`  
+**Concern**: `#Governance`, `#Observability`, `#Lifecycle`  
+**Service**: `#GeminiEnterprise`, `#AgentPlatform`, `#BigQuery`  
 
 ---
 
@@ -34,18 +34,18 @@ description: >-
 
 ```mermaid
 flowchart TD
-    A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 5대 어드민 관리 칩 및 매니페스트 무결성 검증"]
+    A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 프로비저닝 명세 및 리포트 무결성 검증"]
     B --> C["Stage 2: 실습 (Administrator Hands-on)"]
-    C -->|원하는 어드민 관리 칩 선택 및 조치 스크립트 도출| D["거버넌스 매니페스트 및 콘솔 링크 가이드 확인"]
+    C -->|어드민 과제 칩 선택 및 조치 가이드 도출| D["BigQuery 감사 SQL, 로그 싱크 및 콘솔 딥링크 확인"]
     D --> E["Stage 3: 복습 (Deep-dive & Cleanup)"]
-    E -->|정책 적용 상태 검증 및 안전한 Teardown| F["사내 거버넌스 감사 통과"]
+    E -->|사내 갤러리 동작 확인 및 안전한 Teardown| F["운영 체계 정비 완료"]
 ```
 
 ---
 
 ## 2. Stage 1: 예습 (YOLO Autopilot 모드)
 
-고객사 아키텍트가 "어드민 코파일럿 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
+사용자가 "어드민 거버넌스 모듈 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
 1. 현재 활성화된 gcloud 프로젝트 및 실행 서비스 계정 환경을 확인한다.
@@ -57,45 +57,51 @@ python diagnose.py --dry-run
 
 ### Step 1.2 아키텍처 및 자가 검증 브리핑
 실행 완료 후 생성된 `report.md`를 바탕으로 다음 3가지를 명확히 보고한다:
-1. **5대 어드민 관리 과제**: 도메인 온보딩, 마켓플레이스 차단, 라이선스 회수, Overage 방어, FQDN 진단
-2. **거버넌스 매니페스트**: Discovery Engine 공유 및 마켓플레이스 비활성화 규격
-3. **즉시 조치 스크립트**: DNS TXT, BigQuery SQL 및 gcloud 관리자 명령어
+1. **내장 어드민 도구 8종**: 에이전트/데이터 저장소 목록 조회, 배치 상태/공유/삭제, BigQuery 감사 SQL, 콘솔 딥링크
+2. **GE App 사내 갤러리 바인딩**: `Agent Engine` 기반 프로비저닝 및 `/r/agents` 전사 공유(`ALL_USERS`) 명세
+3. **관리 콘솔 딥링크**: Agent Platform, Gemini Enterprise, Cloud Logging, BigQuery 직접 이동 링크
 
 ---
 
 ## 3. Stage 2: 실습 (Administrator Hands-on 모드)
 
-IT 어드민이 특정 관리 이슈에 맞추어 칩을 선택하고 가이드를 도출하는 절차다.
+IT 어드민이 9대 GE 어드민 운영 과제 중 특정 항목을 선택하고 가이드를 도출하는 절차다.
 
-### Step 2.1 5대 관리 칩 선택 실행
+### Step 2.1 GE 어드민 운영 칩 선택 실행
 ```bash
-# 1번 도메인 선점 충돌 및 Cloud Identity 온보딩
+# 1번 60일 미사용 좀비 에이전트 전수 식별 및 보관 정리
 python diagnose.py --dry-run --chip 1
 
-# 2번 외부 마켓플레이스 차단 및 사내 승인 에이전트 통제
+# 2번 미승인 스킬 및 외부 엔드포인트 도구 감사
 python diagnose.py --dry-run --chip 2
 
-# 3번 부서별 라이선스 채택률 분석 및 30일 유휴 라이선스 회수
+# 3번 퇴사자 및 부서 이동자 고아 에이전트 소유권 회수 및 이관
 python diagnose.py --dry-run --chip 3
 
-# 4번 Overage 추가 과금 방어 및 AI Studio 키 차단
+# 4번 부서별 계정별 토큰 소비량 톱 10 및 비용 급증 추적
 python diagnose.py --dry-run --chip 4
 
-# 5번 사내망 프록시 허용용 Exact 15대 코어 FQDN 진단
+# 5번 429 할당량 고갈 에이전트 및 호출 집중 시간대 역추적
 python diagnose.py --dry-run --chip 5
 
-# 6번 수백 개 에이전트 전수 감사 및 좀비 에이전트 식별 (BigQuery 쿼리 팩)
+# 6번 부서별 활성 사용자 추이 및 30일 미사용 유휴 계정 분석
 python diagnose.py --dry-run --chip 6
 
-# 7번 Cloud Logging to BigQuery 30초 원클릭 감사 로그 싱크 구축 & GCP 콘솔 길잡이
+# 7번 Cloud Logging 감사 로그 BigQuery 자동 적재 싱크 구축
 python diagnose.py --dry-run --chip 7
+
+# 8번 사내 갤러리 테스트 에이전트 일괄 비활성화 및 공유 범위 정리
+python diagnose.py --dry-run --chip 8
+
+# 9번 Gemini Enterprise, 데이터 커넥터 및 Agent Platform 관리 콘솔 딥링크
+python diagnose.py --dry-run --chip 9
 ```
 
 ---
 
 ## 4. Stage 3: 복습 (Deep-dive & Teardown 모드)
 
-실습 완료 후 임시 DNS 레코드나 서비스 계정을 정리하는 가이드다.
+실습 완료 후 테스트용 Agent Engine 및 GE App 에이전트 등록을 정리하는 가이드다.
 
 ```bash
 # 임시 서비스 계정 정리

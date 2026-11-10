@@ -1,6 +1,6 @@
 # Gemini Enterprise 사내 스킬 팩토리 배포 보고서 (gemini-enterprise-factory-skill)
 
-- **배포 일시**: 2026-11-07 04:00:43 UTC
+- **배포 일시**: 2026-11-10 01:49:21 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Skill Factory (사내 스킬 팩토리)`
@@ -15,54 +15,50 @@
 | **에이전트 명칭** | `PROVISIONED` | `GE In-Chat Skill Factory (사내 스킬 팩토리)` |
 | **호스팅 런타임** | `Agent Engine` | `projects/sample-project-id/locations/us-central1/reasoningEngines/simulated-skill-factory-engine` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
-| **내장 실행 도구** | `3종 완비` | `deploy_enterprise_skill_tool`, `list_enterprise_skills_tool`, `get_preset_skills_tool` |
+| **내장 실행 도구** | `4종 완비` | `check_skill_duplicate_tool`, `deploy_enterprise_skill_tool`, `list_enterprise_skills_tool`, `get_preset_skills_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
 
 ## 2. 팩토리 에이전트 아키텍처 및 스킬 제작 흐름
 
-본 솔루션은 사내 개발자 및 임직원이 복잡한 OpenAPI 스펙이나 Secret Manager 권한을 일일이 수동 구성하지 않고, GE App 채팅창에서 자연어 대화만으로 사내 기간계 시스템 연동 도구(붕어빵)를 자율 제작 및 등록할 수 있도록 지원하는 **사내 스킬 팩토리(붕어빵 틀)**다:
+본 솔루션은 임직원이 복잡한 규격을 직접 작성하지 않고, GE App 채팅창에서 자연어 대화만으로 업무 스킬(`SKILL.md`)을 제작하여 `/r/skills`에 즉시 등록할 수 있도록 지원하는 **사내 스킬 팩토리(붕어빵 틀)**다:
 
 ```mermaid
-flowchart TB
-    subgraph Dev["1. 엔지니어링 & 프로비저닝"]
-        A["인프라 / 플랫폼 엔지니어"] -->|"python diagnose.py"| B["스킬 팩토리<br/>(diagnose.py)"]
-        B -->|"Google ADK 2.11+ 패키징"| C["Agent Engine 이미지 & 스펙"]
+flowchart LR
+    subgraph L1["1. GE App 대화창"]
+        U["임직원 / 부서 관리자"] -->|"자연어 스킬 생성 요청"| GE["Gemini Enterprise app<br/>(/r/agents)"]
     end
 
-    subgraph Runtime["2. 런타임 & 도구 연동"]
-        C -->|"원클릭 프로비저닝"| D["Agent Engine<br/>(Reasoning Engine)"]
-        D -->|"사내 갤러리 전사 등록"| E["Gemini Enterprise app<br/>사내 갤러리 (/r/agents)"]
+    subgraph L2["2. Agent Engine 팩토리"]
+        GE -->|"대화 라우팅"| F["Skill Factory 에이전트<br/>(gemini-3.8-flash)"]
+        F -->|"슬러그 중복 검사 &<br/>SKILL.md 합성"| T["deploy_enterprise_skill_tool"]
     end
 
-    subgraph Portal["3. 전사 임직원 인터페이스"]
-        E -->|"대화형 스킬 빌더 제공"| F["사내 개발자 / 임직원<br/>(비즈니스 실무자)"]
-        F -->|"자연어 도구 연동 요청"| E
-        E -->|"스킬 자동 등록 도구 호출"| D
-        D -->|"Secret 볼트 & 스킬 생성"| G[("Secret Manager 보안 볼트<br/>OpenAPI Tool 매니페스트")]
+    subgraph L3["3. GE App 스킬 등록"]
+        T -->|"skillAgentDefinition 등록"| REG["GE App 스킬 갤러리<br/>(/r/skills)"]
     end
 ```
 
 ---
 
-## 3. 사내 실무자 활용 가이드 (도구 및 스킬 생성)
+## 3. 사내 실무자 활용 가이드 (스킬 생성 및 즉시 호출)
 
-사내 임직원 및 개발자는 배포된 스킬 팩토리 에이전트와 대화하여 다음과 같이 사내 도구를 즉시 찍어낼 수 있다:
+사내 임직원은 배포된 스킬 팩토리 에이전트와 대화하여 다음과 같이 업무 스킬을 즉시 찍어낼 수 있다:
 
 1. **Gemini Enterprise app 접속**:
    - 웹 포털 ( https://gemini.google.com/app/sample-ge-app-id ) 접속 후 좌측 사이드바 **사내 갤러리(`/r/agents`)** 이동.
    - **`GE In-Chat Skill Factory (사내 스킬 팩토리)`** 선택.
 
 2. **자연어 붕어빵 생성 예시 프롬프트**:
-   - *"사내 Google Sheets 실적 및 명단 행 조회 스킬 만들어 줘"*
-   - *"사내 인시던트 발생 시 슬랙(Slack) 채널 알림 발송 도구 배포해 줘"*
-   - *"Jira Cloud 신규 이슈 및 결함 티켓 자동 생성 스킬 등록해 줘"*
-   - *"ERP 구매 주문(PO) 승인 상태 조회 및 품의서 연동 도구 만들어 줘"*
+   - *"주간 업무 보고서 자동 요약 스킬 생성해서 내 GE App Skills에 등록해 줘"*
+   - *"회의록 핵심 결정 사항 정리 스킬 만들어 줘"*
+   - *"전자결재 기안문 초안 작성 스킬 생성 및 전사 공유해 줘"*
+   - *"현재 사내에 등록된 스킬 목록 조회해 줘"*
 
 3. **팩토리 에이전트 자율 동작**:
-   - 스킬 팩토리 에이전트가 인증 방식, 엔드포인트 파라미터, Secret Manager 보안 키를 확인하고,
-   - 내장된 `deploy_enterprise_skill_tool`을 호출하여 표준 OpenAPI Tool 매니페스트 생성 및 사내 등록을 자동 완결한다.
+   - 스킬 팩토리 에이전트가 슬러그 ID 중복을 사전 확인한 뒤 `SKILL.md` 지침을 구성하고,
+   - 내장된 `deploy_enterprise_skill_tool`을 호출하여 GE App **`/r/skills`** 목록에 즉시 등록한다.
 
 ---
 
@@ -79,8 +75,7 @@ flowchart TB
 ## 5. 콘솔 링크 조치 가이드
 
 - **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project=sample-project-id )
-- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/sample-ge-app-id/agentic/agents?project=sample-project-id )
-- **Secret Manager 콘솔**: 사내 시스템 API 키 및 보안 토큰 볼트 관리 ( https://console.cloud.google.com/security/secret-manager?project=sample-project-id )
+- **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 스킬 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/sample-ge-app-id/agentic/agents?project=sample-project-id )
 
 ---
 

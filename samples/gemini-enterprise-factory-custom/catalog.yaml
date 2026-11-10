@@ -52,14 +52,13 @@ custom_agents:
   required_roles:
   - roles/aiplatform.user
   - roles/discoveryengine.editor
-  - roles/secretmanager.secretAccessor
 - slug: gemini-enterprise-factory-skill
   name: GE In-Chat Skill Factory (사내 스킬 팩토리 모듈)
   category: 업무 도구 및 스킬 팩토리
   description: 사내 비개발자 임직원을 위한 대화형 Open Skills / SKILL.md 도구 팩토리 에이전트
-  backend_tech: Agent Engine (ADK 2.11+) + OpenAPI 3.0
+  backend_tech: Agent Engine (ADK 2.11+) + skillAgentDefinition
   repo_url: https://github.com/jiangjun-forge/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-skill
-  custom_placeholder_text: 생성하고 싶은 업무 연동 도구나 API를 입력하세요...
+  custom_placeholder_text: 생성하고 싶은 업무 스킬 이름이나 지침 요구사항을 입력하세요...
   starter_prompts:
   - 전자결재 품의 상신 및 승인 상태 조회 스킬 생성해 줘
   - 법인카드 경비 전표 정산 및 승인 내역 조회 스킬 매니페스트 만들어 줘
@@ -67,4 +66,3 @@ custom_agents:
   required_roles:
   - roles/aiplatform.user
   - roles/discoveryengine.editor
-  - roles/secretmanager.secretAccessor

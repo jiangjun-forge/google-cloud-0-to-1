@@ -5,7 +5,7 @@
 
 사내 클라우드 아키텍트 및 데이터 엔지니어가 기간계 데이터 저장소(Jira, Confluence, Salesforce,
 ServiceNow, SharePoint, Google Drive, BigQuery 등)를 Gemini Enterprise app에
-연결할 수 있도록 데이터 저장소(Data Store) 매니페스트와 보안 볼트 연동 설정을 자동 생성한다.
+연결할 수 있도록 데이터 저장소(Data Store) 매니페스트 및 ACL 동기화 설정을 자동 생성한다.
 """
 
 import argparse
@@ -240,7 +240,7 @@ def load_connector_catalog(catalog_path: str = None) -> dict:
     for target in candidates:
         if not target:
             continue
-        # 원격 URL 처리 (2.0초 타임아웃 적용하여 사내 방화벽 행 방지)
+        # 원격 URL 처리 (2.0초 타임아웃 적용하여 네트워크 지연 방지)
         if target.startswith("http://") or target.startswith("https://"):
             try:
                 req = urllib.request.Request(target, headers={"User-Agent": "GE-Connector-Factory/1.0"})
@@ -651,7 +651,7 @@ def select_connector_interactive(dry_run: bool, catalog: dict = None) -> dict:
                 "required_secret_keys": ["custom_endpoint_url", "custom_auth_token"],
                 "sync_mode": "DAILY_BATCH",
                 "acl_mode": "USER_RESTRICTED_ACCESS",
-                "description": f"사용자 정의 데이터 소스({custom_title}) 연동 및 보안 색인",
+                "description": f"사용자 정의 데이터 소스({custom_title}) 연동 및 정밀 색인",
                 "content_types": ["documents", "records"],
                 "default_scope": "ORG",
             }
@@ -661,7 +661,7 @@ def select_connector_interactive(dry_run: bool, catalog: dict = None) -> dict:
 
 
 def generate_connector_manifest(connector_data: dict, env_info: dict) -> dict:
-    """Discovery Engine Data Store 커넥터 매니페스트 및 보안 설정을 합성한다."""
+    """Discovery Engine Data Store 커넥터 매니페스트 및 ACL 동기화 설정을 합성한다."""
     project_id = env_info["project_id"]
     location = env_info["location"]
     ge_app_id = env_info["ge_app_id"]
@@ -669,7 +669,6 @@ def generate_connector_manifest(connector_data: dict, env_info: dict) -> dict:
     cid = connector_data["id"].replace("_", "-")
 
     data_store_id = f"ds-{cid}-{project_id[:8]}"
-    secret_vault_id = f"connector-secret-{cid}"
 
     # 1. Discovery Engine Data Store JSON 매니페스트
     ds_manifest = {
@@ -682,7 +681,6 @@ def generate_connector_manifest(connector_data: dict, env_info: dict) -> dict:
             "sourceType": connector_data["source_type"],
             "authentication": {
                 "authType": connector_data["auth_type"],
-                "secretManagerSecretRef": f"projects/{project_id}/secrets/{secret_vault_id}/versions/latest",
                 "serviceAccount": sa_email,
             },
             "syncSchedule": {
@@ -726,22 +724,8 @@ PROJECT_ID="{project_id}"
 LOCATION="{location}"
 DATA_STORE_ID="{data_store_id}"
 GE_APP_ID="{ge_app_id}"
-SECRET_ID="{secret_vault_id}"
-SA_EMAIL="{sa_email}"
 
-echo "[1/4] Secret Manager 보안 볼트에 커넥터 자격 증명 생성 중..."
-gcloud secrets create "${{SECRET_ID}}" \\
-    --project="${{PROJECT_ID}}" \\
-    --replication-policy="automatic" \\
-    --labels="managed-by=google-cloud-0-to-1,scenario=gemini-enterprise-factory-connector,env=sample,created-by=customer-engineer" || true
-
-echo "[2/4] 커넥터 서비스 계정에 최소 권한(Secret Accessor) 바인딩 중..."
-gcloud secrets add-iam-policy-binding "${{SECRET_ID}}" \\
-    --project="${{PROJECT_ID}}" \\
-    --member="serviceAccount:${{SA_EMAIL}}" \\
-    --role="roles/secretmanager.secretAccessor"
-
-echo "[3/4] Discovery Engine Data Store 생성 중..."
+echo "[1/2] Discovery Engine Data Store 생성 중..."
 curl -X POST \\
     -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
     -H "Content-Type: application/json; charset=utf-8" \\
@@ -749,7 +733,7 @@ curl -X POST \\
     -d @connector_manifest.json \\
     "https://discoveryengine.googleapis.com/v1alpha/projects/${{PROJECT_ID}}/locations/${{LOCATION}}/collections/default_collection/dataStores?dataStoreId=${{DATA_STORE_ID}}"
 
-echo "[4/4] Gemini Enterprise app 엔진에 Data Store 바인딩 중..."
+echo "[2/2] Gemini Enterprise app 엔진에 Data Store 바인딩 중..."
 curl -X POST \\
     -H "Authorization: Bearer $(gcloud auth print-access-token)" \\
     -H "Content-Type: application/json; charset=utf-8" \\
@@ -764,7 +748,6 @@ echo "=================================================="
 
     return {
         "data_store_id": data_store_id,
-        "secret_vault_id": secret_vault_id,
         "ds_manifest": ds_manifest,
         "engine_binding": engine_binding_payload,
         "provision_script": provision_script,
@@ -776,7 +759,6 @@ def diagnose_connector_readiness(connector_data: dict, env_info: dict, dry_run: 
     sa_email = env_info["service_account"]
     required_roles = [
         "roles/discoveryengine.admin",
-        "roles/secretmanager.secretAccessor",
     ]
 
     if dry_run:
@@ -819,8 +801,7 @@ def build_markdown_report(env_info: dict, connector_data: dict, artifacts: dict,
 
 ```mermaid
 flowchart TB
-    SaaS["{connector_data['name']}"] -->|"{connector_data['auth_type']}"| Vault["Secret Manager<br/>({artifacts['secret_vault_id']})"]
-    Vault -->|"{connector_data['sync_mode']}"| DS["Discovery Engine Data Store<br/>({artifacts['data_store_id']})"]
+    SaaS["{connector_data['name']}"] -->|"{connector_data['auth_type']} / {connector_data['sync_mode']}"| DS["Discovery Engine Data Store<br/>({artifacts['data_store_id']})"]
     DS -->|"ACL 동기화: {connector_data['acl_mode']}"| GEApp["Gemini Enterprise App<br/>({ge_app_id})"]
 ```
 
@@ -828,9 +809,9 @@ flowchart TB
 | :--- | :--- |
 | **데이터 소스 유형** | `{connector_data['source_type']}` |
 | **인증 방식** | `{connector_data['auth_type']}` |
-| **보안 볼트 참조** | `projects/{project_id}/secrets/{artifacts['secret_vault_id']}` |
+| **Data Store ID** | `{artifacts['data_store_id']}` |
 | **동기화 주기** | `{connector_data['sync_mode']}` |
-| **ACL 및 권한 모델** | `{connector_data['acl_mode']}` (문서 레벨 보안 보장) |
+| **ACL 및 권한 모델** | `{connector_data['acl_mode']}` (문서 레벨 권한 매핑) |
 | **수집 대상 콘텐츠** | `{', '.join(connector_data['content_types'])}` |
 
 ---
@@ -864,14 +845,13 @@ flowchart TB
 - **실행 서비스 계정**: `{sa_email}`
 - **필수 역할 바인딩**:
   - `roles/discoveryengine.admin`: Data Store 생성 및 동기화 제어
-  - `roles/secretmanager.secretAccessor`: 보안 볼트 토큰 복호화
 - **진단 상세**: {diag['detail']}
 
 ---
 
 ## 6. 사내 거버넌스 4대 필수 표준 라벨링
 
-데이터 커넥터 인프라 및 보안 볼트 리소스 생성 시 4대 표준 라벨을 반드시 적용한다:
+데이터 커넥터 인프라 및 Discovery Engine Data Store 생성 시 4대 표준 라벨을 반드시 적용한다:
 - `managed-by`: `google-cloud-0-to-1`
 - `scenario`: `gemini-enterprise-factory-connector`
 - `env`: `sample` (또는 `poc`)
@@ -883,7 +863,6 @@ flowchart TB
 
 - **Discovery Engine 데이터 저장소 콘솔**: ( https://console.cloud.google.com/gen-app-builder/data-stores )
 - **Gemini Enterprise App 관리 콘솔**: ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines )
-- **Secret Manager 보안 볼트 콘솔**: ( https://console.cloud.google.com/security/secret-manager )
 - **IAM 및 서비스 계정 콘솔**: ( https://console.cloud.google.com/iam-admin/iam )
 
 ---
@@ -904,9 +883,6 @@ curl -X POST \\
 gcloud beta discovery-engine data-stores delete "{artifacts['data_store_id']}" \\
     --project="{project_id}" \\
     --location="{location}" --quiet
-
-# 3. Secret Manager 시크릿 정리
-gcloud secrets delete "{artifacts['secret_vault_id']}" --project="{project_id}" --quiet
 ```
 """
 
@@ -945,14 +921,14 @@ def build_factory_markdown_report(env_info: dict, deploy_res: dict, dry_run: boo
 | **에이전트 명칭** | `PROVISIONED` | `{display_name}` |
 | **호스팅 런타임** | `Agent Engine` | `{re_uri}` |
 | **추론 파운데이션 모델** | `gemini-3.8-flash` | 위치: `global` (샌드박스 안정성 보장) |
-| **내장 실행 도구** | `2종 완비` | `deploy_enterprise_connector_tool`, `list_deployed_agents_tool` |
+| **내장 실행 도구** | `2종 완비` | `bind_enterprise_datastore_tool`, `list_connected_datastores_tool` |
 | **GE App 사내 갤러리 등록** | `ACTIVE` | 사내 갤러리(`/r/agents`) 전사 공유 (`ALL_USERS`) 바인딩 완료 |
 
 ---
 
 ## 2. 팩토리 에이전트 아키텍처 및 붕어빵 생산 흐름
 
-본 솔루션은 데이터 엔지니어가 복잡한 수동 매니페스트 작성이나 보안 볼트 바인딩 없이, GE App 채팅창에서 자연어 대화만으로 사내 기간계 데이터 커넥터를 자율 생산(붕어빵 생산)할 수 있도록 지원하는 **사내 커넥터 팩토리(붕어빵 틀)**다:
+본 솔루션은 데이터 엔지니어가 복잡한 수동 매니페스트 작성 없이, GE App 채팅창에서 자연어 대화만으로 사내 기간계 데이터 커넥터를 자율 생산(붕어빵 생산)할 수 있도록 지원하는 **사내 커넥터 팩토리(붕어빵 틀)**다:
 
 ```mermaid
 flowchart TB
@@ -970,7 +946,7 @@ flowchart TB
         E -->|"대화형 인터뷰 제공"| F["사내 데이터 실무자<br/>(엔지니어 / 관리자)"]
         F -->|"자연어 기간계 연동 요청"| E
         E -->|"커넥터 자동 생성 도구 호출"| D
-        D -->|"Data Store & Secret 생성"| G[("Discovery Engine Data Store<br/>Secret Manager 보안 볼트")]
+        D -->|"Data Store 생성 및 바인딩"| G[("Discovery Engine Data Store<br/>문서 레벨 ACL 동기화")]
     end
 ```
 
@@ -992,7 +968,7 @@ flowchart TB
 
 3. **팩토리 에이전트 자율 동작**:
    - 커넥터 스캐폴더 에이전트가 인증 방식, 동기화 주기, 문서 레벨 ACL 요구사항을 확인하고,
-   - 내장된 `deploy_enterprise_connector_tool`을 호출하여 Discovery Engine Data Store 및 Secret Manager 보안 볼트를 자동 구성한다.
+   - 내장된 `bind_enterprise_datastore_tool`을 호출하여 Discovery Engine Data Store 생성 및 Gemini Enterprise app 연결을 자동 구성한다.
 
 ---
 
@@ -1011,7 +987,6 @@ flowchart TB
 - **Agent Platform Runtimes 콘솔**: 에이전트 런타임 상태 및 활성화(Enabled) 관리 ( https://console.cloud.google.com/agent-platform/runtimes?project={project_id} )
 - **Gemini Enterprise 에이전트 목록 콘솔**: 사내 등록된 에이전트 및 Gemini Enterprise app 바인딩 관리 ( https://console.cloud.google.com/gemini-enterprise/locations/global/engines/{ge_app_id}/agentic/agents?project={project_id} )
 - **Discovery Engine 데이터 저장소 콘솔**: 생성된 Data Store 목록 및 동기화 현황 ( https://console.cloud.google.com/gen-app-builder/data-stores?project={project_id} )
-- **Secret Manager 콘솔**: 커넥터 보안 자격 증명 볼트 관리 ( https://console.cloud.google.com/security/secret-manager?project={project_id} )
 
 ---
 
@@ -1066,7 +1041,8 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
         simulated_re_id = "simulated-connector-scaffolder-engine"
         simulated_res = f"projects/{project_id}/locations/{re_location}/reasoningEngines/{simulated_re_id}"
         print(f"  [1] Agent Engine 프로비저닝 시뮬레이션: {simulated_res}")
-        print(f"  [2] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
+        print(f"  [2] 장착 도구: bind_enterprise_datastore_tool, list_connected_datastores_tool")
+        print(f"  [3] GE App 사내 갤러리(/r/agents) 전사 공유(ALL_USERS) 등록 명세 검증 완료")
         return {
             "status": "DRY_RUN_PASSED",
             "reasoning_engine": simulated_res,
@@ -1096,23 +1072,96 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
         credentials=creds,
     )
 
+    def bind_enterprise_datastore_tool(data_store_id: str, source_system: str, auth_type: str = "OAUTH2_CLIENT_CREDENTIALS", acl_mode: str = "IDENTITY_MAPPING_OIDC", sync_interval: str = "HOURLY") -> str:
+        """Create a Discovery Engine Data Store manifest and bind it to Gemini Enterprise app.
+
+        Args:
+            data_store_id: Unique kebab-case Data Store ID (e.g. 'ds-jira-dev').
+            source_system: Source SaaS or system name (e.g. 'Jira', 'Confluence', 'Salesforce', 'Google Drive').
+            auth_type: Authentication protocol (e.g. 'OAUTH2_CLIENT_CREDENTIALS', 'API_TOKEN').
+            acl_mode: Document-level ACL synchronization mode.
+            sync_interval: Synchronization cadence ('HOURLY' or 'DAILY').
+        """
+        ds_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection/dataStores?dataStoreId={data_store_id}"
+        )
+        bind_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection/engines/{ge_app_id}:bindDataStore"
+        )
+        ds_payload = {
+            "displayName": f"{source_system} ({data_store_id})",
+            "industryVertical": "GENERIC",
+            "solutionTypes": ["SOLUTION_TYPE_SEARCH", "SOLUTION_TYPE_CHAT"],
+            "contentConfig": "CONTENT_REQUIRED",
+        }
+        token_val = _get_cloud_token()
+        req_headers = {
+            "Authorization": f"Bearer {token_val}",
+            "Content-Type": "application/json",
+            "X-Goog-User-Project": project_id,
+        }
+        create_resp = requests.post(ds_url, headers=req_headers, json=ds_payload, timeout=20)
+        if not create_resp.ok and create_resp.status_code != 409:
+            return f"[오류] Data Store 생성 실패 (HTTP {create_resp.status_code}): {create_resp.text[:200]}"
+        bind_resp = requests.post(bind_url, headers=req_headers, json={"dataStoreIds": [data_store_id]}, timeout=20)
+        if not bind_resp.ok:
+            return f"[부분 성공] Data Store({data_store_id}) 생성 확인, 엔진 바인딩 대기 (HTTP {bind_resp.status_code}): {bind_resp.text[:200]}"
+        return (
+            f"### 기간계 데이터 커넥터 바인딩 완료\n\n"
+            f"- **대상 시스템**: `{source_system}`\n"
+            f"- **Data Store ID**: `{data_store_id}`\n"
+            f"- **인증 및 ACL**: `{auth_type}` / `{acl_mode}`\n"
+            f"- **동기화 주기**: `{sync_interval}`\n"
+            f"- **GE App 바인딩**: `{ge_app_id}` 연결 완료"
+        )
+
+    def list_connected_datastores_tool() -> str:
+        """List existing Discovery Engine Data Stores available in the current project and GE app."""
+        token_val = _get_cloud_token()
+        req_headers = {
+            "Authorization": f"Bearer {token_val}",
+            "X-Goog-User-Project": project_id,
+        }
+        ds_list_url = (
+            f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}"
+            f"/locations/{ge_location}/collections/default_collection/dataStores"
+        )
+        resp = requests.get(ds_list_url, headers=req_headers, timeout=20)
+        if not resp.ok:
+            return f"[오류] Data Store 목록 조회 실패 (HTTP {resp.status_code}): {resp.text[:200]}"
+        stores = resp.json().get("dataStores", [])
+        if not stores:
+            return "현재 프로젝트에 등록된 Discovery Engine Data Store가 없습니다."
+        lines = [f"### 등록된 Data Store 목록 (총 {len(stores)}건)\n"]
+        for idx, s in enumerate(stores, 1):
+            sid = s.get("name", "").split("/")[-1]
+            sdisp = s.get("displayName", sid)
+            lines.append(f"{idx}. **{sdisp}** (`{sid}`)")
+        return "\n".join(lines)
+
     instruction = """당신은 Google Cloud 및 Gemini Enterprise app 환경의 '사내 데이터 커넥터 스캐폴더(Connector Scaffolder)' 마스터 에이전트입니다.
-사내 다양한 기업 기간계 저장소(Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery 등)의 비정형/정형 데이터를 Gemini Enterprise app의 데이터 저장소(Data Store)로 연결하고, 문서 레벨 접근 제어(Document-level ACL) 및 Secret Manager 보안 볼트 연동 설정을 대화형으로 안내합니다.
+사내 다양한 기업 기간계 저장소(Jira, Confluence, Salesforce, ServiceNow, SharePoint, Google Drive, BigQuery 등)의 비정형/정형 데이터를 Gemini Enterprise app의 데이터 저장소(Data Store)로 연결하고, 문서 레벨 접근 제어(Document-level ACL) 및 동기화 설정을 대화형으로 안내합니다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
 - 사내 엔터프라이즈 표준 기본 모델은 'gemini-3.8-flash' (고속 응답, 사내 RAG 문서 검색, 일상 업무 자동화)이다.
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [다중 데이터 소스 인스턴스 스캐폴딩 및 중복 허용 원칙 (Multi-Source Instance Policy)]
-- 사내 환경에서는 동일한 커넥터 종류(예: Jira, Confluence, Google Drive, Salesforce 등)라 하더라도 부서별 또는 목적별(예: '개발팀 Jira' vs '인사팀 Jira', '전사 공용 Drive' vs '재무팀 보안 Drive')로 서로 다른 엔터프라이즈 데이터 소스를 연결해야 합니다.
+- 사내 환경에서는 동일한 커넥터 종류(예: Jira, Confluence, Google Drive, Salesforce 등)라 하더라도 부서별 또는 목적별(예: '개발팀 Jira' vs '인사팀 Jira', '전사 공용 Drive' vs '재무팀 Drive')로 서로 다른 엔터프라이즈 데이터 소스를 연결해야 합니다.
 - 따라서 커넥터 종류가 같다는 이유로 스캐폴딩 생성을 임의로 차단하거나 거부하지 않으며, 각각 독립된 데이터 저장소 식별자(Data Store ID)와 인스턴스 매니페스트로 다중 스캐폴딩 생성을 독립적으로 지원합니다.
 - 사용자가 동일한 종류의 SaaS 연동을 다시 요청하더라도, 기존 인스턴스와 충돌하지 않도록 고유한 데이터 소스 접미사(예: jira-dev, jira-hr)를 부여하여 새로운 매니페스트를 자율 생성하십시오.
 
+[장착된 실제 실행 도구 (Tools)]
+1. `bind_enterprise_datastore_tool`: 사용자가 특정 데이터 소스 연동 확정을 요청할 때 Discovery Engine Data Store 생성 및 Gemini Enterprise app 연결을 실행합니다.
+2. `list_connected_datastores_tool`: 현재 프로젝트에 등록된 Data Store 목록을 실시간으로 조회합니다.
+
 [핵심 단계별 인터뷰 절차]
 1단계 (데이터 소스 파악): 연동 대상 SaaS/기간계 시스템 및 수집 범위 확인.
-2단계 (인증 및 자격 증명): 인증 방식 확인 및 Secret Manager 보안 볼트 키 URI 매핑.
+2단계 (인증 및 자격 증명): OAuth 2.0, API 토큰 등 인증 프로토콜 및 대행 계정 확인.
 3단계 (ACL 및 권한 동기화): 사용자 식별 매핑 및 문서 레벨 ACL 정책 판정.
-4단계 (동기화 주기 및 매니페스트 합성): 증분 동기화 스케줄과 Data Store 매니페스트 생성.
+4단계 (동기화 주기 및 바인딩): 증분 동기화 스케줄 확정 및 Data Store 생성/바인딩 실행.
 
 [단계별 추천 후속 질문 안내 규약]
 모든 답변 본문의 맨 끝에는 사용자가 다음 행동을 쉽게 선택할 수 있도록 구분선(---)과 함께 마크다운 번호 매기기 리스트로 2~3개의 '추천 후속 질문'을 명확히 안내한다:
@@ -1120,7 +1169,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
 **추천 후속 질문:**
 1. Jira 이슈 동기화 매니페스트 생성
 2. Confluence 위키 연동 및 문서 레벨 ACL 설정
-3. Secret Manager 서비스 계정 보안 키 매핑
+3. 현재 등록된 Data Store 목록 조회해 줘
 - 주의: JSON이나 코드 블록(```suggested_questions 등) 형태가 아닌, 순수 마크다운 텍스트 리스트로 가독성 높게 출력한다.
 
 [소통 원칙]
@@ -1133,6 +1182,7 @@ def deploy_connector_factory_engine(env_info: dict, dry_run: bool = False) -> di
         description=description,
         model="gemini-3.8-flash",
         instruction=instruction,
+        tools=[bind_enterprise_datastore_tool, list_connected_datastores_tool],
     )
     class ResilientAdkApp(agent_engines.AdkApp):
         """Pydantic v2 직렬화 호환성 및 세션 안정화를 지원하는 엔터프라이즈 Agent Engine 래퍼."""
@@ -1321,10 +1371,10 @@ def run_local_scaffolding_mode(args, env_info: dict):
     print(f"  - ACL 동기화  : {connector_data['acl_mode']}")
 
     # 2. 매니페스트 합성
-    print("\n[단계 2/3] Discovery Engine 매니페스트 및 보안 볼트 연동 스펙 합성 중...")
+    print("\n[단계 2/3] Discovery Engine Data Store 매니페스트 합성 중...")
     artifacts = generate_connector_manifest(connector_data, env_info)
     print(f"  - 생성된 Data Store ID : {artifacts['data_store_id']}")
-    print(f"  - Secret Manager 볼트 : {artifacts['secret_vault_id']}")
+    print(f"  - 인증 및 ACL 모드     : {connector_data['auth_type']} ({connector_data['acl_mode']})")
 
     # 3. IAM 권한 및 연결성 진단
     print("\n[단계 3/3] 서비스 계정 IAM 권한 및 Gemini Enterprise app 바인딩 진단 중...")
