@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 서울 리전 Model Armor 기능 제약 및 한국형 가드레일 하이브리드 보완 진단기 (korea-model-armor-guard)
 
-대한민국 서울 리전(asia-northeast3) 환경에서 Model Armor 템플릿의 리전 미지원 필터(프롬프트 인젝션, 악성 URL, RAI)로 인한 보안 사각지대와 데이터 국외 이전 규제 위반 위험을 1분 만에 자동 진단하고, 한국형 개인 정보(Korea-specific InfoTypes) 및 로컬 하이브리드 가드레일 파이프라인 처방을 제공하는 도구다. (As of 2026-10-17)
+대한민국 서울 리전(asia-northeast3) 환경에서 엄격한 데이터 레지던시(Strict Data Residency Enforcement) 활성화 시 Model Armor가 Sensitive Data Protection(SDP) 필터만 네이티브 지원하고 프롬프트 인젝션, 악성 URL, RAI 필터는 데이터 레지던시 강제를 해제(글로벌 처리 허용)해야 작동하는 공식 스펙으로 인해 발생하는 보안 사각지대와 데이터 국외 이전 규제 위반 위험을 1분 만에 자동 진단하고, 한국형 개인 정보(Korea-specific InfoTypes) 및 온소일(On-Soil) 로컬 하이브리드 가드레일 파이프라인 처방을 제공하는 도구다. (As of 2026-11-14)
 
 ---
 

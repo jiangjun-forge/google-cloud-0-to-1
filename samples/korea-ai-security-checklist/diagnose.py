@@ -27,7 +27,7 @@ CHECKLIST_ITEMS = [
         "question": "입력된 프롬프트, 첨부 파일 및 모델 응답이 구글의 기초 모델(LLM) 학습에 재활용되는가?",
         "check_type": "ATTESTATION_POLICY",
         "policy_attestation": "Google Cloud 생성형 AI 서비스 약관(CDPA) 및 Secure AI 백서에 따라 고객 입력/출력 데이터는 모델 학습에 절대 활용되지 않는다 ( https://cloud.google.com/terms/data-processing-addendum , https://services.google.com/fh/files/misc/secure_ai_secure_data.pdf ).",
-        "legal_basis": "개인정보보호위원회 AI 프라이버시 리스크 관리 모델, K-ISMS",
+        "legal_basis": "개인정보보호위원회 생성형 AI 개발 및 활용을 위한 개인정보 처리 안내서, K-ISMS",
     },
     {
         "id": "SEC-02",
@@ -45,7 +45,7 @@ CHECKLIST_ITEMS = [
         "question": "AI 시스템의 신뢰성과 투명성을 검증하는 제3자 공인 AI 국제 인증을 보유하고 있는가?",
         "check_type": "ATTESTATION_CERT",
         "policy_attestation": "Google Cloud 및 Vertex AI, Gemini Enterprise는 글로벌 공인 ISO/IEC 42001 (AI Management System) 인증을 공식 획득 및 유지하고 있다 ( https://cloud.google.com/security/compliance/iso-42001 ).",
-        "legal_basis": "국제 표준화 기구 ISO/IEC 42001:2023, EU AI Act",
+        "legal_basis": "대한민국 인공지능 기본법(고영향 AI 관리 및 감독), 국제 표준화 기구 ISO/IEC 42001:2023",
     },
     {
         "id": "SEC-04",
@@ -165,8 +165,8 @@ CHECKLIST_ITEMS = [
         "title": "실시간 프롬프트 인젝션 및 탈옥(Jailbreak) 차단 가드레일",
         "question": "시스템 프롬프트를 탈취하거나 안전 정책을 무력화하려는 악의적 프롬프트 인젝션 시도를 실시간 방어하는가?",
         "check_type": "GCP_AUDIT_MODEL_ARMOR",
-        "policy_attestation": "Model Armor의 서울 리전(asia-northeast3) 환경은 SDP 연동을 지원하며, 프롬프트 인젝션 및 악성 URL 검사는 글로벌 엔진 또는 사내 로컬 하이브리드 가드레일 계층으로 상호 보완해야 한다 ( https://cloud.google.com/security/products/model-armor ).",
-        "legal_basis": "OWASP Top 10 for LLM (LLM01: Prompt Injection)",
+        "policy_attestation": "Model Armor의 서울 리전(asia-northeast3) 환경은 엄격한 데이터 레지던시(Strict Data Residency) 강제 시 SDP 필터를 네이티브 지원하며, 프롬프트 인젝션 및 악성 URL 검사는 온소일(On-Soil) 인라인 로컬 가드레일 또는 비식별화 후 글로벌 필터 계층으로 상호 보완해야 한다 ( https://cloud.google.com/security/products/model-armor ).",
+        "legal_basis": "금융보안원 금융분야 인공지능 보안 안내서, OWASP Top 10 for LLM (LLM01: Prompt Injection)",
     },
     {
         "id": "SEC-16",
@@ -213,7 +213,7 @@ CHECKLIST_ITEMS = [
         "question": "생성형 AI 모델 및 애플리케이션에 대해 전문 보안 조직에 의한 모의해킹과 레드팀 침투 테스트를 주기적으로 수행하는가?",
         "check_type": "ATTESTATION_POLICY",
         "policy_attestation": "Google Mandiant 및 Google AI Red Team이 Gemini 파운데이션 모델 및 플랫폼 전반에 대해 적대적 공격(Adversarial Robustness) 침투 테스트를 정기 수행한다 ( https://cloud.google.com/security ).",
-        "legal_basis": "KISA AI 보안 가이드라인, OWASP Top 10 for LLM",
+        "legal_basis": "금융위원회 통합 금융분야 AI 가이드라인, 금융감독원 금융 AI 위험관리 프레임워크(AI RMF), 금융보안원 모의 공격 기반 AI 보안성 검증, KISA AI 보안 가이드라인",
     },
 ]
 

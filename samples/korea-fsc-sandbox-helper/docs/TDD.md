@@ -42,9 +42,9 @@ sequenceDiagram
 
 | ID | 구현 모듈 및 함수 | 상세 기술 명세 | 추적 BRD |
 | :---: | :--- | :--- | :---: |
-| **FR-01** | `AUDIT_CHECKLIST_DB` | `consumer_benefit`(3), `regulatory_necessity`(3), `service_innovativeness`(3), `technical_security`(6) 총 15개 세부 카테고리 및 46개 가중치 체크리스트 내장 | BR-01, BR-02, BR-03, BR-04 |
+| **FR-01** | `AUDIT_CHECKLIST_DB` | 4대 대분류 / 15개 중분류 / **46개 소분류(`category:sub_id:item_id`, 총 가중치 102점)** 및 소분류별 법정 기준(`desc`), 신청서 즉시 삽입용 모범 보완 문구(`remedy_clause`) 내장 | BR-01, BR-02, BR-03, BR-04 |
 | **FR-02** | `REJECTION_CASES_DB` | 금융위원회, 금융감독원, 금융보안원 역대 반려 및 보완 요구 대표 사례를 세부 항목 키(`category`, `sub_id`)와 1:1 매핑 | BR-05 |
-| **FR-03** | `evaluate_sandbox_readiness()` | 신청서 초안 키워드 분석 또는 인프라 신호/시뮬레이션 데이터를 바탕으로 항목별 배점 및 `PASS` / `WARN` / `REJECT_RISK` 판정 수행 | BR-01 ~ BR-05 |
+| **FR-03** | `evaluate_sandbox_readiness()` | 제출된 신청서(`.pdf`, `.md`, `.txt` 또는 내장 초기 제출서 `SAMPLE_DRAFT_APPLICATION`)와 46개 소분류를 1:1 대조하여 소분류별 `PASS` / `GAP` 판정, 감점 사유 및 100점 환산 점수를 도출하고, `--simulate-item` 자가 보완 시뮬레이터(`simulate_remedy_clause()`)를 지원 | BR-01 ~ BR-05 |
 | **FR-04** | `generate_reference_blueprint()` | `google-genai` SDK를 통해 `gemini-3.8-flash`(`location="global"`)를 호출하여 서울 리전(`asia-northeast3`) 참조 아키텍처 생성 및 오프라인 결정론적 폴백 보장 | BR-06 |
 | **FR-05** | `verify_reference_urls()` | `ThreadPoolExecutor` 기반으로 신청서 내 공식 레퍼런스 URL의 형식 및 HTTP HEAD 응답 코드를 병렬 검증 | BR-06 |
 | **FR-06** | `render_report_markdown()` | 4대 심사 영역 점수표, 반려 사례 대조표, 참조 블루프린트, URL Fact-Check 표, 4대 필수 라벨이 적용된 `gcloud` 조치 스크립트를 `report.md`로 출력 | BR-07, BR-08 |

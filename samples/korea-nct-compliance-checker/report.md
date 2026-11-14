@@ -27,7 +27,7 @@ Vector Security    RAG 벡터 데이터 저장 차단 (IAM Deny - 법 제10조) 
 Encryption         Cloud KMS CMEK 이중 암호화 (안내서 필수 요건) FAIL     기본 구글 관리 키 사용 중 (KMS CMEK 미연동 버킷 2개 감지)
 Inference Boundary 추론 리전 국소화 (Vertex AI - 안내서 국내 위치) PASS     Vertex AI 서울 리전 엔드포인트(asia-northeast3-aiplatform.googleapis.com) 사용 강제 확인
 Audit Logging      Cloud Audit Logs 데이터 접근 로깅 (법 제10조) PASS     DATA_READ, DATA_WRITE 감사 로그 활성화 상태
-Access Control     사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제) FAIL     iam.allowedPolicyMemberDomains 조직 정책 미적용 (외부 계정 초대 위험 존재)
+Access Control     사외/외국 계정 공유 차단 (조직 정책 - 외국 기업 접근 시 기술 수출 간주) FAIL     iam.allowedPolicyMemberDomains 조직 정책 미적용 (외국 기업/외국인 접근 시 국가핵심기술 불법 수출 간주 위험 존재)
 Provider Isolation 클라우드 제공자 임의 접근 통제 (Access Approval - 안내서 사전 승인 의무) PASS     Access Approval 및 Access Transparency 정상 활성화 (CSP 엔지니어 사전 승인 강제)
 -------------------------------------------------------------------------------------
 
@@ -38,8 +38,8 @@ Provider Isolation 클라우드 제공자 임의 접근 통제 (Access Approval 
    - 조치 방향: gcloud iam deny-policies create 명령으로 벡터 인덱스 사외 생성 차단 정책 적용 필요
 2. Cloud KMS CMEK 이중 암호화 (안내서 필수 요건)
    - 조치 방향: 서울 리전 Cloud KMS 키링 및 암호화 키 생성 후 GCS/BigQuery CMEK 지정 (이중 암호화 의무 준수)
-3. 사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)
-   - 조치 방향: gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 방어)
+3. 사외/외국 계정 공유 차단 (조직 정책 - 외국 기업 접근 시 기술 수출 간주)
+   - 조치 방향: gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (국외 유출 시 최대 65억 원 벌금 및 5배 징벌적 손해배상 방어)
 
 [표준 보안 처방 CLI 명령어]
 1. 서울 리전 Data Boundary 조직 정책 강제:

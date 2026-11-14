@@ -126,10 +126,10 @@ def get_mock_findings(project_id: str) -> List[Dict[str, Any]]:
         {
             "id": "FR-06",
             "category": "AI 모델 거버넌스",
-            "name": "Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가 조건)",
+            "name": "Model Armor SDP 및 온소일 프롬프트 인젝션/탈옥 방어 가드레일 (특례 부가 조건)",
             "status": "PASS",
-            "current": "Model Armor 템플릿(fsi-prompt-guard) 활성화 및 프롬프트 인젝션 탐지 필터 적용됨",
-            "requirement": "금융위원회 1단계 샌드박스 특례 부가 조건에 따라 금융사 내부망 인그레스 사용자 프롬프트에 대한 탈옥 및 악성 명령 주입 실시간 방어 체계 구축 필수",
+            "current": "서울 리전 Model Armor 템플릿(fsi-prompt-guard, Strict Data Residency SDP) 및 온소일 인라인 프롬프트 인젝션/탈옥 방어 가드레일 결합 적용됨",
+            "requirement": "금융위원회 망 분리 특례 부가 조건 및 금융보안원 모의 공격 기반 AI 보안성 검증에 따라, 서울 리전(asia-northeast3) 엄격한 데이터 레지던시 환경에서는 Model Armor 네이티브 SDP 필터와 온소일(On-Soil) 인라인 프롬프트 인젝션/탈옥 방어 가드레일(또는 비식별화 후 글로벌 필터)을 이중 결합해야 함",
             "remediation": "gcloud beta model-armor templates create fsi-prompt-guard --location=asia-northeast3",
         },
         {
@@ -357,10 +357,10 @@ def diagnose_live(project_id: str, location: str, audit_bucket: Optional[str], k
     findings.append({
         "id": "FR-06",
         "category": "AI 모델 거버넌스",
-        "name": "Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일",
+        "name": "Model Armor SDP 및 온소일 프롬프트 인젝션/탈옥 방어 가드레일",
         "status": "PASS" if ma_pass else "FAIL",
         "current": ma_detail,
-        "requirement": "금융사 내부망 인그레스 사용자 프롬프트에 대한 탈옥 및 악성 명령 주입 실시간 방어 체계 구축 필수",
+        "requirement": "금융보안원 모의 공격 기반 AI 보안성 검증 및 서울 리전(asia-northeast3) 엄격한 데이터 레지던시(SDP 전용) 스펙에 맞추어 Model Armor SDP와 온소일 인라인 프롬프트 인젝션/탈옥 방어 가드레일 이중 결합 필수",
         "remediation": f"gcloud beta model-armor templates create fsi-prompt-guard --location={location}",
     })
 

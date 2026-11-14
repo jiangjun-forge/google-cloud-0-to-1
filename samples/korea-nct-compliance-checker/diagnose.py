@@ -141,10 +141,10 @@ def get_mock_check_results(region: str) -> list[dict]:
         },
         {
             "category": "Access Control",
-            "control": "사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)",
+            "control": "사외/외국 계정 공유 차단 (조직 정책 - 외국 기업 접근 시 기술 수출 간주)",
             "status": "FAIL",
-            "current_state": "iam.allowedPolicyMemberDomains 조직 정책 미적용 (외부 계정 초대 위험 존재)",
-            "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 방어)",
+            "current_state": "iam.allowedPolicyMemberDomains 조직 정책 미적용 (외국 기업/외국인 접근 시 국가핵심기술 불법 수출 간주 위험 존재)",
+            "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (국외 유출 시 최대 65억 원 벌금 및 5배 징벌적 손해배상 방어)",
         },
         {
             "category": "Provider Isolation",
@@ -332,10 +332,10 @@ def inspect_live_environment(project_id: str, region: str) -> list[dict]:
 
     results.append({
         "category": "Access Control",
-        "control": "사외/외국 계정 공유 차단 (조직 정책 - 안내서 외국 기업 접근 배제)",
+        "control": "사외/외국 계정 공유 차단 (조직 정책 - 외국 기업 접근 시 기술 수출 간주)",
         "status": "PASS" if domain_pass else "FAIL",
         "current_state": domain_detail,
-        "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (기술 해외 유출 방어)",
+        "remediation": "gcloud resource-manager org-policies set-policy 명령으로 사내 승인 도메인만 허용 (국외 유출 시 최대 65억 원 벌금 및 5배 징벌적 손해배상 방어)",
     })
 
     # 7. 클라우드 제공자 임의 접근 통제 (Access Approval / Access Transparency)

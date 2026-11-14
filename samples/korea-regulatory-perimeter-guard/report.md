@@ -46,8 +46,8 @@ FR-05        | 감사 추적          | [FAIL] | 데이터 접근 감사 로그(
   - 규제 요건: 전자금융거래법 제22조 및 전자금융감독규정 제14조에 따라 금융 거래 및 AI 추론 데이터 조회를 위해 DATA_READ, DATA_WRITE 로그 감사 필수 수집
   - 조치 권고: gcloud projects get-iam-policy $PROJECT_ID 후 auditConfigs 에 aiplatform.googleapis.com 및 storage.googleapis.com 추가
 
-FR-06        | AI 모델 거버넌스     | [PASS] | Model Armor 실시간 프롬프트 인젝션 및 탈옥 방어 가드레일 (특례 부가 조건)
-  - 현재 상태: Model Armor 템플릿(fsi-prompt-guard) 활성화 및 프롬프트 인젝션 탐지 필터 적용됨
+FR-06        | AI 모델 거버넌스     | [PASS] | Model Armor SDP 및 온소일 프롬프트 인젝션/탈옥 방어 가드레일 (특례 부가 조건)
+  - 현재 상태: 서울 리전 Model Armor 템플릿(fsi-prompt-guard, Strict Data Residency SDP) 및 온소일 인라인 프롬프트 인젝션/탈옥 방어 가드레일 결합 적용됨
 
 FR-07        | AI 모델 거버넌스     | [WARN] | Sensitive Data Protection (SDP) 개인 신용 정보 가명 처리 템플릿 (신용정보법 제20조의2)
   - 현재 상태: 기본 민감 정보 템플릿 존재하나 주민등록번호(RRN) 및 계좌번호 특화 커스텀 InfoType 미등록

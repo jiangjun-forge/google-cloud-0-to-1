@@ -58,16 +58,16 @@ flowchart TB
 
 ### Stage 2-A: Autopilot 실행 절차
 1. **가상 실행 또는 실환경 사전 점검**:
-   - 대상 프로젝트나 신청서 파일이 지정되지 않았으면 먼저 가상 실행으로 전체 진단 체계를 검증한다:
+   - 대상 프로젝트나 신청서 파일이 지정되지 않았으면 먼저 가상 실행으로 내장 초기 제출서 대비 46개 소분류 갭 분석 체계를 검증한다:
      ```bash
      python3 samples/korea-fsc-sandbox-helper/diagnose.py --dry-run
      ```
-   - 신청서 초안(`--proposal`)이나 대상 프로젝트(`--project`)가 주어졌으면 해당 인자로 실행한다:
+   - 신청서 초안(`--proposal`, `.pdf`/`.md`/`.txt` 지원)이나 특정 소분류 자가 보완 시뮬레이션(`--simulate-item <category:sub:item> --remedy-text "..."`)이 요청되었으면 해당 인자로 실행한다:
      ```bash
-     python3 samples/korea-fsc-sandbox-helper/diagnose.py --project="<PROJECT_ID>" --proposal="<DRAFT_MD>"
+     python3 samples/korea-fsc-sandbox-helper/diagnose.py --project="<PROJECT_ID>" --proposal="<DRAFT_FILE>"
      ```
 2. **결과 브리핑**:
-   - 생성된 `samples/korea-fsc-sandbox-helper/report.md`를 읽고, **반려 위험(`REJECT_RISK`)** 및 **보완 권고(`WARN`)** 판정을 받은 세부 항목과 매칭된 역대 반려 사례, 그리고 서울 리전(`asia-northeast3`) 참조 블루프린트 핵심 조치를 요약하여 전달한다.
+   - 생성된 `samples/korea-fsc-sandbox-helper/report.md`를 읽고, **46개 소분류(`category:sub_id:item_id`) 중 미비 판정(`GAP`)을 받은 세부 요건**, **신청서 즉시 삽입용 모범 보완 문구(`Remedy Clause`)**, 매칭된 역대 반려 사례, 그리고 서울 리전(`asia-northeast3`) 참조 블루프린트 핵심 조치를 요약하여 전달한다.
 
 ---
 
