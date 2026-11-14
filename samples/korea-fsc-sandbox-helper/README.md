@@ -1,9 +1,20 @@
 <!--
 Copyright 2026 Google LLC. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
+
+NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+[고지 사항] 본 저장소 및 문서는 구글 (Google LLC) 소유이며 Apache 2.0 라이선스 하에 예시 (Sample) 용도로 제공된다.
+프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 금융위원회 혁신 금융 서비스(생성형 AI 망 분리 샌드박스) 사전 심사 및 제출서 갭(Gap) 극복 도구
+> [!IMPORTANT]
+> **구글 (Google LLC) 참조용 샘플 고지 사항**:
+> 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다. 또한 본 도구의 심사 점수 및 보완 문구는 금융위원회/금융보안원의 공식 유권해석이나 법률 자문을 대체하지 않는다.
+
+# 금융위원회 혁신 금융 서비스(생성형 AI 망 분리 샌드박스) 사전 심사 및 제출서 갭(Gap) 극복 도구 (korea-fsc-sandbox-helper)
 
 사내 생성형 AI 및 클라우드 SaaS 도입을 위해 금융위원회 혁신 금융 서비스(규제 샌드박스) 지정을 신청할 때, 작성된 제출서 초안(`.pdf`, `.md`, `.txt`)과 **3계층 법정 심사 기준(4대 대분류 / 15개 중분류 / 46개 소분류, 원점수 102점 만점)** 사이의 1:1 갭(Gap)을 정밀 추적하고, 감점 소분류별 **신청서 즉시 삽입용 모범 보완 문구(Remedy Clause)**와 서울 리전(`asia-northeast3`) 참조 아키텍처 블루프린트를 자동 생성하는 사전 심사 도구다. (As of 2026-11-14)
 

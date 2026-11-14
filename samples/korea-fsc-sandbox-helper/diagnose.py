@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 # Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """금융위원회 혁신 금융 서비스(생성형 AI 망 분리 샌드박스) 사전 심사, 반려 사례 대조 및 참조 아키텍처 진단 도구.
 
@@ -1208,7 +1220,18 @@ def render_report_markdown(
         "<!--",
         "Copyright 2026 Google LLC. All Rights Reserved.",
         "SPDX-License-Identifier: Apache-2.0",
+        "",
+        "NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.",
+        "It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.",
+        "All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.",
+        "",
+        "[고지 사항] 본 저장소 및 문서는 구글 (Google LLC) 소유이며 Apache 2.0 라이선스 하에 예시 (Sample) 용도로 제공된다.",
+        "프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.",
         "-->",
+        "",
+        "> [!IMPORTANT]",
+        "> **구글 (Google LLC) 참조용 샘플 고지 사항**:",
+        "> 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.",
         "",
         "# 금융위원회 혁신 금융 서비스(생성형 AI 망 분리 샌드박스) 3계층(46개 소분류) 갭 분석 및 극복안 리포트",
         "",

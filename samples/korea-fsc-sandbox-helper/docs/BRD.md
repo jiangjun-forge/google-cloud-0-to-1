@@ -1,9 +1,20 @@
 <!--
 Copyright 2026 Google LLC. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
+
+NOTICE: This code/repository is owned by Google LLC and provided under the Apache-2.0 License.
+It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRODUCTION USE.
+All contents, designs, and code examples are subject to change, modification, or removal at any time without notice.
+
+[고지 사항] 본 저장소 및 문서는 구글 (Google LLC) 소유이며 Apache 2.0 라이선스 하에 예시 (Sample) 용도로 제공된다.
+프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): 금융위원회 혁신 금융 서비스(생성형 AI 망 분리 샌드박스) 사전 심사 도구
+> [!IMPORTANT]
+> **구글 (Google LLC) 참조용 샘플 고지 사항**:
+> 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
+
+# 비즈니스 요구 사항 명세서 (BRD): 금융위원회 혁신 금융 서비스(생성형 AI 망 분리 샌드박스) 사전 심사 도구 (korea-fsc-sandbox-helper)
 
 ## 1. 배경 및 목적
 대한민국 금융권에서 생성형 AI 및 SaaS를 내부 업무망이나 대고객 서비스에 연동하려면 금융위원회의 혁신 금융 서비스(규제 샌드박스) 지정 및 금융보안원의 보안성 심의를 통과해야 한다. 그러나 신청 기업들이 기술 기능 설명에만 치중하고 정량적 소비자 편익, 배상 책임 보험(사고당 10억 원/연간 20억 원), 실증 한도 차단기(Circuit Breaker), 논리적 망 분리 대체 통제(VPC-SC Enforced, CMEK, WORM 로그) 등 필수 법정 요건을 누락하여 서류 반려 및 수개월의 일정 지연을 겪는 문제를 해결한다.
