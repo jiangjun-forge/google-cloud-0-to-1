@@ -22,30 +22,11 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 사내 업무 혁신을 위해 Gemini API(버텍스 AI(Vertex AI)) 또는 Gemini Enterprise App을 도입하려 하나, 사내 정보보호팀 및 CISO의 보안성 심의 승인 장벽에 부딪혔을 때
 - [ ] 보안팀으로부터 수십 개 문항의 엑셀/워드 체크리스트(데이터 재학습 여부, 전송 암호화, 인적 검토, 접근 통제 등)를 수신했으나, 구글 공식 약관과 기술적 증적 작성이 막막할 때
 - [ ] 금융감독원/금융보안원 보안성 심의 또는 K-ISMS 심사를 앞두고, 클라우드 프로젝트의 실제 보안 설정(CMEK, Audit Logs, Bucket Lock)을 객관적으로 입증해야 할 때
 - [ ] 사내 도입 검토 초기 단계에 승인용 보안 보고서를 신속하게 확보하고자 할 때
-
-
-### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
-- **대상 사용자 (Target)**: 엔터프라이즈 CISO, 사내 정보보호팀, 컴플라이언스 총괄, 공공/금융 보안 심의 담당자
-- **해결하는 핵심 문제 (Core Pain Points)**:
-  1. 생성형 AI 도입 시 사내 보안팀 및 규제 기관(금융감독원, KISA 등)의 엄격한 보안성 심의 체크리스트를 수동으로 작성하는 데 수개월 소요
-  2. 고객 데이터 비학습(No-Training), 인적 검토 배제(No Human Review), ISO 42001 등 구글 클라우드 공식 보안 약관과 실제 인프라 설정의 정합성 입증 곤란
-  3. 서울 리전 데이터 레지던시 및 전송 암호화, CMEK 등 복잡한 기술적 통제 증적 자료를 체계적으로 수집하기 어려운 문제
-- **본 솔루션의 해결 방식 (Solution)**:
-  - 구글 공식 보안 약관(CDPA), 제3자 공인 인증(ISO 42001 등) 및 사내 실제 GCP 인프라 설정을 교차 대조하여, 국내 보안성 심의에 즉시 제출 가능한 20대 핵심 보안 체크리스트 완제품 소명서(`report.md`)를 자동 생성한다.
-
-### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
-본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
-
-| 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
-| :--- | :--- | :--- |
-| **① 터미널 콘솔 요약** | Visual CLI Table | 20대 보안 항목별(거버넌스, 데이터 주권, 암호화, 네트워크, 감사로깅 등) 판정 상태(PASS/PARTIAL/FAIL) 요약 표 |
-| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | CISO 및 보안 심의 제출용 정규 완제품 소명서: 항목별 법적 근거, 구글 공식 소명 문구, 실측 증적 및 권고안 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **보안성 심의 제출용 마크다운 보고서**: 사내 정보보호위원회 결재 및 규제 기관 제출용 정형 문서<br/>• **결격 항목 즉시 보완 gcloud 명령어**: 감사 로그 활성화, VPC-SC 경계 등록 등 원클릭 조치 스크립트<br/>• **공식 보안 약관 및 인증서 딥링크**: 외부 감사관 소명용 CDPA 및 ISO 42001 공식 검증 링크 |
 
 ---
 
@@ -137,8 +118,8 @@ flowchart TB
 - Google Cloud 글로벌 컴플라이언스 및 ISO 42001 인증 현황 ( https://cloud.google.com/security/compliance/iso-42001 )
 
 ### 2단계: 기술적 미흡(WARN/FAIL) 항목 보완
-- **CMEK 미적용 시**: `samples/korea-regulatory-perimeter-guard`의 처방을 참조하여 Cloud KMS 키링을 생성하고 버킷/데이터셋에 바인딩한다.
-- **감사 로깅 미흡 시**: `samples/gemini-request-response-logging`을 참조하여 `DATA_READ/WRITE` 로그 및 빅쿼리(BigQuery) 스트리밍 싱크를 활성화한다.
+- **CMEK 미적용 시**: 서울 리전(`asia-northeast3`)에 Cloud KMS 키링 및 암호화 키를 생성하고 Cloud Storage 버킷과 BigQuery 데이터셋에 바인딩한다.
+- **감사 로깅 미흡 시**: Cloud Audit Logs에서 `DATA_READ`/`DATA_WRITE` 로그 및 BigQuery 스트리밍 로그 싱크를 활성화한다.
 - **조직 정책 미적용 시**: `gcp.resourceLocations` 및 `iam.disableServiceAccountKeyCreation` 정책을 활성화하여 중앙 통제를 강화한다.
 
 ---

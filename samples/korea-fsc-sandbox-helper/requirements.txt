@@ -1,0 +1,7 @@
+# Copyright 2026 Google LLC. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+google-genai>=1.0.0
+google-auth>=2.25.0
+python-dotenv>=1.0.0
+requests>=2.31.0
