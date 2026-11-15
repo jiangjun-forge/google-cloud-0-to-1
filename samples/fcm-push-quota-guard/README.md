@@ -22,7 +22,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 대규모 사용자 기반 모바일 서비스에서 프로모션, 라이브 커머스, 재난 알림 등으로 수십만~수백만 건의 푸시 메시지를 일시에 발송할 때 다음과 같은 장애가 발생한다:
 - [ ] **FCM API 429 할당량 초과**: FCM HTTP v1 API의 프로젝트당 분당 다운스트림 메시지 기본 전송 한도(600,000+건/분)를 초과하여 대량의 `429 RESOURCE_EXHAUSTED` 에러 발생 및 푸시 전송 실패.
 - [ ] **재시도 폭풍(Retry Storm)과 지연 누적**: 실패한 요청에 대해 고정 지연 또는 즉시 무제한 재시도를 수행하여 FCM 인프라 쓰로틀링이 가중되고 알림이 제때 전달되지 않는 사고.
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | FCM 다운스트림 분당 쿼터, 피크 전송량, 소진율, 위험 등급 및 권장 속도 제한 파라미터 요약 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 피크 트래픽 병목 분석 보고서, 토큰 버킷 레이트 리미터 구현 예제, Full Jitter 재시도 로직 및 QIR 상향 양식 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **토큰 버킷 속도 제한 파이썬 코드**: 대량 푸시 발송 시 429 에러를 방지하는 버킷 제어 모듈<br/>• **Full Jitter 지수 백오프 재시도 템플릿**: 일시적 오류 발생 시 네트워크 부하를 분산하는 전송 핸들러<br/>• **FCM 할당량 상향 요청 가이드**: GCP 콘솔 쿼터 페이지를 통한 필수 지표 증설 절차서 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **토큰 버킷 속도 제한 Python 코드**: 대량 푸시 발송 시 429 에러를 방지하는 버킷 제어 모듈<br/>- **Full Jitter 지수 백오프 재시도 템플릿**: 일시적 오류 발생 시 네트워크 부하를 분산하는 전송 핸들러<br/>- **FCM 할당량 상향 요청 가이드**: GCP 콘솔 쿼터 페이지를 통한 필수 지표 증설 절차서 |
 
 ---
 
@@ -134,7 +134,7 @@ flowchart TB
 ## 4. 조치 가이드 및 권장 설정
 
 ### 1단계: Google Cloud 콘솔 할당량 상향(Quota Increase) 신청
-1. 구글 클라우드 콘솔(Google Cloud Console)의 **IAM 및 관리자 > 할당량 및 시스템 한도** 메뉴로 이동한다.
+1. Google Cloud Console의 **IAM 및 관리자 > 할당량 및 시스템 한도** 메뉴로 이동한다.
 2. 서비스 필터에서 `Firebase Cloud Messaging API`를 선택한다.
 3. 지표 `Downstream messages per minute`를 선택하고 **할당량 수정**을 클릭한다.
 4. 비즈니스 정당성(대규모 프로모션 일정, 예상 동시 발송량)과 함께 최소 피크 대비 1.5배의 수치를 입력하여 상향을 요청한다.
@@ -185,7 +185,7 @@ def exponential_backoff_retry(attempt, base=1.0, max_backoff=32.0):
 본 도구를 실행하고 할당량 및 모니터링 지표를 진단하기 위해 다음 권한이 필요하다:
 
 - `roles/serviceusage.serviceUsageViewer`: FCM API 할당량 및 제한 수치 조회
-- `roles/monitoring.viewer`: 클라우드 모니터링(Cloud Monitoring) 다운스트림 메시지 전송량 및 429 에러율 지표 조회
+- `roles/monitoring.viewer`: Cloud Monitoring 다운스트림 메시지 전송량 및 429 에러율 지표 조회
 - `roles/serviceusage.quotaAdmin`: (선택) 콘솔에서 할당량 상향 요청 승인 및 관리
 
 ---

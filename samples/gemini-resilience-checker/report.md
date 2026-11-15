@@ -11,7 +11,7 @@
 ```text
 [데모 실행] --dry-run 모드가 활성화되어 가상 분석 결과를 시뮬레이션한다.
 ========================================================================
-[진단 결과] 제미나이(Gemini) API 호출 복원력(Resilience) 진단 리포트
+[진단 결과] Gemini API 호출 복원력(Resilience) 진단 리포트
 ========================================================================
 
 진단된 API 호출 소스 파일: 2건
@@ -29,7 +29,7 @@
   - 폴백 모델 예외 체인  : [권장] 미적용
 ------------------------------------------------------------------------
 ========================================================================
-[추천 표준 처방 가이드 - 파이썬 tenacity 라이브러리 연동]
+[추천 표준 처방 가이드 - Python tenacity 라이브러리 연동]
 ========================================================================
 from google import genai
 from google.genai import types
@@ -46,7 +46,7 @@ def generate_with_retry(client, model_id, prompt):
       contents=prompt
   )
 
-# 2. 주 모델(Gemini 3.8 Flash) 일시 장애 시 안정화 모델(Gemini 3.5 Flash)로 자동 우회
+# 2. 주 모델(Gemini Flash) 일시 장애 시 대체 안정화 모델로 자동 우회
 def generate_with_fallback(client, prompt):
   try:
     return generate_with_retry(client, 'gemini-3.8-flash', prompt)
@@ -85,7 +85,7 @@ python diagnose.py
 - **Service Health 콘솔**: ( https://console.cloud.google.com/servicehealth )
 - **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
 - **클라우드 인시던트 핸들링 모범 사례 가이드**: ( https://cloud.google.com/blog/topics/developers-practitioners/cloud-reliability-incident-handling-best-practices )
-- **구글 클라우드 Service Health 공식 개요**: ( https://cloud.google.com/service-health/docs/overview )
+- **Google Cloud Service Health 공식 개요**: ( https://cloud.google.com/service-health/docs/overview )
 
 ---
 

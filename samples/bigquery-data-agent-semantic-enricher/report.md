@@ -63,8 +63,8 @@ python diagnose.py
 python diagnose.py --project=[PROJECT_ID] --dataset=[DATASET_ID] --enrich --apply
 ```
 
-### 2단계: Dataplex Data Profile 스캔 등록 및 카탈로그 통계 게시
-통계 메타데이터가 미수집된 테이블은 Dataplex Data Profile 스캔 작업을 생성하여 최솟값, 최댓값, 고유값 비율을 게시한다:
+### 2단계: Knowledge Catalog Data Profile 스캔 등록 및 카탈로그 통계 게시
+통계 메타데이터가 미수집된 테이블은 Knowledge Catalog Data Profile 스캔 작업을 생성하여 최솟값, 최댓값, 고유값 비율을 게시한다:
 ```bash
 gcloud dataplex datascans create data-profile scan-[TABLE_ID] \
     --location=asia-northeast3 \
@@ -73,7 +73,7 @@ gcloud dataplex datascans create data-profile scan-[TABLE_ID] \
 ```
 
 ### 3단계: Knowledge Catalog 비즈니스 용어집(Glossary) 배포
-자동 생성된 `dataplex_glossary_terms.yaml` 매니페스트를 기반으로 Dataplex Knowledge Catalog에 비즈니스 공식(Formula)을 등록하고 테이블과 바인딩한다.
+자동 생성된 `dataplex_glossary_terms.yaml` 매니페스트를 기반으로 Knowledge Catalog에 비즈니스 공식(Formula)을 등록하고 테이블과 바인딩한다.
 
 ### 4단계: 4대 표준 라벨 기반 거버넌스 준수
 사내 FinOps 비용 추적 및 자원 식별을 위해 데이터셋 및 연관 인프라 생성 시 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=bigquery-data-agent-semantic-enricher,env=sample`)을 누락 없이 주입한다.

@@ -14,15 +14,15 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 엔터프라이즈(Gemini Enterprise) 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
+# Gemini Enterprise 사용자 채택률 분석 및 유휴 라이선스 회수 진단기 (`gemini-enterprise-analytics-exporter`)
 
-전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 빅쿼리(BigQuery) 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다. (As of 2026-10-17)
+전사 배포된 Gemini Enterprise 라이선스의 부서 및 사용자별 실제 활성도 지표를 추출하여 BigQuery 적재 스키마로 가공하고 미사용 유휴 라이선스 회수 대상을 1분 만에 분석하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 전사 또는 계열사 단위로 수천 개의 Gemini Enterprise 라이선스를 일괄 구매했으나, 실제 부서별 임직원 활용도(Active Rate)를 측정할 수 있는 통합 대시보드가 없다.
 - [ ] 라이선스 할당 후 30일 이상 단 한 번도 프롬프트를 입력하지 않은 유휴 계정이 방치되어 불필요한 구독 비용이 매월 누수된다.
 - [ ] 보안 및 규정 준수(Compliance) 목적으로 계정별 사용 빈도와 활동 등급(High, Moderate, Low, Dormant)을 체계적으로 분류하여 감사 리포트를 제출해야 한다.
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 전체 라이선스 수, 활성 사용자 비율, 60일 이상 유휴 라이선스 수 및 예상 월간 회수 절감액 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 부서별 채택률 매트릭스, 유휴 라이선스 회수 대상자 명단, BigQuery 적재 스키마 DDL 및 라이선스 재할당 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **BigQuery 분석 데이터셋 DDL**: 감사 로그를 누적 분석하기 위한 스키마 및 뷰 정의 SQL<br/>• **유휴 라이선스 일괄 회수 CSV/명령어**: Admin 콘솔 또는 디렉터리 API를 통한 미사용 라이선스 해제 명세<br/>• **채택률 Looker Studio 대시보드 템플릿**: 경영진 보고용 실시간 부서별 활용도 시각화 쿼리 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **BigQuery 분석 데이터셋 DDL**: 감사 로그를 누적 분석하기 위한 스키마 및 뷰 정의 SQL<br/>- **유휴 라이선스 일괄 회수 CSV/명령어**: Admin 콘솔 또는 디렉터리 API를 통한 미사용 라이선스 해제 명세<br/>- **채택률 Looker Studio 대시보드 템플릿**: 경영진 보고용 실시간 부서별 활용도 시각화 쿼리 |
 
 ---
 
@@ -181,7 +181,7 @@ CLUSTER BY department, activity_tier;
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
-- **구글 클라우드 IAM(Cloud IAM) 권한**:
+- **Google Cloud IAM 권한**:
   - `roles/bigquery.dataEditor` (테이블 생성 및 데이터 적재)
   - `roles/bigquery.jobUser` (쿼리 및 로드 작업 실행)
 - **Google Workspace / Cloud Identity 권한**:

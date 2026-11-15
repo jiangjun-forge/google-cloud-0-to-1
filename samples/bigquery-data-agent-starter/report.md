@@ -2,7 +2,7 @@
 
 - **생성 모드**: 모의 실행 (Dry-run)
 - **대상 프로젝트**: `sample-project-id`
-- **빅쿼리 리전**: `asia-northeast3` (데이터셋: `cymbal_gold`)
+- **BigQuery 리전**: `asia-northeast3` (데이터셋: `cymbal_gold`)
 - **GDA 런타임**: `global` (에이전트 이름: `cymbal-retail-data-agent`)
 - **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용
 
@@ -15,7 +15,7 @@
  [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]
 ========================================================================================
  - 대상 프로젝트 : sample-project-id (프로젝트 번호: 123456789012)
- - 빅쿼리 리전   : asia-northeast3 (데이터셋: cymbal_gold)
+ - BigQuery 리전 : asia-northeast3 (데이터셋: cymbal_gold)
  - GDA 런타임   : global (에이전트 이름: cymbal-retail-data-agent)
  - GE App 엔진  : omni-retail-ge-app
  - 실행 모드     : 가상 모의 실행 (--dry-run)
@@ -23,9 +23,9 @@
 
  [45분 핸즈온 워크숍 역할 분담 타임라인 (GDA 완전 관리형 골든 아키텍처)]
   * 00~05분 [Step 1 CLI 데이터 패브릭]: cymbal_gold 스몰셋 4개 테이블, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)
-  * 05~15분 [Step 2 CLI 에이전트 엔진]: 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)
+  * 05~15분 [Step 2 CLI GDA 런타임] : 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)
             [보조 확인 경로]: BigQuery Studio 콘솔 UI 수동 생성 지침 출력 (python diagnose.py --agent-config)
-  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise App 사내 갤러리 등록 (python diagnose.py --register-ge-app)
+  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise app 사내 갤러리 등록 (python diagnose.py --register-ge-app)
   * 25~45분 [Step 4 멀티턴 실습 및 종료]: 골든 프롬프트 3선 대화 질의 및 실습 종료 후 자원 정리 (python diagnose.py --teardown)
   * [올인원 모드]: Step 1~3 전체 일괄 자동 배포 실행 (python diagnose.py --all)
 ----------------------------------------------------------------------------------------

@@ -12,14 +12,14 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 데이터 커넥터 스캐폴더 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 클라우드 아키텍트 및 데이터 엔지니어가 사내 14대 엔터프라이즈 3P SaaS(Jira, Confluence, SharePoint, OneDrive, Salesforce, ServiceNow, Workday, SAP S/4HANA, Slack, GitHub, GitLab, Zendesk, Box, HubSpot)의 비정형/정형 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 안전하게 연결할 수 있도록 지원하는 데이터 커넥터 스캐폴더 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 클라우드 아키텍트 및 데이터 엔지니어가 사내 14대 엔터프라이즈 3P SaaS(Jira, Confluence, SharePoint, OneDrive, Salesforce, ServiceNow, Workday, SAP S/4HANA, Slack, GitHub, GitLab, Zendesk, Box, HubSpot)의 비정형/정형 데이터를 Gemini Enterprise app에 안전하게 연결할 수 있도록 지원하는 데이터 커넥터 스캐폴더 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 
 ## 1. 추진 배경 및 비즈니스 동기
 
 1. **기업 기간계 데이터 파편화와 연동 난관**:
-   - 엔터프라이즈 생성형 AI 도입 후 임직원이 필요로 하는 핵심 지식은 슬랙(Slack), 지라(Jira), 컨플루언스(Confluence), 세일즈포스(Salesforce), 셰어포인트(SharePoint) 등 서로 다른 SaaS 및 기간계 시스템에 분산되어 있다.
+   - 엔터프라이즈 생성형 AI 도입 후 임직원이 필요로 하는 핵심 지식은 Slack, Jira, Confluence, Salesforce, SharePoint 등 서로 다른 SaaS 및 기간계 시스템에 분산되어 있다.
    - 각 데이터 소스마다 인증 프로토콜(OAuth 2.0, API Token, Basic Auth), 페이징 규격, 증분 수집 방식이 상이하여 커넥터 구축에 수 주일의 엔지니어링 리소스가 소모된다.
 
 2. **접근 제어 목록(ACL) 동기화 및 검색 범위 정합성 확보**:
@@ -41,7 +41,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **BR-04** | 동기화 주기 및 증분 색인 스케줄링 | 데이터 변경 빈도에 따라 1시간 단위 정기 동기화 또는 일일 배치 동기화 스케줄을 포함한 Discovery Engine Data Store 구성 매니페스트를 합성해야 한다. |
 | **BR-05** | Gemini Enterprise app 사내 앱 직결 바인딩 | 생성된 데이터 저장소(Data Store)를 현재 사내 Gemini Enterprise app의 검색 엔진(Engine)에 원클릭 바인딩하는 자동화 명세를 제공해야 한다. |
 | **BR-06** | 표준 라벨링 및 API 정합성 검증 | 모든 커넥터 리소스에 4대 표준 라벨(`managed-by`, `scenario`, `env`, `created-by`)을 주입하고 Discovery Engine 바인딩 준비 상태를 사전 진단해야 한다. |
-| **BR-07** | 선언적 커넥터 레시피 아키텍처 및 케밥 케이스 표준 | 파이썬 코드 수정 없이 신규 데이터 소스를 확장할 수 있도록 선언적 카탈로그 파일(`catalog.yaml`) 분리 구조를 지원하고, 모든 커넥터 슬러그는 `[domain]-[system]-[action]` 형태의 3단계 소문자 케밥 케이스(kebab-case) 표준을 준수하여야 한다. |
+| **BR-07** | 선언적 커넥터 레시피 아키텍처 및 케밥 케이스 표준 | Python 코드 수정 없이 신규 데이터 소스를 확장할 수 있도록 선언적 카탈로그 파일(`catalog.yaml`) 분리 구조를 지원하고, 모든 커넥터 슬러그는 `[domain]-[system]-[action]` 형태의 3단계 소문자 케밥 케이스(kebab-case) 표준을 준수하여야 한다. |
 | **BR-08** | 에어갭 및 오프라인 환경 회복 탄력성 확보 | 인터넷 연결이 제한된 폐쇄망(Air-gapped) 환경이나 외부 카탈로그 엔드포인트 장애 상황에서도 타임아웃(2.0초 이내)을 적용하고 내장된 시드 카탈로그로 원활히 폴백하여 안정적인 동작을 유지하여야 한다. |
 | **BR-09** | 다중 데이터 소스 인스턴스 스캐폴딩 지원 및 식별자 충돌 방어 | 사내 환경에서는 동일한 커넥터 종류(Jira, Confluence 등)라도 부서별/목적별로 서로 다른 데이터 소스(예: 개발팀 Jira vs 인사팀 Jira)를 연동해야 하므로, 스캐폴더에서 동일 커넥터 유형의 다중 인스턴스 중복 생성을 허용해야 한다. 단, 동일한 대상 데이터 저장소 ID(Data Store ID)에 대한 우발적 덮어쓰기 충돌은 고유 식별자 접미사를 통해 방어하여야 한다. |
 

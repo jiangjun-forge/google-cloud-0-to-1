@@ -101,7 +101,7 @@ python diagnose.py
 
 ### 1단계: Direct VPC Egress 마이그레이션 적용
 Serverless VPC Access 커넥터의 대역폭 한계와 유휴 인스턴스 비용을 제거하기 위해 Direct VPC Egress로 전환한다:
-- 구글 클라우드 콘솔 Cloud Run 서비스 목록 ( https://console.cloud.google.com/run )
+- Google Cloud 콘솔 Cloud Run 서비스 목록 ( https://console.cloud.google.com/run )
 - Cloud Run Direct VPC Egress 설정 가이드 ( https://cloud.google.com/run/docs/configuring/vpc-direct-vpc )
 - VPC 네트워크 연결 옵션 비교 ( https://cloud.google.com/run/docs/configuring/connecting-vpc )
 

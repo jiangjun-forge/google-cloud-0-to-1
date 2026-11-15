@@ -22,9 +22,9 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 금융권 및 엔터프라이즈 사내망에서 Google Cloud 콘솔 및 생성형 AI 애플리케이션(Gemini Enterprise 등)을 도입할 때, 금융보안원 '생성형 AI 보안대책 이행서' 3.2 항목(인가된 관리자 단말기 접속 통제)을 준수해야 한다.
-- [ ] **개인 계정 로그인 유출**: 사내 단말기에서 개인 Gmail(`@gmail.com`) 또는 비인가 구글 계정으로 로그인하여 사내 데이터를 프롬프트로 전송하는 사고 위험.
+- [ ] **개인 계정 로그인 유출**: 사내 단말기에서 개인 Gmail(`@gmail.com`) 또는 비인가 Google 계정으로 로그인하여 사내 데이터를 프롬프트로 전송하는 사고 위험.
 - [ ] **외부 타사 GCP 조직 우회 접속**: 사내 승인 계정이라 할지라도 개인이 생성한 외부 GCP 프로젝트나 타사 테넌트로 접속하여 사내 자산을 반출하는 위험.
 - [ ] **비인가 단말기 접근**: 사내 관리자 계정 탈취 시 외부 미인가 개인 PC나 모바일 기기에서 클라우드 콘솔에 접속하는 문제.
 
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | SWG 테넌트 헤더 주입 여부, 허용 도메인 목록, Context-Aware Access 단말기 인가 레벨 및 보안 적합성 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 테넌트 접근 통제 진단 보고서, SWG 프록시 헤더 설정 가이드, Context-Aware Access 기기 인가 정책 매니페스트 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **SWG 프록시 헤더 주입 설정 가이드**: Squid/BlueCoat/Zscaler용 테넌트 제한 설정 스니펫<br/>• **Context-Aware Access 정책 매니페스트**: 회사 지급 인증 단말기만 접근을 허용하는 기기 정책 JSON<br/>• **테넌트 우회 이상 접속 감사 쿼리**: 비인가 도메인 로그인 시도를 추적하는 Cloud Identity 감사 SQL |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **SWG 프록시 헤더 주입 설정 가이드**: Squid/BlueCoat/Zscaler용 테넌트 제한 설정 스니펫<br/>- **Context-Aware Access 정책 매니페스트**: 회사 지급 인증 단말기만 접근을 허용하는 기기 정책 JSON<br/>- **테넌트 우회 이상 접속 감사 쿼리**: 비인가 도메인 로그인 시도를 추적하는 Cloud Identity 감사 SQL |
 
 ---
 

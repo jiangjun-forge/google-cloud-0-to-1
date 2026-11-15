@@ -14,15 +14,15 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 엔터프라이즈(Gemini Enterprise) 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기 (`gemini-enterprise-governance-guard`)
+# Gemini Enterprise 에이전트 마켓플레이스 차단 및 사내 거버넌스 진단기 (`gemini-enterprise-governance-guard`)
 
-제미나이 엔터프라이즈 환경에서 외부 공개 에이전트 마켓플레이스 접근 차단, 사내 승인 커스텀 에이전트 강제 정책, 미승인 스킬 체이닝 위험 및 Microsoft Entra ID(Workforce Identity Federation) SSO 400 인증 오류를 1분 만에 자동 진단하고 복구 처방을 제공하는 도구다. (As of 2026-10-17)
+Gemini Enterprise 환경에서 외부 공개 에이전트 마켓플레이스 접근 차단, 사내 승인 커스텀 에이전트 강제 정책, 미승인 스킬 체이닝 위험 및 Microsoft Entra ID(Workforce Identity Federation) SSO 400 인증 오류를 1분 만에 자동 진단하고 복구 처방을 제공하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 전사 임직원에게 Gemini Enterprise 라이선스를 배포한 후, 사용자가 외부 공개 마켓플레이스 에이전트에 무분별하게 접근하여 사내 기밀 데이터를 전송할 위험이 발생한다.
 - [ ] 관리자가 마켓플레이스 구매/조달 담당자 메일을 지정하지 않은 상태에서 사용자가 에이전트 승인 요청을 보내 혼선이 빚어지거나 승인 없이 임의 활성화된다.
 - [ ] 일반 사용자가 에이전트 플로우에서 검증되지 않은 외부 서드파티 스킬을 임의로 연결하여 워크플로우를 생성하지 못하도록 차단해야 한다.
@@ -34,7 +34,7 @@ All contents, designs, and code examples are subject to change, modification, or
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. 임직원들이 검증되지 않은 외부 공개 에이전트 마켓플레이스에 접근하여 사내 기밀 프롬프트를 전송할 위험
   2. 사내 IT팀이 승인한 커스텀 에이전트만 사용하도록 강제하는 중앙 통제 거버넌스 부재
-  3. Microsoft Entra ID(구 Azure AD) 연동 Workforce Identity Federation(WIF) SSO 환경에서 발생하는 400 인증 오류
+  3. Microsoft Entra ID 연동 Workforce Identity Federation(WIF) SSO 환경에서 발생하는 400 인증 오류
 - **본 솔루션의 해결 방식 (Solution)**:
   - Gemini Enterprise 환경에서 외부 마켓플레이스 차단 설정, 사내 승인 커스텀 에이전트 강제 정책, 미승인 도구 체이닝 위험 및 Entra ID WIF SSO 매핑 상태를 1분 만에 자동 진단하고 복구 처방을 제공한다.
 
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 마켓플레이스 차단 여부, 승인 에이전트 강제 상태, WIF SSO 400 인증 에러 원인 및 종합 거버넌스 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 전사 AI 거버넌스 감사 보고서, 마켓플레이스 차단 가이드, 승인 에이전트 레지스트리 명세 및 Entra ID WIF 복구 스크립트 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **외부 마켓플레이스 전면 차단 조직 정책**: 승인되지 않은 외부 에이전트 접근을 제한하는 정책<br/>• **Microsoft Entra ID WIF 속성 매핑 JSON**: SSO 400 에러를 해결하는 `google.subject` 매핑 설정<br/>• **사내 승인 에이전트 화이트리스트 명세**: 전사 임직원에게만 노출할 공인 에이전트 레지스트리 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **외부 마켓플레이스 전면 차단 조직 정책**: 승인되지 않은 외부 에이전트 접근을 제한하는 정책<br/>- **Microsoft Entra ID WIF 속성 매핑 JSON**: SSO 400 에러를 해결하는 `google.subject` 매핑 설정<br/>- **사내 승인 에이전트 화이트리스트 명세**: 전사 임직원에게만 노출할 공인 에이전트 레지스트리 |
 
 ---
 

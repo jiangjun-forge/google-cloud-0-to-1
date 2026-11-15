@@ -14,15 +14,15 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이(Gemini) API 요청 및 응답 BigQuery 자동 로깅 (`gemini-request-response-logging`)
+# Gemini API 요청 및 응답 BigQuery 자동 로깅 (`gemini-request-response-logging`)
 
-별도의 복잡한 엔드포인트 프록시 서버 구축 없이, 제미나이(Gemini) 파운데이션 모델 자체의 설정을 통해 **모든 프롬프트 요청 및 응답 데이터를 빅쿼리(BigQuery)로 자동 내보내고 사용자별 토큰 소비량을 1분 만에 분석**하는 가이드다. (As of 2026-10-17)
+별도의 복잡한 엔드포인트 프록시 서버 구축 없이, Gemini 파운데이션 모델 자체의 설정을 통해 **모든 프롬프트 요청 및 응답 데이터를 BigQuery로 자동 내보내고 사용자별 토큰 소비량을 1분 만에 분석**하는 가이드다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **AI 프롬프트 감사 및 규제 준수**: 엔터프라이즈 환경에서 어떤 사내 사용자가 어떤 질문과 답변을 모델과 주고받았는지 규제 컴플라이언스 차원에서 영구 보관해야 할 때
 - [ ] **부서별/사용자별 토큰 과금 분필**: 전체 프로젝트 비용 청구서로는 확인하기 어려운 사용자 계정 및 API 키 단위의 상세 입력/출력 토큰 소모량을 BigQuery SQL로 정확히 정산하고자 할 때
 - [ ] **프록시 없는 무중단 로깅**: 애플리케이션 코드를 크게 변경하거나 별도의 로깅 미들웨어 서버를 운영하지 않고 GCP 관리형 파이프라인으로 처리하고자 할 때
@@ -31,7 +31,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
 - **대상 사용자 (Target)**: AI 애플리케이션 아키텍트, 데이터 거버넌스 엔지니어, 보안 감사관 및 FinOps 분석가
 - **해결하는 핵심 문제 (Core Pain Points)**:
-  1. 임직원이나 고객의 프롬프트와 모델 답변을 기록하기 위해 복잡한 리버스 프록시 서버나 별도 로깅 계층을 구축하는 비용과 지연시간
+  1. 임직원이나 사용자의 프롬프트와 모델 답변을 기록하기 위해 복잡한 리버스 프록시 서버나 별도 로깅 계층을 구축하는 비용과 지연시간
   2. 자체 구축 프록시의 단일 장애점(SPOF) 위험 및 프록시 서버 장애 시 AI 서비스 전체가 마비되는 문제
   3. 수집된 비정형 텍스트 로그를 데이터 웨어하우스로 동기화하는 ETL 파이프라인 개발 및 유지보수 공수
 - **본 솔루션의 해결 방식 (Solution)**:
@@ -44,7 +44,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | BigQuery 로그 데이터셋 연결 상태, 로깅 활성화 여부, 표본 추출 비율(100%) 및 테스트 쿼리 검증 결과 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 서버리스 프롬프트 로깅 아키텍처 보고서, BigQuery 테이블 스키마 명세, 사용자별 토큰 분석 SQL 및 자원 정리 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **BigQuery 로그 테이블 스키마 DDL**: 요청/응답 페이로드, 타임스탬프, 토큰 수를 저장하는 DDL<br/>• **파운데이션 모델 로깅 활성화 코드**: SDK 또는 콘솔을 통해 원클릭으로 로깅을 켜는 파이썬 코드<br/>• **비용 및 감사 추적 표준 SQL**: BigQuery에서 사용자별 일일 토큰 소모량을 산출하는 분석 쿼리 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **BigQuery 로그 테이블 스키마 DDL**: 요청/응답 페이로드, 타임스탬프, 토큰 수를 저장하는 DDL<br/>- **파운데이션 모델 로깅 활성화 코드**: SDK 또는 콘솔을 통해 원클릭으로 로깅을 켜는 Python 코드<br/>- **비용 및 감사 추적 표준 SQL**: BigQuery에서 사용자별 일일 토큰 소모량을 산출하는 분석 쿼리 |
 
 ---
 
@@ -158,12 +158,12 @@ flowchart TB
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
-BigQuery 데이터세트 생성 및 제미나이 모델 호출을 위한 IAM 권한 목록이다:
+BigQuery 데이터세트 생성 및 Gemini 모델 호출을 위한 IAM 권한 목록이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
 | :--- | :--- | :--- |
-| **빅쿼리 데이터 편집자 (권장)** | `roles/bigquery.dataEditor` | 로그 저장용 데이터세트 및 테이블 생성 |
-| **버텍스 AI 사용자** | `roles/aiplatform.user` | 제미나이 모델 호출 및 로깅 파라미터 설정 |
+| **BigQuery 데이터 편집자 (권장)** | `roles/bigquery.dataEditor` | 로그 저장용 데이터세트 및 테이블 생성 |
+| **Vertex AI 사용자** | `roles/aiplatform.user` | Gemini 모델 호출 및 로깅 파라미터 설정 |
 
 ---
 

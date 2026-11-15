@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 3] 프롬프트 구글 독스 관리 및 스마트 캐싱 엔진 (Prompt Management & Cache Engine)
+ * [모듈 3] 프롬프트 Google Docs 관리 및 스마트 캐싱 엔진 (Prompt Management & Cache Engine)
  */
 
 /**
- * 캠페인 루트의 prompts/ 폴더 내에 9대 프롬프트 구글 독스를 자동 시딩한다.
+ * 캠페인 루트의 prompts/ 폴더 내에 9대 프롬프트 Google Docs를 자동 시딩한다.
  * GitHub 퍼블릭 저장소(GitHub Raw)에서 최신 프롬프트 마크다운 파일을 실시간 인출하여 생성하며,
- * 마케터가 이미 수정한 구글 독스가 존재할 경우 기존 내용을 안전하게 보존한다.
+ * 마케터가 이미 수정한 Google Docs가 존재할 경우 기존 내용을 안전하게 보존한다.
  *
  * @param {GoogleAppsScript.Drive.Folder} promptsFolder - prompts 폴더 객체
  */
@@ -50,14 +50,14 @@ function seedDefaultPrompts(promptsFolder) {
       }
 
       saveGoogleDoc(promptsFolder, def.title, initialContent);
-      Logger.log("프롬프트 구글 독스 자동 시딩 완료: " + def.title);
+      Logger.log("프롬프트 Google Docs 자동 시딩 완료: " + def.title);
     }
   }
 }
 
 /**
- * 프롬프트 구글 독스 문서를 읽어 시스템 지침 텍스트를 반환한다.
- * 구글 독스의 수정 시각(Last-Modified)을 감지하여 변경이 없을 때에는
+ * 프롬프트 Google Docs 문서를 읽어 시스템 지침 텍스트를 반환한다.
+ * Google Docs의 수정 시각(Last-Modified)을 감지하여 변경이 없을 때에는
  * CacheService로부터 0.01초 만에 즉시 반환하는 스마트 캐싱을 수행한다.
  *
  * @param {string} promptKey - CONFIG.DEFAULT_PROMPTS 키 (예: "02_content_generation")
@@ -97,7 +97,7 @@ function getPromptTemplate(promptKey) {
       return cachedContent;
     }
 
-    // 문서가 새로 수정되었거나 캐시 미스 시 구글 독스 본문 로드
+    // 문서가 새로 수정되었거나 캐시 미스 시 Google Docs 본문 로드
     var docContent = readGoogleDoc(promptsFolder, targetTitle);
     if (docContent && docContent.trim().length > 10) {
       // 마케터 안내용 주석 및 머리말(# 제목) 정제
@@ -116,7 +116,7 @@ function getPromptTemplate(promptKey) {
       return cleanedContent;
     }
   } catch (err) {
-    Logger.log("프롬프트 구글 독스 로드 예외, 기본값 사용: " + err);
+    Logger.log("프롬프트 Google Docs 로드 예외, 기본값 사용: " + err);
   }
 
   return fallbackText;

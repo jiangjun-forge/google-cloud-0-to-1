@@ -12,13 +12,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 커스텀 에이전트 팩토리 및 Gemini Enterprise app 연동기 기술 상세 설계서 (TDD)
 
-본 문서는 사내 엔지니어링 환경에서 구동하는 하이코드(High-code) 커스텀 에이전트 팩토리 및 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 사내 갤러리 연동 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
+본 문서는 사내 엔지니어링 환경에서 구동하는 하이코드(High-code) 커스텀 에이전트 팩토리 및 Gemini Enterprise app 사내 갤러리 연동 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 개발자 또는 클라우드 아키텍트가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 추천 칩 또는 깃 저장소 URL을 입력하면, 에이전트 엔진(Agent Engine) 런타임 내의 도구가 대행 서비스 계정의 인가 토큰을 활용하여 비동기 프로비저닝 및 사내 갤러리 등록을 무인 수행한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 개발자 또는 클라우드 아키텍트가 Gemini Enterprise app 대화창에서 추천 칩 또는 Git 저장소 URL을 입력하면, Agent Engine 런타임 내의 도구가 대행 서비스 계정의 인가 토큰을 활용하여 비동기 프로비저닝 및 사내 갤러리 등록을 무인 수행한다.
 
 ```mermaid
 sequenceDiagram
@@ -70,9 +70,9 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (하이코드 에이전트 자동 구축 및 코드 생성) | **FR-01** (에이전트 코어 코드 생성기) | **NFR-01** (무의존성 및 단일 파이썬 실행) | `diagnose.py` |
+| **BR-01** (하이코드 에이전트 자동 구축 및 코드 생성) | **FR-01** (에이전트 코어 코드 생성기) | **NFR-01** (무의존성 및 단일 Python 실행) | `diagnose.py` |
 | **BR-02** (엔터프라이즈 데이터 및 도구 템플릿) | **FR-02** (BigQuery 및 시스템 도구 조립) | **NFR-02** (표준 소프트웨어 스택 준수) | `diagnose.py` 템플릿 모듈 |
-| **BR-03** (에이전트 엔진 런타임 배포 자동화) | **FR-03** (deploy.py 및 의존성 도출) | **NFR-01**, **NFR-02** | `diagnose.py` 배포 빌더 |
+| **BR-03** (Agent Engine 런타임 배포 자동화) | **FR-03** (deploy.py 및 의존성 도출) | **NFR-01**, **NFR-02** | `diagnose.py` 배포 빌더 |
 | **BR-04** (GitHub 저장소 직결 무인 배포) | **FR-04** (저장소 연동 파이프라인 컴파일러) | **NFR-01**, **NFR-02** | `diagnose.py` 저장소 연동 모듈 |
 | **BR-05** (Gemini Enterprise app 사내 갤러리 연동) | **FR-05** (ADK 에이전트 바인딩 매니페스트) | **NFR-03** (결정론적 가상 실행 지원) | `diagnose.py` 연동 모듈 |
 | **BR-06** (엔터프라이즈 보안 및 격리 준수) | **FR-06** (IAM 권한 진단 및 마크다운 리포트) | **NFR-03** (가명 마스킹 및 보안 준수) | `diagnose.py`, `report.md` |
@@ -88,18 +88,18 @@ sequenceDiagram
 ## 3. 기능 기술 요구 사항 명세 (Functional Requirements)
 
 ### FR-01: 하이코드 에이전트 코어 코드(`agent.py`) 자동 생성
-- Google ADK 및 `google-genai` 통일 SDK를 기반으로 다단계 추론(Multi-step Reasoning)과 도구 호출(Function Calling)이 내장된 완성형 파이썬 코드를 생성한다.
+- Google ADK 및 `google-genai` 통일 SDK를 기반으로 다단계 추론(Multi-step Reasoning)과 도구 호출(Function Calling)이 내장된 완성형 Python 코드를 생성한다.
 - 입력된 도메인(예: 금융 이상 거래 탐지, 스마트팩토리 설비 진단, SRE 장애 역추적)에 맞추어 시스템 지침, 도구 바인딩 및 AdkApp 래퍼 로직을 포함한다.
 
 ### FR-02: 엔터프라이즈 데이터 및 도구 명세(`tools.py`) 생성
-- 빅쿼리(BigQuery) 데이터셋 SQL 질의 도구, 사내 REST API 호출 도구, 또는 구글 워크스페이스(Google Workspace) 연동 도구의 파이썬 함수와 타입 힌트를 생성한다.
+- BigQuery 데이터셋 SQL 질의 도구, 사내 REST API 호출 도구, 또는 Google Workspace 연동 도구의 Python 함수와 타입 힌트를 생성한다.
 - 도구 함수 내부의 인증 처리는 하드코딩을 배제하고 애플리케이션 기본 자격 증명(ADC) 및 환경 변수를 참조하도록 구성한다.
 
-### FR-03: 에이전트 엔진 런타임 배포 스펙(`deploy.py`, `requirements.txt`) 도출
-- 생성된 파이썬 코드를 즉시 패키징하여 Agent Engine에 프로비저닝하고 GE App에 자동 등록하는 `deploy.py` 및 `requirements.txt`를 도출한다.
+### FR-03: Agent Engine 런타임 배포 스펙(`deploy.py`, `requirements.txt`) 도출
+- 생성된 Python 코드를 즉시 패키징하여 Agent Engine에 프로비저닝하고 GE App에 자동 등록하는 `deploy.py` 및 `requirements.txt`를 도출한다.
 
 ### FR-04: Gemini Enterprise app ADK 에이전트 바인딩 매니페스트 생성 및 연동 진단
-- 배포된 Agent Engine 리소스를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 `adkAgentDefinition`으로 등록하기 위한 JSON 페이로드를 생성한다.
+- 배포된 Agent Engine 리소스를 Gemini Enterprise app에 `adkAgentDefinition`으로 등록하기 위한 JSON 페이로드를 생성한다.
 - Gemini Enterprise app과 백엔드 프로젝트 간의 서비스 계정 호출 권한 및 도메인 제한 공유(Domain Restricted Sharing) 조직 정책 준수 여부를 사전 진단한다.
 
 ### FR-05: IAM 권한 진단 및 표준 마크다운 리포트 자동 생성
@@ -108,7 +108,7 @@ sequenceDiagram
 
 ### FR-06: Agent Engine 프로비저닝 및 ChatOps 4대 실행 도구 체계
 - `python diagnose.py` 실행으로 Agent Engine에 ADK 기반 `GE Custom Agent Factory`를 프로비저닝하고 GE App에 `adkAgentDefinition`으로 바인딩한다.
-- 런타임 내에 4대 파이썬 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다:
+- 런타임 내에 4대 Python 실행 도구를 장착하여, GE app 웹 챗창에서 들어오는 배포 명령을 Discovery Engine REST API로 직접 중계한다:
   1. `show_custom_catalog_tool`: 0~4번 전체 카탈로그 마크다운 표 실시간 브리핑
   2. `deploy_enterprise_agent_tool`: 사전 중복 검증 및 원클릭 프로비저닝 집행 (기등록 활성화 에이전트 발견 시 즉시 안내 및 중복 빌드 차단)
   3. `check_deployment_status_tool`: 백그라운드 LRO 빌드/배포 상태 비동기 추적 및 갤러리 등록 완결
@@ -120,7 +120,7 @@ sequenceDiagram
 - 한 번에 하나의 에이전트씩 개별 의사 결정을 거쳐 독립 프로비저닝하는 거버넌스 로직을 강제한다.
 
 ### FR-08: 선언적 커스텀 레시피 아키텍처 및 케밥 케이스 표준
-- 파이썬 코드 수정 없이 신규 에이전트를 추가할 수 있도록 선언적 카탈로그 파일(`catalog.yaml`) 분리 구조를 지원한다.
+- Python 코드 수정 없이 신규 에이전트를 추가할 수 있도록 선언적 카탈로그 파일(`catalog.yaml`) 분리 구조를 지원한다.
 - 모든 에이전트 식별자는 소문자 케밥 케이스(kebab-case) 표준을 준수한다.
 
 ### FR-09: 4계층 캐스케이드 로더 및 폐쇄망 환경 소켓 타임아웃 방어
@@ -134,14 +134,14 @@ sequenceDiagram
 
 ## 4. 비기능 기술 요구 사항 명세 (Non-Functional Requirements)
 
-### NFR-01: 무의존성 및 순수 파이썬 단일 실행 원칙
+### NFR-01: 무의존성 및 순수 Python 단일 실행 원칙
 - 외부 쉘 스크립트나 별도 패키징 툴 없이 `python diagnose.py` 직접 실행만으로 에이전트 생성과 진단을 완결한다.
-- 생성되는 하이코드 산출물 역시 표준 파이썬 라이브러리 기반으로 자립 실행이 가능해야 한다.
+- 생성되는 하이코드 산출물 역시 표준 Python 라이브러리 기반으로 자립 실행이 가능해야 한다.
 
 ### NFR-02: 표준 소프트웨어 스택 준수
 - AI SDK: `google-genai v2.0+`, `google-adk 2.11+`
 - 에이전트 런타임: `Agent Engine`
-- 배포 체계: 순수 파이썬 스크립트 기반 원클릭 배포
+- 배포 체계: 순수 Python 스크립트 기반 원클릭 배포
 
 ### NFR-03: 결정론적 가상 실행(--dry-run) 및 사내 식별 정보 마스킹
 - `--dry-run` 모드 실행 시 실제 GCP API 호출 및 소스 파일 오버라이트 없이도 메모리 상에서 코드 및 매니페스트 무결성을 정밀하게 스모크 테스트한다.

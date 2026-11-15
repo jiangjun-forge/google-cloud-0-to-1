@@ -16,17 +16,17 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise In-Chat Factory: 노코드 에이전트 팩토리 모듈 (gemini-enterprise-factory-agent)
 
-`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 노코드 에이전트 생성을 담당하는 도구로, 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 비개발자 임직원이 복잡한 클라우드 콘솔이나 IAM 권한 없이도 웹 대화창 내에서 14대 엔터프라이즈 카탈로그 추천 칩 선택과 실시간 검색 그라운딩을 통해 사내 승인된 노코드(No-code) 에이전트를 자율 생성하고 전용 대행 서비스 계정으로 안전하게 등록하는 자율형 사내 에이전트 팩토리 모듈이다. (As of 2026-11-07)
+`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 노코드 에이전트 생성을 담당하는 도구로, Gemini Enterprise app 환경에서 비개발자 임직원이 복잡한 클라우드 콘솔이나 IAM 권한 없이도 웹 대화창 내에서 14대 엔터프라이즈 카탈로그 추천 칩 선택과 실시간 검색 그라운딩을 통해 사내 승인된 노코드(No-code) 에이전트를 자율 생성하고 전용 대행 서비스 계정으로 안전하게 등록하는 자율형 사내 에이전트 팩토리 모듈이다. (As of 2026-11-07)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 사내 엔터프라이즈 생성형 AI 환경에서 다음과 같은 병목이나 고민이 발생하고 있다면 본 솔루션 도입이 필요하다:
 - [ ] **중앙 IT/인프라팀의 에이전트 제작 병목**: 현업 부서(인사, 재무, 마케팅, 고객 지원)마다 맞춤형 에이전트 제작 요청이 쏟아져 담당자가 수작업으로 지침과 도구를 세팅하느라 본연의 인프라 업무가 마비된 경우
 - [ ] **비개발자 임직원의 백지 증후군(Blank Canvas Syndrome)**: 일반 직원이 에이전트를 직접 만들고 싶어도 빈 프롬프트 창에서 어떤 지침(Instructions), 가드레일, 업무 절차를 적어야 할지 몰라 포기하는 경우
-- [ ] **임직원 GCP IAM 권한 부여 불가**: 일반 직원에게 에이전트 생성을 위한 구글 클라우드(Google Cloud) 콘솔 접근 권한이나 프로젝트 편집자(Editor) 권한을 부여할 수 없어 자급자족이 불가능한 경우
+- [ ] **임직원 GCP IAM 권한 부여 불가**: 일반 직원에게 에이전트 생성을 위한 Google Cloud 콘솔 접근 권한이나 프로젝트 편집자(Editor) 권한을 부여할 수 없어 자급자족이 불가능한 경우
 - [ ] **에이전트 지침 품질 편차 및 제작 창구 분산**: 직원마다 개별 작성한 프롬프트 품질 편차가 크고, 표준 지침과 추천 질문(Starter Prompts) 형식이 통일되지 않는 경우
 
 
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 선택된 업무 도메인, 인터뷰 기반 추천 지침, Agent Engine 빌드 상태 및 사내 갤러리(`/r/agents`) 등록 결과 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 에이전트 시스템 지침 전문, 추천 질문(Starter Prompts) 명세, 에이전트 슬러그 및 사내 공유 범위(`ALL_USERS`) 보고서 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **프로비저닝된 커스텀 에이전트**: Gemini Enterprise app 웹 챗창에서 `@멘션`으로 호출 가능한 맞춤 에이전트<br/>• **선언적 에이전트 카탈로그 (`catalog.yaml`)**: 코드 수정 없이 14대 업무 도메인 팩을 확장하는 레시피<br/>• **대행 서비스 계정 실행 환경**: Zero IAM 임직원을 대신해 에이전트를 등록하는 런타임 환경 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **프로비저닝된 커스텀 에이전트**: Gemini Enterprise app 웹 챗창에서 `@멘션`으로 호출 가능한 맞춤 에이전트<br/>- **선언적 에이전트 카탈로그 (`catalog.yaml`)**: 코드 수정 없이 14대 업무 도메인 팩을 확장하는 레시피<br/>- **대행 서비스 계정 실행 환경**: Zero IAM 임직원을 대신해 에이전트를 등록하는 런타임 환경 |
 
 ---
 
@@ -121,7 +121,7 @@ flowchart TB
     end
 
     subgraph Runtime["2. Agent Engine 호스팅 런타임"]
-        GEApp -->|"2. 대화형 인터뷰 세션 인입"| Engine["Agent Engine 런타임<br/>(ResilientAdkApp / gemini-3.8-flash)"]
+        GEApp -->|"2. 대화형 인터뷰 세션 인입"| Engine["Agent Engine 런타임<br/>(ResilientAdkApp / Gemini Flash)"]
         Catalog["14대 업무 도메인 추천 칩 카탈로그"] --- Engine
         Tools["register_nocode_agent_tool<br/>(대행 SA: ge-agent-factory-sa)"] --> Engine
     end

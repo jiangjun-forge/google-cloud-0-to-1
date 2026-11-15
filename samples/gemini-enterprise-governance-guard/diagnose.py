@@ -91,7 +91,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-p
   code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
   projects = [p.strip() for p in stdout.splitlines() if p.strip()] if code == 0 and stdout else []
   if projects:
-    print("\n[?] 대상 구글 클라우드(Google Cloud) 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
+    print("\n[?] 대상 Google Cloud 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
     for idx, p in enumerate(projects, 1):
       print(f"  [{idx}] {p}")
     print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
@@ -192,7 +192,7 @@ def evaluate_governance(data: dict) -> list[dict]:
         "status": "CRITICAL",
         "description": f"WIF 풀 속성 매핑에 필수 클레임({', '.join(missing_claims)})이 누락되어 Entra ID 로그인 시 HTTP 400 오류 발생",
         "remediation": (
-            "구글 클라우드 WIF 공급업체 매핑에 attribute.user_email='assertion.email' 및 "
+            "Google Cloud WIF 공급업체 매핑에 attribute.user_email='assertion.email' 및 "
             "attribute.display_name='assertion.name'을 추가하고, Entra ID 앱 등록 토큰 구성에서 email 클레임 발행을 활성화한다."
         ),
     })
@@ -284,9 +284,9 @@ def build_markdown_report(results: list[dict], app_name: str, project_id: str, i
       "",
       "## 4. 콘솔 링크 조치 가이드",
       "",
-      "- **제미나이 엔터프라이즈 스킬 및 에이전트 관리 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/manage-skills )",
-      "- **구글 클라우드(Google Cloud) Workforce Identity Federation 구성 가이드**: ( https://cloud.google.com/iam/docs/workforce-identity-federation )",
-      "- **구글 클라우드 콘솔 Workforce Identity 풀**: ( https://console.cloud.google.com/iam-admin/workforce-pools )",
+      "- **Gemini Enterprise 스킬 및 에이전트 관리 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/manage-skills )",
+      "- **Google Cloud Workforce Identity Federation 구성 가이드**: ( https://cloud.google.com/iam/docs/workforce-identity-federation )",
+      "- **Google Cloud 콘솔 Workforce Identity 풀**: ( https://console.cloud.google.com/iam-admin/workforce-pools )",
       "",
       "---",
       "",
@@ -459,7 +459,7 @@ def main():
   parser = argparse.ArgumentParser(
       description="Gemini Enterprise 에이전트 마켓플레이스 차단 및 사내 커스텀 에이전트 거버넌스 진단기"
   )
-  parser.add_argument("--project", help="대상 구글 클라우드(Google Cloud) 프로젝트 ID")
+  parser.add_argument("--project", help="대상 Google Cloud 프로젝트 ID")
   parser.add_argument(
       "--ge-app-id",
       default=os.getenv("GE_APP_ID") or "default-enterprise-agent-app",
@@ -475,7 +475,7 @@ def main():
 
   project_id = "sample-project-id" if args.dry_run else (args.project or get_default_project())
   if not project_id and not args.dry_run:
-    print("구글 클라우드(Google Cloud) 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
+    print("Google Cloud 프로젝트 ID가 지정되지 않았다. --project 플래그를 주거나 gcloud config set project를 설정한다.", file=sys.stderr)
     sys.exit(1)
 
   app_id = args.ge_app_id or "default-enterprise-agent-app"

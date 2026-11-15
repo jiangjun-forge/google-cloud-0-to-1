@@ -14,17 +14,17 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 구글 워크스페이스(Google Workspace) 마케팅 콘텐츠 파이프라인 (`gws-marketing-content-pipeline`)
+# Google Workspace 마케팅 콘텐츠 파이프라인 (`gws-marketing-content-pipeline`)
 
-서버 인프라 구축이나 로컬 개발 환경 설정 없이, Google AI Studio API Key 1회 등록만으로 구글 드라이브(Google Drive)와 구글 시트(Google Sheets) 환경에서 마케팅 캠페인 기획, 멀티 채널 콘텐츠 생성 및 AI 페르소나 다면 평가를 실행하는 워크스페이스 자동화 파이프라인이다. (As of 2026-10-17)
+서버 인프라 구축이나 로컬 개발 환경 설정 없이, Google AI Studio API Key 1회 등록만으로 Google Drive와 Google Sheets 환경에서 마케팅 캠페인 기획, 멀티 채널 콘텐츠 생성 및 AI 페르소나 다면 평가를 실행하는 워크스페이스 자동화 파이프라인이다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
-본 가이드는 클라우드 인프라 승인이나 별도 개발 도구 설치 없이, 마케터가 일상적으로 사용하는 구글 드라이브(Google Drive)와 구글 시트(Google Sheets) 환경 안에서 생성형 AI 기반 마케팅 콘텐츠 파이프라인을 직접 구축하고 운영하는 실무 튜토리얼이다. 본 가이드를 따라 진행하면 다음 과업을 마케터가 자가 완결적으로 수행할 수 있다:
-- [ ] 구글 드라이브 캠페인 폴더에 서버리스 마케팅 자동화 작업 공간 구축
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+본 가이드는 클라우드 인프라 승인이나 별도 개발 도구 설치 없이, 마케터가 일상적으로 사용하는 Google Drive와 Google Sheets 환경 안에서 생성형 AI 기반 마케팅 콘텐츠 파이프라인을 직접 구축하고 운영하는 실무 튜토리얼이다. 본 가이드를 따라 진행하면 다음 과업을 마케터가 자가 완결적으로 수행할 수 있다:
+- [ ] Google Drive 캠페인 폴더에 서버리스 마케팅 자동화 작업 공간 구축
 - [ ] 아이디어 메모 한 줄로부터 캠페인 기획서(PLAN) 및 채널별 제작 명세서(SPEC) 자동 도출
 - [ ] 타깃 AI 페르소나 가상 패널 합성 및 멀티 채널 콘텐츠(카피라이팅, 배너/포스터/SNS 이미지, 모바일 숏폼 영상) 초판(rv-00) 제작
 - [ ] 가상 소비자 패널 다면 평가 분석 및 마케터 보정 지침 기반 개정본(rv-01 ~ rv-99) 순환 도출
@@ -34,10 +34,10 @@ All contents, designs, and code examples are subject to change, modification, or
 - **대상 사용자 (Target)**: 엔터프라이즈 브랜드 마케터, 콘텐츠 크리에이터, 디지털 마케팅 팀 및 비개발자 현업
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. 신규 제품 출시 시 캠페인 기획, 제작 명세서(SPEC), 광고 카피라이팅, 숏폼 콘티 작성을 수작업으로 진행하여 수일이 소요되는 비효율
-  2. 복잡한 서버 인프라나 파이썬 환경을 구축할 수 없는 비개발자 마케터가 최신 Gemini 생성형 AI를 업무에 도입하기 어려운 진입 장벽
+  2. 복잡한 서버 인프라나 Python 환경을 구축할 수 없는 비개발자 마케터가 최신 Gemini 생성형 AI를 업무에 도입하기 어려운 진입 장벽
   3. 소비자 피드백과 가상 페르소나 다면 평가를 콘텐츠에 지속 반영하는 인간 참여형(Human-in-the-loop) 보정 루프의 부재
 - **본 솔루션의 해결 방식 (Solution)**:
-  - Google AI Studio API Key 1회 등록만으로 구글 드라이브(Drive)와 구글 시트(Sheets) 브라우저 환경에서 Gemini API를 연동하여 기획서 작성부터 숏폼 영상 콘티, 가상 페르소나 다면 평가, 마케터 보정 루프까지 완결하는 노코드 마케팅 파이프라인을 제공한다.
+  - Google AI Studio API Key 1회 등록만으로 Google Drive와 Google Sheets 브라우저 환경에서 Gemini API를 연동하여 기획서 작성부터 숏폼 영상 콘티, 가상 페르소나 다면 평가, 마케터 보정 루프까지 완결하는 노코드 마케팅 파이프라인을 제공한다.
 
 ### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
 본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 테스트 수이트 실행 결과: 5대 E2E 시나리오, 12개 엣지 케이스, 25개 유닛 테스트 통과 현황 및 모의 검증 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 마케팅 콘텐츠 생성 보고서, 9대 프롬프트 템플릿 구조, 실행 내역 탭 스프레드시트 링크 및 산출물 드라이브 경로 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Google Apps Script 원클릭 코드 (`code.js`)**: 시트 사이드바에서 동작하는 전체 파이프라인 엔진<br/>• **사이드바 UI 템플릿 (`sidebar.html`)**: 마케터가 버튼 클릭으로 단계를 제어하는 직관적 인터페이스<br/>• **9대 업무 프롬프트 문서 세트**: 구글 독스에서 직접 수정 가능한 기획/평가/보정 프롬프트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **Google Apps Script 원클릭 코드 (`code.js`)**: 시트 사이드바에서 동작하는 전체 파이프라인 엔진<br/>- **사이드바 UI 템플릿 (`sidebar.html`)**: 마케터가 버튼 클릭으로 단계를 제어하는 직관적 인터페이스<br/>- **9대 업무 프롬프트 문서 세트**: Google Docs에서 직접 수정 가능한 기획/평가/보정 프롬프트 |
 
 ---
 
@@ -55,8 +55,8 @@ All contents, designs, and code examples are subject to change, modification, or
 > [!TIP]
 > Cloud Shell 접속 환경 구성 및 저장소 클론(`git clone`) 방법은 루트의 [메인 README](../../README.md)를 참고한다.
 
-### 1) 구글 드라이브 작업 공간 설정
-구글 드라이브에 캠페인 전용 폴더를 생성하고 Google AI Studio API 키를 등록한다.
+### 1) Google Drive 작업 공간 설정
+Google Drive에 캠페인 전용 폴더를 생성하고 Google AI Studio API 키를 등록한다.
 
 **파이프라인 실행 현황 미리보기:**
 ```text
@@ -88,13 +88,13 @@ flowchart TB
 
     subgraph Layer3["Layer 3: Pipeline & Orchestration Runtime (런타임 오케스트레이션)"]
         AppsScriptEngine["Google Apps Script 엔진 (bundle_apps_script.js)"]
-        PromptEngine["프롬프트 구글 독스 외부화 및 스마트 캐싱"]
+        PromptEngine["프롬프트 Google Docs 외부화 및 스마트 캐싱"]
         RevisionController["무제한 리비전(rv-00~rv-99) 순환 제어기"]
     end
 
     subgraph Layer4["Layer 4: Foundation Models & Drive Assets (모델 및 산출물 저장소)"]
-        GeminiFlash["Gemini 3.8 Flash (기획서/명세서 컴파일, 다면 평가, VLM 분석)"]
-        VeoFast["Gemini Veo 3.1 Fast (9:16 모바일 숏폼 세로 영상 생성)"]
+        GeminiFlash["Gemini Flash (기획서/명세서 컴파일, 다면 평가, VLM 분석)"]
+        VeoFast["Veo Fast (9:16 모바일 숏폼 세로 영상 생성)"]
         CampaignFolder["Google Drive 캠페인 폴더 (Docs/Sheets/Media 에셋)"]
     end
 
@@ -126,12 +126,12 @@ flowchart TB
 
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
-### 1단계: 구글 드라이브 캠페인 폴더 및 구글 시트 생성
+### 1단계: Google Drive 캠페인 폴더 및 Google Sheets 생성
 
-1. 구글 드라이브 ( https://drive.google.com )에 접속하여 이번 캠페인 이름으로 새 폴더를 생성한다. (예: `2026 가을 오텀 브리즈 캠페인`, `autumn-campaign-2026` 등 자유롭게 명명).
+1. Google Drive ( https://drive.google.com )에 접속하여 이번 캠페인 이름으로 새 폴더를 생성한다. (예: `2026 가을 오텀 브리즈 캠페인`, `autumn-campaign-2026` 등 자유롭게 명명).
    - 폴더의 고유 ID로 영구 바인딩되므로 추후 폴더 이름을 변경해도 정상 추적된다.
-2. 생성한 폴더 안으로 이동하여 빈 구글 시트(Google Sheets) 문서를 새로 생성한다.
-3. 구글 시트 상단 메뉴에서 `확장 프로그램` > `Apps Script`를 클릭하여 스크립트 편집기를 연다.
+2. 생성한 폴더 안으로 이동하여 빈 Google Sheets 문서를 새로 생성한다.
+3. Google Sheets 상단 메뉴에서 `확장 프로그램` > `Apps Script`를 클릭하여 스크립트 편집기를 연다.
 
 ### 2단계: 부트스트랩 스크립트 및 매니페스트 등록
 
@@ -146,18 +146,18 @@ flowchart TB
 > **보안 경고 관련 사전 안내 (안내 사항)**:
 > 최초 1회 권한 승인 시 `Google에서 확인하지 않은 앱(Google hasn't verified this app)` 경고 화면이 나타나는 것은, 본인이 방금 생성한 사내 전용 Apps Script가 Google의 외부 공개 마켓플레이스 심사를 거치지 않았기 때문에 표시되는 정상적인 Google 보안 확인 절차입니다. 외부로 데이터가 유출되지 않는 사내 본인 계정 스크립트이므로 안심하고 `고급(Advanced)` > `...으로 이동(안전하지 않음)`을 클릭하여 계속 진행한다.
 
-1. 구글 시트 브라우저 탭으로 돌아와 페이지를 새로고침(F5)한다.
+1. Google Sheets 브라우저 탭으로 돌아와 페이지를 새로고침(F5)한다.
 2. 잠시 후 상단 메뉴에 `[마케팅 콘텐츠 파이프라인]` 메뉴가 생성되면 클릭 후 `제어 패널 열기`를 선택한다.
-3. 최초 1회 실행 시 구글 계정 권한 승인 창이 나타난다:
+3. 최초 1회 실행 시 Google 계정 권한 승인 창이 나타난다:
    - `권한 필요(Authorization Required)` 대화상자에서 `계속(Continue)`을 클릭한다.
-   - 파이프라인을 구동할 본인의 구글 계정을 선택한다.
+   - 파이프라인을 구동할 본인의 Google 계정을 선택한다.
    - `Google에서 확인하지 않은 앱(Google hasn't verified this app)` 경고 화면이 나타나면 좌측 하단의 `고급(Advanced)` 링크를 클릭한 후, `...으로 이동(안전하지 않음)(Go to ... (unsafe))`을 클릭한다.
-   - 구글 드라이브, 구글 독스, 구글 폼, 구글 시트 등의 접근 권한 요청 화면에서 `모두 선택(Select all)` 체크박스를 활성화하고 하단의 `계속(Continue)` 또는 `허용(Allow)`을 클릭한다.
-4. 권한 승인이 완료되면 구글 시트 우측에 마케팅 콘텐츠 파이프라인 제어 패널(사이드바)이 열린다.
+   - Google Drive, Google Docs, Google Forms, Google Sheets 등의 접근 권한 요청 화면에서 `모두 선택(Select all)` 체크박스를 활성화하고 하단의 `계속(Continue)` 또는 `허용(Allow)`을 클릭한다.
+4. 권한 승인이 완료되면 Google Sheets 우측에 마케팅 콘텐츠 파이프라인 제어 패널(사이드바)이 열린다.
 
 ### 4단계: Gemini API Key 등록 및 연결 검증
 
-1. Google AI Studio ( https://aistudio.google.com/app/apikey )에서 구글 계정으로 Gemini API Key를 발급받는다.
+1. Google AI Studio ( https://aistudio.google.com/app/apikey )에서 Google 계정으로 Gemini API Key를 발급받는다.
    - 기본 무료 발급 키는 멀티모달 콘텐츠 생성 시 토큰이나 할당량(Quota)이 충분하지 않을 수 있으므로, 안정적인 연속 실행을 위해서는 AI Studio 콘솔에서 종량제(Pay-as-you-go) 결제 연결을 권장한다.
 2. 사이드바 상단 온보딩 카드의 `[지금 API Key 등록하기]`를 누르고 복사한 API Key를 입력한 뒤 `[저장 및 검증]`을 클릭한다.
 3. 상단 배지에 `API Key: 등록됨` 상태가 표시되는지 확인한다.
@@ -180,4 +180,4 @@ flowchart TB
 ## 7. 리소스 정리 (Teardown) 안내
 
 - **숏폼 영상 권장 규격**: 브라우저 런타임 제약(6분 타임아웃, 30MB 페이로드)에 따라 15초~30초 이내의 숏폼 동영상을 권장한다. 1분 이상의 장문 인터뷰나 대용량 고화질 영상 처리가 필요한 엔터프라이즈 환경에서는 Google Cloud 환경(Vertex AI, Cloud Run)으로의 이관 컨설팅을 권장한다.
-- **자원 정리 안내**: 본 솔루션은 상시 가상 머신(VM)이나 전용 데이터베이스 등 상시 인프라 리소스를 생성하지 않는다. 실습 종료 후 구글 드라이브에서 해당 캠페인 폴더 1개만 휴지통으로 이동하여 비우면 모든 데이터가 정리된다.
+- **자원 정리 안내**: 본 솔루션은 상시 가상 머신(VM)이나 전용 데이터베이스 등 상시 인프라 리소스를 생성하지 않는다. 실습 종료 후 Google Drive에서 해당 캠페인 폴더 1개만 휴지통으로 이동하여 비우면 모든 데이터가 정리된다.

@@ -17,10 +17,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-request-response-logging
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-request-response-logging: 별도의 복잡한 엔드포인트 프록시 서버 구축 없이, 제미나이(Gemini) 파운데이션 모델 자체의 설정을 통해 모든 프롬프트 요청 및 응답 데이터를 BigQuery로 자동 내보내고 사용자별 토큰 소비량을 1분 만에 분석하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-request-response-logging: 별도의 복잡한 엔드포인트 프록시 서버 구축 없이, Gemini 파운데이션 모델 자체의 설정을 통해 모든 프롬프트 요청 및 응답 데이터를 BigQuery로 자동 내보내고 사용자별 토큰 소비량을 1분 만에 분석하는 도구다.
 ---
 
-# 제미나이(Gemini) API 요청 및 응답 BigQuery 자동 로깅 (`gemini-request-response-logging`) (Autopilot & Hands-on Guide)
+# Gemini API 요청 및 응답 BigQuery 자동 로깅 (`gemini-request-response-logging`) (Autopilot & Hands-on Guide)
 
 본 스킬은 사내 엔지니어와 실무자가 `gemini-request-response-logging` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 

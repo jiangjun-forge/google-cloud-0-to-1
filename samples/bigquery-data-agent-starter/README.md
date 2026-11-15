@@ -16,22 +16,22 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # BigQuery Conversational Analytics Data Agent 45분 완성 스타터 가이드 (Standalone & Optional Gemini Enterprise app)
 
-45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 빅쿼리(BigQuery) 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, 구글 1P 완전 관리형 런타임(GDA `dataAgents` REST API)을 통해 CLI 원클릭(`--deploy-agent`)으로 데이터 에이전트를 프로비저닝하며, A2A 표준 규격 기반으로 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 직결 연동하거나 BigQuery Studio 콘솔 UI에서 단독(Standalone)으로 멀티턴 대화 질의를 완주할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-10-19)
+45분 핸즈온 워크숍 내에 참석자가 명령어 한 줄(`--setup-demo`)로 BigQuery 스몰셋 데이터셋(`cymbal_gold`)과 실데이터를 10초 만에 자동 구축하고, 구글 1P 완전 관리형 런타임(GDA `dataAgents` REST API)을 통해 CLI 원클릭(`--deploy-agent`)으로 데이터 에이전트를 프로비저닝하며, A2A 표준 규격 기반으로 Gemini Enterprise app에 직결 연동하거나 BigQuery Studio 콘솔 UI에서 단독(Standalone)으로 멀티턴 대화 질의를 완주할 수 있도록 설계된 실무 워크숍 스타터 키트다. (As of 2026-10-19)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 다음과 같은 요구 사항이 워크숍이나 사내 PoC에서 발생하고 있다면 즉시 본 스타터 키트를 활용해야 한다:
 - [ ] 45분 내외의 짧은 핸즈온 세션 동안 참석자들이 BigQuery 데이터 준비부터 BigQuery Data Agent 생성 및 자연어 질의응답까지 막힘 없이 완주해야 하는 경우
 - [ ] 별도의 컨테이너 빌드나 유휴 VM 비용 없이, 구글 관리형 테넌트 GDA(Gemini Data Analytics) `dataAgents` REST API를 통해 CLI 한 줄로 에이전트를 자동 프로비저닝하고자 하는 경우
-- [ ] 제미나이 엔터프라이즈 앱에 올리지 않고 BigQuery Studio 내에서 단독(Standalone)으로 Data Agent를 쓰는 부서와, 제미나이 엔터프라이즈 앱에 직결 게시하려는 전사 배포 조직 모두를 하나의 워크숍 키트로 지원해야 하는 경우
+- [ ] Gemini Enterprise app에 올리지 않고 BigQuery Studio 내에서 단독(Standalone)으로 Data Agent를 쓰는 부서와, Gemini Enterprise app에 직결 게시하려는 전사 배포 조직 모두를 하나의 워크숍 키트로 지원해야 하는 경우
 - [ ] 별도의 GCP 과금이나 권한 부여 전, 가상 실행(`--dry-run`)으로 전체 SQL DDL/DML과 에이전트 시스템 지침, A2A Agent Card 명세를 사전 검토하고자 하는 경우
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
-- **대상 사용자 (Target)**: 빅쿼리 엔지니어, 엔터프라이즈 AI 아키텍트, 데이터 분석가 및 핸즈온 워크숍 운영자
+- **대상 사용자 (Target)**: BigQuery 엔지니어, 엔터프라이즈 AI 아키텍트, 데이터 분석가 및 핸즈온 워크숍 운영자
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. 핸즈온 세션 중 참석자마다 상이한 데이터 준비 상태와 권한 설정으로 인해 실습 초반에 시간이 지체되는 문제
   2. 별도의 커스텀 컨테이너 빌드나 유휴 VM 인프라를 띄우느라 복잡한 배포 파이프라인과 추가 인프라 비용이 발생하는 문제
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 스몰셋 테이블 적재 현황, 시맨틱 뷰 생성 결과, GDA Data Agent 리소스 경로 및 A2A 카드 발급 요약 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 45분 워크숍 타임라인, 스몰셋 DDL/DML 명세, GDA REST 페이로드, A2A Agent Card 및 Studio/GE 연동 단계별 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **A2A 표준 에이전트 카드 (`a2a_agent_card.json`)**: Gemini Enterprise app 및 Studio 연동 표준 프로토콜 규격<br/>• **시맨틱 뷰 DDL**: 에이전트 질의 정확도를 극대화하는 `v_cymbal_retail_semantic` 뷰<br/>• **원클릭 배포 REST 호출문**: 구글 1P 테넌트에 에이전트를 등록하는 curl/gcloud 명세 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **A2A 표준 에이전트 카드 (`a2a_agent_card.json`)**: Gemini Enterprise app 및 Studio 연동 표준 프로토콜 규격<br/>- **시맨틱 뷰 DDL**: 에이전트 질의 정확도를 극대화하는 `v_cymbal_retail_semantic` 뷰<br/>- **원클릭 배포 REST 호출문**: 구글 1P 테넌트에 에이전트를 등록하는 curl/gcloud 명세 |
 
 ---
 
@@ -67,7 +67,7 @@ python diagnose.py --dry-run
  [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]
 ========================================================================================
  - 대상 프로젝트 : sample-project-id (프로젝트 번호: 123456789012)
- - 빅쿼리 리전   : asia-northeast3 (데이터셋: cymbal_gold)
+ - BigQuery 리전 : asia-northeast3 (데이터셋: cymbal_gold)
  - GDA 런타임   : global (에이전트 이름: cymbal-retail-data-agent)
  - GE App 엔진  : omni-retail-ge-app
  - 실행 모드     : 가상 모의 실행 (--dry-run)

@@ -16,13 +16,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Multi-Cluster GKE Inference Gateway 라우팅 및 L7 제어 평면 진단기 (`gke-multi-cluster-inference-gateway`)
 
-대규모 AI/LLM 서빙 환경에서 GPU/TPU 공급 부족으로 여러 리전과 멀티 클라우드에 분산된 수십 개 쿠버네티스 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연 시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검 및 처방하는 아키텍처 진단 도구다. (As of 2026-10-17)
+대규모 AI/LLM 서빙 환경에서 GPU/TPU 공급 부족으로 여러 리전과 멀티 클라우드에 분산된 수십 개 Kubernetes 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연 시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검 및 처방하는 아키텍처 진단 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 단일 리전/단일 클러스터 내 GPU 재고 부족으로 인해 여러 리전의 GKE 클러스터 및 타 클라우드(EKS, AKS 등)에 걸쳐 다수의 분산 클러스터를 운영하고 있을 때
 - [ ] 단순 라운드로빈 로드 밸런서로 인해 특정 클러스터의 VRAM / KV-cache 메모리 고갈(40%+ 포화) 시 동적 오버플로 분배가 이루어지지 않고 인퍼런스 지연이 급증할 때
 - [ ] 다계층 Istio 서비스 메시 중계 구조(허브 클러스터 $\rightarrow$ 중간 프록시 $\rightarrow$ 백엔드 파드)로 인해 헤어피닝 지연 시간(TTFT)이 증가하고 불필요한 크로스 리전 Egress 비용이 발생할 때
@@ -31,7 +31,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
-- **대상 사용자 (Target)**: AI 인프라 플랫폼 엔지니어, 멀티 클러스터 쿠버네티스 아키텍트, SRE 리드 및 분산 서빙 엔지니어
+- **대상 사용자 (Target)**: AI 인프라 플랫폼 엔지니어, 멀티 클러스터 Kubernetes 아키텍트, SRE 리드 및 분산 서빙 엔지니어
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. 다중 리전 및 멀티 클라우드에 분산된 수십 개 GPU/TPU GKE 클러스터 간 트래픽 중계를 위해 복잡한 Istio 풀 메시(Full-mesh)를 운영하는 관리 부담
   2. 계층형 게이트웨이 중계로 인한 추가 네트워크 홉과 TTFT(첫 토큰 지연 시간) 레이턴시 증가로 AI 서빙 품질 저하
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 다중 클러스터 연결성, L7 백엔드 서비스 구성, 가중치 기반 라우팅, 헬스 체크 상태 및 8대 규칙 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 멀티 클러스터 제어 평면 진단서, 1홉 플랫 아키텍처 설계도, Global ALB 생성 gcloud 명령어 및 트래픽 분산 매니페스트 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Global External ALB 프로비저닝 스크립트**: 다중 클러스터 백엔드를 하나로 묶는 gcloud 명령<br/>• **Hybrid/Internet NEG 등록 매니페스트**: 타 리전/온프렘 쿠버네티스 엔드포인트 직결 설정<br/>• **가중치 기반 트래픽 분할(Canary) 규칙**: GPU 클러스터 간 부하를 동적으로 배분하는 URL 맵 명세 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **Global External ALB 프로비저닝 스크립트**: 다중 클러스터 백엔드를 하나로 묶는 gcloud 명령<br/>- **Hybrid/Internet NEG 등록 매니페스트**: 타 리전/온프렘 Kubernetes 엔드포인트 직결 설정<br/>- **가중치 기반 트래픽 분할(Canary) 규칙**: GPU 클러스터 간 부하를 동적으로 배분하는 URL 맵 명세 |
 
 ---
 

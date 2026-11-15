@@ -10,10 +10,10 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): 제미나이(Gemini) VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`)
+# 비즈니스 요구 사항 명세서 (BRD): Gemini VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`)
 
 ## 1. 배경 및 목적
-제미나이(Gemini / Vertex AI) API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다.
+Gemini 및 Vertex AI API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다.
 
 사내 클라우드 운영 환경에서 인프라 담당자와 보안 및 아키텍처 실무자가 수동 콘솔 점검에 의존할 경우 설정 누락, 장애 인지 지연, 불필요한 비용 누수가 발생할 수 있다. 본 미니 프로젝트(`gemini-vpc-sc-denial-resolver`)는 현장 실무에서 즉시 실행 가능한 자동화 진단 및 조치 가이드를 제공하여 운영 안정성을 체계적으로 확보한다.
 
@@ -23,7 +23,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 설명 | 우선순위 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** | **현장 장애 및 리스크 사전 탐지** | 제미나이(Gemini) VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`) 관련 운영 리스크 및 설정 누락을 사전에 식별하여야 한다. | 필수 (P0) |
+| **BR-01** | **현장 장애 및 리스크 사전 탐지** | Gemini VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`) 관련 운영 리스크 및 설정 누락을 사전에 식별하여야 한다. | 필수 (P0) |
 | **BR-02** | **표준화된 자동 진단 체계 구축** | 수동 콘솔 점검에 따른 인적 오류와 장애 복구 지연 시간을 단축하여야 한다. | 필수 (P0) |
 | **BR-03** | **가상 실행(Dry-run) 기반 무중단 사전 검증** | 실제 GCP 과금 발생 전 가상 실행(--dry-run)으로 안전하게 정책을 검증하여야 한다. | 필수 (P0) |
 | **BR-04** | **실무자 조치 가이드 및 자원 정리(Teardown) 안내** | 비개발 직군과 운영 실무자가 즉시 참조할 수 있는 콘솔 조치 경로와 테스트 리소스 정리 절차를 제공하여야 한다. | 권장 (P1) |

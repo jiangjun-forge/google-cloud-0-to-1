@@ -386,7 +386,7 @@ def run_config_mode(args):
 
     # 1. Project ID
     current_proj = os.environ.get("PROJECT_ID") or get_gcloud_config("project") or ""
-    proj_prompt = f"1. 구글 클라우드 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. 구글 클라우드 프로젝트 ID 입력: "
+    proj_prompt = f"1. Google Cloud 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. Google Cloud 프로젝트 ID 입력: "
     if sys.stdin.isatty():
         try:
             val = input(proj_prompt).strip()
@@ -1160,11 +1160,10 @@ def deploy_admin_governor_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 에이전트 기획서 및 시스템 명세서 출력 시 적용 모델 항목에는 반드시 'gemini-3.8-flash (권장 기본)'로 명시한다.
 
 [2026년 Google Cloud 콘솔 공식 정규 명칭 원칙]
-- 과거 구형 명칭(Search and Conversation, Generative AI App Builder, Vertex AI Agent Builder, Agentspace 등)은 2026년 현재 전면 개편되었으므로 절대 사용하지 않는다.
-- 현재 공식 정규 명칭만을 엄격히 사용한다:
-  * 에이전트 개발 및 운영 플랫폼: 'Agent Platform' (한글: '에이전트 플랫폼')
-  * 사내 임직원 웹 대화 포털: 'Gemini Enterprise' (한글: '제미나이 엔터프라이즈')
-  * 에이전트 실행 엔진: 'Agent Engine' (한글: '에이전트 엔진')
+- 과거 구형 명칭이나 한글 음차는 사용하지 않고 오직 현재 공식 영문 단축 정규 명칭만을 엄격히 사용한다:
+  * 에이전트 개발 및 운영 플랫폼: 'Agent Platform'
+  * 사내 임직원 웹 대화 포털: 'Gemini Enterprise'
+  * 에이전트 실행 엔진: 'Agent Engine'
   * 감사 및 로그 분석: 'Cloud Logging' / 'BigQuery'
 
 [GCP 콘솔 직접 딥링크(Deep Link) 안내 의무화 규약]

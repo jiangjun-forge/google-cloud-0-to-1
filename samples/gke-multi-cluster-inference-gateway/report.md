@@ -6,7 +6,7 @@
 - **진단 모드**: `모의 실행 (Dry-run)`
 - **종합 평가**: 총 8개 항목 중 **적합(PASS) 6건**, **주의(WARN) 2건**, **부적합(FAIL) 0건**
 
-> **[고지 사항]** 본 보고서는 구글 클라우드 공식 멀티 클러스터 GKE Inference Gateway 레퍼런스 아키텍처 및 사내 실제 로드 밸런서 설정을 대조하여 생성된 **기술 진단 및 아키텍처 최적화 증적 문서**다.
+> **[고지 사항]** 본 보고서는 Google Cloud 공식 멀티 클러스터 GKE Inference Gateway 레퍼런스 아키텍처 및 사내 실제 로드 밸런서 설정을 대조하여 생성된 **기술 진단 및 아키텍처 최적화 증적 문서**다.
 
 ---
 
@@ -40,7 +40,7 @@
 
 ## 3. 공식 GKE Inference Gateway 제약 사항 및 아키텍처 대응
 
-구글 클라우드 공식 문서 ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway#limitations )에 명시된 3대 제약 조건과 사내 대응 아키텍처는 다음과 같다:
+Google Cloud 공식 문서 ( https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-multi-cluster-inference-gateway#limitations )에 명시된 3대 제약 조건과 사내 대응 아키텍처는 다음과 같다:
 
 1. **단일 VPC 제약 (Same VPC Network)**: 관리형 Gateway는 모든 클러스터가 동일 VPC에 위치해야 한다. 타 클라우드(EKS/AKS) 및 독립 VPC 클러스터는 Global External ALB의 Internet/Hybrid NEG 직접 바인딩으로 제약을 우회한다.
 2. **백엔드 서비스당 최대 50개 NEG 제한**: 멀티포트 InferencePool 사용 시 3개 존 클러스터 2개만으로도 48개 NEG가 생성되어 50개 한도에 도달한다. 클러스터 확장 시 모델 포트/경로별 백엔드 서비스 분할(URL Map 분기)을 적용한다.

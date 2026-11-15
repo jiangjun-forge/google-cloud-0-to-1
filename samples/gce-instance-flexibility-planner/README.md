@@ -14,15 +14,15 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 컴퓨트 엔진(Compute Engine) & GKE 인스턴스 유연성(Instance Flexibility) 및 스톡아웃 방어 설계기
+# Compute Engine & GKE 인스턴스 유연성(Instance Flexibility) 및 스톡아웃 방어 설계기
 
-업계 전반의 AI 및 대규모 컴퓨트 수요 급증으로 인한 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 상황에서, 단일 머신 타입/단일 존 고착 위험을 진단하고 GKE(Google Kubernetes Engine) 커스텀 컴퓨트 클래스(Custom ComputeClass, CCC)의 능동적 마이그레이션(Active Migration) 및 컴퓨트 엔진(Compute Engine) 리전 관리형 인스턴스 그룹(Regional MIG)의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하여 무중단 복원력을 확보하는 올인원 아키텍처 진단 도구다. (As of 2026-10-17)
+업계 전반의 AI 및 대규모 컴퓨트 수요 급증으로 인한 하드웨어 용량 부족(ZONE_RESOURCE_POOL_EXHAUSTED) 상황에서, 단일 머신 타입/단일 존 고착 위험을 진단하고 GKE(Google Kubernetes Engine) 커스텀 컴퓨트 클래스(Custom ComputeClass, CCC)의 능동적 마이그레이션(Active Migration) 및 Compute Engine 리전 관리형 인스턴스 그룹(Regional MIG)의 instanceSelections 다중 머신 랭킹 정책을 자동 설계하여 무중단 복원력을 확보하는 올인원 아키텍처 진단 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 주요 리전(서울, 도쿄, 아이오와 등)에서 특정 머신 또는 GPU 타입(예: `g2-standard-8`, `a2-highgpu-8g`, `n2-standard-8`) 프로비저닝 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러로 배포나 스케일아웃이 실패한다.
 - [ ] LLM 서빙 및 인퍼런스 환경에서 NVIDIA L4, T4 또는 A100 GPU 단일 패밀리에 고착되어 스톡아웃 시 파드가 Pending 상태에 갇힌다.
 - [ ] GKE 오토스케일러가 노드를 증설하지 못해 대량의 파드가 `Pending` 상태로 적체되거나, 스팟 노드 대규모 회수 시 대체 노드를 구하지 못한다.
@@ -47,7 +47,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 노드 풀별 인스턴스 고착도, 가용 존 분산 상태, 머신 패밀리 스톡아웃 위험 지표 및 대체 인스턴스 목록 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 인프라 유연성 진단서, GKE CCC YAML 매니페스트, Regional MIG 인스턴스 선택 JSON 규격 및 Flex CUD 전환 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **GKE Custom ComputeClass 매니페스트**: 우선순위 머신 패밀리 목록이 정의된 YAML<br/>• **Regional MIG instanceSelections JSON**: Compute Engine 대체 머신 랭킹 구성 정책<br/>• **bulkInsert API 프로비저닝 템플릿**: 대규모 단기 배치 연산 워커 자동 확보 스크립트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **GKE Custom ComputeClass 매니페스트**: 우선순위 머신 패밀리 목록이 정의된 YAML<br/>- **Regional MIG instanceSelections JSON**: Compute Engine 대체 머신 랭킹 구성 정책<br/>- **bulkInsert API 프로비저닝 템플릿**: 대규모 단기 배치 연산 워커 자동 확보 스크립트 |
 
 ---
 
@@ -204,7 +204,7 @@ gcloud services enable compute.googleapis.com container.googleapis.com
 
 | 역할 (Role) | 설명 |
 | :--- | :--- |
-| `roles/compute.viewer` | 컴퓨트 엔진(Compute Engine) 인스턴스 템플릿 및 MIG 설정 조회 권한 |
+| `roles/compute.viewer` | Compute Engine 인스턴스 템플릿 및 MIG 설정 조회 권한 |
 | `roles/container.viewer` | GKE 클러스터 및 노드 풀 구성 상태 조회 권한 |
 
 ---

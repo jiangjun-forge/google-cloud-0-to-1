@@ -14,15 +14,15 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이(Gemini) VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`)
+# Gemini VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`)
 
-제미나이(Gemini) 및 버텍스 AI(Vertex AI) API 호출 시 발생하는 VPC 서비스 컨트롤(VPC Service Controls, VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다. (As of 2026-10-17)
+Gemini 및 Vertex AI API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 **거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방**하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **VPC-SC 경계 차단 장애**: 온프레미스 사설망, 하이브리드 클라우드 또는 특정 서브넷에서 Gemini 호출 시 알 수 없는 보안 정책 거부(Denial)가 발생할 때
 - [ ] **거부 원인 규명 곤란**: 일반적인 클라이언트 에러 메시지만으로는 수신 규칙(Ingress Rule) 누락인지, 상이한 경계 분리인지 판단하기 어려울 때
 - [ ] **VPC-SC 감사 추적 및 즉각 해결**: Cloud Logging의 보안 정책 감사 로그(`cloudaudit.googleapis.com/policy`)를 역추적하여 고유 거부 ID(UUID)와 원인별 해결책을 즉시 확보하고자 할 때
@@ -44,7 +44,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 차단 시각, 주체 계정, 대상 서비스, 거부 사유 코드, 보안 경계 이름 및 네트워크 차단 요약 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | VPC-SC 차단 이벤트 전수 역추적 보고서, 거부 사유별 기술적 원인 분석, 보안팀 제출용 수신 규칙 YAML 및 적용 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **VPC-SC 인그레스 규칙 YAML**: 차단된 주체와 네트워크를 선별 허용하는 정밀 수신 정책<br/>• **gcloud 액세스 정책 업데이트 명령어**: 보안 경계에 정책을 즉시 반영하는 CLI 명령어<br/>• **사내 승인 네트워크 대역 검증 가이드**: 온프렘 및 사내 VPC 서브넷 대조 명세서 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **VPC-SC 인그레스 규칙 YAML**: 차단된 주체와 네트워크를 선별 허용하는 정밀 수신 정책<br/>- **gcloud 액세스 정책 업데이트 명령어**: 보안 경계에 정책을 즉시 반영하는 CLI 명령어<br/>- **사내 승인 네트워크 대역 검증 가이드**: 온프렘 및 사내 VPC 서브넷 대조 명세서 |
 
 ---
 
@@ -61,7 +61,7 @@ python diagnose.py --dry-run
 
 **터미널 진단 출력 미리보기:**
 ```text
-[진단 결과] 제미나이(Gemini) VPC Service Controls 경계 차단 진단 리포트
+[진단 결과] Gemini VPC Service Controls 경계 차단 진단 리포트
   - 대상 프로젝트: sample-project-id
   - 조회 기간: 최근 7일
 ========================================================================
@@ -157,7 +157,7 @@ Cloud Logging 감사 로그를 조회하기 위해 필요한 IAM 역할이다:
 
 | 역할 (Role) | 권한 ID | 용도 |
 | :--- | :--- | :--- |
-| **클라우드 로깅 뷰어 (권장)** | `roles/logging.viewer` | Cloud Logging 정책 감사 로그 읽기 |
+| **Cloud Logging 뷰어 (권장)** | `roles/logging.viewer` | Cloud Logging 정책 감사 로그 읽기 |
 | **보안 뷰어 (선택)** | `roles/iam.securityViewer` | 보안 정책 및 거부 감사 로그 통합 조회 |
 
 > [!NOTE]
@@ -175,7 +175,7 @@ Cloud Logging 감사 로그를 조회하기 위해 필요한 IAM 역할이다:
 
 ```text
 ========================================================================
-[진단 결과] 제미나이(Gemini) VPC Service Controls 경계 차단 진단 리포트
+[진단 결과] Gemini VPC Service Controls 경계 차단 진단 리포트
   - 대상 프로젝트: my-secured-project
   - 조회 기간: 최근 7일
 ========================================================================

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Gemini API VPC Service Controls Denial Resolver.
 
-제미나이(Gemini) 및 Vertex AI 호출 시 발생하는 VPC Service Controls(VPC-SC)
+Gemini 및 Vertex AI 호출 시 발생하는 VPC Service Controls(VPC-SC)
 보안 경계 차단(Perimeter Denial) 감사 로그를 역추적하고 원인별 해결책을 처방한다.
 """
 
@@ -82,13 +82,13 @@ def get_prescription(reason: str) -> str:
     )
   elif reason in ("SERVICE_NOT_RESTRICTED", "RESOURCES_NOT_IN_SAME_PERIMETER"):
     return (
-        "제미나이 API(aiplatform.googleapis.com)가 경계 보호 대상으로 누락되었거나, "
+        "Gemini API(aiplatform.googleapis.com)가 경계 보호 대상으로 누락되었거나, "
         "호출 리소스와 대상 모델이 서로 다른 보안 경계로 분리되어 있다. "
         "두 리소스를 동일한 서비스 경계로 병합하거나 경계 간 브리지(Bridge) 규칙을 구성해야 한다."
     )
   else:
     return (
-        "비공개 Google 액세스(Private Google Access) 또는 Private Service Connect(PSC) 연결이 불안정하다. "
+        "Private Google Access 또는 Private Service Connect(PSC) 연결이 불안정하다. "
         "사설 DNS 해석 및 서브넷 라우팅 테이블 구성을 점검해야 한다."
     )
 
@@ -96,7 +96,7 @@ def get_prescription(reason: str) -> str:
 def report_denials(denials: list[dict], project_id: str, days: int):
   """진단 리포트 및 문제 해결 처방을 출력한다."""
   print("=" * 72)
-  print("[진단 결과] 제미나이(Gemini) VPC Service Controls 경계 차단 진단 리포트")
+  print("[진단 결과] Gemini VPC Service Controls 경계 차단 진단 리포트")
   print(f"  - 대상 프로젝트: {project_id}")
   print(f"  - 조회 기간: 최근 {days}일")
   print("=" * 72)
@@ -170,7 +170,7 @@ def build_markdown_report(denials: list[dict], project_id: str, days: int, is_dr
 
 ```text
 {header_line}========================================================================
-[진단 결과] 제미나이(Gemini) VPC Service Controls 경계 차단 진단 리포트
+[진단 결과] Gemini VPC Service Controls 경계 차단 진단 리포트
   - 대상 프로젝트: {project_id}
   - 조회 기간: 최근 {days}일
 ========================================================================
@@ -385,7 +385,7 @@ def run_config_mode(scenario_name: str = "") -> None:
 
 def main():
   parser = argparse.ArgumentParser(
-      description="제미나이 API VPC-SC 경계 차단 감사 로그 분석 및 문제 해결 처방 도구"
+      description="Gemini API VPC-SC 경계 차단 감사 로그 분석 및 문제 해결 처방 도구"
   )
   parser.add_argument(
       "-p",
@@ -432,7 +432,7 @@ def main():
 
   project_id = args.project or get_default_project(is_dry_run=False)
 
-  print(f"\n[진행] 프로젝트 '{project_id}' 최근 {args.days}일 제미나이 API VPC-SC 경계 차단 감사 로그 조회 중 (최대 {args.limit}건)...")
+  print(f"\n[진행] 프로젝트 '{project_id}' 최근 {args.days}일 Gemini API VPC-SC 경계 차단 감사 로그 조회 중 (최대 {args.limit}건)...")
 
   denials = fetch_denials(project_id, args.days, args.limit)
   report_denials(denials, project_id, args.days)

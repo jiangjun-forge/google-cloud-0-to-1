@@ -34,7 +34,7 @@ Workforce Identity SSO 인증        CRITICAL     WIF 풀 속성 매핑에 필�
 
 * [심각] Workforce Identity SSO 인증
   - 위험: WIF 풀 속성 매핑에 필수 클레임(attribute.user_email, attribute.display_name)이 누락되어 Entra ID 로그인 시 HTTP 400 오류 발생
-  - 처방: 구글 클라우드 WIF 공급업체 매핑에 attribute.user_email='assertion.email' 및 attribute.display_name='assertion.name'을 추가하고, Entra ID 앱 등록 토큰 구성에서 email 클레임 발행을 활성화한다.
+  - 처방: Google Cloud WIF 공급업체 매핑에 attribute.user_email='assertion.email' 및 attribute.display_name='assertion.name'을 추가하고, Entra ID 앱 등록 토큰 구성에서 email 클레임 발행을 활성화한다.
 ```
 
 ---
@@ -62,9 +62,9 @@ Workforce Identity 풀 공급업체 및 관련 클라우드 인프라 리소스 
 
 ## 4. 콘솔 링크 조치 가이드
 
-- **제미나이 엔터프라이즈 스킬 및 에이전트 관리 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/manage-skills )
-- **구글 클라우드(Google Cloud) Workforce Identity Federation 구성 가이드**: ( https://cloud.google.com/iam/docs/workforce-identity-federation )
-- **구글 클라우드 콘솔 Workforce Identity 풀**: ( https://console.cloud.google.com/iam-admin/workforce-pools )
+- **Gemini Enterprise 스킬 및 에이전트 관리 가이드**: ( https://docs.cloud.google.com/gemini/enterprise/docs/manage-skills )
+- **Google Cloud Workforce Identity Federation 구성 가이드**: ( https://cloud.google.com/iam/docs/workforce-identity-federation )
+- **Google Cloud 콘솔 Workforce Identity 풀**: ( https://console.cloud.google.com/iam-admin/workforce-pools )
 
 ---
 

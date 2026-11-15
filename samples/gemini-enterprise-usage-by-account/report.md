@@ -1,6 +1,6 @@
 # Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석 보고서
 
-- **생성 일시**: 2026-10-20 13:24:00 UTC
+- **생성 일시**: 2026-11-15 00:32:14 UTC
 - **실행 모드**: 가상 실행 (Dry-run)
 - **대상 프로젝트**: `sample-project-id`
 - **BigQuery 데이터세트**: `gemini_enterprise_logs`
@@ -48,7 +48,7 @@ ORDER BY grand_total_tokens DESC;
 
 ## 2. Gemini Enterprise app 공식 내장 프롬프트/응답 로깅 활성화 가이드
 
-구글 클라우드 공식 관리형 기능을 통해 프롬프트와 LLM 출력을 BigQuery로 영구 보관하려면 아래 절차를 수행한다:
+Google Cloud 공식 관리형 기능을 통해 프롬프트와 LLM 출력을 BigQuery로 영구 보관하려면 아래 절차를 수행한다:
 
 1. **Gemini Enterprise 관리 콘솔 접속**: `https://gemini.google.com` (또는 Cloud Console > Gemini Enterprise)
 2. **감사 설정 이동**: [Settings] > [Audit & Compliance] 메뉴 선택

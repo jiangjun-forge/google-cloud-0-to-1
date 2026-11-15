@@ -17,10 +17,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-legacy-sdk-scanner
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-legacy-sdk-scanner: 소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 `google-genai`로의 마이그레이션 가이드를 1분 만에 제공하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-legacy-sdk-scanner: 소스 코드 내 구형 Gemini SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 `google-genai`로의 마이그레이션 가이드를 1분 만에 제공하는 도구다.
 ---
 
-# 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 (`gemini-legacy-sdk-scanner`) (Autopilot & Hands-on Guide)
+# 구형 Gemini SDK 탐색 및 신규 SDK 마이그레이션 (`gemini-legacy-sdk-scanner`) (Autopilot & Hands-on Guide)
 
 본 스킬은 사내 엔지니어와 실무자가 `gemini-legacy-sdk-scanner` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 

@@ -17,10 +17,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-quota-cost-alert
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-quota-cost-alert: 제미나이(Gemini) API 비용 급증 및 예산 임계치 도달 시, Cloud Pub/Sub과 Cloud Functions를 연동하여 실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로 차단하는 안전 아키텍처를 검증하고 시뮬레이션하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-quota-cost-alert: Gemini API 비용 급증 및 예산 임계치 도달 시, Cloud Pub/Sub과 Cloud Functions를 연동하여 실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로 차단하는 안전 아키텍처를 검증하고 시뮬레이션하는 도구다.
 ---
 
-# 제미나이(Gemini) API 비용 및 쿼터 임계치 실시간 경보 자동화 (`gemini-quota-cost-alert`) (Autopilot & Hands-on Guide)
+# Gemini API 비용 및 쿼터 임계치 실시간 경보 자동화 (`gemini-quota-cost-alert`) (Autopilot & Hands-on Guide)
 
 본 스킬은 사내 엔지니어와 실무자가 `gemini-quota-cost-alert` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 

@@ -17,10 +17,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-vpc-sc-denial-resolver
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-vpc-sc-denial-resolver: 제미나이(Gemini / Vertex AI) API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-vpc-sc-denial-resolver: Gemini 및 Vertex AI API 호출 시 발생하는 VPC Service Controls(VPC-SC) 보안 경계 차단(Perimeter Denial) 에러를 감사 로그에서 역추적하고 거부 사유 코드별 근본 원인 분석 및 네트워크 수신 허용 규칙을 1분 만에 처방하는 도구다.
 ---
 
-# 제미나이(Gemini) VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`) (Autopilot & Hands-on Guide)
+# Gemini VPC Service Controls 차단 감사 추적 및 처방 (`gemini-vpc-sc-denial-resolver`) (Autopilot & Hands-on Guide)
 
 본 스킬은 사내 엔지니어와 실무자가 `gemini-vpc-sc-denial-resolver` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 

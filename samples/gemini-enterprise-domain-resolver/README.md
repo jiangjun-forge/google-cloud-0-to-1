@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 엔터프라이즈(Gemini Enterprise) 도입을 위한 도메인 충돌(domain_in_use) 진단기
+# Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 진단기
 
 Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의해 선점되어 발생하는 도메인 충돌(domain_in_use)을 진단하고, Google Workspace 라이선스 구매 없이 Cloud Identity Free를 활용하여 독립적인 엔터프라이즈 AI 환경을 배포하도록 지원하는 진단 도구다. (As of 2026-10-17)
 
@@ -22,9 +22,9 @@ Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의�
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 그룹사 산하 계열사에 Gemini Enterprise를 전사 공급하려 할 때, 사내 도메인이 이미 사용 중이라는 에러(`domain_in_use`)로 인해 신규 테넌트 개설이 차단된 경우
-- [ ] Gemini Enterprise는 Google Workspace(Gmail, 구글 드라이브(Google Drive), 구글 독스(Google Docs))와는 완전히 별개의 독립 제품이므로, 고가의 Workspace 라이선스 없이 무료 `Cloud Identity Free` 계정만으로 전사 배포하고자 하는 경우
+- [ ] Gemini Enterprise는 Google Workspace(Gmail, Google Drive, Google Docs)와는 완전히 별개의 독립 제품이므로, 고가의 Workspace 라이선스 없이 무료 `Cloud Identity Free` 계정만으로 전사 배포하고자 하는 경우
 - [ ] 과거 임직원이 회사 이메일 주소로 구글 무료 서비스(Google Workspace Essentials Starter 등)에 개별 가입하여 도메인이 비관리(Unmanaged) 상태로 선점되어 이를 중앙 거버넌스로 편입해야 하는 경우
 
 
@@ -44,7 +44,7 @@ Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의�
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 도메인 선점 상태, DNS TXT 레코드 인증 여부, 미관리 계정 수 및 테넌트 배포 준비도 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 도메인 충돌 근본 원인 분석서, DNS 레코드 설정 가이드, 미관리 계정 강제 회수/초대 절차 및 Cloud Identity Free 배포 매뉴얼 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **DNS 도메인 소유권 검증 레코드**: 네임서버 등록용 `google-site-verification` TXT 레코드 값<br/>• **미관리 사용자 계정 전환 가이드**: 개인 계정을 사내 관리형 계정으로 흡수하는 단계별 절차서<br/>• **Cloud Identity Free 프로비저닝 링크**: 추가 라이선스 비용 없이 테넌트를 활성화하는 직결 링크 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **DNS 도메인 소유권 검증 레코드**: 네임서버 등록용 `google-site-verification` TXT 레코드 값<br/>- **미관리 사용자 계정 전환 가이드**: 개인 계정을 사내 관리형 계정으로 흡수하는 단계별 절차서<br/>- **Cloud Identity Free 프로비저닝 링크**: 추가 라이선스 비용 없이 테넌트를 활성화하는 직결 링크 |
 
 ---
 

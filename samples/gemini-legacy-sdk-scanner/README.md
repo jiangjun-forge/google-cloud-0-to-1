@@ -14,28 +14,28 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 구형 제미나이(Gemini) SDK 탐색 및 신규 SDK 마이그레이션 진단기 (`gemini-legacy-sdk-scanner`)
+# 구형 Gemini SDK 탐색 및 신규 SDK 마이그레이션 진단기 (`gemini-legacy-sdk-scanner`)
 
-소스 코드 내 구형 제미나이 SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 구글 공식 통일 SDK인 **`google-genai`로의 마이그레이션 가이드를 1분 만에 제공**하는 도구다. (As of 2026-10-17)
+소스 코드 내 구형 Gemini SDK(`google.generativeai` 또는 `vertexai.generative_models`) 호출 부위를 정적 탐색하고 최신 Google 공식 통일 SDK인 **`google-genai`로의 마이그레이션 가이드를 1분 만에 제공**하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **구형 라이브러리 지원 중단 대비**: 구형 SDK(`google-generativeai`) 지원 종료 예정에 따라 신규 라이브러리로 사전 전환이 필요한 경우
-- [ ] **통일 클라이언트 전환**: AI Studio 환경과 버텍스 AI(Vertex AI) 환경에서 각각 파편화되어 사용되던 코드를 최신 `google-genai` 단일 클라이언트로 일원화하고자 할 때
-- [ ] **레거시 코드 자가 감사**: 프로젝트 내 파이썬 스크립트, 배시 스크립트, 주피터 노트북(`.ipynb`) 전반에 걸쳐 잔존하는 구형 SDK 호출 위치를 전수 조사하고자 할 때
+- [ ] **통일 클라이언트 전환**: AI Studio 환경과 Vertex AI 환경에서 각각 파편화되어 사용되던 코드를 최신 `google-genai` 단일 클라이언트로 일원화하고자 할 때
+- [ ] **레거시 코드 자가 감사**: 프로젝트 내 Python 스크립트, 배시 스크립트, Jupyter Notebook(`.ipynb`) 전반에 걸쳐 잔존하는 구형 SDK 호출 위치를 전수 조사하고자 할 때
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
 - **대상 사용자 (Target)**: 소프트웨어 엔지니어, 백엔드 개발자, AI 서비스 운영팀 및 코드베이스 아키텍트
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. 과거에 분파되었던 구형 SDK(`google.generativeai` 또는 `vertexai.generative_models`)가 레포지토리에 혼재되어 유지보수성이 저하되는 문제
-  2. 구글 공식 단일 표준 SDK인 `google-genai`의 최신 기능(Live API, 최신 모델 파라미터 등)을 활용하지 못하는 레거시 기술 부채
+  2. Google 공식 단일 표준 SDK인 `google-genai`의 최신 기능(Live API, 최신 모델 파라미터 등)을 활용하지 못하는 레거시 기술 부채
   3. 대규모 모노레포나 수십 개 마이크로서비스에서 레거시 SDK 호출 부위를 수작업으로 찾고 마이그레이션 코드를 작성하는 공수 부담
 - **본 솔루션의 해결 방식 (Solution)**:
-  - 지정된 디렉터리 내 파이썬 소스 코드를 정적 분석(AST/Regex)하여 레거시 SDK import 및 클래스 호출 라인을 1초 만에 전수 스캔하고, 최신 `google-genai` 표준 코드로의 1:1 마이그레이션 가이드를 제공한다.
+  - 지정된 디렉터리 내 Python 소스 코드를 정적 분석(AST/Regex)하여 레거시 SDK import 및 클래스 호출 라인을 1초 만에 전수 스캔하고, 최신 `google-genai` 표준 코드로의 1:1 마이그레이션 가이드를 제공한다.
 
 ### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
 본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
@@ -44,7 +44,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 스캔된 파일 수, 검출된 레거시 호출 수, 파일별 위험 라인 번호 및 사용된 구형 모듈 요약 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 레거시 기술 부채 분석서, 파일별 상세 마이그레이션 전/후 비교 코드, 의존성 교체 가이드 및 최신 SDK 호출 규격 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **1:1 코드 변환 예제 스니펫**: 구형 `GenerativeModel`을 `genai.Client()`로 전환하는 정형 코드<br/>• **의존성 업데이트 명령어**: `requirements.txt` 내 패키지를 `google-genai`로 교체하는 가이드<br/>• **CI/CD 정적 검사 연동 가이드**: 레거시 SDK 신규 유입을 차단하는 GitHub Actions 린터 설정 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **1:1 코드 변환 예제 스니펫**: 구형 `GenerativeModel`을 `genai.Client()`로 전환하는 정형 코드<br/>- **의존성 업데이트 명령어**: `requirements.txt` 내 패키지를 `google-genai`로 교체하는 가이드<br/>- **CI/CD 정적 검사 연동 가이드**: 레거시 SDK 신규 유입을 차단하는 GitHub Actions 린터 설정 |
 
 ---
 
@@ -63,7 +63,7 @@ python diagnose.py --dry-run
 ```text
 [데모 실행] --dry-run 모드가 활성화되어 가상 분석 결과를 시뮬레이션한다.
 ========================================================================
-[진단 결과] 구형 제미나이(Gemini) SDK 코드 정적 진단 리포트
+[진단 결과] 구형 Gemini SDK 코드 정적 진단 리포트
 ========================================================================
 검출된 구형 SDK 사용 파일: 2건 (총 5개 라인)
 [파일: app/services/chat_bot.py]
@@ -111,9 +111,9 @@ flowchart TB
         Parser --> GuideGen
     end
 
-    subgraph Layer4["4. 대상 2026 표준 제미나이 에코시스템 (Target Modern Ecosystem)"]
-        UnifiedSDK["구글 공식 통일 SDK<br/>(google-genai 2.31+)"]
-        ModernModel["최신 표준 파운데이션 모델<br/>(gemini-3.8-flash / global)"]
+    subgraph Layer4["4. 대상 2026 표준 Gemini 에코시스템 (Target Modern Ecosystem)"]
+        UnifiedSDK["Google 공식 통일 SDK<br/>(google-genai 2.31+)"]
+        ModernModel["최신 표준 파운데이션 모델<br/>(Gemini Flash / global)"]
     end
 
     CLI -->|"2. 파일 트리 순회"| Repo
@@ -141,7 +141,7 @@ flowchart TB
 
 ```text
 ========================================================================
-[진단 결과] 구형 제미나이(Gemini) SDK 코드 정적 진단 리포트
+[진단 결과] 구형 Gemini SDK 코드 정적 진단 리포트
 ========================================================================
 
 검출된 구형 SDK 사용 파일: 2건 (총 5개 라인)
@@ -196,7 +196,7 @@ pip install google-genai
 
 | 권한 항목 | 요구 조건 | 비고 |
 | :--- | :--- | :--- |
-| **구글 클라우드 IAM 권한** | 필요 없음 | 순수 로컬 또는 Cloud Shell 환경 정적 진단 도구 |
+| **Google Cloud IAM 권한** | 필요 없음 | 순수 로컬 또는 Cloud Shell 환경 정적 진단 도구 |
 | **로컬 환경 권한** | 소스 코드 읽기 권한 | 스캔 대상 프로젝트 디렉터리 접근 권한 |
 
 ---

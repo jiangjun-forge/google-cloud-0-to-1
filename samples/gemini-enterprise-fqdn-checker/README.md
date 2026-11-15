@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 엔터프라이즈(Gemini Enterprise) 사내망 방화벽 FQDN 연결 진단기 (`gemini-enterprise-fqdn-checker`)
+# Gemini Enterprise 사내망 방화벽 FQDN 연결 진단기 (`gemini-enterprise-fqdn-checker`)
 
 사내망 보안 정책상 와일드카드 도메인 등록이 불가한 환경에서 Gemini Enterprise App 정상 구동에 필요한 필수 코어 API, 인증, 정적 에셋 FQDN의 아웃바운드 443 및 DNS 연결성을 1분 만에 일괄 진단하고 방화벽 허용 명세를 자동 생성하는 도구다. (As of 2026-10-17)
 
@@ -22,7 +22,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 사내 보안 방화벽 규정상 와일드카드 도메인(`*.googleapis.com`, `*.gstatic.com`) 일괄 허용이 전면 금지되어 있다.
 - [ ] 사내 PC 또는 VDI 환경에서 Gemini Enterprise App 접속 시 흰 화면(Blank Page)만 표시되거나 폰트와 스타일이 깨진다.
 - [ ] 텍스트 질의는 일부 동작하나 Deep Research 실행, 멀티모달 이미지 생성 및 UI 렌더링 시 통신 에러가 발생한다. (원인: `discoveryengine.clients6.google.com` 차단)
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 20개 FQDN별 카테고리, DNS 해석 IP, 443 TLS 핸드셰이크 성공 여부, RTT 지연시간 및 연결성 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 사내망 네트워크 통신 적합성 보고서, 차단된 FQDN 목록, 방화벽 정책 등록용 정형 표 및 SWG 프록시 허용 명세서 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **보안팀 제출용 방화벽 허용 FQDN 명세**: 복붙 가능한 20대 공식 FQDN 목록<br/>• **사내 관문 프록시(SWG) 룰셋 규격**: 와일드카드 없이 개별 도메인을 등록하는 프록시 정책<br/>• **네트워크 연결성 모니터링 스크립트**: 주기적으로 사내망 연결성을 검증하는 자동 헬스체크 도구 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **보안팀 제출용 방화벽 허용 FQDN 명세**: 복붙 가능한 20대 공식 FQDN 목록<br/>- **사내 관문 프록시(SWG) 룰셋 규격**: 와일드카드 없이 개별 도메인을 등록하는 프록시 정책<br/>- **네트워크 연결성 모니터링 스크립트**: 주기적으로 사내망 연결성을 검증하는 자동 헬스체크 도구 |
 
 ---
 

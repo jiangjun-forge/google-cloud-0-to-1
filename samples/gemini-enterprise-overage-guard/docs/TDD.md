@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): 제미나이 엔터프라이즈(Gemini Enterprise) 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
+# 기술 상세 설계서 (TDD): Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
@@ -82,6 +82,6 @@ sequenceDiagram
 | 요구 사항 ID | 요구 사항 명칭 | 상세 기준 |
 | :--- | :--- | :--- |
 | **NFR-01** | **최소 IAM 권한 준수** | 진단에 필요한 최소 권한(`roles/billing.viewer, roles/orgpolicy.policyViewer, roles/serviceusage.serviceUsageViewer, roles/monitoring.viewer`)만을 요구한다. |
-| **NFR-02** | **크로스 플랫폼 순수 파이썬 단일 실행** | 쉘 래퍼 종속성 없이 `python diagnose.py` 직접 실행 체계로 동작하며 `report.md`를 자동 갱신한다. |
+| **NFR-02** | **크로스 플랫폼 순수 Python 단일 실행** | 쉘 래퍼 종속성 없이 `python diagnose.py` 직접 실행 체계로 동작하며 `report.md`를 자동 갱신한다. |
 | **NFR-03** | **민감 정보 비식별화 및 가명화** | 가상 실행(`--dry-run`) 모드에서 사내 실환경 프로젝트 노출을 방지하기 위해 `sample-project-id` 가명을 강제 적용한다. |
 | **NFR-04** | **사내 거버넌스 4대 필수 표준 라벨링 준수** | 사내 거버넌스, FinOps 비용 배분 및 자원 추적성을 위해 모든 생성 매니페스트 및 리소스에 4대 표준 라벨을 필수로 주입한다. |

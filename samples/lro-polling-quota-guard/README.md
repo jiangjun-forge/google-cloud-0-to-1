@@ -22,11 +22,11 @@ Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] Speech-to-Text V2 (`BatchRecognize`), Document AI (`BatchProcessDocuments`), Video Intelligence (`AnnotateVideo`), Translation V3 (`BatchTranslateDocument`) 등 대용량 비동기 배치 파이프라인에서 원인 모를 `429 RESOURCE_EXHAUSTED` 에러가 발생한다.
 - [ ] Google Cloud 콘솔 할당량 대시보드에서 주 작업 요청 지표(예: `BatchRecognize requests`, `BatchProcess requests`)는 한도 대비 여유가 충분한데 서비스가 중단된다.
-- [ ] 파이썬 코드에서 `operation = client.some_batch_method(...)` 실행 후 `operation.result()`로 동기 블로킹 대기하고 있다.
-- [ ] 다수의 워커 스레드나 프로세스가 동시에 작업을 대기하면서 구글 클라이언트 SDK의 내부 폴링 주기로 인해 리전당 `operation_requests` 쿼터(기본 120~150 RPM)를 순식간에 초과하고 있다.
+- [ ] Python 코드에서 `operation = client.some_batch_method(...)` 실행 후 `operation.result()`로 동기 블로킹 대기하고 있다.
+- [ ] 다수의 워커 스레드나 프로세스가 동시에 작업을 대기하면서 Google 클라이언트 SDK의 내부 폴링 주기로 인해 리전당 `operation_requests` 쿼터(기본 120~150 RPM)를 순식간에 초과하고 있다.
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
@@ -44,8 +44,8 @@ Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이
 | 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 작업 제출 RPM, SDK 기본 폴링 RPM, 할당량 대비 소진율, 429 고갈 위험 등급 및 최적 폴링 간격 요약 표 |
-| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 비동기 LRO 쿼터 고갈 분석 보고서, 커스텀 폴링 객체 주입 파이썬 코드, 비동기 큐 분리 아키텍처 및 QIR 상향 양식 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **커스텀 폴링 객체 주입 코드**: `initial=5.0`, `maximum=30.0` 지수 백오프가 적용된 파이썬 호출 모듈<br/>• **Cloud Tasks 연동 비동기 큐 파이프라인**: 블로킹 없이 작업 완료 상태를 분리 수집하는 워커 아키텍처<br/>• **LRO Quota 상향 요청 가이드**: GCP 콘솔을 통한 `operation_requests` 필수 증설 절차서 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 비동기 LRO 쿼터 고갈 분석 보고서, 커스텀 폴링 객체 주입 Python 코드, 비동기 큐 분리 아키텍처 및 QIR 상향 양식 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **커스텀 폴링 객체 주입 코드**: `initial=5.0`, `maximum=30.0` 지수 백오프가 적용된 Python 호출 모듈<br/>- **Cloud Tasks 연동 비동기 큐 파이프라인**: 블로킹 없이 작업 완료 상태를 분리 수집하는 워커 아키텍처<br/>- **LRO Quota 상향 요청 가이드**: GCP 콘솔을 통한 `operation_requests` 필수 증설 절차서 |
 
 ---
 
@@ -171,7 +171,7 @@ flowchart TB
 
 | 역할 (Role) | 설명 |
 | :--- | :--- |
-| 클라우드 모니터링 뷰어(`roles/monitoring.viewer`) | 클라우드 모니터링(Cloud Monitoring) 지표 및 사용량 조회 권한 |
+| Cloud Monitoring 뷰어(`roles/monitoring.viewer`) | Cloud Monitoring 지표 및 사용량 조회 권한 |
 | 서비스 사용량 뷰어(`roles/serviceusage.serviceUsageViewer`) | 대상 API 활성화 상태 및 기본 할당량 확인 권한 |
 
 ---

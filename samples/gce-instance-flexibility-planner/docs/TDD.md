@@ -57,7 +57,7 @@ sequenceDiagram
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
 | **BR-01** (단일 머신 고착 취약점 진단) | **FR-01** (단일 머신 의존성 및 스톡아웃 취약점 스캔) | **NFR-01** (최소 IAM 권한 준수) | `diagnose.py` (`scan_vulnerabilities`, `diagnose_workloads`) |
-| **BR-02** (동등 사양 머신 랭킹 산출) | **FR-02** (동등 사양 프로필 탐색 및 랭킹 엔진) | **NFR-02** (순수 파이썬 단일 실행) | `diagnose.py` (`get_machine_profile`, `SHAPE_CATALOG`) |
+| **BR-02** (동등 사양 머신 랭킹 산출) | **FR-02** (동등 사양 프로필 탐색 및 랭킹 엔진) | **NFR-02** (순수 Python 단일 실행) | `diagnose.py` (`get_machine_profile`, `SHAPE_CATALOG`) |
 | **BR-03** (GKE Custom ComputeClass 자동 생성) | **FR-03** (GKE Custom ComputeClass 매니페스트 생성) | **NFR-04** (자원 거버넌스 준수) | `diagnose.py` (`generate_gke_compute_class_manifest`) |
 | **BR-04** (MIG instanceSelections 정책 생성) | **FR-04** (Compute Engine Regional MIG 정책 생성) | **NFR-04** (자원 거버넌스 준수) | `diagnose.py` (`generate_mig_policy_config`) |
 | **BR-05** (FinOps Flex CUD 결합 가이드) | **FR-05** (진단 리포트 자동 생성 및 덮어쓰기) | **NFR-03** (가상 실행 및 비식별화) | `diagnose.py` (`generate_report_markdown`), `report.md` |
@@ -93,7 +93,7 @@ sequenceDiagram
 ### NFR-01: 최소 IAM 권한 준수
 - 본 도구는 읽기 전용 진단 스크립트로서 `roles/compute.viewer` 및 `roles/container.viewer` 권한만 요구하며 운영 중인 클러스터나 인스턴스를 무단 변경하지 않는다.
 
-### NFR-02: 순수 파이썬 단일 실행 및 크로스 플랫폼 지원
+### NFR-02: 순수 Python 단일 실행 및 크로스 플랫폼 지원
 - 외부 복잡한 도구 설치 없이 `python diagnose.py` 직접 실행 체계로 단일화하며 Linux, macOS, Cloud Shell 환경에서 원활하게 호환된다.
 
 ### NFR-03: 가상 실행 모드 (--dry-run) 및 비식별화

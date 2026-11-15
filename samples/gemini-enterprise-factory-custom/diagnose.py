@@ -65,9 +65,9 @@ FALLBACK_CUSTOM_CATALOG = {
         "description": "Gemini Enterprise 공식 1P(Google Drive, BigQuery, Cloud Storage) 및 3P(Jira, Confluence, Salesforce, ServiceNow, SharePoint) 커넥터 연동 매니페스트 및 ACL 동기화 스캐폴더",
         "backend_tech": "Agent Engine (ADK 2.11+) + Discovery Engine Data Store",
         "repo_url": "https://github.com/example-corp/google-cloud-0-to-1/tree/main/samples/gemini-enterprise-factory-connector",
-        "custom_placeholder_text": "연동하고 싶은 공식 커넥터 데이터 소스(1P: 드라이브/빅쿼리, 3P: Jira/Confluence/Salesforce)를 입력하세요...",
+        "custom_placeholder_text": "연동하고 싶은 공식 커넥터 데이터 소스(1P: Google Drive/BigQuery, 3P: Jira/Confluence/Salesforce)를 입력하세요...",
         "starter_prompts": [
-            "구글 드라이브 및 빅쿼리 1P 공식 데이터 커넥터 연동 매니페스트 작성해 줘",
+            "Google Drive 및 BigQuery 1P 공식 데이터 커넥터 연동 매니페스트 작성해 줘",
             "Jira 및 Confluence 3P 공식 커넥터 설정과 ACL 동기화 구성해 줘",
             "Salesforce CRM 고객 데이터스토어 연동 매니페스트 스캐폴딩해 줘",
         ],
@@ -373,7 +373,7 @@ def run_config_mode(args):
 
     # 1. Project ID
     current_proj = os.environ.get("PROJECT_ID") or get_gcloud_config("project") or ""
-    proj_prompt = f"1. 구글 클라우드 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. 구글 클라우드 프로젝트 ID 입력: "
+    proj_prompt = f"1. Google Cloud 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. Google Cloud 프로젝트 ID 입력: "
     if sys.stdin.isatty():
         try:
             val = input(proj_prompt).strip()
@@ -623,7 +623,7 @@ class ResilientAdkApp(agent_engines.AdkApp):
 app = ResilientAdkApp(agent=agent, enable_tracing=True)
 """
 
-    # 2. tools.py (파이썬 함수 도구 정의)
+    # 2. tools.py (Python 함수 도구 정의)
     tools_code = f"""# Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -673,7 +673,7 @@ def test_conversation(prompt: str) -> dict[str, Any]:
     return {{"prompt": prompt, "status": "SUCCESS", "response": "에이전트 정상 응답"}}
 
 def query_bigquery_sql(sql_query: str) -> dict[str, Any]:
-    \"\"\"빅쿼리(BigQuery) 데이터셋에 SQL 질의를 수행하고 결과를 반환한다.
+    \"\"\"BigQuery 데이터셋에 SQL 질의를 수행하고 결과를 반환한다.
 
     Args:
         sql_query: 실행할 표준 SQL 쿼리문.
@@ -699,7 +699,7 @@ google-auth
 google-cloud-bigquery
 """
 
-    # 4. deploy.py (순수 파이썬 Agent Engine 원클릭 배포 스크립트)
+    # 4. deploy.py (순수 Python Agent Engine 원클릭 배포 스크립트)
     deploy_script = f"""# Copyright 2026 Google LLC. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -1000,7 +1000,7 @@ def build_markdown_report(env_info: dict, chip_data: dict, artifacts: dict, iam_
 
 ## 3. Gemini Enterprise app ADK 에이전트 바인딩 매니페스트 (ADK Agent Manifest)
 
-배포 완료 후 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 사내 갤러리에 본 에이전트를 등록하기 위한 JSON 페이로드다:
+배포 완료 후 Gemini Enterprise app 사내 갤러리에 본 에이전트를 등록하기 위한 JSON 페이로드다:
 
 ```json
 {json.dumps(artifacts['ge_manifest'], indent=2, ensure_ascii=False)}
@@ -1797,7 +1797,7 @@ def deploy_custom_scaffolder_engine(env_info: dict, dry_run: bool = False) -> di
 [장착된 실제 실행 도구 (Tools)]
 당신에게는 실제 클라우드 환경에 에이전트를 프로비저닝하고 Gemini Enterprise app에 자동 등록할 수 있는 실제 실행 도구가 장착되어 있습니다:
 1. `show_custom_catalog_tool`: 사용자가 카탈로그, 전체 목록, 배포 가능한 에이전트 종류, 레시피 목록 등을 물어보거나 확인을 요청하면 즉시 이 도구를 호출하여 0~4번 전체 카탈로그 표를 출력하십시오!
-2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 `action_phase='direct_deploy'`로 즉시 호출하여 클라우드 빌드와 사내 갤러리 등록을 진행하십시오!
+2. `deploy_enterprise_agent_tool`: 사용자가 특정 에이전트(0~4번 번호 또는 명칭)의 배포를 요청하거나, 깃 주소(GitHub URL)를 주며 배포하라고 요청하면 `action_phase='direct_deploy'`로 즉시 호출하여 Cloud Build와 사내 갤러리 등록을 진행하십시오!
 3. `check_deployment_status_tool`: 사용자가 "배포 상태 어때?", "진행 상황 알려 줘", "다 됐어?", "배포 완료됐나 확인해 줘" 등 배포 진행 상황이나 상태를 물어보면 즉시 이 도구를 호출하여 실시간 빌드/배포 상태를 확인하고, 완료되었을 경우 사내 갤러리 등록을 자동 완결하십시오!
 4. `list_deployed_agents_tool`: 현재 Gemini Enterprise app 사내 갤러리에 등록된 활성 에이전트 목록을 조회할 때 즉시 호출하십시오.
 

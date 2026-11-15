@@ -3,7 +3,7 @@
 
 """Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 진단 및 배포 도구.
 
-사내 비개발자 임직원이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 내에서 대화형 인터뷰와
+사내 비개발자 임직원이 Gemini Enterprise app 내에서 대화형 인터뷰와
 추천 칩 선택을 통해 실시간 검색 보강된 노코드 에이전트를 자율 생성하고
 전용 대행 서비스 계정으로 안전하게 등록할 수 있도록 메타 에이전트를 배포한다.
 """
@@ -138,7 +138,7 @@ FALLBACK_AGENT_CATALOG = {
         "core_compliance": "부정경쟁방지 및 영업비밀보호에 관한 법률, 하도급법",
         "default_scope": "ORG",
         "starter_prompts": [
-            "고객사 전달 NDA에서 일방적 손해배상 독소 조항 찾아줘",
+            "거래처 전달 NDA에서 일방적 손해배상 독소 조항 찾아줘",
             "SW 외주 용역 계약서의 지식재산권 귀속 조항 표준 문구 추천해줘",
             "계약 분쟁 시 관할 법원을 우리 회사 소재지 법원으로 변경하는 특약 검토해줘",
             "표준 업무위수탁 계약서 필수 기재사항 누락 여부 확인해줘",
@@ -199,7 +199,7 @@ FALLBACK_AGENT_CATALOG = {
         "default_scope": "ORG",
         "starter_prompts": [
             "30인 이상 수용 가능한 화상회의실 예약 현황과 장비 안내해줘",
-            "외부 고객사 방문 시 임시 출입증 발급 및 무료 주차 등록 방법 알려줘",
+            "외부 방문객 방문 시 임시 출입증 발급 및 무료 주차 등록 방법 알려줘",
             "사내 피트니스 센터 이용 시간과 개인 사물함 배정 규정 확인해줘",
             "사내 우편물 수령처와 퀵서비스 발송 신청 절차 안내해줘",
         ],
@@ -243,7 +243,7 @@ FALLBACK_AGENT_CATALOG = {
             "제품 파손 클레임 접수 시 부서별 긴급 에스컬레이션 기준 안내해줘",
             "배송 지연에 따른 포인트 보상 기준과 고객 안내 스크립트 작성해줘",
         ],
-        "instructions_summary": "고객의 감정에 공감하면서도 회사의 정책을 명확하게 전달하는 정중한 상담 스크립트와 분류 데이터를 제공한다.",
+        "instructions_summary": "민원인의 감정에 공감하면서도 회사의 정책을 명확하게 전달하는 정중한 상담 스크립트와 분류 데이터를 제공한다.",
     },
     12: {
         "id": "biz-meeting-summarizer",
@@ -275,7 +275,7 @@ FALLBACK_AGENT_CATALOG = {
         "mention_handle": "@corp-pr-drafter",
         "slash_command": "/corp-pr-drafter",
         "target_users": "홍보팀, 브랜드 마케터, 사내 커뮤니케이션 담당자",
-        "core_compliance": "표시·광고의 공정화에 관한 법률 및 언론 보도 가이드라인",
+        "core_compliance": "표시 및 광고의 공정화에 관한 법률 및 언론 보도 가이드라인",
         "default_scope": "ORG",
         "starter_prompts": [
             "신규 AI 솔루션 런칭 관련 언론 배포용 표준 보도자료 초안 작성해줘",
@@ -588,7 +588,7 @@ def run_config_mode(args):
 
     # 1. Project ID
     current_proj = os.environ.get("PROJECT_ID") or get_gcloud_config("project") or ""
-    proj_prompt = f"1. 구글 클라우드 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. 구글 클라우드 프로젝트 ID 입력: "
+    proj_prompt = f"1. Google Cloud 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. Google Cloud 프로젝트 ID 입력: "
     if sys.stdin.isatty():
         try:
             val = input(proj_prompt).strip()
@@ -796,7 +796,7 @@ def synthesize_agent_specification(category: str, chip: dict, dry_run: bool, pro
    - 필수 정보가 부족한 경우 친절하게 추가 입력을 안내한다.
 2. **규정 및 기준 대조 (Compliance Check)**:
    - 적용 기준: {compliance}
-   - 실시간 구글 검색(Google Search Grounding) 및 사내 공식 규정을 대조하여 인가 기준 충족 여부를 객관적으로 검증한다.
+   - 실시간 Google Search Grounding 및 사내 공식 규정을 대조하여 인가 기준 충족 여부를 객관적으로 검증한다.
 3. **단계별 조치 안내 및 승인 연동**:
    - 자동 승인 가능 항목과 관리자 결재 필요 항목을 명확히 구분하여 안내한다.
    - 필요한 경우 표준 서식 양식을 제공하고 정식 접수 번호를 안내한다.
@@ -866,7 +866,7 @@ def build_meta_agent_manifest(env_info: dict):
     }
 
     meta_instructions = f"""너는 사내 Gemini Enterprise App 환경의 공식 에이전트 제작 도우미인 'GE In-Chat Agent Factory (사내 노코드 에이전트 팩토리)'이다.
-사내 비개발자 임직원과 친절하게 대화하며, 추천 칩을 제시하고 실시간 구글 검색(Search Grounding)을 통해
+사내 비개발자 임직원과 친절하게 대화하며, 추천 칩을 제시하고 실시간 Google Search Grounding을 통해
 전문적이고 빈틈없는 사내 승인 노코드 에이전트를 기획 및 등록해 주는 역할을 전담한다.
 
 [2026년 Google Cloud AI 모델 표준 및 거버넌스 가이드라인]
@@ -875,7 +875,7 @@ def build_meta_agent_manifest(env_info: dict):
 
 [핵심 행동 수칙]
 1. 임직원이 접속하면 부서별 추천 칩(IT, 인사, 재무, 법무, 스마트팩토리 등)을 제시하여 선택을 돕는다.
-2. 선택된 주제에 대해 구글 검색을 활용하여 2026년 최신 규정 및 표준 작업 절차를 실시간으로 조사한다.
+2. 선택된 주제에 대해 Google Search를 활용하여 2026년 최신 규정 및 표준 작업 절차를 실시간으로 조사한다.
 3. 5대 골든 프롬프트(Role, Workflow, Guardrails, Fallback, Starter Prompts) 규격으로 시스템 지침을 완성한다.
 4. 임직원에게 기획된 에이전트 명세를 보여주고 최종 확인을 구한다.
 5. 임직원이 동의하면 'create_ge_nocode_agent' 도구를 호출하여 전용 서비스 계정({env_info['delegated_sa']}) 권한으로 Gemini Enterprise app에 즉시 등록한다.
@@ -1247,7 +1247,7 @@ def deploy_agent_factory_engine(env_info: dict, dry_run: bool = False) -> dict:
 - 신규 슬러그인 경우에만: 비로소 1단계(목적 파악) 인터뷰를 시작한다.
 1단계 (목적 파악): 해결하려는 구체적인 업무 페인포인트와 주요 사용 부서 확인.
 2단계 (핵심 규칙): 에이전트가 지켜야 할 사내 규정과 처리 기준, 필수 기재 항목 정의.
-3단계 (지식 베이스): 연동할 사내 구글 드라이브(Google Drive), 구글 시트(Google Sheets), 문서, 사내 위키 등 데이터 저장소 정의.
+3단계 (지식 베이스): 연동할 사내 Google Drive, Google Sheets, 문서, 사내 위키 등 데이터 저장소 정의.
 4단계 (최종 검증 및 합성): 5대 골든 규격(Role, Workflow, Guardrails, Fallback, Starter Prompts)으로 완성된 시스템 지침서 생성.
 5단계 (실제 클라우드 등록): 사용자가 에이전트 등록/배포에 동의하면, 반드시 `register_nocode_agent_tool` 도구를 호출하여 Gemini Enterprise app 사내 갤러리에 실제로 등록을 집행한다!
 

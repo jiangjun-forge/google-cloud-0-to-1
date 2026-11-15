@@ -57,7 +57,7 @@ class EdgeCaseParserTest(unittest.TestCase):
             "summaryDocUrl": ""
         }
 
-        # 파이썬으로 Code_Sidebar.js의 결정론적 룰을 모킹 검증
+        # Python으로 Code_Sidebar.js의 결정론적 룰을 모킹 검증
         def mock_deterministic_fallback(query: str, s: dict):
             q = query.lower().replace(" ", "")
             # 0. 조회 의도 인터셉트
@@ -184,7 +184,7 @@ class EdgeCaseParserTest(unittest.TestCase):
             }
         ]
 
-        # 파이썬 구현 검증
+        # Python 구현 검증
         extracted_points = []
         for idx, fb in enumerate(sample_feedbacks):
             pts = fb.get("points")

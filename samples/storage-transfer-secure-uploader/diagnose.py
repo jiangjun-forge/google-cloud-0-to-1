@@ -127,7 +127,7 @@ def get_mock_preflight_checks(bucket: str, pool: str) -> list[dict]:
             "step": "2. STS 에이전트 풀",
             "item": f"에이전트 풀 상태 ({pool})",
             "status": "PASS",
-            "detail": "온프레미스 도커 에이전트 4대 정상 연결 (상태: CONNECTED, 버전: 최신)",
+            "detail": "온프레미스 Docker 에이전트 4대 정상 연결 (상태: CONNECTED, 버전: 최신)",
         },
         {
             "step": "3. 버킷 보안 통제",

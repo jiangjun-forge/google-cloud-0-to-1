@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Gemini API Request and Response BigQuery Logging Tool.
 
-제미나이(Gemini) 파운데이션 모델의 모든 프롬프트 요청 및 생성 응답 데이터를
+Gemini 파운데이션 모델의 모든 프롬프트 요청 및 생성 응답 데이터를
 BigQuery 데이터세트에 실시간 자동 스트리밍 적재하고 토큰 사용량을 분석한다.
 """
 
@@ -231,19 +231,19 @@ def execute_logging(project_id: str, dataset_id: str, location: str, model_id: s
     def _call_model():
       return genai_client.models.generate_content(
           model=model_id,
-          contents="구글 클라우드 BigQuery 연동 로깅 테스트 프롬프트다."
+          contents="Google Cloud BigQuery 연동 로깅 테스트 프롬프트다."
       )
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
       future = executor.submit(_call_model)
       response = future.result(timeout=10.0)
-      print("\n[제미나이 호출 성공]")
+      print("\n[Gemini 호출 성공]")
       print(f"응답 요약: {response.text[:120]}...\n")
   except concurrent.futures.TimeoutError:
     print("\n[경고] Vertex AI 엔드포인트 응답 대기 시간이 10초를 초과하여 테스트 추론을 안전하게 건너뛴다.")
     print("  (네트워크 지연 또는 Vertex AI 첫 호출 웜업 지연일 수 있다.)")
   except Exception as e:
-    print(f"[경고] 제미나이 호출 중 오류 발생: {e}")
+    print(f"[경고] Gemini 호출 중 오류 발생: {e}")
 
 
 
@@ -380,8 +380,8 @@ def main():
   parser.add_argument(
       "-l",
       "--location",
-      default=os.getenv("LOCATION") or "asia-northeast3",
-      help="Vertex AI 리전 위치 (기본값: asia-northeast3)",
+      default=os.getenv("LOCATION") or "global",
+      help="Vertex AI 리전 위치 (기본값: global)",
   )
   parser.add_argument(
       "-m",

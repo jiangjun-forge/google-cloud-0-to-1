@@ -39,7 +39,7 @@ function onOpen() {
 }
 
 /**
- * [Step 1 가드레일] 캠페인 아이디어 메모 구글 독스 작성 및 저장
+ * [Step 1 가드레일] 캠페인 아이디어 메모 Google Docs 작성 및 저장
  *
  * @param {string} [customIdea] - 사이드바 대화창 또는 인라인에서 전달된 아이디어 (선택)
  */

@@ -46,7 +46,7 @@ def safe_parse_json(text: str, fallback: Any = None, expect_array: bool = False)
 
 
 def inspect_revision_folder(folder_path: str) -> Dict[str, bool]:
-    """특정 리비전 폴더 내 필수 에셋(구글 독스, 이미지 3종, 숏폼 비디오)의 완성도를 실사한다."""
+    """특정 리비전 폴더 내 필수 에셋(Google Docs, 이미지 3종, 숏폼 비디오)의 완성도를 실사한다."""
     if not os.path.exists(folder_path):
         return {"complete": False, "has_doc": False, "has_video": False, "img_count": 0}
     files = os.listdir(folder_path)

@@ -17,10 +17,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gemini-resilience-checker
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gemini-resilience-checker: 제미나이(Gemini) API 호출 소스 코드에서 429 과부하 에러와 일시적 네트워크 장애를 방어하기 위한 지수 백오프, 지터(무작위 대기), 최대 재시도 제약, 폴백 모델 체인 구비 여부를 1분 만에 정적 진단하고 표준 처방 코드를 제시하는 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gemini-resilience-checker: Gemini API 호출 소스 코드에서 429 과부하 에러와 일시적 네트워크 장애를 방어하기 위한 지수 백오프, 지터(무작위 대기), 최대 재시도 제약, 폴백 모델 체인 구비 여부를 1분 만에 정적 진단하고 표준 처방 코드를 제시하는 도구다.
 ---
 
-# 제미나이(Gemini) API 복원력 패턴 자가 진단 (`gemini-resilience-checker`) (Autopilot & Hands-on Guide)
+# Gemini API 복원력 패턴 자가 진단 (`gemini-resilience-checker`) (Autopilot & Hands-on Guide)
 
 본 스킬은 사내 엔지니어와 실무자가 `gemini-resilience-checker` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 리소스 정리)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다.
 

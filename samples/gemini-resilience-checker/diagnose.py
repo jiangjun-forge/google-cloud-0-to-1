@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Gemini API Resilience Pattern Checker.
 
-제미나이(Gemini) API 호출 코드 내 429 에러 및 일시적 장애를 방어하기 위한
+Gemini API 호출 코드 내 429 에러 및 일시적 장애를 방어하기 위한
 지수 백오프, 지터, 최대 재시도 제한, 폴백 모델 패턴 적용 여부를 정적 진단한다.
 """
 
@@ -41,7 +41,7 @@ def scan_file(file_path: Path) -> dict | None:
   except Exception:
     return None
 
-  # 제미나이 호출 구문 감지
+  # Gemini 호출 구문 감지
   gemini_call_pattern = re.compile(
       r"generate_content|generate_content_stream|generate_content_async|models\.generate_content"
   )
@@ -63,7 +63,7 @@ def scan_file(file_path: Path) -> dict | None:
 
 
 def scan_directory(scan_path: str) -> list[dict]:
-  """지정한 디렉터리 내의 파이썬 및 쉘 스크립트 파일을 재귀 스캔한다."""
+  """지정한 디렉터리 내의 Python 및 쉘 스크립트 파일을 재귀 스캔한다."""
   results = []
   target_dir = Path(scan_path)
   if not target_dir.exists() or not target_dir.is_dir():
@@ -87,11 +87,11 @@ def scan_directory(scan_path: str) -> list[dict]:
 def report_results(findings: list[dict]):
   """진단 결과를 정형화된 리포트로 출력하고 표준 처방 가이드를 제시한다."""
   print("=" * 72)
-  print("[진단 결과] 제미나이(Gemini) API 호출 복원력(Resilience) 진단 리포트")
+  print("[진단 결과] Gemini API 호출 복원력(Resilience) 진단 리포트")
   print("=" * 72)
 
   if not findings:
-    print("\n[안내] 대상 디렉터리에서 검사할 제미나이 API 호출 코드를 발견하지 못했다.")
+    print("\n[안내] 대상 디렉터리에서 검사할 Gemini API 호출 코드를 발견하지 못했다.")
     print("      (대상 파일 확장자: .py, .sh)\n")
     return
 
@@ -112,11 +112,11 @@ def report_results(findings: list[dict]):
   )
 
   if total_issues == 0:
-    print("\n[성공] 모든 제미나이 호출 부위가 장애 방어 복원력 패턴을 충족하고 있다.\n")
+    print("\n[성공] 모든 Gemini 호출 부위가 장애 방어 복원력 패턴을 충족하고 있다.\n")
     return
 
   print("\n" + "=" * 72)
-  print("[추천 표준 처방 가이드 - 파이썬 tenacity 라이브러리 연동]")
+  print("[추천 표준 처방 가이드 - Python tenacity 라이브러리 연동]")
   print("=" * 72)
   print("""from google import genai
 from google.genai import types
@@ -133,7 +133,7 @@ def generate_with_retry(client, model_id, prompt):
       contents=prompt
   )
 
-# 2. 주 모델(Gemini 3.8 Flash) 일시 장애 시 안정화 모델(Gemini 3.5 Flash)로 자동 우회
+# 2. 주 모델(Gemini Flash) 일시 장애 시 대체 안정화 모델로 자동 우회
 def generate_with_fallback(client, prompt):
   try:
     return generate_with_retry(client, 'gemini-3.8-flash', prompt)
@@ -156,7 +156,7 @@ def build_markdown_report(findings: list[dict], is_dry_run: bool) -> str:
   finding_lines = []
   if not findings:
     finding_lines.append(
-        "\n[안내] 대상 디렉터리에서 검사할 제미나이 API 호출 코드를 발견하지 못했다.\n      (대상 파일 확장자: .py, .sh)\n"
+        "\n[안내] 대상 디렉터리에서 검사할 Gemini API 호출 코드를 발견하지 못했다.\n      (대상 파일 확장자: .py, .sh)\n"
     )
   else:
     finding_lines.append(f"\n진단된 API 호출 소스 파일: {len(findings)}건\n")
@@ -182,11 +182,11 @@ def build_markdown_report(findings: list[dict], is_dry_run: bool) -> str:
 
 ```text
 {header_line}========================================================================
-[진단 결과] 제미나이(Gemini) API 호출 복원력(Resilience) 진단 리포트
+[진단 결과] Gemini API 호출 복원력(Resilience) 진단 리포트
 ========================================================================
 {findings_text}
 ========================================================================
-[추천 표준 처방 가이드 - 파이썬 tenacity 라이브러리 연동]
+[추천 표준 처방 가이드 - Python tenacity 라이브러리 연동]
 ========================================================================
 from google import genai
 from google.genai import types
@@ -203,7 +203,7 @@ def generate_with_retry(client, model_id, prompt):
       contents=prompt
   )
 
-# 2. 주 모델(Gemini 3.8 Flash) 일시 장애 시 안정화 모델(Gemini 3.5 Flash)로 자동 우회
+# 2. 주 모델(Gemini Flash) 일시 장애 시 대체 안정화 모델로 자동 우회
 def generate_with_fallback(client, prompt):
   try:
     return generate_with_retry(client, 'gemini-3.8-flash', prompt)
@@ -242,7 +242,7 @@ python diagnose.py
 - **Service Health 콘솔**: ( https://console.cloud.google.com/servicehealth )
 - **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
 - **클라우드 인시던트 핸들링 모범 사례 가이드**: ( https://cloud.google.com/blog/topics/developers-practitioners/cloud-reliability-incident-handling-best-practices )
-- **구글 클라우드 Service Health 공식 개요**: ( https://cloud.google.com/service-health/docs/overview )
+- **Google Cloud Service Health 공식 개요**: ( https://cloud.google.com/service-health/docs/overview )
 
 ---
 
@@ -415,7 +415,7 @@ def main():
     print("[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md")
     return
 
-  print(f"\n[스캔 시작] '{args.path}' 경로 내 제미나이 API 복원력 패턴을 진단하는 중...")
+  print(f"\n[스캔 시작] '{args.path}' 경로 내 Gemini API 복원력 패턴을 진단하는 중...")
   findings = scan_directory(args.path)
   report_results(findings)
   md_content = build_markdown_report(findings, is_dry_run=False)

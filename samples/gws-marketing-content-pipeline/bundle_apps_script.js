@@ -19,7 +19,7 @@
  */
 
 var CONFIG = {
-  // 기본 캠페인 코드 및 구글 드라이브 루트 폴더명
+  // 기본 캠페인 코드 및 Google Drive 루트 폴더명
   CAMPAIGN_CODE: "cp-ignite",
 
   // 인증 방식: Google AI Studio API Key 기반 인증 (Zero-GCP Dependency)
@@ -33,7 +33,7 @@ var CONFIG = {
   GEMINI_MODEL: "gemini-3.8-flash",
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 생성 모델
   MODEL_JUDGE: "gemini-3.8-flash", // AI 페르소나 다면 평가 및 가드레일 판정 모델
-  MODEL_COPILOT: "gemini-3.8-flash", // AI 코파일럿 대화 및 상황 인지 고속 반응 모델 (Gemini 3.8 Flash)
+  MODEL_COPILOT: "gemini-3.8-flash", // AI 코파일럿 대화 및 상황 인지 고속 반응 모델 (Gemini Flash)
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 모델 (Veo 3.1 Fast)
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
@@ -44,13 +44,13 @@ var CONFIG = {
   HTTP_BASE_DELAY_MS: 1500, // 지수 백오프 기본 대기 시간 (ms)
   MAX_MEDIA_PAYLOAD_MB: 35, // Apps Script 단일 페이로드 안전 상한 (MB)
   
-  // 구글 드라이브 핵심 기획/명세/콘텐츠 문서 파일명
-  IDEA_DOC_NAME: "아이디어 메모", // 마케터 원천 아이디어 작성용 구글 독스 (캠페인 루트 직속)
+  // Google Drive 핵심 기획/명세/콘텐츠 문서 파일명
+  IDEA_DOC_NAME: "아이디어 메모", // 마케터 원천 아이디어 작성용 Google Docs (캠페인 루트 직속)
   PLAN_DOC_NAME: "PLAN", // 마케팅 캠페인 기획서 전문
   SPEC_DOC_NAME: "SPEC", // 멀티 채널 콘텐츠 제작 명세서 (이미지, 숏폼, 카피 규격)
   CONTENT_DOC_NAME: "campaign_content", // 멀티 채널 마케팅 콘텐츠 전문 (카피라이팅 및 영상 콘티)
   PERSONA_FILE_NAME: "ai_personas.json", // 타깃 AI 페르소나 마스터 데이터 (캠페인 루트 직속)
-  PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 구글 독스 보관 폴더명
+  PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 Google Docs 보관 폴더명
   DIRECTIVE_DOC_NAME: "마케터 보정 지침", // 마케터 전용 의사 결정 및 보정 지침서 (AI 덮어쓰기 금지)
 
   // GitHub 퍼블릭 저장소 Raw 베이스 URL (초기화 시 최신 프롬프트 실시간 인출)
@@ -85,7 +85,7 @@ var CONFIG = {
     }
   },
 
-  // 9대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
+  // 9대 프롬프트 Google Docs 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
   DEFAULT_PROMPTS: {
     "01_idea_to_plan": {
       title: "01_idea_to_plan",
@@ -109,7 +109,7 @@ var CONFIG = {
       title: "04_content_generation",
       description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 생성 지침",
       systemInstruction:
-        "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content 구글 독스를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
+        "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content Google Docs를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
     "05_persona_evaluation": {
       title: "05_persona_evaluation",
@@ -127,13 +127,13 @@ var CONFIG = {
       title: "07_feedback_summary",
       description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
-        "당신은 CMO 전속 수석 분석관이다. AI 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
+        "당신은 CMO 전속 수석 분석관이다. AI 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary Google Docs를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
     "08_content_revision": {
       title: "08_content_revision",
       description: "피드백 요약서 및 독립된 마케터 보정 지침서 반영 차기 리비전 콘텐츠 보정 지침",
       systemInstruction:
-        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content Google Docs로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
     "09_visual_prompt": {
       title: "09_visual_prompt",
@@ -379,7 +379,7 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
 }
 
 /**
- * Gemini 멀티모달(VLM) 심층 분석 API 호출 (구글 드라이브 이미지 및 비디오 Blob 직접 처리)
+ * Gemini 멀티모달(VLM) 심층 분석 API 호출 (Google Drive 이미지 및 비디오 Blob 직접 처리)
  */
 function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   var apiKey = getGeminiApiKey();
@@ -863,13 +863,13 @@ function createDeterministicVector(text, dim) {
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 3] 프롬프트 구글 독스 관리 및 스마트 캐싱 엔진 (Prompt Management & Cache Engine)
+ * [모듈 3] 프롬프트 Google Docs 관리 및 스마트 캐싱 엔진 (Prompt Management & Cache Engine)
  */
 
 /**
- * 캠페인 루트의 prompts/ 폴더 내에 9대 프롬프트 구글 독스를 자동 시딩한다.
+ * 캠페인 루트의 prompts/ 폴더 내에 9대 프롬프트 Google Docs를 자동 시딩한다.
  * GitHub 퍼블릭 저장소(GitHub Raw)에서 최신 프롬프트 마크다운 파일을 실시간 인출하여 생성하며,
- * 마케터가 이미 수정한 구글 독스가 존재할 경우 기존 내용을 안전하게 보존한다.
+ * 마케터가 이미 수정한 Google Docs가 존재할 경우 기존 내용을 안전하게 보존한다.
  *
  * @param {GoogleAppsScript.Drive.Folder} promptsFolder - prompts 폴더 객체
  */
@@ -910,14 +910,14 @@ function seedDefaultPrompts(promptsFolder) {
       }
 
       saveGoogleDoc(promptsFolder, def.title, initialContent);
-      Logger.log("프롬프트 구글 독스 자동 시딩 완료: " + def.title);
+      Logger.log("프롬프트 Google Docs 자동 시딩 완료: " + def.title);
     }
   }
 }
 
 /**
- * 프롬프트 구글 독스 문서를 읽어 시스템 지침 텍스트를 반환한다.
- * 구글 독스의 수정 시각(Last-Modified)을 감지하여 변경이 없을 때에는
+ * 프롬프트 Google Docs 문서를 읽어 시스템 지침 텍스트를 반환한다.
+ * Google Docs의 수정 시각(Last-Modified)을 감지하여 변경이 없을 때에는
  * CacheService로부터 0.01초 만에 즉시 반환하는 스마트 캐싱을 수행한다.
  *
  * @param {string} promptKey - CONFIG.DEFAULT_PROMPTS 키 (예: "02_content_generation")
@@ -957,7 +957,7 @@ function getPromptTemplate(promptKey) {
       return cachedContent;
     }
 
-    // 문서가 새로 수정되었거나 캐시 미스 시 구글 독스 본문 로드
+    // 문서가 새로 수정되었거나 캐시 미스 시 Google Docs 본문 로드
     var docContent = readGoogleDoc(promptsFolder, targetTitle);
     if (docContent && docContent.trim().length > 10) {
       // 마케터 안내용 주석 및 머리말(# 제목) 정제
@@ -976,7 +976,7 @@ function getPromptTemplate(promptKey) {
       return cleanedContent;
     }
   } catch (err) {
-    Logger.log("프롬프트 구글 독스 로드 예외, 기본값 사용: " + err);
+    Logger.log("프롬프트 Google Docs 로드 예외, 기본값 사용: " + err);
   }
 
   return fallbackText;
@@ -1016,7 +1016,7 @@ function renderPromptTemplate(template, variables) {
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 4] 구글 드라이브 파일 탐색, 입출력 및 마크다운 독스 렌더러 (Drive Utils & Document Renderer)
+ * [모듈 4] Google Drive 파일 탐색, 입출력 및 마크다운 Google Docs 렌더러 (Drive Utils & Document Renderer)
  */
 
 /**
@@ -1247,7 +1247,7 @@ function generateCampaignSlug(rawName) {
 }
 
 /**
- * 현재 구글 시트의 이름이 기본 Untitled 상태이거나 초기 상태인 경우,
+ * 현재 Google Sheets의 이름이 기본 Untitled 상태이거나 초기 상태인 경우,
  * 확정된 캠페인 폴더명 및 슬러그에 맞추어 직관적인 컨트롤 타워 명칭으로 자동 변경한다.
  *
  * @param {string} [displayName] - 캠페인 폴더 표시 명칭
@@ -1277,21 +1277,21 @@ function syncSpreadsheetTitleWithCampaign(displayName, slug) {
       var newTitle = "[마케팅 콘텐츠 컨트롤 타워] " + targetName;
       if (currentTitle !== newTitle) {
         ss.rename(newTitle);
-        Logger.log("구글 시트 제목 자동 동기화: '" + currentTitle + "' -> '" + newTitle + "'");
+        Logger.log("Google Sheets 제목 자동 동기화: '" + currentTitle + "' -> '" + newTitle + "'");
       }
     }
   } catch (e) {
-    Logger.log("구글 시트 제목 변경 중 예외 (무시 가능): " + e);
+    Logger.log("Google Sheets 제목 변경 중 예외 (무시 가능): " + e);
   }
 }
 
 /**
  * 마케터가 생성한 캠페인 폴더를 자동 감지하고 폴더 ID로 영구 바인딩한다.
- * [UX 혁신]: 마케터가 구글 드라이브에서 자유롭게 폴더를 만들고 시트를 넣으면,
- * 1. 구글 시트의 부모 폴더를 즉시 캠페인 루트 폴더로 자동 채택
+ * [UX 혁신]: 마케터가 Google Drive에서 자유롭게 폴더를 만들고 시트를 넣으면,
+ * 1. Google Sheets의 부모 폴더를 즉시 캠페인 루트 폴더로 자동 채택
  * 2. 폴더 ID(folder.getId())를 영구 저장하여 마케터가 폴더 이름을 변경해도 완벽 추적
  * 3. 한글 폴더명을 분석하여 안전한 영문 슬러그를 자동 합성
- * 4. 구글 시트 제목이 Untitled일 경우 캠페인 명칭으로 자동 동기화
+ * 4. Google Sheets 제목이 Untitled일 경우 캠페인 명칭으로 자동 동기화
  */
 function getCampaignFolder(optDoNotCreate) {
   var props = PropertiesService.getScriptProperties();
@@ -1310,7 +1310,7 @@ function getCampaignFolder(optDoNotCreate) {
     }
   }
 
-  // 2. 현재 구글 시트가 위치한 부모 폴더 자동 감지
+  // 2. 현재 Google Sheets가 위치한 부모 폴더 자동 감지
   try {
     var sheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
     var sheetFile = DriveApp.getFileById(sheetId);
@@ -1450,7 +1450,7 @@ function saveBinaryFile(folder, fileName, base64Data, contentType) {
 }
 
 /**
- * 마크다운 인라인 서식(**bold**)을 파싱하여 구글 독스 텍스트 요소에 굵은 글씨 스타일을 적용한다.
+ * 마크다운 인라인 서식(**bold**)을 파싱하여 Google Docs 텍스트 요소에 굵은 글씨 스타일을 적용한다.
  */
 function formatInlineStyles(element, rawText) {
   var cleanText = "";
@@ -1483,8 +1483,8 @@ function formatInlineStyles(element, rawText) {
 }
 
 /**
- * 구글 독스 본문(Body)을 안전하게 초기화한다.
- * [마지막 단락 보호]: 구글 독스 문서 섹션에는 최소 1개의 단락이 반드시 존재해야 하므로,
+ * Google Docs 본문(Body)을 안전하게 초기화한다.
+ * [마지막 단락 보호]: Google Docs 문서 섹션에는 최소 1개의 단락이 반드시 존재해야 하므로,
  * body.clear() 대신 마지막 단락을 보존하며 텍스트를 비워 'Can't remove the last paragraph' 예외를 원천 차단한다.
  */
 function safelyClearBody(body) {
@@ -1519,7 +1519,7 @@ function safelyClearBody(body) {
 }
 
 /**
- * 마크다운 텍스트를 구글 독스(Google Docs) 네이티브 스타일(Title, Heading 1~3, List, Table, HorizontalRule)로 변환하여 렌더링한다.
+ * 마크다운 텍스트를 Google Docs 네이티브 스타일(Title, Heading 1~3, List, Table, HorizontalRule)로 변환하여 렌더링한다.
  */
 function renderMarkdownToDoc(doc, markdown) {
   var body = doc.getBody();
@@ -1686,7 +1686,7 @@ function renderMarkdownToDoc(doc, markdown) {
 }
 
 /**
- * 구글 독스(Google Docs) 문서를 생성하거나 기존 문서의 본문을 네이티브 스타일로 갱신한다.
+ * Google Docs 문서를 생성하거나 기존 문서의 본문을 네이티브 스타일로 갱신한다.
  */
 function saveGoogleDoc(folder, title, content) {
   var files = folder.getFilesByName(title);
@@ -1714,7 +1714,7 @@ function saveGoogleDoc(folder, title, content) {
 }
 
 /**
- * 폴더 내의 구글 독스(Google Docs) 문서를 열어 본문 텍스트를 읽는다.
+ * 폴더 내의 Google Docs 문서를 열어 본문 텍스트를 읽는다.
  */
 function readGoogleDoc(folder, title) {
   var files = folder.getFilesByName(title);
@@ -1751,9 +1751,9 @@ function getDefaultMediaSpec(prefix) {
 
 /**
  * 마케터가 작성/수정한 콘텐츠 제작 명세서(SPEC) 및 보정 지침을 분석하여 미디어 제작 스펙을 컴파일한다.
- * Gemini 3.8 Flash의 자연어 이해를 기반으로 하되, 비정형 텍스트 및 오프라인 환경에 대비한 결정론적 룰을 함께 적용한다.
+ * Gemini Flash의 자연어 이해를 기반으로 하되, 비정형 텍스트 및 오프라인 환경에 대비한 결정론적 룰을 함께 적용한다.
  *
- * @param {string} specContent - 마케터의 SPEC 구글 독스 본문
+ * @param {string} specContent - 마케터의 SPEC Google Docs 본문
  * @param {string} prefix - 리비전 접두사 ("00", "01" 등)
  * @param {string} [directiveText] - 마케터 보정 지침 (9단계인 경우)
  * @param {GoogleAppsScript.Drive.Folder} [targetFolder] - 저장 대상 폴더 (media_specs.json 저장용)
@@ -1799,7 +1799,7 @@ function compileMediaSpecFromDocs(specContent, prefix, directiveText, targetFold
   var snsExcluded = /(sns|피드|1:1|정방형)\s*(?:이미지|소재|제작)?\s*(?:은|는|이|가|을|를)?\s*(제외|생략|미제작|보류|없음|x|빼)/i.test(combinedText) ||
                     (lower.indexOf("sns 제외") !== -1 || lower.indexOf("1:1 제외") !== -1 || lower.indexOf("피드 제외") !== -1);
 
-  // 2. Gemini 3.8 Flash를 통한 지능형 자연어 컴파일 (API Key 유효 시)
+  // 2. Gemini Flash를 통한 지능형 자연어 컴파일 (API Key 유효 시)
   var apiKey = getGeminiApiKey();
   if (apiKey && typeof callGemini === "function") {
     try {
@@ -1895,7 +1895,7 @@ function compileMediaSpecFromDocs(specContent, prefix, directiveText, targetFold
 }
 
 /**
- * 마케터가 열어볼 campaign_content 구글 독스 최상단에 수록할 [제작 명세서 반영 현황] 헤더 블록을 생성한다.
+ * 마케터가 열어볼 campaign_content Google Docs 최상단에 수록할 [제작 명세서 반영 현황] 헤더 블록을 생성한다.
  *
  * @param {Object} mediaSpec - 컴파일된 미디어 스펙 객체
  * @return {string} 마크다운 헤더 블록
@@ -2132,8 +2132,8 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief, options,
 }
 
 /**
- * campaign_content 구글 독스 본문에 모바일 세로 숏폼 영상 제작 콘티 섹션이 포함되도록 보장한다.
- * (별도 txt 파일을 생성하지 않고 마케팅 콘텐츠 단일 구글 독스 문서 내에 완전 통합)
+ * campaign_content Google Docs 본문에 모바일 세로 숏폼 영상 제작 콘티 섹션이 포함되도록 보장한다.
+ * (별도 txt 파일을 생성하지 않고 마케팅 콘텐츠 단일 Google Docs 문서 내에 완전 통합)
  */
 function ensureShortsScriptInCampaignContent(rawContent, prefix, visualBrief) {
   var content = rawContent || "";
@@ -2171,7 +2171,7 @@ function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief
     var systemInstruction = templatePrompt || (
       "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
       "제공된 캠페인 카피와 고객 피드백 요약본, 그리고 최우선 구속력을 갖는 마케터의 최종 의사 결정 지침을 정밀 분석하여, " +
-      "이미지 생성 AI(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
+      "이미지 생성 AI(Gemini Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
       "엄격한 작성 규칙:\n" +
       "1. [마케터 최종 의사 결정 및 보정 지침]에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등), 색감/무드가 지정되어 있다면 이를 절대 누락하지 말고 최우선으로 영문 프롬프트에 반영하십시오.\n" +
       "2. 마케터 코멘트에 모델에 대한 별도 언급이 없더라도 한국 시장 타깃 캠페인이므로 한국인(Korean) 모델 및 서울의 현대적인 일상/공간을 기본 배경으로 설정하십시오.\n" +
@@ -2738,7 +2738,7 @@ function projectHighDimTo2D(vectors) {
 }
 
 /**
- * 구글 시트 실시간 실행 내역 헬퍼 (아무 장식 없는 순수 기본 시트 스타일)
+ * Google Sheets 실시간 실행 내역 헬퍼 (아무 장식 없는 순수 기본 시트 스타일)
  */
 function getDashboardSheet() {
   try {
@@ -2950,7 +2950,7 @@ function initDashboardSheet() {
 
 /**
  * 실행 내역 시트에 결과를 항상 맨 아래에 새 행으로 누적 추가(Append-only)한다.
- * [기본 스타일]: 색상 배지나 테두리 등 서식 장식 없이, 구글 시트 본연의 담백한 텍스트/숫자로 기록한다.
+ * [기본 스타일]: 색상 배지나 테두리 등 서식 장식 없이, Google Sheets 본연의 담백한 텍스트/숫자로 기록한다.
  *
  * @param {string} stepId - 실행 단계 식별자
  * @param {string} stepName - 작업 명칭
@@ -3116,7 +3116,7 @@ function detectLatestRevisionRoundNum(optOutputFolder) {
 }
 
 /**
- * 마케터가 클릭 한 번으로 결과물(구글 독스, 구글 드라이브 폴더)을 즉시 열 수 있도록 산출물 정보를 기록한다.
+ * 마케터가 클릭 한 번으로 결과물(Google Docs, Google Drive 폴더)을 즉시 열 수 있도록 산출물 정보를 기록한다.
  * (스프레드시트를 가로막는 모달 팝업을 전면 배제하고, 사이드바 상단 카드 및 AI 코파일럿 채팅창 버블로 비차단 안내)
  */
 function showResultModal(title, message, btnText, btnUrl) {
@@ -3141,11 +3141,11 @@ function showResultModal(title, message, btnText, btnUrl) {
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 4] 캠페인 작업 공간 초기화 및 구글 폼 올인원 세팅 엔진 (Workspace & Form Initializer)
+ * [모듈 4] 캠페인 작업 공간 초기화 및 Google Forms 올인원 세팅 엔진 (Workspace & Form Initializer)
  */
 
 /**
- * [캠페인 초기화] 구글 드라이브 폴더 트리, AI 페르소나 마스터 패널, 9대 프롬프트 구글 독스,
+ * [캠페인 초기화] Google Drive 폴더 트리, AI 페르소나 마스터 패널, 9대 프롬프트 Google Docs,
  * 그리고 고객 VoC 수집용 Google Forms 생성 및 시트 바인딩까지 초장에 완결한다.
  */
 function initCampaignWorkspace() {
@@ -3173,15 +3173,15 @@ function initCampaignWorkspace() {
       Logger.log("루트 직속 AI 페르소나 데이터셋 시딩 완료: " + personaFileName);
     }
 
-    // 3. prompts/ 폴더 내 9대 프롬프트 구글 독스 자동 시딩 (기존 마케터 수정분 보존)
+    // 3. prompts/ 폴더 내 9대 프롬프트 Google Docs 자동 시딩 (기존 마케터 수정분 보존)
     seedDefaultPrompts(promptsFolder);
 
     var folderDisplayName = campaignFolder.getName();
 
-    // 4. [스마트 보존] 고객 VoC 수집용 구글 폼(Google Forms) 탐색 및 연동 (기존 폼 보존, 부재 시에만 생성)
+    // 4. [스마트 보존] 고객 VoC 수집용 Google Forms 탐색 및 연동 (기존 폼 보존, 부재 시에만 생성)
     var formInfo = setupFeedbackGoogleForm(campaignFolder, campaignCode);
 
-    // 5. 현재 구글 시트를 캠페인 루트 폴더로 패키징 및 직관적 명칭 동기화
+    // 5. 현재 Google Sheets를 캠페인 루트 폴더로 패키징 및 직관적 명칭 동기화
     try {
       var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
       var sheetFile = DriveApp.getFileById(activeSpreadsheet.getId());
@@ -3201,7 +3201,7 @@ function initCampaignWorkspace() {
       Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
     }
 
-    // 6. 구글 시트 실행 내역 표 초기화 및 핵심 리소스 링크 등록
+    // 6. Google Sheets 실행 내역 표 초기화 및 핵심 리소스 링크 등록
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     initDashboardSheet();
     
@@ -3221,7 +3221,7 @@ function initCampaignWorkspace() {
     if (formInfo && formInfo.publishedUrl) {
       recordStepResultToSheet(
         "고객 피드백 채널",
-        "VoC 구글 폼 및 모바일 QR",
+        "VoC Google Forms 및 모바일 QR",
         "활성",
         formInfo.publishedUrl,
         "온라인 설문지 열기",
@@ -3277,7 +3277,7 @@ function setupFeedbackGoogleForm(campaignFolder, campaignCode) {
     var spreadsheetId = spreadsheet.getId();
     var formTitle = "고객 피드백 설문 (" + campaignCode + ")";
 
-    // 기존에 생성된 폼이 있는지 스마트 탐색 (동일 제목 또는 폴더 내 기존 구글 폼 보존)
+    // 기존에 생성된 폼이 있는지 스마트 탐색 (동일 제목 또는 폴더 내 기존 Google Forms 보존)
     var existingFiles = campaignFolder.getFilesByName(formTitle);
     if (!existingFiles.hasNext()) {
       existingFiles = campaignFolder.getFilesByType(MimeType.GOOGLE_FORMS);
@@ -3359,7 +3359,7 @@ function setupFeedbackGoogleForm(campaignFolder, campaignCode) {
       .setHelpText("제품 착용 컷, 언박싱 사진에 대한 의견이나 이미지 파일 링크를 입력하십시오.")
       .setRequired(false);
 
-    // 현재 구글 시트에 응답 탭 연결
+    // 현재 Google Sheets에 응답 탭 연결
     form.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
 
     // 폼 파일을 캠페인 루트 폴더로 이동
@@ -3446,7 +3446,7 @@ function getMasterPersonas25() {
  */
 
 /**
- * [Step 1] 캠페인 아이디어 메모 구글 독스를 작성/저장한다.
+ * [Step 1] 캠페인 아이디어 메모 Google Docs를 작성/저장한다.
  *
  * @param {string} [customIdea] - 마케터가 입력한 원천 아이디어
  */
@@ -3474,15 +3474,15 @@ function runCampaignIdeaMemo(customIdea) {
         "캠페인 아이디어 메모",
         "완료",
         ideaFile.getUrl(),
-        "[아이디어 메모] 구글 독스 열기",
+        "[아이디어 메모] Google Docs 열기",
         durationSec,
         0,
-        "마케터 원천 아이디어 등록 완료 (구글 독스에서 직접 수정 가능)"
+        "마케터 원천 아이디어 등록 완료 (Google Docs에서 직접 수정 가능)"
       );
 
       return {
         success: true,
-        message: "캠페인 아이디어 메모가 준비되었습니다. 생성된 구글 독스에서 아이디어를 검토하신 후 [Step 2] 기획서(PLAN) 생성을 진행해 주십시오.",
+        message: "캠페인 아이디어 메모가 준비되었습니다. 생성된 Google Docs에서 아이디어를 검토하신 후 [Step 2] 기획서(PLAN) 생성을 진행해 주십시오.",
         ideaDocUrl: ideaFile.getUrl(),
         ideaContent: ideaMemo
       };
@@ -3744,7 +3744,7 @@ function runInitialContentGeneration(forceOverwrite) {
         "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
       );
     } else {
-      // 2. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
+      // 2. 프롬프트 템플릿 로드 (Google Docs 스마트 캐싱)
       var systemInstruction = getPromptTemplate("04_content_generation");
       var promptText =
         "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
@@ -3794,7 +3794,7 @@ function runInitialContentGeneration(forceOverwrite) {
       "초판 멀티 채널 콘텐츠 (rv-00)",
       "완료",
       rv00Folder.getUrl(),
-      "구글 드라이브 폴더 열기 (rv-00)",
+      "Google Drive 폴더 열기 (rv-00)",
       durationSec,
       getSessionTotalTokens(),
       logDetail
@@ -3802,7 +3802,7 @@ function runInitialContentGeneration(forceOverwrite) {
 
     showResultModal(
       "초판 마케팅 콘텐츠 생성 완료 (rv-00)",
-      "카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오가 준비되었습니다.\n\n" +
+      "카피 및 숏폼 영상 콘티가 통합된 Google Docs(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오가 준비되었습니다.\n\n" +
       "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
       "* 실행 상세 내역: " + logDetail + "\n\n" +
       "아래 버튼을 눌러 초판 콘텐츠 폴더를 확인하십시오.",
@@ -3934,7 +3934,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt, forceOverwrite, customDir
         marketerDirective
       );
     } else {
-      // 2. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
+      // 2. 프롬프트 템플릿 로드 (Google Docs 스마트 캐싱)
       var systemInstruction = getPromptTemplate("08_content_revision");
       var userPrompt =
         "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), " +
@@ -3991,7 +3991,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt, forceOverwrite, customDir
       stepTitle,
       "완료",
       targetRvFolder.getUrl(),
-      "구글 드라이브 폴더 열기 (" + targetRvName + ")",
+      "Google Drive 폴더 열기 (" + targetRvName + ")",
       durationSec,
       getSessionTotalTokens(),
       logDetail
@@ -4003,14 +4003,14 @@ function runReviseContent(targetRoundOpt, isSilentOpt, forceOverwrite, customDir
         "피드백 분석 보고서와 마케터 보정 지침이 반영된 개정본(" + targetRvName + ") 및 비주얼 에셋이 준비되었습니다.\n\n" +
         "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
         "* 실행 상세 내역: " + logDetail + "\n\n" +
-        "[마케터 보정 지침] 구글 독스에서 언제든 수정 후 다시 보정할 수 있습니다.",
+        "[마케터 보정 지침] Google Docs에서 언제든 수정 후 다시 보정할 수 있습니다.",
         "개정본 콘텐츠 폴더 열기 (" + targetRvName + ")",
         targetRvFolder.getUrl()
       );
     }
     return {
       success: true,
-      message: "콘텐츠 보정(" + targetRvName + ")이 완료되었습니다. [마케터 보정 지침] 구글 독스에서 언제든 지침을 추가 수정할 수 있습니다.",
+      message: "콘텐츠 보정(" + targetRvName + ")이 완료되었습니다. [마케터 보정 지침] Google Docs에서 언제든 지침을 추가 수정할 수 있습니다.",
       targetRv: targetRvName,
       folderUrl: targetRvFolder.getUrl(),
       content: finalizedContent
@@ -4160,7 +4160,7 @@ function runPersonaEvaluation(targetRoundOpt) {
 
 /**
  * [Step 7] 고객 VoC 설문 응답, 제출된 미디어(영상/이미지) VLM 분석, AI 페르소나 다면 평가 데이터를 통합하여
- * 피드백 종합 분석 보고서(feedback_summary) 구글 독스를 자동 생성한다.
+ * 피드백 종합 분석 보고서(feedback_summary) Google Docs를 자동 생성한다.
  *
  * @param {string} [targetRoundOpt] - 대상 피드백 라운드
  */
@@ -4246,13 +4246,13 @@ function runFeedbackSummaryReport(targetRoundOpt) {
     var prevFolder = getCampaignSubFolder(["output", prevRvName]);
     var prevContent = readGoogleDoc(prevFolder, CONFIG.CONTENT_DOC_NAME || "campaign_content") || "";
 
-    // 4. 구글 독스 기반 프롬프트 템플릿 로드 (스마트 캐싱)
+    // 4. Google Docs 기반 프롬프트 템플릿 로드 (스마트 캐싱)
     var systemInstruction = getPromptTemplate("07_feedback_summary");
     var userPrompt =
       "다음은 " + prevRvName + " 마케팅 콘텐츠에 대한 AI 가상 페르소나 다면 평가 결과와 실제 고객 설문 응답, 미디어 VLM 분석 데이터이다.\n\n" +
       "### [1. 이전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + (prevContent.substring(0, 1500) || "카피 및 비주얼") + "\n\n" +
       "### [2. AI 가상 페르소나 다면 평가 데이터셋]\n" + (personaFeedbacksRaw.substring(0, 3000) || "평가 데이터") + "\n\n" +
-      "### [3. 고객 구글 폼 응답 데이터]\n" + (formResponsesText || "접수된 고객 설문 응답 없음") + "\n\n" +
+      "### [3. 고객 Google Forms 응답 데이터]\n" + (formResponsesText || "접수된 고객 설문 응답 없음") + "\n\n" +
       "### [4. 고객 제출 미디어 VLM 분석 실데이터 (" + mediaAnalysisList.length + "건)]\n" +
       (mediaAnalysisList.length > 0 ? JSON.stringify(mediaAnalysisList, null, 2) : "실제 업로드된 고객 동영상 및 이미지 없음 (미제출)") + "\n\n" +
       "위 데이터를 종합하여 최고 마케팅 책임자(CMO) 및 담당 마케터가 검토할 피드백 종합 분석 보고서(feedback_summary)를 작성하라.\n" +
@@ -4260,7 +4260,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
 
     var reportMarkdown = callGemini(systemInstruction, userPrompt);
 
-    // 5. feedback_summary 구글 독스 문서 생성
+    // 5. feedback_summary Google Docs 문서 생성
     var summaryFile = saveGoogleDoc(feedbackFolder, "feedback_summary", reportMarkdown);
 
     // 6. 대시보드 시트에 링크 기록
@@ -4273,7 +4273,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       stepTitle,
       "완료",
       summaryFile.getUrl(),
-      "구글 독스 보고서 열기 (" + targetRound + ")",
+      "Google Docs 보고서 열기 (" + targetRound + ")",
       durationSec,
       getSessionTotalTokens(),
       logDetail
@@ -4375,7 +4375,7 @@ function runMarketerDirective(customDirectiveOpt, targetRoundOpt) {
         "마케터 보정 지침 열기 (" + targetRound + ")",
         durationSec,
         0,
-        "마케터 최종 의사 결정 지침서 준비 완료 (구글 독스에서 직접 수정 가능)"
+        "마케터 최종 의사 결정 지침서 준비 완료 (Google Docs에서 직접 수정 가능)"
       );
 
       showResultModal(
@@ -4461,7 +4461,7 @@ function loadGoogleFormResponsesText() {
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 9] 구글 시트 우측 패널(Sidebar) 모던 HTML 컨트롤 타워 UI
+ * [모듈 9] Google Sheets 우측 패널(Sidebar) 모던 HTML 컨트롤 타워 UI
  */
 
 /**
@@ -4517,7 +4517,7 @@ function getDeterministicFallback(userMessage, status) {
     if ((q.indexOf("기획") !== -1 || q.indexOf("plan") !== -1) && status.planDocUrl) {
       return {
         success: true,
-        reply: "캠페인 기획서(PLAN) 구글 독스 준비해 뒀어. 아래 링크 눌러서 바로 열어봐.",
+        reply: "캠페인 기획서(PLAN) Google Docs 준비해 뒀어. 아래 링크 눌러서 바로 열어봐.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -4527,7 +4527,7 @@ function getDeterministicFallback(userMessage, status) {
     if ((q.indexOf("명세") !== -1 || q.indexOf("spec") !== -1) && status.specDocUrl) {
       return {
         success: true,
-        reply: "멀티 채널 콘텐츠 제작 명세서(SPEC) 구글 독스야.",
+        reply: "멀티 채널 콘텐츠 제작 명세서(SPEC) Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -4537,7 +4537,7 @@ function getDeterministicFallback(userMessage, status) {
     if (q.indexOf("아이디어") !== -1 && status.ideaDocUrl) {
       return {
         success: true,
-        reply: "캠페인 원천 [아이디어 메모] 구글 독스야.",
+        reply: "캠페인 원천 [아이디어 메모] Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -4548,7 +4548,7 @@ function getDeterministicFallback(userMessage, status) {
       var rvTag = status.latestRv || "rv-00";
       return {
         success: true,
-        reply: "현재 최신 마케팅 콘텐츠(" + rvTag + ") 구글 독스야.",
+        reply: "현재 최신 마케팅 콘텐츠(" + rvTag + ") Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -4559,7 +4559,7 @@ function getDeterministicFallback(userMessage, status) {
       var fbTag = status.latestFb || "fb-01";
       return {
         success: true,
-        reply: "피드백 종합 분석 보고서(feedback_summary) 구글 독스야.",
+        reply: "피드백 종합 분석 보고서(feedback_summary) Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -4570,7 +4570,7 @@ function getDeterministicFallback(userMessage, status) {
       var fbTag2 = status.latestFb || "fb-01";
       return {
         success: true,
-        reply: "마케터 전용 [마케터 보정 지침] 구글 독스야.",
+        reply: "마케터 전용 [마케터 보정 지침] Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -4602,7 +4602,7 @@ function getDeterministicFallback(userMessage, status) {
     if ((q.indexOf("폴더") !== -1 || q.indexOf("드라이브") !== -1) && status.folderUrl) {
       return {
         success: true,
-        reply: "캠페인 구글 드라이브 루트 폴더야.",
+        reply: "캠페인 Google Drive 루트 폴더야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -4867,7 +4867,7 @@ function askPipelineAssistant(userMessage) {
         saveGoogleDoc(campaignFolder, (CONFIG && CONFIG.IDEA_DOC_NAME) || "아이디어 메모", ideaText);
         return {
           success: true,
-          reply: "새로운 캠페인 아이디어가 [아이디어 메모] 구글 독스에 잘 들어갔어:\n[" + ideaText + "]\n\n지금 바로 전문 기획서(PLAN)랑 제작 명세서(SPEC)를 뽑아볼까?",
+          reply: "새로운 캠페인 아이디어가 [아이디어 메모] Google Docs에 잘 들어갔어:\n[" + ideaText + "]\n\n지금 바로 전문 기획서(PLAN)랑 제작 명세서(SPEC)를 뽑아볼까?",
           action: "guardAndRunIdeaToPlan",
           actionLabel: "기획서 (PLAN & SPEC) 도출하기",
           taskName: "기획서 및 명세서 생성"
@@ -4904,9 +4904,9 @@ function askPipelineAssistant(userMessage) {
   ].join("\n");
 
   var systemInstruction = 
-    "당신은 구글 드라이브 마케팅 콘텐츠 파이프라인의 전담 AI 코파일럿 어시스턴트이다.\n" +
+    "당신은 Google Drive 마케팅 콘텐츠 파이프라인의 전담 AI 코파일럿 어시스턴트이다.\n" +
     "비개발자 마케터와 편안하고 전문적인 동료로서 대화하며, 캠페인을 성공적으로 이끌 수 있도록 돕는다.\n" +
-    "현재 구글 드라이브 및 스프레드시트의 파이프라인 실제 상태는 다음과 같다:\n" +
+    "현재 Google Drive 및 스프레드시트의 파이프라인 실제 상태는 다음과 같다:\n" +
     contextSummary + "\n\n" +
     "[파이프라인 지원 가능 액션 식별자 목록]\n" +
     "- 'initCampaignWorkspace': [Step 0] API Key & 작업 공간 구축\n" +
@@ -4972,7 +4972,7 @@ function askPipelineAssistant(userMessage) {
 }
 
 /**
- * 구글 시트 우측 패널에 마케팅 콘텐츠 파이프라인 컨트롤 타워를 표시한다.
+ * Google Sheets 우측 패널에 마케팅 콘텐츠 파이프라인 컨트롤 타워를 표시한다.
  */
 function showPipelineSidebar() {
   var ui = SpreadsheetApp.getUi();
@@ -5141,7 +5141,7 @@ function getPipelineStatus(optBypassCache) {
         if (contentFiles.hasNext()) {
           status.contentDocUrl = contentFiles.next().getUrl();
         } else {
-          // 이름에 content, asset, 카피가 포함되거나 구글 독스 파일 전수 스캔
+          // 이름에 content, asset, 카피가 포함되거나 Google Docs 파일 전수 스캔
           var rvAllFiles = rvFolder.getFiles();
           while (rvAllFiles.hasNext()) {
             var rvf = rvAllFiles.next();
@@ -5293,7 +5293,7 @@ function getPipelineStatus(optBypassCache) {
 
 /**
  * 우측 패널(Sidebar)용 모던 HTML 문자열을 생성한다.
- * [구글 워크스페이스 스타일]: Google Sans 서체, 구글 클라우드 테마 색상, 무이모지, 실시간 RPC 연동.
+ * [Google Workspace 스타일]: Google Sans 서체, Google Cloud 테마 색상, 무이모지, 실시간 RPC 연동.
  */
 function getPipelineSidebarHtml() {
   return "" +
@@ -5693,7 +5693,7 @@ function getPipelineSidebarHtml() {
     "  <div class='copilot-section'>\n" +
     "    <div class='copilot-header'>\n" +
     "      <span>AI 코파일럿 대화 및 지시</span>\n" +
-    "      <span class='step-tag'>Gemini 3.8 Flash</span>\n" +
+    "      <span class='step-tag'>Gemini Flash</span>\n" +
     "    </div>\n" +
     "    <div id='chatLog' class='chat-log'>\n" +
     "      <div class='chat-bubble bot'>\n" +
@@ -5741,7 +5741,7 @@ function getPipelineSidebarHtml() {
     "          <button class='btn' onclick='toggleIdeaBox(false)'>닫기</button>\n" +
     "        </div>\n" +
     "        <div style='margin-top: 5px; text-align: right;'>\n" +
-    "          <a id='linkIdeaDoc' href='#' target='_blank' style='font-size: 10px; color: #1a73e8; text-decoration: underline; display: none;'>[아이디어 메모] 구글 독스 직접 열기</a>\n" +
+    "          <a id='linkIdeaDoc' href='#' target='_blank' style='font-size: 10px; color: #1a73e8; text-decoration: underline; display: none;'>[아이디어 메모] Google Docs 직접 열기</a>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "\n" +
@@ -5787,7 +5787,7 @@ function getPipelineSidebarHtml() {
     "          <button class='btn' onclick='toggleDirectiveBox(false)'>닫기</button>\n" +
     "        </div>\n" +
     "        <div style='margin-top: 5px; text-align: right;'>\n" +
-    "          <a id='linkDirectiveDoc' href='#' target='_blank' style='font-size: 10px; color: #1a73e8; text-decoration: underline; display: none;'>[마케터 보정 지침] 구글 독스 직접 열기</a>\n" +
+    "          <a id='linkDirectiveDoc' href='#' target='_blank' style='font-size: 10px; color: #1a73e8; text-decoration: underline; display: none;'>[마케터 보정 지침] Google Docs 직접 열기</a>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "\n" +
@@ -6238,7 +6238,7 @@ function onOpen() {
 }
 
 /**
- * [Step 1 가드레일] 캠페인 아이디어 메모 구글 독스 작성 및 저장
+ * [Step 1 가드레일] 캠페인 아이디어 메모 Google Docs 작성 및 저장
  *
  * @param {string} [customIdea] - 사이드바 대화창 또는 인라인에서 전달된 아이디어 (선택)
  */

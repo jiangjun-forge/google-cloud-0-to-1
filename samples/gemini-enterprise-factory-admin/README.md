@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise In-Chat Factory: 어드민 및 거버넌스 모듈 (gemini-enterprise-factory-admin)
 
-사내 IT 어드민과 운영 담당자가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 채팅창에서 사내 등록 에이전트 및 데이터 저장소(Data Store) 현황 조회, 테스트 에이전트 일괄 상태 변경/공유 범위 조정, BigQuery 감사 로그 분석 쿼리 및 로그 싱크 구성을 자연어로 즉시 처리하는 사내 어드민 전담 에이전트 배포 모듈이다. (As of 2026-11-10)
+사내 IT 어드민과 운영 담당자가 Gemini Enterprise app 채팅창에서 사내 등록 에이전트 및 데이터 저장소(Data Store) 현황 조회, 테스트 에이전트 일괄 상태 변경/공유 범위 조정, BigQuery 감사 로그 분석 쿼리 및 로그 싱크 구성을 자연어로 즉시 처리하는 사내 어드민 전담 에이전트 배포 모듈이다. (As of 2026-11-10)
 
 ---
 
@@ -91,7 +91,7 @@ flowchart TB
     end
 
     subgraph Runtime["2. Agent Engine 호스팅 런타임 (Google ADK)"]
-        GEApp -->|"2. 어드민 세션 질의 전달"| Engine["Agent Engine<br/>(gemini-3.8-flash)"]
+        GEApp -->|"2. 어드민 세션 질의 전달"| Engine["Agent Engine<br/>(Gemini Flash)"]
         Engine -->|"3. 내장 어드민 도구 8종 실행"| Tools["목록 조회 / 배치 제어 / 감사 SQL / 콘솔 딥링크"]
     end
 

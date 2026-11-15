@@ -16,13 +16,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud NAT 포트 고갈 및 사일런트 패킷 드롭 진단기
 
-구글 쿠버네티스 엔진(GKE, Google Kubernetes Engine) 클러스터 및 컴퓨트 엔진(Compute Engine) 환경에서 외부 API 호출 시 발생하는 간헐적 타임아웃 장애의 근본 원인을 규명하기 위해, 클라우드 NAT(Cloud NAT)의 동적 포트 할당(DPA) 확장 지연과 자원 고갈 패킷 드롭(OUT_OF_RESOURCES)을 1분 만에 교차 진단하고 최적의 최소 할당 포트와 커널 재시도 파라미터를 도출하는 도구다. (As of 2026-10-17)
+GKE 클러스터 및 Compute Engine 환경에서 외부 API 호출 시 발생하는 간헐적 타임아웃 장애의 근본 원인을 규명하기 위해, Cloud NAT의 동적 포트 할당(DPA) 확장 지연과 자원 고갈 패킷 드롭(OUT_OF_RESOURCES)을 1분 만에 교차 진단하고 최적의 최소 할당 포트와 커널 재시도 파라미터를 도출하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 인프라에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] GKE 파드 또는 VM에서 외부 결제 PG사, 서드파티 API 호출 시 간헐적으로 `Connection timed out` 또는 `Connection reset by peer`가 발생할 때
 - [ ] GCP 콘솔에서 Cloud NAT 상태는 정상(Green/Running)으로 표시되나 실트래픽에서 연결 실패가 보고될 때
 - [ ] 트래픽 버스트 시 4분(240초) 동안 신규 TCP SYN 패킷이 유실되는 DPA 확장 지연(NET-AV-2)이 의심될 때
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | Cloud NAT 게이트웨이별 포트 할당률, 패킷 드롭 건수, 고갈 위험 등급 및 권장 최소 포트 수치 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 7일간 시계열 지표 분석 결과, 트래픽 피크 대비 권장 포트 계산 근거, gcloud 설정 명령어 및 커널 튜닝 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Cloud NAT 최적화 gcloud 명령어**: `--min-ports-per-vm` 및 정적 IP 확충 설정<br/>• **Linux 커널 소켓 튜닝 스크립트**: `tcp_fin_timeout` 및 `tcp_tw_reuse` 파라미터 적용 가이드<br/>• **GKE 노드 풀 네트워크 정책 매니페스트**: 대량 아웃바운드 트래픽 분산 매니페스트 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **Cloud NAT 최적화 gcloud 명령어**: `--min-ports-per-vm` 및 정적 IP 확충 설정<br/>- **Linux 커널 소켓 튜닝 스크립트**: `tcp_fin_timeout` 및 `tcp_tw_reuse` 파라미터 적용 가이드<br/>- **GKE 노드 풀 네트워크 정책 매니페스트**: 대량 아웃바운드 트래픽 분산 매니페스트 |
 
 ---
 

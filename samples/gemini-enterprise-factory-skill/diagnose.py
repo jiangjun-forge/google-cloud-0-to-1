@@ -3,7 +3,7 @@
 
 """Gemini Enterprise 자율형 사내 스킬 팩토리 진단 및 배포 도구.
 
-사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 채팅창에서 반복 업무를
+사내 Gemini Enterprise app 채팅창에서 반복 업무를
 재사용 가능한 업무 스킬(SKILL.md)로 대화형 생성하고, GE App 스킬 갤러리(/r/skills)에
 skillAgentDefinition 규격으로 즉시 자동 프로비저닝하는 사내 스킬 팩토리다.
 """
@@ -198,7 +198,7 @@ FALLBACK_SYSTEM_TOOL_CATALOG = {
         "id": "corp-car-dispatch",
         "slug": "corp-car-dispatch",
         "title": "업무용 법인 차량 배차 신청",
-        "description": "고객사 미팅 및 지방 출장용 업무용 법인 차량 배차를 신청하고 하이패스 및 운행 일지 작성을 자동 연동한다.",
+        "description": "거래처 미팅 및 지방 출장용 업무용 법인 차량 배차를 신청하고 하이패스 및 운행 일지 작성을 자동 연동한다.",
         "category": "총무 및 시설 자산 관리",
         "slash_command": "/corp-car-dispatch",
         "mention_handle": "@corp-car-dispatch",
@@ -284,7 +284,7 @@ FALLBACK_SYSTEM_TOOL_CATALOG = {
         "id": "slack-notice-broadcast",
         "slug": "slack-notice-broadcast",
         "title": "사내 메신저 공지 긴급 알림 배포",
-        "description": "사내 슬랙(Slack), 잔디(Jandi) 또는 카카오워크 특정 전사/부서 채널에 긴급 공지, 인사이동, 경조사 알림을 발송한다.",
+        "description": "사내 Slack, 잔디(Jandi) 또는 카카오워크 특정 전사/부서 채널에 긴급 공지, 인사이동, 경조사 알림을 발송한다.",
         "category": "업무 협업 및 워크스페이스",
         "slash_command": "/slack-notice-broadcast",
         "mention_handle": "@slack-notice-broadcast",
@@ -299,13 +299,13 @@ FALLBACK_SYSTEM_TOOL_CATALOG = {
         "id": "sheets-voc-append",
         "slug": "sheets-voc-append",
         "title": "사내 VOC 개선 제안 행 추가",
-        "description": "사내 구글 시트(Google Sheets)에 고객 불만 VOC, 신규 기능 제안, 업무 개선 아이디어 행을 실시간 추가한다.",
+        "description": "사내 Google Sheets에 고객 불만 VOC, 신규 기능 제안, 업무 개선 아이디어 행을 실시간 추가한다.",
         "category": "업무 협업 및 워크스페이스",
         "slash_command": "/sheets-voc-append",
         "mention_handle": "@sheets-voc-append",
         "default_scope": "ORG",
         "parameters": {
-            "spreadsheet_id": {"type": "string", "description": "취합 구글 시트 ID", "required": True},
+            "spreadsheet_id": {"type": "string", "description": "취합 Google Sheets ID", "required": True},
             "category": {"type": "string", "description": "VOC 분류 (서비스, 결제, 시스템, 개선제안)", "required": True},
             "content": {"type": "string", "description": "상세 내용", "required": True},
         },
@@ -314,7 +314,7 @@ FALLBACK_SYSTEM_TOOL_CATALOG = {
         "id": "drive-template-find",
         "slug": "drive-template-find",
         "title": "사내 표준 계약서 위임장 양식 검색",
-        "description": "사내 구글 드라이브(Google Drive) 공용 폴더에서 법무팀 공인 최신 표준 계약서, NDA, 재직증명서, 위임장 양식을 검색한다.",
+        "description": "사내 Google Drive 공용 폴더에서 법무팀 공인 최신 표준 계약서, NDA, 재직증명서, 위임장 양식을 검색한다.",
         "category": "업무 협업 및 워크스페이스",
         "slash_command": "/drive-template-find",
         "mention_handle": "@drive-template-find",
@@ -361,7 +361,7 @@ FALLBACK_SYSTEM_TOOL_CATALOG = {
         "mention_handle": "@crm-lead-register",
         "default_scope": "ORG",
         "parameters": {
-            "company_name": {"type": "string", "description": "고객사 법인명", "required": True},
+            "company_name": {"type": "string", "description": "거래처 법인명", "required": True},
             "contact_person": {"type": "string", "description": "담당자 이름 및 직함", "required": True},
             "meeting_summary": {"type": "string", "description": "미팅 요약 및 제안 내용", "required": True},
         },
@@ -637,7 +637,7 @@ def run_config_mode(args):
 
     # 1. Project ID
     current_proj = os.environ.get("PROJECT_ID") or get_gcloud_config("project") or ""
-    proj_prompt = f"1. 구글 클라우드 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. 구글 클라우드 프로젝트 ID 입력: "
+    proj_prompt = f"1. Google Cloud 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. Google Cloud 프로젝트 ID 입력: "
     if sys.stdin.isatty():
         try:
             val = input(proj_prompt).strip()
@@ -981,7 +981,7 @@ flowchart TB
     end
 
     subgraph L2["2. Agent Engine 팩토리"]
-        GE -->|"대화 라우팅"| F["Skill Factory 에이전트<br/>(gemini-3.8-flash)"]
+        GE -->|"대화 라우팅"| F["Skill Factory 에이전트<br/>(Gemini Flash)"]
         F -->|"슬러그 중복 검사 &<br/>SKILL.md 합성"| T["deploy_enterprise_skill_tool"]
     end
 

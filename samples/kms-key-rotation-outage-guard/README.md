@@ -16,13 +16,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud KMS CMEK 키 순환 및 구버전 비활성화 장애 예방기 (kms-key-rotation-outage-guard)
 
-클라우드 KMS(Cloud KMS) 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 클라우드 스토리지(Cloud Storage) 객체 및 영구 데이터의 복호화 실패로 인한 대형 서비스 장애(Outage)를 사전 탐지하고 안전한 데이터 재암호화(Rewrite) 워크플로우를 처방하는 도구다. (As of 2026-10-17)
+Cloud KMS 암호화 키(CMEK) 자동 순환 후 구버전(CryptoKeyVersion) 키를 비활성화하거나 삭제할 때 Cloud Storage 객체 및 영구 데이터의 복호화 실패로 인한 대형 서비스 장애(Outage)를 사전 탐지하고 안전한 데이터 재암호화(Rewrite) 워크플로우를 처방하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] Cloud KMS CMEK 키를 90일 주기로 자동 순환(Rotation)하도록 설정한 후 구버전 키를 안전하게 정리하고자 하는 경우
 - [ ] 보안 규정 준수를 위해 이전 버전의 키를 비활성화(Disable)하거나 파기 예정(Destroy Scheduled)으로 전환하려 할 때, 해당 키로 암호화된 기존 데이터가 남아 있는지 검증해야 하는 경우
 - [ ] 구버전 키가 비활성화되어 `Cloud Storage` 객체 다운로드 또는 `BigQuery` 테이블 조회 시 즉시 400/403 KMS 복호화 거부 장애가 발생하는 사태를 미연에 방지하려는 경우
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | KMS 키 버전별 상태(기본/사용중/비활성), 버킷 내 객체별 암호화 키 버전 분포 및 비활성화 안전성 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | CMEK 키 순환 정합성 보고서, 위험 객체 목록, 객체 재암호화(Rewrap) 스크립트 및 안전한 키 순환 절차서 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **객체 일괄 재암호화 gcloud 명령어**: 구버전 객체를 최신 기본 키로 재암호화하는 스크립트<br/>• **안전한 구버전 키 비활성화 명령어**: 검증 완료 후 구버전을 안전하게 중단하는 gcloud 명령<br/>• **KMS 키 상태 변경 감사 모니터링**: 키 비활성화/파기 시도 시 긴급 알림을 전송하는 정책 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **객체 일괄 재암호화 gcloud 명령어**: 구버전 객체를 최신 기본 키로 재암호화하는 스크립트<br/>- **안전한 구버전 키 비활성화 명령어**: 검증 완료 후 구버전을 안전하게 중단하는 gcloud 명령<br/>- **KMS 키 상태 변경 감사 모니터링**: 키 비활성화/파기 시도 시 긴급 알림을 전송하는 정책 |
 
 ---
 
@@ -166,7 +166,7 @@ flowchart TB
 
 | 서비스 | 필요 역할(Role) | 최소 IAM 권한 |
 | :--- | :--- | :--- |
-| `Cloud KMS` | `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.cryptoKeys.get`, `cloudkms.cryptoKeyVersions.list` |
+| `Cloud KMS` | `Cloud KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.cryptoKeys.get`, `cloudkms.cryptoKeyVersions.list` |
 | `Cloud Storage` | `스토리지 객체 뷰어(roles/storage.objectViewer)` | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
 
 ---

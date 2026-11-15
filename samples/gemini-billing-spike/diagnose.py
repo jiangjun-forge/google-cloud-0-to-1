@@ -142,7 +142,7 @@ def parse_and_report(project_id: str, days: int, data: dict):
   """수집된 메트릭 데이터를 자격 증명, 서비스, 메서드별로 집계하고 가이드를 출력한다."""
   time_series = data.get("timeSeries", [])
   print("=" * 72)
-  print("[진단 결과] 제미나이(Gemini) 사용량 및 비용 급증 원인 분석 리포트")
+  print("[진단 결과] Gemini 사용량 및 비용 급증 원인 분석 리포트")
   print(f"   - 대상 프로젝트: {project_id}")
   print(f"   - 조회 대상 기간: 최근 {days}일")
   print("=" * 72)
@@ -310,7 +310,7 @@ def build_markdown_report(project_id: str, days: int, data: dict, is_dry_run: bo
     lines.append("[데모 실행] --dry-run 모드가 활성화되어 가상 샘플 데이터를 기반으로 리포트를 시뮬레이션한다.")
   lines.extend([
       "=" * 72,
-      "[진단 결과] 제미나이(Gemini) 사용량 및 비용 급증 원인 분석 리포트",
+      "[진단 결과] Gemini 사용량 및 비용 급증 원인 분석 리포트",
       f"   - 대상 프로젝트: {project_id}",
       f"   - 조회 대상 기간: 최근 {days}일",
       "=" * 72,

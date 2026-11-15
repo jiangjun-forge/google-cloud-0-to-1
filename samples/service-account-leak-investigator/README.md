@@ -22,8 +22,8 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
-- [ ] 깃허브(GitHub) 공개 저장소나 외부 협업 환경에 영구 서비스 계정 키(JSON Key)가 노출된 정황을 접수한 경우
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] GitHub 공개 저장소나 외부 협업 환경에 영구 서비스 계정 키(JSON Key)가 노출된 정황을 접수한 경우
 - [ ] 사법 기관이나 보안 관제 센터로부터 자격 증명 유출 및 사이버 공격 악용 사실을 통보받은 경우
 - [ ] 유출된 서비스 계정이 `Cloud Storage`, `BigQuery`, `Cloud IAM` 등 핵심 자원에서 데이터 탈취나 권한 상승을 시도했는지 즉시 확인해야 하는 경우
 - [ ] 장기 서비스 계정 키를 전면 폐기하고 안전한 Workload Identity Federation 체계로 전환하고자 하는 경우
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 유출 의심 키 ID, 최근 호출 건수, 호출 출발지 IP 목록, 비정상 활동 감지 여부 및 침해 위험 등급 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 서비스 계정 침해 사고 정밀 포렌식 보고서, 시간대별 호출 타임라인, 비정상 API 호출 분석 및 긴급 격리 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **위험 키 즉시 비활성화 명령어**: 프로덕션 복구를 염두에 두고 임시 중단하는 gcloud 명령<br/>• **Workload Identity Federation 전환 템플릿**: 정적 키 발급을 영구 제거하는 AWS/GitHub Actions WIF 설정<br/>• **비정상 위치/IP 접근 탐지 Cloud Monitoring 알림**: 해외 IP 호출 시 긴급 경보를 트리거하는 정책 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **위험 키 즉시 비활성화 명령어**: 프로덕션 복구를 염두에 두고 임시 중단하는 gcloud 명령<br/>- **Workload Identity Federation 전환 템플릿**: 정적 키 발급을 영구 제거하는 AWS/GitHub Actions WIF 설정<br/>- **비정상 위치/IP 접근 탐지 Cloud Monitoring 알림**: 해외 IP 호출 시 긴급 경보를 트리거하는 정책 |
 
 ---
 
@@ -229,7 +229,7 @@ data-pipeline-sa a1b2c3d4e5f6...    2026-05-15   ACTIVE   침해 의심 시점 �
 2. 악의적으로 부여된 비인가 IAM 바인딩 제거:
    gcloud projects remove-iam-policy-binding <PROJECT_ID> --member=<USER> --role=<ROLE>
 3. 영구 자격 증명 폐기 및 Workload Identity Federation 전환:
-   - 깃허브 액션(GitHub Actions) 환경: OIDC 연동 풀(Pool) 생성 후 단기 토큰 발급 체계로 전면 전환
+   - GitHub Actions 환경: OIDC 연동 풀(Pool) 생성 후 단기 토큰 발급 체계로 전면 전환
    - 온프레미스 서버 환경: mTLS 기반 SPIFFE/SPIRE 또는 IdP SAML/OIDC 페더레이션 적용
 ================================================================================
 ```

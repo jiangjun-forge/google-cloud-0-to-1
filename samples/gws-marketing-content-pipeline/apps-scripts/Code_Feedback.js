@@ -123,7 +123,7 @@ function runPersonaEvaluation(targetRoundOpt) {
 
 /**
  * [Step 7] 고객 VoC 설문 응답, 제출된 미디어(영상/이미지) VLM 분석, AI 페르소나 다면 평가 데이터를 통합하여
- * 피드백 종합 분석 보고서(feedback_summary) 구글 독스를 자동 생성한다.
+ * 피드백 종합 분석 보고서(feedback_summary) Google Docs를 자동 생성한다.
  *
  * @param {string} [targetRoundOpt] - 대상 피드백 라운드
  */
@@ -209,13 +209,13 @@ function runFeedbackSummaryReport(targetRoundOpt) {
     var prevFolder = getCampaignSubFolder(["output", prevRvName]);
     var prevContent = readGoogleDoc(prevFolder, CONFIG.CONTENT_DOC_NAME || "campaign_content") || "";
 
-    // 4. 구글 독스 기반 프롬프트 템플릿 로드 (스마트 캐싱)
+    // 4. Google Docs 기반 프롬프트 템플릿 로드 (스마트 캐싱)
     var systemInstruction = getPromptTemplate("07_feedback_summary");
     var userPrompt =
       "다음은 " + prevRvName + " 마케팅 콘텐츠에 대한 AI 가상 페르소나 다면 평가 결과와 실제 고객 설문 응답, 미디어 VLM 분석 데이터이다.\n\n" +
       "### [1. 이전 마케팅 콘텐츠 (" + prevRvName + ")]\n" + (prevContent.substring(0, 1500) || "카피 및 비주얼") + "\n\n" +
       "### [2. AI 가상 페르소나 다면 평가 데이터셋]\n" + (personaFeedbacksRaw.substring(0, 3000) || "평가 데이터") + "\n\n" +
-      "### [3. 고객 구글 폼 응답 데이터]\n" + (formResponsesText || "접수된 고객 설문 응답 없음") + "\n\n" +
+      "### [3. 고객 Google Forms 응답 데이터]\n" + (formResponsesText || "접수된 고객 설문 응답 없음") + "\n\n" +
       "### [4. 고객 제출 미디어 VLM 분석 실데이터 (" + mediaAnalysisList.length + "건)]\n" +
       (mediaAnalysisList.length > 0 ? JSON.stringify(mediaAnalysisList, null, 2) : "실제 업로드된 고객 동영상 및 이미지 없음 (미제출)") + "\n\n" +
       "위 데이터를 종합하여 최고 마케팅 책임자(CMO) 및 담당 마케터가 검토할 피드백 종합 분석 보고서(feedback_summary)를 작성하라.\n" +
@@ -223,7 +223,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
 
     var reportMarkdown = callGemini(systemInstruction, userPrompt);
 
-    // 5. feedback_summary 구글 독스 문서 생성
+    // 5. feedback_summary Google Docs 문서 생성
     var summaryFile = saveGoogleDoc(feedbackFolder, "feedback_summary", reportMarkdown);
 
     // 6. 대시보드 시트에 링크 기록
@@ -236,7 +236,7 @@ function runFeedbackSummaryReport(targetRoundOpt) {
       stepTitle,
       "완료",
       summaryFile.getUrl(),
-      "구글 독스 보고서 열기 (" + targetRound + ")",
+      "Google Docs 보고서 열기 (" + targetRound + ")",
       durationSec,
       getSessionTotalTokens(),
       logDetail
@@ -338,7 +338,7 @@ function runMarketerDirective(customDirectiveOpt, targetRoundOpt) {
         "마케터 보정 지침 열기 (" + targetRound + ")",
         durationSec,
         0,
-        "마케터 최종 의사 결정 지침서 준비 완료 (구글 독스에서 직접 수정 가능)"
+        "마케터 최종 의사 결정 지침서 준비 완료 (Google Docs에서 직접 수정 가능)"
       );
 
       showResultModal(

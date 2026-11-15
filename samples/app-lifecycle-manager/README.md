@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 엔터프라이즈 AI 앱 생애 주기 및 콜드라인 냉동 거버넌스 진단기 (app-lifecycle-manager)
 
-현업 바이브 코딩과 노코드 빌더로 대량 생성된 사내 AI 앱(웹앱 SPA, `Agent Engine`, `Cloud Run` API)의 중복 개발을 `BigQuery Vector Search`(`gemini-embedding-001`)와 `Dataplex Universal Catalog`로 사전 차단하고, 호출 텔레메트리(`Hit-Count & TTL`)와 `BigQuery Graph`(`GQL`) 멀티홉 호출 리니지 역추적을 통해 유휴 1회성 앱(96% 코호트)은 활성 호출자 안전 차단 후 월 `$0.02` `Cloud Storage Coldline` 냉동 타임캡슐(`rehydrate.sh` 1분 부활 스크립트 포함)로 동결하며, 고빈도 핵심 앱(4% 코호트)은 정식 프로덕션 파이프라인으로 승격시키는 5단계 생애 주기 관리 도구다. (As of 2026-11-14)
+현업 바이브 코딩과 노코드 빌더로 대량 생성된 사내 AI 앱(웹앱 SPA, `Agent Engine`, `Cloud Run` API)의 중복 개발을 `BigQuery Vector Search`(`gemini-embedding-001`)와 `Knowledge Catalog`로 사전 차단하고, 호출 텔레메트리(`Hit-Count & TTL`)와 `BigQuery Graph`(`GQL`) 멀티홉 호출 리니지 역추적을 통해 유휴 1회성 앱(96% 코호트)은 활성 호출자 안전 차단 후 월 `$0.02` `Cloud Storage Coldline` 냉동 타임캡슐(`rehydrate.sh` 1분 부활 스크립트 포함)로 동결하며, 고빈도 핵심 앱(4% 코호트)은 정식 프로덕션 파이프라인으로 승격시키는 5단계 생애 주기 관리 도구다. (As of 2026-11-14)
 
 ---
 
@@ -97,7 +97,7 @@ flowchart TB
 
     subgraph L4["Layer 4: Target Backend & Data"]
         G["BigQuery Vector Search (gemini-embedding-001) & BigQuery Property Graph (GQL)"]
-        H["Dataplex Universal Catalog (Aspect) & Cloud Storage Coldline 타임캡슐 볼트 (asia-northeast3)"]
+        H["Knowledge Catalog (Aspect) & Cloud Storage Coldline 타임캡슐 볼트 (asia-northeast3)"]
     end
 
     A --> E
@@ -139,7 +139,7 @@ gcloud storage cat gs://YOUR_PROJECT_ID-onetime-archive/q3-board-deck-kpi-visual
 ```
 
 - BigQuery 콘솔 ( https://console.cloud.google.com/bigquery )
-- Dataplex Universal Catalog 콘솔 ( https://console.cloud.google.com/dataplex/search )
+- Knowledge Catalog 콘솔 ( https://console.cloud.google.com/dataplex/search )
 - Cloud Storage 콘솔 ( https://console.cloud.google.com/storage/browser )
 
 ---
@@ -150,7 +150,7 @@ gcloud storage cat gs://YOUR_PROJECT_ID-onetime-archive/q3-board-deck-kpi-visual
 | :--- | :--- | :--- |
 | **Cloud Run / Monitoring** | `roles/run.viewer`, `roles/monitoring.viewer` | 사내 AI 앱 인벤토리 및 14일/30일 호출 수(`request_count`) 조회 |
 | **BigQuery (Vector & Graph)** | `roles/bigquery.dataViewer`, `roles/bigquery.jobUser` | `VECTOR_SEARCH` 중복 검사 및 `app_lineage_graph` GQL 멀티홉 호출 리니지 조회 |
-| **Dataplex Universal Catalog** | `roles/dataplex.catalogViewer` | 전사 AI 앱 거버넌스 Aspect(`lifecycle_stage`, `ttl_days`) 조회 |
+| **Knowledge Catalog** | `roles/dataplex.catalogViewer` | 전사 AI 앱 거버넌스 Aspect(`lifecycle_stage`, `ttl_days`) 조회 |
 | **Cloud Storage** | `roles/storage.objectAdmin` (냉동 아카이빙 실행 시) | Coldline 타임캡슐 매니페스트 및 `rehydrate.sh` 아카이빙/복원 |
 
 ---
@@ -158,7 +158,7 @@ gcloud storage cat gs://YOUR_PROJECT_ID-onetime-archive/q3-board-deck-kpi-visual
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 - **왜 단순 삭제가 아니라 '임베딩 색인 + 콜드라인 타임캡슐'인가?**:
-  바이브 코딩으로 생성된 96%의 1회성 앱을 단순 삭제하면 지식 자산(시스템 프롬프트, 스키마, 컨테이너 다이제스트)이 영구 소멸되어 타 부서가 동일한 앱을 다시 개발하게 된다. 반면 컴퓨트(`min-instances`)와 서비스 계정 권한만 회수하고 아티팩트를 월 `$0.02`의 `Cloud Storage Coldline` 타임캡슐로 동결한 뒤 `BigQuery Vector Search`(`gemini-embedding-001`)와 `Dataplex Universal Catalog`에 색인해 두면, 유휴 컴퓨트 비용과 보안 공격 표면을 0으로 수렴시키면서도 자연어 검색 한 번으로 60초 만에 즉시 복원할 수 있다.
+  바이브 코딩으로 생성된 96%의 1회성 앱을 단순 삭제하면 지식 자산(시스템 프롬프트, 스키마, 컨테이너 다이제스트)이 영구 소멸되어 타 부서가 동일한 앱을 다시 개발하게 된다. 반면 컴퓨트(`min-instances`)와 서비스 계정 권한만 회수하고 아티팩트를 월 `$0.02`의 `Cloud Storage Coldline` 타임캡슐로 동결한 뒤 `BigQuery Vector Search`(`gemini-embedding-001`)와 `Knowledge Catalog`에 색인해 두면, 유휴 컴퓨트 비용과 보안 공격 표면을 0으로 수렴시키면서도 자연어 검색 한 번으로 60초 만에 즉시 복원할 수 있다.
 - **BigQuery Graph (`GQL`) 기반 블라스트 반경 검증**:
   `(UpstreamCaller)-[INVOKES]->(OneTimeApp)-[DEPENDS_ON]->(GCPResource)` 프로퍼티 그래프를 통해 `Cloud Scheduler`, `Eventarc`, `Workflows`, `Pub/Sub`, 타 에이전트(`A2A`) 등 모든 인바운드 호출 경로를 역추적하고 결정론적 차단 명령어를 먼저 생성함으로써 폐기 시 운영 장애를 원천 차단한다.
 - **상세 설계 문서**:

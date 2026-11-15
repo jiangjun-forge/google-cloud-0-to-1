@@ -1,6 +1,6 @@
 ---
 name: app-lifecycle-manager
-description: "Autopilot, hands-on diagnostics, and self-healing for app-lifecycle-manager: 현업 바이브 코딩과 노코드 빌더로 대량 생성된 사내 AI 앱(웹앱 SPA, Agent Engine, Cloud Run API)의 중복 개발을 BigQuery Vector Search(gemini-embedding-001)와 Dataplex Universal Catalog로 사전 차단하고, 호출 수(Hit-Count) 및 보존 기한(TTL), BigQuery Graph(GQL) 멀티홉 호출 리니지 역추적을 통해 유휴 1회성 앱(96% 코호트)은 활성 호출자 안전 차단 후 Cloud Storage Coldline 냉동 타임캡슐(rehydrate.sh 1분 부활 스크립트 포함)로 동결하며, 고빈도 핵심 앱(4% 코호트)은 정식 프로덕션 파이프라인으로 승격시키는 생애 주기 관리 도구다."
+description: "Autopilot, hands-on diagnostics, and self-healing for app-lifecycle-manager: 현업 바이브 코딩과 노코드 빌더로 대량 생성된 사내 AI 앱(웹앱 SPA, Agent Engine, Cloud Run API)의 중복 개발을 BigQuery Vector Search(gemini-embedding-001)와 Knowledge Catalog로 사전 차단하고, 호출 수(Hit-Count) 및 보존 기한(TTL), BigQuery Graph(GQL) 멀티홉 호출 리니지 역추적을 통해 유휴 1회성 앱(96% 코호트)은 활성 호출자 안전 차단 후 Cloud Storage Coldline 냉동 타임캡슐(rehydrate.sh 1분 부활 스크립트 포함)로 동결하며, 고빈도 핵심 앱(4% 코호트)은 정식 프로덕션 파이프라인으로 승격시키는 생애 주기 관리 도구다."
 ---
 
 # [Skill] app-lifecycle-manager
@@ -31,7 +31,7 @@ flowchart TB
 
     subgraph L4["Layer 4: Target Backend & Data"]
         G["BigQuery Vector Search (gemini-embedding-001) & BigQuery Property Graph (GQL)"]
-        H["Dataplex Universal Catalog (Aspect) & Cloud Storage Coldline 타임캡슐 볼트 (asia-northeast3)"]
+        H["Knowledge Catalog (Aspect) & Cloud Storage Coldline 타임캡슐 볼트 (asia-northeast3)"]
     end
 
     A --> E

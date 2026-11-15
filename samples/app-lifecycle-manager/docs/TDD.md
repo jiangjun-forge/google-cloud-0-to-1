@@ -54,7 +54,7 @@ sequenceDiagram
 | 요구 사항 ID | 모듈/컴포넌트 | 기술 구현 상세 |
 | :---: | :--- | :--- |
 | **FR-01** | `CatalogVectorEngine.pre_build_semantic_gate` | 국문/영문 형태소 및 동의어 정규화 토큰과 BigQuery `VECTOR_SEARCH`(`gemini-embedding-001`) SQL 생성기를 결합하여 신규 앱 아이디어와 기존 인벤토리 간 코사인 유사도를 산출하고 `REHYDRATE_CRYO` 또는 `REUSE_ACTIVE`를 판정한다. |
-| **FR-02** | `CatalogVectorEngine.register_or_update_aspect` | Dataplex Universal Catalog 커스텀 엔트리(`one-time-ai-app`) 및 `app-lifecycle-governance` Aspect 페이로드를 합성하고 4대 필수 라벨을 주입한다. |
+| **FR-02** | `CatalogVectorEngine.register_or_update_aspect` | Knowledge Catalog 커스텀 엔트리(`one-time-ai-app`) 및 `app-lifecycle-governance` Aspect 페이로드를 합성하고 4대 필수 라벨을 주입한다. |
 | **FR-03** | `HitCountTTLDetector.evaluate_fleet` | Cloud Monitoring MQL 쿼리(`run.googleapis.com/request_count`) 또는 인벤토리 메트릭을 기반으로 `ALREADY_ARCHIVED`, `CRYO_DISPOSAL`(`hit_count <= 1` 및 `age_days >= ttl_days`), `PRODUCTION_GRADUATION`(`hit_count >= 50`), `KEEP_ACTIVE` 4개 코호트로 분류한다. |
 | **FR-04** | `LineageGraphEngine.build_property_graph_ddl` | `CREATE OR REPLACE PROPERTY GRAPH` DDL과 `GRAPH ... MATCH (caller:UpstreamCaller)-[inv:INVOKES]->(app:OneTimeApp)-[dep:DEPENDS_ON]->(res:GCPResource)` GQL 쿼리를 생성한다. |
 | **FR-05** | `LineageGraphEngine.analyze_and_sever` | 업스트림 호출자별 결정론적 차단 명령어(`gcloud scheduler jobs pause`, `gcloud eventarc triggers delete`, `gcloud run services update-traffic --to-zero`, `gcloud pubsub subscriptions modify-push-config`)와 다운스트림 서비스 계정 IAM 회수 명령어를 합성한다. |
@@ -72,7 +72,7 @@ sequenceDiagram
 | **NFR-01** | 무과금 결정론적 가상 실행 (`--dry-run`) | GCP API 호출이나 비용 발생 없이 내장된 7개 엔터프라이즈 앱 인벤토리와 멀티홉 리니지 시드 데이터로 5초 이내에 전체 5단계 파이프라인을 완주하고 `report.md`를 생성한다. |
 | **NFR-02** | 시크릿 제로 유출 (Zero Secret Leakage) | 콜드라인 버킷이나 마크다운 리포트에 평문 API 키, 비밀번호, 베어러 토큰이 절대 기록되지 않도록 정규식 기반 자동 마스킹을 강제한다. |
 | **NFR-03** | 블라스트 반경 안전 게이트 (Blast-Radius Gate) | 활성 자동화 호출자(`is_active=True` 및 비브라우저 호출)에 대해 결정론적 차단 명령어가 확보되지 않으면(`safe_to_dispose=False`) 냉동 아카이빙을 즉시 거부(`ValueError`)한다. |
-| **NFR-04** | 리전 및 모델 표준 준수 | 일반 GCP 인프라(Cloud Run, BigQuery, Cloud Storage, Dataplex)는 서울 리전(`asia-northeast3`)을 기본값으로 적용하고, Gemini 호출은 `global` 리전 및 `gemini-3.8-flash` / `gemini-embedding-001` 표준을 준수한다. |
+| **NFR-04** | 리전 및 모델 표준 준수 | 일반 GCP 인프라(Cloud Run, BigQuery, Cloud Storage, Knowledge Catalog)는 서울 리전(`asia-northeast3`)을 기본값으로 적용하고, Gemini 호출은 `global` 리전 및 `gemini-3.8-flash` / `gemini-embedding-001` 표준을 준수한다. |
 
 ---
 

@@ -12,13 +12,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 자율형 사내 스킬 팩토리 기술 상세 설계서 (TDD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 맞춤 업무 스킬(`SKILL.md`)을 대화형으로 생성하고, GE App 스킬 갤러리(`/r/skills`)에 `skillAgentDefinition` 규격으로 자동 프로비저닝하기 위한 시스템 아키텍처, 기술 상세 설계 및 검증 계획을 정의한다.
+본 문서는 사내 Gemini Enterprise app 환경에서 맞춤 업무 스킬(`SKILL.md`)을 대화형으로 생성하고, GE App 스킬 갤러리(`/r/skills`)에 `skillAgentDefinition` 규격으로 자동 프로비저닝하기 위한 시스템 아키텍처, 기술 상세 설계 및 검증 계획을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 현업 임직원 또는 부서 관리자가 GE App 대화창에서 업무 스킬 생성을 요청하면, 에이전트 엔진(Agent Engine) 런타임이 슬러그 중복 검증 후 `SKILL.md` 지침과 `skillAgentDefinition` 페이로드를 합성하여 GCS 스테이징 버킷 및 디스커버리 엔진(Discovery Engine) 스킬 갤러리(`/r/skills`)에 즉시 등록한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 현업 임직원 또는 부서 관리자가 GE App 대화창에서 업무 스킬 생성을 요청하면, Agent Engine 런타임이 슬러그 중복 검증 후 `SKILL.md` 지침과 `skillAgentDefinition` 페이로드를 합성하여 GCS 스테이징 버킷 및 Discovery Engine 스킬 갤러리(`/r/skills`)에 즉시 등록한다.
 
 ```mermaid
 sequenceDiagram
@@ -58,7 +58,7 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (대화형 노코드 스킬 생성) | **FR-01** (대화형 스킬 선택 및 지침 합성) | **NFR-01** (무의존성 및 단일 파이썬 실행) | `diagnose.py` |
+| **BR-01** (대화형 노코드 스킬 생성) | **FR-01** (대화형 스킬 선택 및 지침 합성) | **NFR-01** (무의존성 및 단일 Python 실행) | `diagnose.py` |
 | **BR-02** (24종 엔터프라이즈 스킬 카탈로그) | **FR-02** (7대 도메인 24종 엔터프라이즈 스킬 칩 내장) | **NFR-02** (초경량 패키징 원칙) | `catalog.yaml`, `diagnose.py` |
 | **BR-03** (표준 SKILL.md 및 skillAgentDefinition 컴파일) | **FR-03** (`SKILL.md` 및 GCS URI 아티팩트 조립) | **NFR-03** (가명 마스킹 및 결정론적 가상 실행) | `diagnose.py` 스캐폴더 모듈 |
 | **BR-04** (생성 후 공유 범위 선택) | **FR-04** (`PRIVATE` / `ALL_USERS` 스코프 분기) | **NFR-02**, **NFR-03** | `diagnose.py` 배포 도구 |
@@ -148,7 +148,7 @@ sequenceDiagram
 
 ## 4. 비기능 기술 요구 사항 명세 (Non-Functional Requirements)
 
-### NFR-01: 순수 파이썬 단일 실행 원칙
+### NFR-01: 순수 Python 단일 실행 원칙
 - 쉘 래퍼 없이 `python diagnose.py` 단일 명령으로 팩토리 에이전트 배포 및 로컬 진단을 완결한다.
 - 크로스 플랫폼(Linux, macOS, Windows) 호환성을 지원한다.
 

@@ -16,29 +16,28 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드
 
-빅쿼리(BigQuery) Data Agent(제미나이 인 빅쿼리(Gemini in BigQuery), 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, 데이터플렉스(Dataplex) 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다. (As of 2026-10-17)
+BigQuery Data Agent(Gemini in BigQuery, 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, Knowledge Catalog 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 다음과 같은 현상이 운영 또는 개발 환경에서 발생하고 있다면 즉시 본 진단 도구를 구동해야 한다:
 - [ ] 자연어 질문 입력 시 Data Agent가 유사한 스키마를 가진 다른 테이블을 잘못 조인하거나 참조하는 경우
 - [ ] 컬럼 설명(Description)이 비어 있어 LLM이 축약어(예: `amt`, `diff_qty`, `stat_cd`)의 의미를 임의로 날조하여 필터링하는 경우
 - [ ] 순매출, 할인율, 결품 예상 시간 등 비즈니스 계산 공식(Formula)이 명시되지 않아 임의의 수식으로 계산 결과를 왜곡하는 경우
-- [ ] Dataplex 데이터 프로파일링(Null 비율, 고유값 목록, 최솟값 및 최댓값)이 수행되지 않아 유효하지 않은 조건절을 생성하는 경우
+- [ ] Knowledge Catalog 데이터 프로파일링(Null 비율, 고유값 목록, 최솟값 및 최댓값)이 수행되지 않아 유효하지 않은 조건절을 생성하는 경우
 - [ ] 수십 개 테이블의 메타데이터를 수작업으로 채우기 어려워 Data Agent 전사 확산이 지연되는 경우
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
-- **대상 사용자 (Target)**: 데이터 엔지니어, 빅쿼리 분석가, 데이터 거버넌스 담당자 및 AI 솔루션 아키텍트
+- **대상 사용자 (Target)**: 데이터 엔지니어, BigQuery 분석가, 데이터 거버넌스 담당자 및 AI 솔루션 아키텍트
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. BigQuery Data Agent(자연어 기반 SQL 생성) 도입 시 테이블 및 컬럼 설명 부재로 인한 심각한 쿼리 환각(Hallucination) 및 테이블 오라우팅
-  2. Dataplex 데이터 프로파일링 통계(NULL 비율, 고유값 등)가 에이전트에 연동되지 않아 비효율적인 필터 조건과 엉뚱한 JOIN이 생성되는 문제
+  2. Knowledge Catalog 데이터 프로파일링 통계(NULL 비율, 고유값 등)가 에이전트에 연동되지 않아 비효율적인 필터 조건과 엉뚱한 JOIN이 생성되는 문제
   3. 사내 핵심 비즈니스 KPI 및 용어집(Glossary) 계산 공식이 누락되어 매출, 활성 사용자 등의 질의에 잘못된 집계 로직이 도출되는 현상
 - **본 솔루션의 해결 방식 (Solution)**:
-  - 대상 데이터셋의 테이블/컬럼 설명 충실도, Dataplex 프로파일링 연동 여부, Knowledge Catalog 비즈니스 용어집 바인딩 상태를 3단계로 점수화(0~100점)하고, 결손 메타데이터를 지능적으로 보강하는 SQL DDL 및 콘솔 조치 명령을 도출한다.
+  - 대상 데이터셋의 테이블/컬럼 설명 충실도, Knowledge Catalog 프로파일링 연동 여부, Knowledge Catalog 비즈니스 용어집 바인딩 상태를 3단계로 점수화(0~100점)하고, 결손 메타데이터를 지능적으로 보강하는 SQL DDL 및 콘솔 조치 명령을 도출한다.
 
 ### 1.2 최종 산출물 3종 세트 미리보기 (Deliverables & Visual Preview)
 본 도구를 실행(`python diagnose.py`)하면 다음 3가지 구체적인 엔터프라이즈 자산이 생성된다:
@@ -46,8 +45,8 @@ All contents, designs, and code examples are subject to change, modification, or
 | 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 테이블/컬럼 설명 충실도, 프로파일링 연동, 용어집 바인딩 3대 영역 점수 및 최종 시맨틱 준비도 점수 |
-| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 데이터셋 메타데이터 결손 전수 분석, 컬럼별 설명 보강 제안서, Dataplex 데이터 프로파일링 스캔 가이드 및 용어집 계산 공식 DDL |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **시맨틱 보강 DDL 스크립트**: 테이블/컬럼 주석을 즉시 반영하는 `ALTER TABLE ... SET OPTIONS` SQL<br/>• **Dataplex 데이터 프로파일링 가이드**: 메타데이터 카탈로그 자동 수집 작업 생성 명령어<br/>• **Knowledge Catalog 매핑 명세**: 비즈니스 용어집과 테이블 간 거버넌스 바인딩 가이드 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 데이터셋 메타데이터 결손 전수 분석, 컬럼별 설명 보강 제안서, Knowledge Catalog 데이터 프로파일링 스캔 가이드 및 용어집 계산 공식 DDL |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **시맨틱 보강 DDL 스크립트**: 테이블/컬럼 주석을 즉시 반영하는 `ALTER TABLE ... SET OPTIONS` SQL<br/>- **Knowledge Catalog 데이터 프로파일링 가이드**: 메타데이터 카탈로그 자동 수집 작업 생성 명령어<br/>- **Knowledge Catalog 매핑 명세**: 비즈니스 용어집과 테이블 간 거버넌스 바인딩 가이드 |
 
 ---
 
@@ -121,10 +120,10 @@ flowchart TB
 
     subgraph Layer4 ["Layer 4: Target Backend & Metadata Fabric"]
         BQMeta["BigQuery 스키마 메타데이터<br/>(테이블 및 컬럼 Description)"]
-        DataplexProfile["Dataplex 데이터 프로파일<br/>(고유값, Null 비율, 통계치)"]
+        CatalogProfile["Knowledge Catalog 데이터 프로파일<br/>(고유값, Null 비율, 통계치)"]
         KnowledgeCatalog["Knowledge Catalog<br/>(비즈니스 용어집 및 Formula)"]
         ScoreEngine --> BQMeta
-        ScoreEngine --> DataplexProfile
+        ScoreEngine --> CatalogProfile
         ScoreEngine --> KnowledgeCatalog
         EnrichEngine -.->|"선택적 패치 반영 (--apply)"| BQMeta
     end
@@ -136,24 +135,19 @@ flowchart TB
 1. **테이블 및 컬럼 설명 패치 확인**:
    - Google Cloud 콘솔 BigQuery Studio에서 대상 테이블의 스키마 탭을 확인하여 각 필드에 구체적인 비즈니스 설명과 유효 범위가 반영되었는지 검증한다.
    - BigQuery Studio 콘솔 ( https://console.cloud.google.com/bigquery )
-2. **Dataplex 데이터 프로파일링 실행**:
-   - 통계 지표가 없는 테이블은 Dataplex Data Profile 스캔을 등록하고 실행하여 최솟값, 최댓값, 고유값 비율을 카탈로그에 게시한다.
-   - Dataplex Data Profile 안내 ( https://cloud.google.com/dataplex/docs/data-profiling-overview )
+2. **Knowledge Catalog 데이터 프로파일링 실행**:
+   - 통계 지표가 없는 테이블은 Knowledge Catalog 데이터 프로파일 스캔을 등록하고 실행하여 최솟값, 최댓값, 고유값 비율을 카탈로그에 게시한다.
+   - Knowledge Catalog 데이터 프로파일링 안내 ( https://cloud.google.com/dataplex/docs/data-profiling-overview )
 3. **Knowledge Catalog 비즈니스 용어집 등록**:
-   - 생성된 `dataplex_glossary_terms.yaml` 템플릿을 참조하여 Dataplex Knowledge Catalog에 비즈니스 용어와 계산 수식(`Formula`)을 등록하고 관련 테이블에 바인딩한다.
-   - Dataplex Business Glossary 콘솔 ( https://console.cloud.google.com/dataplex/business-glossaries )
-4. **Starter 키트 연계 및 완전 관리형 GDA `dataAgents` 자동 배포**:
-   - 메타데이터 보강이 완료된 데이터셋은 `bigquery-data-agent-starter` 도구를 통해 구글 관리형 런타임 GDA REST API로 1초 만에 완전 관리형 데이터 에이전트로 자동 프로비저닝된다:
-   ```bash
-   cd ../bigquery-data-agent-starter
-   python diagnose.py --deploy-agent
-   ```
-   - 보강된 컬럼 설명과 비즈니스 공식이 GDA 에이전트의 `systemInstruction` 및 `exampleQueries`로 자동 바인딩되어 환각을 0%에 가깝게 차단한다.
-5. **(선택 사항) 타 클라우드 스토리지 연동 시 Cross-Cloud Caching 활성화**:
+   - 생성된 `dataplex_glossary_terms.yaml` 템플릿을 참조하여 Knowledge Catalog에 비즈니스 용어와 계산 수식(`Formula`)을 등록하고 관련 테이블에 바인딩한다.
+   - Knowledge Catalog Business Glossary 콘솔 ( https://console.cloud.google.com/dataplex/business-glossaries )
+4. **관리형 데이터 에이전트(`dataAgents`) 연동 검증**:
+   - 메타데이터 보강이 완료된 데이터셋을 BigQuery Data Agent에 연결하면 보강된 컬럼 설명과 비즈니스 공식이 `systemInstruction` 및 `exampleQueries` 컨텍스트로 자동 참조되어 쿼리 환각을 차단한다.
+5. **(선택 사항) 타 클라우드 객체 저장소 연동 시 Cross-Cloud Caching 활성화**:
    - BigQuery Omni 및 보더리스 레이크하우스(Borderless Lakehouse) 환경에서 타 클라우드(AWS S3, Azure Blob)의 객체를 쿼리하는 경우, Cross-Cloud Caching을 활성화하여 전송(Egress) 비용을 줄이고 반복 NL2SQL 쿼리 지연 시간을 최대 50% 단축한다.
    - Cross-Cloud Caching 안내 ( https://cloud.google.com/blog/products/data-analytics/borderless-lakehouse-cross-cloud-caching-and-connections )
 6. **GCP 리소스 생성 시 4대 필수 표준 라벨링 준수**:
-   - 사내 거버넌스 및 FinOps 비용 추적을 위해 데이터셋, 테이블, Dataplex 데이터 스캔 생성 시 4대 표준 라벨을 필수로 주입한다:
+   - 사내 거버넌스 및 FinOps 비용 추적을 위해 데이터셋, 테이블, Knowledge Catalog 데이터 스캔 생성 시 4대 표준 라벨을 필수로 주입한다:
      - `managed-by`: `google-cloud-0-to-1`
      - `scenario`: `bigquery-data-agent-semantic-enricher`
      - `env`: `sample`
@@ -205,7 +199,7 @@ historical_transactional_data       X (누락/부실)    0/22 (0%)      X (미�
 ==========================================================================================
 
 ==========================================================================================
-Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (Enrichment Plan)
+Gemini 및 Knowledge Catalog 기반 시맨틱 메타데이터 지능형 보강 계획 (Enrichment Plan)
 ==========================================================================================
 
 [1. 테이블: pos_transactions_gold]
@@ -217,7 +211,7 @@ Gemini 및 Dataplex 기반 시맨틱 메타데이터 지능형 보강 계획 (En
     - tax_amount          : Local and state sales tax applied to transaction.
     - total               : Final net payment collected. Formula: subtotal_amount - discount + tax_amount. Must match tender total.
     - tender_type         : Primary payment method (Enum: CASH, CREDIT_CARD, MOBILE_PAY, GIFT_CARD).
-  * Dataplex 비즈니스 용어집(Glossary) 계산 공식 매핑:
+  * Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 매핑:
     - 공식: Net Revenue = subtotal_amount - discount + tax_amount (Filter: total > 0)
 ```
 

@@ -12,13 +12,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 데이터 커넥터 스캐폴더 기술 상세 설계서 (TDD)
 
-본 문서는 사내 기간계 데이터 저장소를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)의 데이터 저장소(Data Store)로 연결하기 위한 데이터 커넥터 스캐폴더 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 규격 및 진단 로직을 정의한다.
+본 문서는 사내 기간계 데이터 저장소를 Gemini Enterprise app의 데이터 저장소(Data Store)로 연결하기 위한 데이터 커넥터 스캐폴더 도구의 시스템 아키텍처, 기술 상세 설계, 인터페이스 규격 및 진단 로직을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 아키텍트 또는 데이터 엔지니어가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 14대 기간계 데이터 소스(Jira, Confluence, Salesforce, Google Drive 등) 연결 요청을 입력하면, 에이전트 엔진(Agent Engine) 런타임이 인증 방식과 문서 레벨 ACL 매핑을 합성하고 디스커버리 엔진(Discovery Engine) 데이터 저장소(Data Store)를 사내 앱에 직결 바인딩한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 아키텍트 또는 데이터 엔지니어가 Gemini Enterprise app 대화창에서 14대 기간계 데이터 소스(Jira, Confluence, Salesforce, Google Drive 등) 연결 요청을 입력하면, Agent Engine 런타임이 인증 방식과 문서 레벨 ACL 매핑을 합성하고 Discovery Engine 데이터 저장소(Data Store)를 사내 앱에 직결 바인딩한다.
 
 ```mermaid
 sequenceDiagram
@@ -56,7 +56,7 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (14대 엔터프라이즈 3P SaaS 커넥터 및 자유 프롬프팅) | **FR-01** (14대 엔터프라이즈 3P SaaS 커넥터 카탈로그 및 선택기) | **NFR-01** (무의존성 단일 파이썬 실행) | `catalog.yaml`, `diagnose.py` |
+| **BR-01** (14대 엔터프라이즈 3P SaaS 커넥터 및 자유 프롬프팅) | **FR-01** (14대 엔터프라이즈 3P SaaS 커넥터 카탈로그 및 선택기) | **NFR-01** (무의존성 단일 Python 실행) | `catalog.yaml`, `diagnose.py` |
 | **BR-02** (인증 방식 및 대행 계정 연동 명세) | **FR-02** (OAuth 2.0 및 인증 설정 명세 빌더) | **NFR-02** (최소 권한 및 4대 라벨 준수) | `diagnose.py` |
 | **BR-03** (문서 레벨 ACL 및 사용자 매핑) | **FR-03** (문서 레벨 ACL 정책 컴파일러) | **NFR-02** (데이터 거버넌스 준수) | `diagnose.py` |
 | **BR-04** (동기화 주기 및 증분 색인) | **FR-04** (Discovery Engine Data Store 매니페스트 생성) | **NFR-01**, **NFR-03** | `diagnose.py` |
@@ -79,11 +79,11 @@ sequenceDiagram
 - 대행 서비스 계정에 `roles/discoveryengine.admin` 최소 권한을 바인딩하는 지침을 생성한다.
 
 ### FR-03: 문서 레벨 접근 제어(ACL) 및 계정 매핑 컴파일러
-- 원본 SaaS 사용자의 이메일과 사내 구글 워크스페이스(Google Workspace) / Cloud Identity 계정 간의 일치 여부를 매핑하는 사용자 식별 정책(Identity Mapping)을 명세한다.
+- 원본 SaaS 사용자의 이메일과 사내 Google Workspace / Cloud Identity 계정 간의 일치 여부를 매핑하는 사용자 식별 정책(Identity Mapping)을 명세한다.
 - 공개 문서(PUBLIC), 부서 제한(GROUP_RESTRICTED), 개인 문서(USER_RESTRICTED)의 3단계 접근 격리 규칙을 매니페스트에 주입한다.
 
 ### FR-04: Discovery Engine Data Store 구성 매니페스트 자동 생성
-- 구글 클라우드 공식 Discovery Engine Data Store v1alpha/v1 규격에 맞추어 `dataStoreId`, `displayName`, `contentConfig`, `solutionTypes` 매니페스트 JSON을 합성한다.
+- Google Cloud 공식 Discovery Engine Data Store v1alpha/v1 규격에 맞추어 `dataStoreId`, `displayName`, `contentConfig`, `solutionTypes` 매니페스트 JSON을 합성한다.
 - 1시간 정기 증분 동기화(Schedule) 및 에러 발생 시 알림 정책을 포함한다.
 
 ### FR-05: Gemini Enterprise app 엔진 직결 바인딩
@@ -112,7 +112,7 @@ sequenceDiagram
 
 ## 4. 비기능 기술 요구 사항 명세 (Non-Functional Requirements)
 
-### NFR-01: 무의존성 및 순수 파이썬 단일 실행 원칙
+### NFR-01: 무의존성 및 순수 Python 단일 실행 원칙
 - 외부 쉘 스크립트에 의존하지 않고 크로스 플랫폼(Linux, macOS, Windows)에서 `python diagnose.py` 직접 실행만으로 동작한다.
 
 ### NFR-02: 최소 권한 및 4대 필수 라벨 준수
@@ -123,7 +123,7 @@ sequenceDiagram
 - GCP 환경 연결 없이도 모의 데이터를 통해 전체 파이프라인의 문법 무결성 및 매니페스트 구조를 신뢰성 있게 검증할 수 있도록 지원한다.
 
 ### NFR-04: 초경량 패키징 및 단일 디렉터리 완결성
-- 외부 무거운 SDK 프레임워크 의존성을 배제하고, 수십 KB 수준의 선언적 카탈로그와 순수 파이썬 표준 라이브러리로 전체 프로젝트를 경량화한다.
+- 외부 무거운 SDK 프레임워크 의존성을 배제하고, 수십 KB 수준의 선언적 카탈로그와 순수 Python 표준 라이브러리로 전체 프로젝트를 경량화한다.
 
 ### NFR-05: 에어갭 무중단 회복 탄력성 및 타임아웃 보장
 - 인터넷이 차단된 폐쇄망 환경에서도 소켓 타임아웃 2.0초 제한을 통해 행(Hang) 상태를 원천 방지하고 내장 시드로 결정론적 폴백을 보장한다.

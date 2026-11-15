@@ -57,7 +57,7 @@ function loadPipelineEngine(forceRefresh) {
       }
       if (parts.length === count) {
         fullCode = parts.join("");
-        Logger.log("구글 시트 영구 저장소로부터 로컬 엔진 고속 로드 완료 (버전: " + savedVersion + ")");
+        Logger.log("Google Sheets 영구 저장소로부터 로컬 엔진 고속 로드 완료 (버전: " + savedVersion + ")");
       }
     }
   }
@@ -82,7 +82,7 @@ function loadPipelineEngine(forceRefresh) {
       newProps[BOOTSTRAP_CONFIG.PROP_VERSION] = BOOTSTRAP_CONFIG.VERSION;
 
       scriptProps.setProperties(newProps);
-      Logger.log("GitHub 최신 엔진 구글 시트 영구 저장 완료 (총 " + chunkIdx + "개 청크 저장, 버전: " + BOOTSTRAP_CONFIG.VERSION + ")");
+      Logger.log("GitHub 최신 엔진 Google Sheets 영구 저장 완료 (총 " + chunkIdx + "개 청크 저장, 버전: " + BOOTSTRAP_CONFIG.VERSION + ")");
     } else {
       throw new Error("GitHub 퍼블릭 저장소로부터 엔진 코드를 가져오지 못했습니다. (HTTP 응답 코드: " + resp.getResponseCode() + ")");
     }
@@ -118,7 +118,7 @@ function findTargetFunction(fnName) {
  * [자가 치유(Self-Healing) 엔진]:
  * 1. 로컬 캐시에서 코드를 로드하여 실행을 시도한다.
  * 2. 만약 해당 함수가 로컬 캐시에 없다면(신규 기능 추가 등), 즉시 GitHub에서 최신 엔진을 1회 자동 다운로드하여 자가 치유 갱신 후 실행한다.
- * 3. 예외 발생 시 구글 시트 알림 대화상자로 명확한 원인을 즉각 안내한다.
+ * 3. 예외 발생 시 Google Sheets 알림 대화상자로 명확한 원인을 즉각 안내한다.
  */
 function dispatch(fnName, args) {
   try {
@@ -160,7 +160,7 @@ function renderPipelineMenu() {
 }
 
 /**
- * 구글 시트 문서 열림 시 메뉴 자동 등록 및 사이드바 표시 시도 (단순 트리거)
+ * Google Sheets 문서 열림 시 메뉴 자동 등록 및 사이드바 표시 시도 (단순 트리거)
  */
 function onOpen() {
   renderPipelineMenu();

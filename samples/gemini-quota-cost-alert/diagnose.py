@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Gemini API Quota and Budget Alert Pipeline Tool.
 
-제미나이(Gemini) API 비용 초과 시 Pub/Sub 기반 예산 알림 연동 및
+Gemini API 비용 초과 시 Pub/Sub 기반 예산 알림 연동 및
 Cloud Functions 자동 할당량(Quota) 차단 아키텍처를 진단하고 시뮬레이션한다.
 """
 
@@ -112,7 +112,7 @@ def print_architecture_guide(project_id: str, topic_name: str):
   print("=" * 72)
   print("[표준 처방] 비용 초과 시 자동 할당량(Quota) 차단 Cloud Functions 가이드")
   print("=" * 72)
-  print(f"""1. 자동 차단 파이썬 핸들러 (main.py):
+  print(f"""1. 자동 차단 Python 핸들러 (main.py):
 ------------------------------------------------------------------------
 import base64
 import json
@@ -166,7 +166,7 @@ def build_markdown_report(project_id: str, topic: str, budget_name: str, is_dry_
 
 ```text
 ========================================================================
-[진단 시작] 제미나이(Gemini) API 실시간 비용 및 할당량 경보 아키텍처 점검
+[진단 시작] Gemini API 실시간 비용 및 할당량 경보 아키텍처 점검
   - 프로젝트 ID: {project_id}
   - Pub/Sub 주제: {topic}
   - 예산 규칙명: {budget_name}
@@ -175,7 +175,7 @@ def build_markdown_report(project_id: str, topic: str, budget_name: str, is_dry_
 {dry_run_console_line}========================================================================
 [표준 처방] 비용 초과 시 자동 할당량(Quota) 차단 Cloud Functions 가이드
 ========================================================================
-1. 자동 차단 파이썬 핸들러 (main.py):
+1. 자동 차단 Python 핸들러 (main.py):
 ------------------------------------------------------------------------
 import base64
 import json
@@ -406,7 +406,7 @@ def run_config_mode(scenario_name: str = "") -> None:
 
 def main():
   parser = argparse.ArgumentParser(
-      description="제미나이(Gemini) API 비용 및 쿼터 임계치 경보 설정 및 시뮬레이션 도구"
+      description="Gemini API 비용 및 쿼터 임계치 경보 설정 및 시뮬레이션 도구"
   )
   parser.add_argument(
       "-p",
@@ -418,7 +418,7 @@ def main():
       "-b",
       "--billing-account",
       default=os.getenv("BILLING_ACCOUNT_ID"),
-      help="클라우드 빌링 계정 ID (미지정 시 자동 조회)",
+      help="Cloud Billing 계정 ID (미지정 시 자동 조회)",
   )
   parser.add_argument(
       "-t",
@@ -448,7 +448,7 @@ def main():
     project_id = args.project or get_default_project(is_dry_run=False)
 
   print("=" * 72)
-  print("[진단 시작] 제미나이(Gemini) API 실시간 비용 및 할당량 경보 아키텍처 점검")
+  print("[진단 시작] Gemini API 실시간 비용 및 할당량 경보 아키텍처 점검")
   print(f"  - 프로젝트 ID: {project_id}")
   print(f"  - Pub/Sub 주제: {args.topic}")
   print(f"  - 예산 규칙명: {args.budget_name}")

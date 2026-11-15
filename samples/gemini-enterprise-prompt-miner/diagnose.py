@@ -3,9 +3,9 @@
 
 """Gemini Enterprise 프롬프트 로그 기반 3R 마이크로 업무 발굴 및 도구/에이전트 전환 파이프라인 분석기.
 
-제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 누적된 사용자 질의(Prompt) 로그를
+Gemini Enterprise app에 누적된 사용자 질의(Prompt) 로그를
 BigQuery 또는 JSONL에서 수집하고, 인라인 PII 마스킹 및 멀티 턴 세션 묶음 정제를 거쳐
-빅쿼리 내장 임베딩(ML.GENERATE_EMBEDDING)과 자율 적응형(Auto-K) K-Means++ 군집화를 통해
+BigQuery 내장 임베딩(ML.GENERATE_EMBEDDING)과 자율 적응형(Auto-K) K-Means++ 군집화를 통해
 사내 3R(반복성 Repetitive, 규칙성 Rule-based, 검색 집약성 Retrieval-heavy) 마이크로 업무를 발굴하고
 사내 API 도구(Tool) 및 검색/자율 에이전트(Agent) 전환 파이프라인을 자동 도출한다.
 """
@@ -48,7 +48,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-p
     code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
     projects = [p.strip() for p in stdout.splitlines() if p.strip()] if code == 0 and stdout else []
     if projects:
-        print("\n[?] 대상 구글 클라우드(Google Cloud) 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
+        print("\n[?] 대상 Google Cloud 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
         for idx, p in enumerate(projects, 1):
             print(f"  [{idx}] {p}")
         print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
@@ -362,7 +362,7 @@ def determine_optimal_k(n_sessions: int, clusters_arg: str | int = "auto") -> in
 
 
 def run_kmeans(vectors: list[list[float]], k: int, max_iter: int = 35) -> list[int]:
-    """순수 파이썬 K-Means++ 클러스터링 (외부 scikit-learn 없이 동작)."""
+    """순수 Python K-Means++ 클러스터링 (외부 scikit-learn 없이 동작)."""
     n = len(vectors)
     if n <= k:
         return list(range(n))
@@ -442,7 +442,7 @@ DOMAIN_SIGNATURES = [
         "3r_fit": "매우 높음 (반복성 85%, 규칙성 95%)",
         "recommended_asset": "자율 에이전트 (결제 트랜잭션 자율 롤백 복구 Agent)",
         "asset_type": "autonomous-agent",
-        "instructions": "PG사 승인 실패 로그를 감지하고 멱등성 키(Idempotency Key)를 기반으로 결제 취소 웹훅을 자동 재시도하며 슬랙 경보를 발행한다."
+        "instructions": "PG사 승인 실패 로그를 감지하고 멱등성 키(Idempotency Key)를 기반으로 결제 취소 웹훅을 자동 재시도하며 Slack 경보를 발행한다."
     },
     {
         "keywords": ["주문서", "미생성", "주문 생성", "장바구니"],

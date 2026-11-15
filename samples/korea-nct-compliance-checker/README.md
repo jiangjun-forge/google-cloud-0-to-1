@@ -150,8 +150,8 @@ flowchart TB
 | :--- | :--- | :--- | :--- |
 | `Access Approval` | `Access Approval 뷰어(roles/accessapproval.viewer)` | `accessapproval.settings.get` | CSP 임의 접근 사전 승인 설정 조회 |
 | `Cloud IAM` | `보안 검토자(roles/iam.securityReviewer)` | `iam.denyPolicies.get`, `iam.denyPolicies.list` | RAG 벡터 저장 차단 IAM Deny 확인 (법 제10조) |
-| `Cloud KMS` | `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.keyRings.list`, `cloudkms.cryptoKeys.list` | 서울 리전 CMEK 이중 암호화 키링 상태 조회 (안내서 기준) |
-| `Logging` | `클라우드 로깅 뷰어(roles/logging.viewer)` | `logging.views.access` | Cloud Audit Logs 데이터 접근 감사 로깅 조회 (법 제10조) |
+| `Cloud KMS` | `Cloud KMS 뷰어(roles/cloudkms.viewer)` | `cloudkms.keyRings.list`, `cloudkms.cryptoKeys.list` | 서울 리전 CMEK 이중 암호화 키링 상태 조회 (안내서 기준) |
+| `Logging` | `Cloud Logging 뷰어(roles/logging.viewer)` | `logging.views.access` | Cloud Audit Logs 데이터 접근 감사 로깅 조회 (법 제10조) |
 | `Resource Manager` | `조직 정책 뷰어(roles/orgpolicy.policyViewer)` | `orgpolicy.policies.list`, `orgpolicy.constraints.list` | 리소스 위치 및 외부 도메인 차단 조직 정책 조회 (법 제11조) |
 
 ---

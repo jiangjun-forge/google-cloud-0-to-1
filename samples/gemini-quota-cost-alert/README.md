@@ -14,17 +14,17 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이(Gemini) API 비용 및 쿼터 임계치 실시간 경보 자동화 진단기 (`gemini-quota-cost-alert`)
+# Gemini API 비용 및 쿼터 임계치 실시간 경보 자동화 진단기 (`gemini-quota-cost-alert`)
 
-제미나이(Gemini) API 비용 급증 및 예산 임계치 도달 시, 클라우드 펍/섭(Cloud Pub/Sub)과 클라우드 펑션스(Cloud Functions)를 연동하여 **실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로 차단하는 안전 아키텍처**를 검증 및 시뮬레이션하는 도구다. (As of 2026-10-17)
+Gemini API 비용 급증 및 예산 임계치 도달 시, Cloud Pub/Sub과 Cloud Functions를 연동하여 **실시간 경보를 전송하고 API 쿼터 한도를 자동으로 0으로 차단하는 안전 아키텍처**를 검증 및 시뮬레이션하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **비용 급증 방어**: 비인가 호출이나 잘못 작성된 루프 코드로 인해 예산 상한을 초과했을 때 자동으로 서비스를 일시 차단하고자 할 때
-- [ ] **실시간 예산 알림 연동**: 단순 이메일 알림을 넘어 Pub/Sub 메시징 큐로 실시간 예산 초과 이벤트를 수신하여 사내 슬랙이나 모니터링 시스템과 연동하고자 할 때
+- [ ] **실시간 예산 알림 연동**: 단순 이메일 알림을 넘어 Pub/Sub 메시징 큐로 실시간 예산 초과 이벤트를 수신하여 사내 Slack이나 모니터링 시스템과 연동하고자 할 때
 - [ ] **사전 파이프라인 모의 검증**: 실제 과금이나 서비스 중단 없이 예산 초과 이벤트 페이로드와 차단 로직이 정상 작동하는지 가상 시뮬레이션으로 테스트하고자 할 때
 
 
@@ -43,8 +43,8 @@ All contents, designs, and code examples are subject to change, modification, or
 | 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 프로젝트 결제 계정 연동 상태, Pub/Sub 토픽 및 Cloud Functions 배포 명세, 가상 예산 초과 이벤트 검증 결과 |
-| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 비용 폭증 자동 차단 아키텍처 설계서, Cloud Functions 2세대 자동 차단 파이썬 코드, 배포 CLI 명령어 및 Teardown 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **자동 차단 파이썬 핸들러 (`main.py`)**: 쿼터를 0으로 즉시 조정하는 서버리스 함수 소스 코드<br/>• **Cloud Functions 2세대 배포 스크립트**: Pub/Sub 트리거 및 4대 필수 라벨이 주입된 gcloud 명령<br/>• **예산 알림 Pub/Sub 연동 가이드**: Cloud Billing 콘솔에서 웹훅 알림을 구성하는 정형 절차서 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 비용 폭증 자동 차단 아키텍처 설계서, Cloud Functions 2세대 자동 차단 Python 코드, 배포 CLI 명령어 및 Teardown 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **자동 차단 Python 핸들러 (`main.py`)**: 쿼터를 0으로 즉시 조정하는 서버리스 함수 소스 코드<br/>- **Cloud Functions 2세대 배포 스크립트**: Pub/Sub 트리거 및 4대 필수 라벨이 주입된 gcloud 명령<br/>- **예산 알림 Pub/Sub 연동 가이드**: Cloud Billing 콘솔에서 웹훅 알림을 구성하는 정형 절차서 |
 
 ---
 
@@ -62,7 +62,7 @@ python diagnose.py --dry-run
 **터미널 진단 출력 미리보기:**
 ```text
 ========================================================================
-[진단 시작] 제미나이(Gemini) API 실시간 비용 및 할당량 경보 아키텍처 점검
+[진단 시작] Gemini API 실시간 비용 및 할당량 경보 아키텍처 점검
   - 프로젝트 ID: sample-project-id
   - Pub/Sub 주제: gemini-cost-alerts
   - 예산 규칙명: gemini-budget-alert
@@ -164,9 +164,9 @@ flowchart TB
 
 | 역할 (Role) | 권한 ID | 용도 |
 | :--- | :--- | :--- |
-| **클라우드 빌링 관리자 (또는 뷰어)** | `roles/billing.costsManager` 또는 `roles/billing.viewer` | 결제 예산 규칙 확인 및 생성 |
-| **클라우드 펍/섭 관리자** | `roles/pubsub.admin` | 알림 전달용 Cloud Pub/Sub 주제 생성 및 메시지 테스트 |
-| **클라우드 펑션스 개발자** | `roles/cloudfunctions.developer` | 자동 차단 Cloud Functions 배포 |
+| **Cloud Billing 관리자 (또는 뷰어)** | `roles/billing.costsManager` 또는 `roles/billing.viewer` | 결제 예산 규칙 확인 및 생성 |
+| **Cloud Pub/Sub 관리자** | `roles/pubsub.admin` | 알림 전달용 Cloud Pub/Sub 주제 생성 및 메시지 테스트 |
+| **Cloud Functions 개발자** | `roles/cloudfunctions.developer` | 자동 차단 Cloud Functions 배포 |
 
 > [!NOTE]
 > `--dry-run` 모드로 실행할 경우 실제 클라우드 리소스 생성이나 IAM 권한 없이도 파이프라인 구조와 페이로드 스키마를 즉시 확인할 수 있다.
@@ -183,7 +183,7 @@ flowchart TB
 
 ```text
 ========================================================================
-[진단 시작] 제미나이(Gemini) API 실시간 비용 및 할당량 경보 아키텍처 점검
+[진단 시작] Gemini API 실시간 비용 및 할당량 경보 아키텍처 점검
   - 프로젝트 ID: my-prod-project
   - Pub/Sub 주제: gemini-cost-alerts
   - 예산 규칙명: gemini-budget-alert

@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise In-Chat Factory: 사내 스킬 팩토리 모듈 (gemini-enterprise-factory-skill)
 
-`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 사내 업무 스킬(Skills) 생성을 담당하는 도구로, 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 채팅창에서 현업 임직원이 반복적인 업무 절차, 보고서 양식, 검토 체크리스트를 담은 맞춤 스킬(`SKILL.md` / `skillAgentDefinition`)을 붕어빵 찍어내듯 대화형으로 생성하고 사내 스킬 갤러리(`/r/skills`)에 즉시 등록 및 공유할 수 있도록 지원하는 GE App 전용 스킬 팩토리다. (As of 2026-11-10)
+`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 사내 업무 스킬(Skills) 생성을 담당하는 도구로, Gemini Enterprise app 채팅창에서 현업 임직원이 반복적인 업무 절차, 보고서 양식, 검토 체크리스트를 담은 맞춤 스킬(`SKILL.md` / `skillAgentDefinition`)을 붕어빵 찍어내듯 대화형으로 생성하고 사내 스킬 갤러리(`/r/skills`)에 즉시 등록 및 공유할 수 있도록 지원하는 GE App 전용 스킬 팩토리다. (As of 2026-11-10)
 
 ---
 
@@ -26,7 +26,7 @@ Gemini Enterprise app 도입 후 현업에서 다음과 같은 상황이 발생�
 - [ ] **반복 업무 프롬프트 매번 재입력**: 주간 보고서 작성, 회의록 요약, 경비 규정 검토 등 자주 쓰는 업무 절차와 출력 형식을 매번 채팅창에 새로 입력하고 있는 경우
 - [ ] **팀 내 검증된 노하우 공유 한계**: 특정 직원이 만든 유용한 업무 프롬프트와 체크리스트를 부서원이나 전사 임직원이 `/스킬명`으로 바로 꺼내 쓰기 어려운 경우
 - [ ] **비개발자 임직원의 SKILL.md 작성 부담**: 일반 현업 담당자가 지침 구조, 트리거 조건, 출력 양식을 규격에 맞춰 직접 작성하기 막막해하는 경우
-- [ ] **GE App `/r/skills` 카탈로그 빠른 확충 필요**: 초기 데모(Day-1) 이후 고객사 실무(Day-2)에 바로 투입할 24종 이상의 표준 업무 스킬을 단시간 내 GE App에 채워 넣고 싶은 경우
+- [ ] **GE App `/r/skills` 카탈로그 빠른 확충 필요**: 사내 도입 직후 현업 실무에 바로 투입할 24종 이상의 표준 업무 스킬을 단시간 내 GE App에 채워 넣고 싶은 경우
 
 ---
 
@@ -91,8 +91,8 @@ flowchart TB
     end
 
     subgraph RuntimeLayer["2. 스킬 팩토리 런타임 (Agent Engine)"]
-        GEChat -->|"2. 대화형 생성 요청"| Engine["GE In-Chat Skill Factory<br/>(Google ADK + Gemini 3.8 Flash)"]
-        Engine -->|"3. 카탈로그·중복 체크 및<br/>SKILL.md 지침 합성"| Tools["내장 스킬 생성 도구<br/>- check_skill_duplicate_tool<br/>- deploy_enterprise_skill_tool<br/>- get_preset_skills_tool"]
+        GEChat -->|"2. 대화형 생성 요청"| Engine["GE In-Chat Skill Factory<br/>(Google ADK + Gemini Flash)"]
+        Engine -->|"3. 카탈로그, 중복 체크 및<br/>SKILL.md 지침 합성"| Tools["내장 스킬 생성 도구<br/>- check_skill_duplicate_tool<br/>- deploy_enterprise_skill_tool<br/>- get_preset_skills_tool"]
     end
 
     subgraph GEOutput["3. GE App 공식 스킬 갤러리 등록"]

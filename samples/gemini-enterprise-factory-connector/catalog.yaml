@@ -37,7 +37,7 @@ connectors:
       - "jira_instance_url"
     sync_mode: "HOURLY_INCREMENTAL"
     acl_mode: "IDENTITY_MAPPING_OIDC"
-    description: "사내 개발 및 운영 지라(Jira) 프로젝트 티켓, 이슈 내역, 에픽 및 댓글 데이터를 색인하고 이슈 보안 스킴(Security Scheme)을 동기화한다."
+    description: "사내 개발 및 운영 Jira 프로젝트 티켓, 이슈 내역, 에픽 및 댓글 데이터를 색인하고 이슈 보안 스킴(Security Scheme)을 동기화한다."
     content_types:
       - "issues"
       - "comments"
@@ -183,7 +183,7 @@ connectors:
       - "github_repo_list"
     sync_mode: "HOURLY_INCREMENTAL"
     acl_mode: "REPO_COLLABORATOR_TEAMS"
-    description: "사내 깃허브 저장소의 마크다운 문서(README.md, docs/, RFCs) 및 OpenAPI 스펙을 팀/조직 열람 권한에 연동하여 색인한다."
+    description: "사내 GitHub 저장소의 마크다운 문서(README.md, docs/, RFCs) 및 OpenAPI 스펙을 팀/조직 열람 권한에 연동하여 색인한다."
     content_types:
       - "markdown_docs"
       - "open_api_specs"

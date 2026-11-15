@@ -1,6 +1,6 @@
 # Gemini Enterprise 데이터 커넥터 스캐폴더 배포 보고서 (gemini-enterprise-factory-connector)
 
-- **배포 일시**: 2026-11-10 01:49:22 UTC
+- **배포 일시**: 2026-11-15 00:32:13 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Connector Scaffolder (사내 데이터 커넥터 스캐폴더)`
@@ -58,7 +58,7 @@ flowchart TB
    - *"사내 Atlassian Jira Cloud 이슈 및 티켓 연동 커넥터 매니페스트 생성해 줘"*
    - *"Confluence 사내 지식 베이스 위키 문서 동기화 커넥터 배포해 줘"*
    - *"Salesforce CRM 영업 리드 및 기회 데이터 저장소 연결해 줘"*
-   - *"사내 구글 드라이브(Google Drive) 및 쉐어포인트(SharePoint) 전사 문서 연동해 줘"*
+   - *"사내 Google Drive 및 SharePoint 전사 문서 연동해 줘"*
 
 3. **팩토리 에이전트 자율 동작**:
    - 커넥터 스캐폴더 에이전트가 인증 방식, 동기화 주기, 문서 레벨 ACL 요구사항을 확인하고,

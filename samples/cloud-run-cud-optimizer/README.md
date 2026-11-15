@@ -16,14 +16,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud Run Compute CUD 약정 할인 최적화 및 권장 엔진 과소 약정 분석
 
-서버리스 클라우드 런(Cloud Run) 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough) 기반의 최적 Compute Flexible CUD 약정액과 사전 리소스 최적화 가이드를 처방한다. (As of 2026-10-17)
+서버리스 Cloud Run 환경에서 자동 스케일링 특성으로 인해 GCP 콘솔 추천 엔진이 초래하는 과소 약정(Under-commitment) 트랩을 분석하고, 3개월 시계열 최저 바닥선(Trough) 기반의 최적 Compute Flexible CUD 약정액과 사전 리소스 최적화 가이드를 처방한다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다: Cloud Run을 대규모 배치 처리, 마이크로서비스 또는 이벤트 기반 워크로드로 운영할 때, 비용 최적화를 위해 약정 사용 할인(CUD, Committed Use Discounts)을 검토하게 된다.
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다: Cloud Run을 대규모 배치 처리, 마이크로서비스 또는 이벤트 기반 워크로드로 운영할 때, 비용 최적화를 위해 약정 사용 할인(CUD, Committed Use Discounts)을 검토하게 된다.
 - [ ] **추천 엔진의 과소 약정(Under-commitment) 유도**: Cloud Run의 동적 오토스케일링(Scale-in/Scale-out) 변동성 때문에 GCP 콘솔의 기본 CUD 추천 엔진(주황색 지표)이 극도로 보수적인 수치(안전 바닥선의 30~50% 수준)를 제안하여 실질적인 절감 기회를 크게 상실한다.
 - [ ] **과다 약정(Over-commitment) 공포**: 추천 수치보다 크게 약정하고 싶으나, 비수기나 트래픽 감소 시 스케일 인되어 약정 금액 밑으로 떨어져 유휴 비용(돈 낭비)을 지불할까 우려하여 의사 결정이 지연된다.
 - [ ] **사전 최적화 부재**: CPU 상시 할당(Always allocated), 유휴 min-instances, 낮은 Concurrency 등 서비스 구성 최적화가 선행되지 않은 상태에서 CUD를 약정하여 불필요한 인프라 비용까지 1~3년간 고정 약정하는 오류가 발생한다.
@@ -45,7 +44,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 90일 최저/평균/피크 사용량, 추천 약정액($/hour), 예상 월간 절감액 및 ROI 지표 요약 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 시간대별 사용량 분포 차트, Flexible CUD 추천 산출 근거, Cloud Run 사전 최적화 체크리스트 및 구매 실행 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **약정 구매 실행 파라미터**: GCP 결제 콘솔 입력용 시간당 약정 금액($/hr) 및 기간(1년/3년)<br/>• **Cloud Run 최적화 배포 옵션**: `--cpu-throttling`, `--concurrency`, `--min-instances` 최적 파라미터<br/>• **FinOps 거버넌스 라벨링 규약**: CUD 비용 추적을 위한 4대 필수 라벨 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **약정 구매 실행 파라미터**: GCP 결제 콘솔 입력용 시간당 약정 금액($/hr) 및 기간(1년/3년)<br/>- **Cloud Run 최적화 배포 옵션**: `--cpu-throttling`, `--concurrency`, `--min-instances` 최적 파라미터<br/>- **FinOps 거버넌스 라벨링 규약**: CUD 비용 추적을 위한 4대 필수 라벨 가이드 |
 
 ---
 
@@ -142,7 +141,7 @@ flowchart TB
 1. GCP 콘솔에서 **결제(Billing) > 약정 사용 할인(CUD)** 메뉴로 이동한다.
 2. **약정 구매(Purchase commitment)**를 선택하고 다음 옵션을 지정한다:
    - **약정 유형**: **Compute Flexible CUD** (Cloud Run, GKE, Compute Engine에 공통 적용되며 서비스별 종속 제약이 없음)
-   - **약정 기간**: 1년 또는 3년 (약정 할인율은 구글 클라우드 공식 요금 페이지 참조)
+   - **약정 기간**: 1년 또는 3년 (약정 할인율은 Google Cloud 공식 요금 페이지 참조)
    - **시간당 커밋 금액**: 콘솔의 보수적 추천액이 아닌, 진단 리포트에서 도출된 최적 권장 약정액을 입력한다.
 
 ### 공식 가이드 및 콘솔 링크

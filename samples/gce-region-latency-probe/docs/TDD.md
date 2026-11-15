@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): 서울 워크로드 대체 컴퓨트 엔진(Compute Engine) GPU 및 인프라 리전 레이턴시/가용성 프로브 (`gce-region-latency-probe`)
+# 기술 상세 설계서 (TDD): 서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시/가용성 프로브 (`gce-region-latency-probe`)
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 

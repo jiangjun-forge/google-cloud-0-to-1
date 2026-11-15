@@ -11,7 +11,7 @@
 ```text
 [데모 실행] --dry-run 모드가 활성화되어 가상 분석 결과를 시뮬레이션한다.
 ========================================================================
-[진단 결과] 구형 제미나이(Gemini) SDK 코드 정적 진단 리포트
+[진단 결과] 구형 Gemini SDK 코드 정적 진단 리포트
 ========================================================================
 
 검출된 구형 SDK 사용 파일: 2건 (총 5개 라인)
@@ -48,7 +48,7 @@ from google.genai import types
 # API 키 기반 (AI Studio)
 client = genai.Client(api_key="YOUR_API_KEY")
 
-# 또는 구글 클라우드(Google Cloud) 프로젝트 기반 (Vertex AI)
+# 또는 Google Cloud 프로젝트 기반 (Vertex AI)
 # client = genai.Client(vertexai=True, project="YOUR_PROJECT_ID", location="global")
 
 # 2. 콘텐츠 생성 호출

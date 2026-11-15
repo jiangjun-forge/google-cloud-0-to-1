@@ -41,7 +41,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-p
         )
         projects = [p.strip() for p in res.stdout.splitlines() if p.strip()]
         if projects:
-            print("\n[?] 대상 구글 클라우드(Google Cloud) 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
+            print("\n[?] 대상 Google Cloud 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
             for idx, p in enumerate(projects, 1):
                 print(f"  [{idx}] {p}")
             print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")

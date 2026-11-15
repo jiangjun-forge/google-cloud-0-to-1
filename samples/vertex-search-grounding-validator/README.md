@@ -16,14 +16,14 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Agent Platform Search 데이터 저장소 색인 및 그라운딩 정합성 진단기 (vertex-search-grounding-validator)
 
-Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Storage) 원본 문서와 Agent Platform Search 데이터 저장소(Data Store) 간의 색인 누락, 청킹(Chunking) 실패, 서비스 에이전트 권한 누락 및 Gemini 그라운딩 검색 품질 저하를 1분 만에 일괄 진단하고 처방하는 도구다. (As of 2026-10-17)
+Agent Platform 및 RAG 파이프라인에서 Cloud Storage 원본 문서와 Agent Platform Search 데이터 저장소(Data Store) 간의 색인 누락, 청킹(Chunking) 실패, 서비스 에이전트 권한 누락 및 Gemini 그라운딩 검색 품질 저하를 1분 만에 일괄 진단하고 처방하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
-- [ ] Cloud Storage 버킷에 신규 문서나 개정된 사내 규정을 업로드했으나, Agent Platform Search 및 제미나이(Gemini) 모델 답변에 최신 내용이 반영되지 않는 경우
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] Cloud Storage 버킷에 신규 문서나 개정된 사내 규정을 업로드했으나, Agent Platform Search 및 Gemini 모델 답변에 최신 내용이 반영되지 않는 경우
 - [ ] 원본 스토리지 객체 수 대비 데이터 저장소에 실제 색인(Indexed) 완료된 문서 수가 현저히 부족하여 색인 누락율을 전수 파악해야 하는 경우
 - [ ] 복잡한 표(Table), 다단 레이아웃, 스캔 PDF 파일이 단순 Digital Parser로 처리되어 검색 결과가 깨지거나 누락되는 경우
 - [ ] Discovery Engine 서비스 에이전트(`gcp-sa-discoveryengine`)에 스토리지 읽기 권한(`roles/storage.objectViewer`)이 누락되어 색인 동기화가 차단된 경우
@@ -33,7 +33,7 @@ Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Sto
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
 - **대상 사용자 (Target)**: RAG 파이프라인 엔지니어, AI 솔루션 아키텍트, 검색 엔진 관리자 및 데이터 관리팀
 - **해결하는 핵심 문제 (Core Pain Points)**:
-  1. Cloud Storage 원본 문서와 Agent Platform Search(구 Vertex AI Search) 데이터 저장소 간의 색인 누락으로 답변 환각 발생
+  1. Cloud Storage 원본 문서와 Agent Platform Search 데이터 저장소 간의 색인 누락으로 답변 환각 발생
   2. 문서 파서(Document Parser) 설정 오류로 표(Table)나 다단 레이아웃이 깨져 RAG 검색 정확도가 급격히 저하되는 문제
   3. 스토리지 원본 데이터 변경 후 자동 동기화 스케줄이 누락되어 과거 버전의 문서가 계속 그라운딩되는 정합성 불일치
 - **본 솔루션의 해결 방식 (Solution)**:
@@ -46,7 +46,7 @@ Agent Platform 및 RAG 파이프라인에서 클라우드 스토리지(Cloud Sto
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 데이터 저장소별 원본 문서 수, 색인 완료 문서 수, 색인율(%), 파서 유형, 청킹 설정 및 그라운딩 정합성 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | RAG 데이터 정합성 정밀 진단서, 색인 누락 문서 목록, 고급 레이아웃 파서 활성화 명령어 및 자동 동기화 매니페스트 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **고급 레이아웃 파서 적용 gcloud 명령어**: 표와 서식을 정밀하게 보존하는 디지털 파서 설정<br/>• **정기 증분 색인 동기화 스케줄 매니페스트**: Cloud Storage 변경 사항을 자동 반영하는 스케줄러<br/>• **그라운딩 품질 검증 평가 스크립트**: 테스트 질의를 던져 색인된 문서의 적중률을 측정하는 코드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **고급 레이아웃 파서 적용 gcloud 명령어**: 표와 서식을 정밀하게 보존하는 디지털 파서 설정<br/>- **정기 증분 색인 동기화 스케줄 매니페스트**: Cloud Storage 변경 사항을 자동 반영하는 스케줄러<br/>- **그라운딩 품질 검증 평가 스크립트**: 테스트 질의를 던져 색인된 문서의 적중률을 측정하는 코드 |
 
 ---
 
@@ -119,10 +119,10 @@ flowchart TB
         DataStoreEngine --> GroundingProbe
     end
 
-    subgraph Layer4["Layer 4: Target Backend & Storage (원본 스토리지 및 제미나이 추론)"]
+    subgraph Layer4["Layer 4: Target Backend & Storage (원본 스토리지 및 Gemini 추론)"]
         direction TB
         SourceBucket["Cloud Storage 원본 문서 버킷<br/>(gs://demo-customer-faqs / PDF, HTML)"]
-        GeminiModel["제미나이 3.8 Flash 모델<br/>(Search Grounding 연동 추론)"]
+        GeminiModel["Gemini Flash 모델<br/>(Search Grounding 연동 추론)"]
     end
 
     UserQuery ==>|"그라운딩 검색 요청"| DataStoreEngine
@@ -141,7 +141,7 @@ flowchart TB
 2. **문서 청킹 및 Layout Parser 설정**:
    - 고품질 RAG 검색을 위해 복잡한 PDF 구조를 이해하는 Layout Parser와 적절한 청크 크기(200~500 토큰)를 설정한다.
    - 문서 파싱 및 청킹 가이드 ( https://cloud.google.com/generative-ai-app-builder/docs/parse-chunk-documents )
-3. **제미나이(Gemini) 그라운딩 연동 최적화**:
+3. **Gemini 그라운딩 연동 최적화**:
    - 검색된 문서를 파운데이션 모델에 공급할 때 검색 점수 임계치(Dynamic Retrieval Threshold)를 설정하여 무관한 문서 인입을 차단한다.
    - Agent Platform Search를 활용한 Gemini 그라운딩 ( https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini )
 
@@ -164,7 +164,7 @@ flowchart TB
 
 | 역할 (Role) | 최소 IAM 권한 |
 | :--- | :--- |
-| 디스커버리 엔진 뷰어(`roles/discoveryengine.viewer`) | `discoveryengine.dataStores.get`, `discoveryengine.documents.list` |
+| Discovery Engine 뷰어(`roles/discoveryengine.viewer`) | `discoveryengine.dataStores.get`, `discoveryengine.documents.list` |
 | 스토리지 객체 뷰어(`roles/storage.objectViewer`) | `storage.buckets.get`, `storage.objects.get`, `storage.objects.list` |
 
 ---

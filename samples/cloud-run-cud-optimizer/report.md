@@ -72,7 +72,7 @@ python diagnose.py
 ### 2단계: Compute Flexible CUD 구매
 1. 콘솔의 과소 약정 추천액 대신 본 진단 리포트에서 도출된 최적 권장 약정액을 적용한다.
 2. 특정 서비스에 묶이지 않고 Cloud Run, GKE, Compute Engine에 공통 적용되는 **Compute Flexible CUD**를 선택한다.
-3. 구글 클라우드 콘솔 약정 구매 경로 ( https://console.cloud.google.com/billing/commitments )
+3. Google Cloud 콘솔 약정 구매 경로 ( https://console.cloud.google.com/billing/commitments )
 
 ### 3단계: 사내 거버넌스 4대 필수 표준 라벨링 준수
 Cloud Run 서비스 생성 및 수정 시 FinOps 비용 분석 및 추적을 위해 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=cloud-run-cud-optimizer,env=sample,created-by=customer-engineer`)을 누락 없이 주입한다.

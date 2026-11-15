@@ -20,7 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 대한민국 금융권의 엄격한 클라우드 보안 컴플라이언스(전자금융거래법, 전자금융감독규정, 신용정보법)를 Google Cloud 환경에서 자동 검증하기 위한 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **순수 파이썬 단일 실행 모델**: CLI 기반 핵심 파이썬 스크립트(`diagnose.py`)를 통해 상위 폴더 의존성 없이 단일 명령 실행을 지원한다.
+1. **순수 Python 단일 실행 모델**: CLI 기반 핵심 Python 스크립트(`diagnose.py`)를 통해 상위 폴더 의존성 없이 단일 명령 실행을 지원한다.
 2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 모든 GCP 리소스에 대해 `describe`, `list`, `get` 조회 명령만 수행하여 운영 환경에 영향을 주지 않고 안전함.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증이나 IAM 권한이 없는 환경에서도 결정론적(Deterministic) 모의 진단 데이터를 반환하여 빠른 데모 및 검증 보장.
 4. **선언적 처방(Prescriptive Remediation)**: 결격 항목(FAIL/WARN) 식별 시 관리자가 즉시 복구할 수 있는 표준 `gcloud` CLI 명령어를 1:1 매핑하여 출력.
@@ -105,7 +105,7 @@ sequenceDiagram
 
 ### 3.2 서브프로세스 래퍼 (`run_gcloud_json`)
 - 모든 gcloud 명령어를 `subprocess.run(..., capture_output=True, text=True, check=True)`로 안전하게 격리 실행.
-- `--format=json` 인자를 강제하여 파이썬 딕셔너리로 역직렬화.
+- `--format=json` 인자를 강제하여 Python 딕셔너리로 역직렬화.
 - 비정상 종료 시 예외를 포획하고 `None`을 반환하여 전체 진단 프로세스가 중단되지 않도록 안전장치(Fail-Safe) 마련.
 
 ### 3.3 리포트 포매터 (`print_report`)

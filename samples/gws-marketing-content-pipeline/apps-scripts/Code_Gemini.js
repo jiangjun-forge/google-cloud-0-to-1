@@ -230,7 +230,7 @@ function callGemini(systemInstruction, userContent, modelOverride, maxTokensOver
 }
 
 /**
- * Gemini 멀티모달(VLM) 심층 분석 API 호출 (구글 드라이브 이미지 및 비디오 Blob 직접 처리)
+ * Gemini 멀티모달(VLM) 심층 분석 API 호출 (Google Drive 이미지 및 비디오 Blob 직접 처리)
  */
 function callGeminiMultimodal(prompt, mediaBlob, modelOverride) {
   var apiKey = getGeminiApiKey();

@@ -14,7 +14,7 @@
 | 단계 | 점검 항목 | 결과 | 상세 상태 |
 | :--- | :--- | :--- | :--- |
 | 1. 온프렘 로컬 전처리 | 영상 비식별화 및 개인식별정보/번호판 마스킹 | PASS | 142개 영상 파일(총 417GB) 전수 비식별화 메타데이터 태그 확인 완료 |
-| 2. STS 에이전트 풀 | 에이전트 풀 상태 (on-prem-posix-pool) | PASS | 온프레미스 도커 에이전트 4대 정상 연결 (상태: CONNECTED, 버전: 최신) |
+| 2. STS 에이전트 풀 | 에이전트 풀 상태 (on-prem-posix-pool) | PASS | 온프레미스 Docker 에이전트 4대 정상 연결 (상태: CONNECTED, 버전: 최신) |
 | 3. 버킷 보안 통제 | 타깃 버킷 공개 접근 차단 (PAP) | PASS | gs://secure-media-archive publicAccessPrevention=enforced 적용됨 |
 | 4. 데이터 암호화 | Cloud KMS CMEK 암호화 적용 | PASS | 서울 리전(asia-northeast3) KMS 키(projects/demo/locations/asia-northeast3/keyRings/nct/cryptoKeys/video-key) 바인딩됨 |
 | 5. 무결성 검증 설정 | CRC32c / MD5 체크섬 검증 | PASS | 전송 중 손상 방지를 위한 청크 단위 CRC32c 해시 대조 자동 활성화 |

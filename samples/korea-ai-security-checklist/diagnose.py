@@ -33,7 +33,7 @@ CHECKLIST_ITEMS = [
         "id": "SEC-02",
         "category": "AI 거버넌스",
         "title": "인적 검토 및 외부 평가자 열람 배제 (No Human Review)",
-        "question": "서비스 품질 개선 명목으로 구글 내부 엔지니어 또는 외부 인력이 고객사 데이터를 열람하는가?",
+        "question": "서비스 품질 개선 명목으로 구글 내부 엔지니어 또는 외부 인력이 사내 데이터를 열람하는가?",
         "check_type": "ATTESTATION_POLICY",
         "policy_attestation": "엔터프라이즈 라이선스 적용 시 No Human Review 정책이 강제되어 서비스 개선 목적의 인적 검토가 배제된다 ( https://cloud.google.com/security/compliance/offerings ).",
         "legal_basis": "정보통신망법 제28조, 금융보안원 SaaS 보안 가이드라인",
@@ -185,7 +185,7 @@ CHECKLIST_ITEMS = [
         "title": "클라우드 서비스 제공자(CSP) 임의 접근 차단 (Access Approval)",
         "question": "구글 엔지니어가 장애 지원 등의 목적으로 고객 환경에 접근할 때 사전에 고객 관리자의 명시적 승인을 거쳐야 하는가?",
         "check_type": "GCP_AUDIT_ACCESS_APPROVAL",
-        "policy_attestation": "Access Approval 및 Access Transparency를 활성화하여 구글 엔지니어의 고객사 데이터 임의 접근을 통제하고 사유를 투명하게 기록한다 ( https://cloud.google.com/access-approval ).",
+        "policy_attestation": "Access Approval 및 Access Transparency를 활성화하여 구글 엔지니어의 사내 데이터 임의 접근을 통제하고 사유를 투명하게 기록한다 ( https://cloud.google.com/access-approval ).",
         "legal_basis": "금융보안원 CSP 안전성 평가 기준",
     },
     {
@@ -201,7 +201,7 @@ CHECKLIST_ITEMS = [
         "id": "SEC-19",
         "category": "라이프사이클",
         "title": "계약 종료 시 데이터 완전 파기 (Data Erasure) 보장",
-        "question": "서비스 해지 또는 라이선스 만료 시 데이터센터 내 고객사 데이터가 물리적/논리적으로 완전히 복구 불가능하게 파기되는가?",
+        "question": "서비스 해지 또는 라이선스 만료 시 데이터센터 내 사내 데이터가 물리적/논리적으로 완전히 복구 불가능하게 파기되는가?",
         "check_type": "ATTESTATION_POLICY",
         "policy_attestation": "Google Cloud 데이터 삭제 가이드라인 및 NIST SP 800-88 표준에 따라 지정 기한 내에 완전하고 안전한 데이터 소거(Data Erasure)를 보장한다 ( https://cloud.google.com/docs/security/deletion ).",
         "legal_basis": "개인정보보호법 제21조 (개인정보의 파기)",
@@ -313,7 +313,7 @@ def evaluate_checklist_items(project_id: str, region: str, dry_run: bool) -> Lis
 
         if c_type in ["ATTESTATION_POLICY", "ATTESTATION_CERT"]:
             item_res["status"] = "PASS"
-            item_res["evidence"] = "구글 클라우드 공식 보안 약관(CDPA) 및 제3자 공인 인증서 소명 완료"
+            item_res["evidence"] = "Google Cloud 공식 보안 약관(CDPA) 및 제3자 공인 인증서 소명 완료"
         elif dry_run:
             mock_entry = mock_status_map.get(item["id"], {"status": "PASS", "evidence": "가상 시뮬레이션 환경 통제 충족"})
             item_res["status"] = mock_entry["status"]
@@ -398,7 +398,7 @@ def build_markdown_report(project_id: str, region: str, dry_run: bool, items: Li
         f"- **진단 모드**: `{mode_str}`",
         f"- **종합 평가**: 총 {total_cnt}개 항목 중 **적합(PASS) {pass_cnt}건**, **조건부 충족(PARTIAL) {partial_cnt}건**, **주의(WARN) {warn_cnt}건**, **부적합(FAIL) {fail_cnt}건**",
         "",
-        "> **[고지 사항]** 본 보고서는 구글 클라우드 공식 보안 약관(CDPA), 글로벌 공인 인증서(ISO 42001, ISO 27001 등) 및 사내 GCP 프로젝트의 실제 기술적 보안 설정을 실시간 대조하여 생성된 **공식 보안성 심의 소명 증적 문서**다.",
+        "> **[고지 사항]** 본 보고서는 Google Cloud 공식 보안 약관(CDPA), 글로벌 공인 인증서(ISO 42001, ISO 27001 등) 및 사내 GCP 프로젝트의 실제 기술적 보안 설정을 실시간 대조하여 생성된 **공식 보안성 심의 소명 증적 문서**다.",
         "",
         "---",
         "",
@@ -459,8 +459,8 @@ def build_markdown_report(project_id: str, region: str, dry_run: bool, items: Li
         "",
         "## 4. 콘솔 링크 조치 가이드",
         "",
-        "- **구글 클라우드 보안 및 컴플라이언스 포털**: ( https://cloud.google.com/security/compliance/iso-42001 )",
-        "- **구글 클라우드 데이터 처리 추가 계약(CDPA)**: ( https://cloud.google.com/terms/data-processing-addendum )",
+        "- **Google Cloud 보안 및 컴플라이언스 포털**: ( https://cloud.google.com/security/compliance/iso-42001 )",
+        "- **Google Cloud 데이터 처리 추가 계약(CDPA)**: ( https://cloud.google.com/terms/data-processing-addendum )",
         "- **Cloud KMS 관리 콘솔**: ( https://console.cloud.google.com/security/kms )",
         "- **VPC Service Controls 콘솔**: ( https://console.cloud.google.com/security/service-perimeter )",
         "",

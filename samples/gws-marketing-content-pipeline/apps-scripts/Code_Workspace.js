@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 4] 캠페인 작업 공간 초기화 및 구글 폼 올인원 세팅 엔진 (Workspace & Form Initializer)
+ * [모듈 4] 캠페인 작업 공간 초기화 및 Google Forms 올인원 세팅 엔진 (Workspace & Form Initializer)
  */
 
 /**
- * [캠페인 초기화] 구글 드라이브 폴더 트리, AI 페르소나 마스터 패널, 9대 프롬프트 구글 독스,
+ * [캠페인 초기화] Google Drive 폴더 트리, AI 페르소나 마스터 패널, 9대 프롬프트 Google Docs,
  * 그리고 고객 VoC 수집용 Google Forms 생성 및 시트 바인딩까지 초장에 완결한다.
  */
 function initCampaignWorkspace() {
@@ -35,15 +35,15 @@ function initCampaignWorkspace() {
       Logger.log("루트 직속 AI 페르소나 데이터셋 시딩 완료: " + personaFileName);
     }
 
-    // 3. prompts/ 폴더 내 9대 프롬프트 구글 독스 자동 시딩 (기존 마케터 수정분 보존)
+    // 3. prompts/ 폴더 내 9대 프롬프트 Google Docs 자동 시딩 (기존 마케터 수정분 보존)
     seedDefaultPrompts(promptsFolder);
 
     var folderDisplayName = campaignFolder.getName();
 
-    // 4. [스마트 보존] 고객 VoC 수집용 구글 폼(Google Forms) 탐색 및 연동 (기존 폼 보존, 부재 시에만 생성)
+    // 4. [스마트 보존] 고객 VoC 수집용 Google Forms 탐색 및 연동 (기존 폼 보존, 부재 시에만 생성)
     var formInfo = setupFeedbackGoogleForm(campaignFolder, campaignCode);
 
-    // 5. 현재 구글 시트를 캠페인 루트 폴더로 패키징 및 직관적 명칭 동기화
+    // 5. 현재 Google Sheets를 캠페인 루트 폴더로 패키징 및 직관적 명칭 동기화
     try {
       var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
       var sheetFile = DriveApp.getFileById(activeSpreadsheet.getId());
@@ -63,7 +63,7 @@ function initCampaignWorkspace() {
       Logger.log("시트 캠페인 폴더 이동 중 예외 (무시 가능): " + sheetMoveErr);
     }
 
-    // 6. 구글 시트 실행 내역 표 초기화 및 핵심 리소스 링크 등록
+    // 6. Google Sheets 실행 내역 표 초기화 및 핵심 리소스 링크 등록
     var durationSec = Math.round((new Date().getTime() - startTime) / 1000);
     initDashboardSheet();
     
@@ -83,7 +83,7 @@ function initCampaignWorkspace() {
     if (formInfo && formInfo.publishedUrl) {
       recordStepResultToSheet(
         "고객 피드백 채널",
-        "VoC 구글 폼 및 모바일 QR",
+        "VoC Google Forms 및 모바일 QR",
         "활성",
         formInfo.publishedUrl,
         "온라인 설문지 열기",
@@ -139,7 +139,7 @@ function setupFeedbackGoogleForm(campaignFolder, campaignCode) {
     var spreadsheetId = spreadsheet.getId();
     var formTitle = "고객 피드백 설문 (" + campaignCode + ")";
 
-    // 기존에 생성된 폼이 있는지 스마트 탐색 (동일 제목 또는 폴더 내 기존 구글 폼 보존)
+    // 기존에 생성된 폼이 있는지 스마트 탐색 (동일 제목 또는 폴더 내 기존 Google Forms 보존)
     var existingFiles = campaignFolder.getFilesByName(formTitle);
     if (!existingFiles.hasNext()) {
       existingFiles = campaignFolder.getFilesByType(MimeType.GOOGLE_FORMS);
@@ -221,7 +221,7 @@ function setupFeedbackGoogleForm(campaignFolder, campaignCode) {
       .setHelpText("제품 착용 컷, 언박싱 사진에 대한 의견이나 이미지 파일 링크를 입력하십시오.")
       .setRequired(false);
 
-    // 현재 구글 시트에 응답 탭 연결
+    // 현재 Google Sheets에 응답 탭 연결
     form.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
 
     // 폼 파일을 캠페인 루트 폴더로 이동

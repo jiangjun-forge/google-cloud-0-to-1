@@ -16,14 +16,14 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise In-Chat Factory: 기간계 데이터 및 MCP 커넥터 모듈 (gemini-enterprise-factory-connector)
 
-`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 사내 기간계 데이터 연동을 담당하는 도구로, 구글 드라이브나 빅쿼리 같은 1P 자산 외에 지라(Jira), 컨플루언스(Confluence), 세일즈포스(Salesforce), 서비스나우(ServiceNow), 셰어포인트(SharePoint), SAP 등 14대 엔터프라이즈 3P SaaS 시스템의 데이터를 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 연결할 수 있도록 데이터 저장소(Data Store) 구성 매니페스트와 ACL 동기화 설정을 대화창 내에서 자율 생성해 주는 사내 커넥터 스캐폴더 엔지니어링 모듈이다. (As of 2026-11-10)
+`Gemini Enterprise In-Chat Factory`의 5대 핵심 모듈 중 사내 기간계 데이터 연동을 담당하는 도구로, Google Drive나 BigQuery 같은 1P 자산 외에 Jira, Confluence, Salesforce, ServiceNow, SharePoint, SAP 등 14대 엔터프라이즈 3P SaaS 시스템의 데이터를 Gemini Enterprise app에 연결할 수 있도록 데이터 저장소(Data Store) 구성 매니페스트와 ACL 동기화 설정을 대화창 내에서 자율 생성해 주는 사내 커넥터 스캐폴더 엔지니어링 모듈이다. (As of 2026-11-10)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 엔터프라이즈 에이전트 도입 후 다음과 같은 실무적 한계나 연동 난관이 발생하고 있다면 본 솔루션 도입이 필요하다:
-- [ ] **기간계 데이터 파편화**: 사내 주요 지식이 지라, 컨플루언스, 세일즈포스, 셰어포인트 등 여러 SaaS에 분산되어 있어 AI 검색을 위한 단일 뷰 구성이 어려운 경우
+- [ ] **기간계 데이터 파편화**: 사내 주요 지식이 Jira, Confluence, Salesforce, SharePoint 등 여러 SaaS에 분산되어 있어 AI 검색을 위한 단일 뷰 구성이 어려운 경우
 - [ ] **인증 프로토콜 복잡성**: 각 데이터 소스마다 OAuth 2.0, API Token, JWT 등 인증 방식이 제각각이어서 커넥터 매니페스트 작성에 많은 시간이 소모되는 경우
 - [ ] **문서 레벨 권한(ACL) 유실 우려**: 원본 SaaS의 사용자별 열람 권한이 동기화되지 않아 권한 없는 사용자에게 기밀 정보가 노출될 위험이 있는 경우
 - [ ] **동기화 주기 및 증분 색인 미흡**: 변경 데이터가 실시간 또는 정기적으로 반영되지 않아 AI 에이전트가 과거 정보를 바탕으로 잘못된 답변을 생성하는 경우
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 선택된 시스템 커넥터 유형, 인증 방식 및 ACL 설정, 데이터 저장소 생성 매니페스트 및 등록 결과 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 데이터 커넥터 아키텍처 보고서, Discovery Engine Data Store 구성 매니페스트 및 동기화 스케줄 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **데이터스토어 프로비저닝 매니페스트**: 기간계 시스템별 증분 색인 및 ACL 매핑 JSON<br/>• **실행 스크립트**: Data Store 생성 및 Gemini Enterprise app 바인딩 명령어<br/>• **사내 검색 엔진 원클릭 바인딩**: 생성된 데이터스토어를 Gemini Enterprise app에 연결하는 API 명세 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **데이터스토어 프로비저닝 매니페스트**: 기간계 시스템별 증분 색인 및 ACL 매핑 JSON<br/>- **실행 스크립트**: Data Store 생성 및 Gemini Enterprise app 바인딩 명령어<br/>- **사내 검색 엔진 원클릭 바인딩**: 생성된 데이터스토어를 Gemini Enterprise app에 연결하는 API 명세 |
 
 ---
 
@@ -119,7 +119,7 @@ flowchart TB
     end
 
     subgraph Runtime["2. Agent Engine 호스팅 런타임"]
-        GEApp -->|"2. 대화형 스캐폴딩 세션 인입"| Engine["Agent Engine 런타임<br/>(ResilientAdkApp / gemini-3.8-flash)"]
+        GEApp -->|"2. 대화형 스캐폴딩 세션 인입"| Engine["Agent Engine 런타임<br/>(ResilientAdkApp / Gemini Flash)"]
         Templates["14대 기간계 커넥터 카탈로그<br/>(Jira/Confluence/Salesforce 등)"] --- Engine
         Tools["bind_enterprise_datastore_tool<br/>(대행 SA: ge-connector-sa)"] --> Engine
     end

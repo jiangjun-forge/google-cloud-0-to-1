@@ -24,10 +24,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ```text
 .
 ├── .agents/                                    # Antigravity(agy) 및 Jetski AI 에이전트 실습 스킬
-│   └── skills/                                 # 48개 시나리오별 Autopilot 및 핸즈온 가이드
+│   └── skills/                                 # 47개 시나리오별 Autopilot 및 핸즈온 가이드
 ├── LICENSE                                     # Apache-2.0 오픈소스 라이선스
 ├── README.md                                   # 프로젝트 전체 개요 및 아키텍처 안내서
-└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (48개)
+└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (47개)
     ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
     ├── app-lifecycle-manager/                  # 바이브 코딩 AI 앱 중복 방지, GQL 리니지 차단 및 Coldline 냉동 거버넌스
     ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
@@ -51,7 +51,6 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── gemini-enterprise-domain-resolver/      # 사내 도메인 선점 충돌 진단 및 Cloud Identity 배포
     ├── gemini-enterprise-fqdn-checker/         # 사내망 방화벽 허용용 Exact FQDN 및 443 연결성 진단
     ├── gemini-enterprise-governance-guard/     # 마켓플레이스 차단, 사내 승인 에이전트 통제 및 WIF SSO 진단
-    ├── gemini-enterprise-latency-profiler/     # 엔터프라이즈 신뢰 스택(네트워크, 가드레일, TTFT) 구간별 지연 시간 분석
     ├── gemini-enterprise-overage-guard/        # Overage 과금 방어, AI Studio API 키 차단 및 Billing RBAC 가드
     ├── gemini-enterprise-prompt-miner/         # [GE In-Chat Factory] 프롬프트 로그 기반 상류 마이크로 업무 발굴 엔진
     ├── gemini-enterprise-usage-by-account/     # Gemini Enterprise app 공식 로깅 기반 계정별 토큰 사용량 및 지연시간 분석
@@ -105,7 +104,7 @@ agy --version
 ```
 
 ### 2.3 에이전트 가동 및 미니 프로젝트 자율 실행 예시
-저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 48개 실습 스킬을 에이전트가 자동으로 로드한다:
+저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 47개 실습 스킬을 에이전트가 자동으로 로드한다:
 ```bash
 # 저장소 루트에서 Antigravity CLI 가동 (스킬 자동 인식)
 agy
@@ -120,7 +119,7 @@ agy
 
 ## 3. 실습 스킬 (`.agents/skills/`) 및 3단계 학습 가이드
 
-본 저장소의 모든 미니 프로젝트는 고객 개발자가 AI 에이전트를 페어 프로그래머 삼아 자율 실행(YOLO Autopilot)부터 직접 실습, 아키텍처 복습까지 원활하게 진행할 수 있도록 `.agents/skills/<슬러그>/`에 스킬 명세서를 기본 탑재하고 있다:
+본 저장소의 모든 미니 프로젝트는 사내 개발자가 AI 에이전트를 페어 프로그래머 삼아 자율 실행(YOLO Autopilot)부터 직접 실습, 아키텍처 복습까지 원활하게 진행할 수 있도록 `.agents/skills/<슬러그>/`에 스킬 명세서를 기본 탑재하고 있다:
 
 - **수동 직접 실습**: 안내에 따라 터미널에서 `cd samples/<슬러그> && python diagnose.py` 직접 실행
 - **에이전트 자율 진단(Autopilot)**: "이 문제를 진단해 줘" 요청 시 에이전트가 최적의 샘플을 탐색하여 사전 점검부터 원인 분석, 조치 가이드까지 자율 실행
@@ -151,10 +150,10 @@ agy
 - `README.md`: 문제 증상 체크리스트, 빠른 시작, 아키텍처 다이어그램, 조치 가이드, 필요 IAM 권한 명세
 - `diagnose.py`: 시나리오별 진단 및 분석 핵심 로직 (실시간 터미널 출력 및 `report.md` 자동 생성/덮어쓰기)
 - `report.md`: 진단 실행 결과 표준 마크다운 리포트 (사내 공유 및 복습용, 모의 실행 가명 결과 기본 포함)
-- `requirements.txt`: 실행에 필요한 최소 파이썬 의존성 패키지 목록
+- `requirements.txt`: 실행에 필요한 최소 Python 의존성 패키지 목록
 
 ### 4.2 공통 CLI 실행 옵션 및 표준 인터페이스
-본 저장소의 모든 미니 프로젝트는 쉘 스크립트 래퍼 없이 순수 파이썬 단일 명령(`python diagnose.py`)으로 크로스 플랫폼(Linux, macOS, Windows) 호환성을 지원하며, 다음과 같은 공통 표준 CLI 인터페이스를 제공한다:
+본 저장소의 모든 미니 프로젝트는 쉘 스크립트 래퍼 없이 순수 Python 단일 명령(`python diagnose.py`)으로 크로스 플랫폼(Linux, macOS, Windows) 호환성을 지원하며, 다음과 같은 공통 표준 CLI 인터페이스를 제공한다:
 
 | 실행 옵션 (CLI Flag) | 모드 명칭 | 주요 역할 및 동작 방식 |
 | :--- | :--- | :--- |

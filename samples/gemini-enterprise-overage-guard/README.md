@@ -14,15 +14,15 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 엔터프라이즈(Gemini Enterprise) 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
+# Gemini Enterprise 추가 과금 방어 및 비인가 API 호출 차단 가드 (`gemini-enterprise-overage-guard`)
 
-제미나이 엔터프라이즈 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(클라우드 빌링(Cloud Billing))으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방하는 종합 비용 가드레일 도구다. (As of 2026-10-17)
+Gemini Enterprise 전사 도입 환경에서 라이선스 일일 풀링 쿼터 초과 쓰로틀링(업무 중단) 위험뿐만 아니라, 임직원이 공식 계정으로 Google AI Studio 등에 접근하여 회사 결제 계정(Cloud Billing)으로 API 키를 발급하거나 유료 API를 호출하는 섀도우 과금 누수를 체계적으로 차단하고, 계열사 중간 관리자 권한 거버넌스(RBAC)를 진단, 처방하는 종합 비용 가드레일 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 엔터프라이즈 환경에서 전사 임직원에게 공식 계정을 배포할 때 다음과 같은 3대 비용 누수 및 업무 중단 리스크가 발생한다: 1. **Gemini Enterprise 자체 일일 풀링 쿼터 소진 및 쓰로틀링**: 2. **Google AI Studio를 통한 비의도적 유료 API 호출 (가장 큰 위험 경로)**: 3. **계열사 IT 관리자의 결제 권한 남용 및 거버넌스 부재**:
 - [ ] 오버리지 빌링이 비활성화(OFF)된 경우, 피크 시간대 일일 쿼터가 소진되면 당일 자정까지 전사 AI 질의가 일시 차단되는 업무 장애 발생.
 - [ ] 반대로 오버리지 토글을 켰을 때(ON) 월 지출 상한선(Spend Cap)이 없으면 통제 불능의 초과 비용(Runaway Cost) 청구 위험.
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 일일 쿼터 소진율(%), 오버리지 활성화 상태, AI Studio 위험 프로젝트 수 및 결제 권한 과다 부여 계정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 쿼터 고갈 및 과금 누수 분석서, 일일 쓰로틀링 방어 설정, AI Studio 차단 조직 정책 명령어 및 계열사 RBAC 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **AI Studio 키 발급 차단 조직 정책**: `generativelanguage.googleapis.com` 호출을 제한하는 정책<br/>• **오버리지 안전 임계치 알림 정책**: 일일 쿼터 80% 도달 시 어드민에게 자동 통보하는 모니터링 설정<br/>• **계열사 OU 전용 결제 역할 명세**: `roles/billing.admin`을 대체하는 최소 권한 맞춤 역할 DDL |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **AI Studio 키 발급 차단 조직 정책**: `generativelanguage.googleapis.com` 호출을 제한하는 정책<br/>- **오버리지 안전 임계치 알림 정책**: 일일 쿼터 80% 도달 시 어드민에게 자동 통보하는 모니터링 설정<br/>- **계열사 OU 전용 결제 역할 명세**: `roles/billing.admin`을 대체하는 최소 권한 맞춤 역할 DDL |
 
 ---
 
@@ -166,13 +166,13 @@ gcloud services disable generativelanguage.googleapis.com --project=[PROJECT_ID]
 ### 4단계: 계열사 IT 관리자 결제 권한(Billing RBAC) 회수 및 거버넌스 확립
 - 계열사 관리자에게 최고 관리자(Super Admin) 권한 부여를 엄격히 금지한다.
 - Cloud Identity 관리자 콘솔에서 계열사 조직 단위(OU)에 한정된 맞춤 역할(사용자/그룹 관리)만 부여한다.
-- 구글 클라우드 콘솔에서 `roles/billing.admin` 및 `roles/billing.user` 권한을 회수하고, 사전 프로비저닝된 프로젝트 내 `roles/viewer`만 선별 부여한다.
+- Google Cloud 콘솔에서 `roles/billing.admin` 및 `roles/billing.user` 권한을 회수하고, 사전 프로비저닝된 프로젝트 내 `roles/viewer`만 선별 부여한다.
 
 ### 차단 정책 적용 후 기존 업무 영향도 평가
-- **Gemini Enterprise 웹 앱 (Chat / Search)**: 영향 없음 (자체 관리형 테넌트 및 버텍스 AI(Vertex AI) 엔드포인트를 사용하므로 정상 동작)
+- **Gemini Enterprise 웹 앱 (Chat / Search)**: 영향 없음 (자체 관리형 테넌트 및 Vertex AI 엔드포인트를 사용하므로 정상 동작)
 - **NotebookLM Enterprise**: 영향 없음 (Enterprise 테넌트 격리 영역 내 구동)
 - **Antigravity (Google OAuth 로그인)**: 영향 없음 (사용자 라이선스 기반 인증)
-- **Antigravity (구글 클라우드 프로젝트 종량제 모드)**: 차단됨 (의도된 통제 목적에 정확히 부합)
+- **Antigravity (Google Cloud 프로젝트 종량제 모드)**: 차단됨 (의도된 통제 목적에 정확히 부합)
 
 ---
 ## 5. 사전 준비 사항 (필요 IAM 권한)

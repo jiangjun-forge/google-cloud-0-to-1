@@ -16,18 +16,18 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Cloud Run Direct VPC Egress 구성 및 네트워크 연결성 진단기
 
-클라우드 런(Cloud Run) 환경에서 Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 클라우드 NAT(Cloud NAT) 라우팅 정합성을 1분 만에 일괄 진단하는 도구다. (As of 2026-10-17)
+Cloud Run 환경에서 Serverless VPC Access 커넥터의 병목과 인스턴스 비용을 제거하기 위한 Direct VPC Egress 구성 상태, 서브넷 가용 IP 고갈 위험, Private Google Access 및 Cloud NAT 라우팅 정합성을 1분 만에 일괄 진단하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 기존 Serverless VPC Access 커넥터(VPC Connector)의 최대 처리량 제약이나 인스턴스 기동 지연(Cold Start) 병목을 해소하고자 하는 경우
 - [ ] 커넥터 유지에 수반되는 고정 가상 머신(e2-micro 등) 인스턴스 비용을 절감하고 Direct VPC Egress 로 전환하고자 하는 경우
 - [ ] Cloud Run 컨테이너가 급격히 수평 확장(Auto-scaling)될 때 할당된 서브넷의 사설 IP가 고갈되어 파드가 기동 실패(Crash)하는 위험을 사전에 방지하려는 경우
 - [ ] `all-traffic` 옵션 설정 후 Cloud NAT 미구성으로 인해 외부 공용 API(결제 게이트웨이, 서드파티 웹훅) 통신이 차단되는 장애를 진단해야 하는 경우
-- [ ] 서브넷의 Private Google Access(PGA) 설정 누락으로 클라우드 스토리지(Cloud Storage), 빅쿼리(BigQuery) 등 구글 사설 API 호출이 실패하는 원인을 규명하려는 경우
+- [ ] 서브넷의 Private Google Access(PGA) 설정 누락으로 Cloud Storage, BigQuery 등 구글 사설 API 호출이 실패하는 원인을 규명하려는 경우
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 서비스별 Egress 모드, 서브넷 IP 가용률, Private Google Access 상태 및 네트워크 연결성 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 서비스별 네트워크 설정 상세 분석, 커넥터 제거 시 비용 절감액 계산, IP 대역 확장 가이드 및 전환 gcloud 명령어 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Direct VPC Egress 전환 명령어**: 커넥터를 대체하는 `--network`, `--subnet`, `--vpc-egress` 설정<br/>• **서브넷 확장 및 PGA 활성화 스크립트**: 가용 IP 확보 및 사설 구글 액세스 강제 명령어<br/>• **기존 Serverless 커넥터 삭제 명령어**: 유휴 커넥터 리소스 회수를 통한 즉각적인 비용 절감 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **Direct VPC Egress 전환 명령어**: 커넥터를 대체하는 `--network`, `--subnet`, `--vpc-egress` 설정<br/>- **서브넷 확장 및 PGA 활성화 스크립트**: 가용 IP 확보 및 사설 구글 액세스 강제 명령어<br/>- **기존 Serverless 커넥터 삭제 명령어**: 유휴 커넥터 리소스 회수를 통한 즉각적인 비용 절감 가이드 |
 
 ---
 

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Gemini Legacy SDK Usage Scanner.
 
-구형 제미나이 SDK(google.generativeai 또는 vertexai.generative_models) 호출 부위를
+구형 Gemini SDK(google.generativeai 또는 vertexai.generative_models) 호출 부위를
 정적 분석하여 탐지하고 최신 google-genai SDK로의 마이그레이션 가이드를 제공한다.
 """
 
@@ -49,7 +49,7 @@ def get_mock_findings():
 
 
 def scan_file(file_path: Path) -> dict | None:
-  """단일 소스 코드 파일을 검사하여 구형 제미나이 SDK 사용 여부를 분석한다."""
+  """단일 소스 코드 파일을 검사하여 구형 Gemini SDK 사용 여부를 분석한다."""
   try:
     content = file_path.read_text(encoding="utf-8", errors="ignore")
   except Exception:
@@ -82,7 +82,7 @@ def scan_file(file_path: Path) -> dict | None:
 
 
 def scan_directory(scan_path: str) -> list[dict]:
-  """지정한 디렉터리 내의 파이썬, 쉘 스크립트, 주피터 노트북 파일을 재귀 스캔한다."""
+  """지정한 디렉터리 내의 Python, 쉘 스크립트, Jupyter Notebook 파일을 재귀 스캔한다."""
   results = []
   target_dir = Path(scan_path)
   if not target_dir.exists() or not target_dir.is_dir():
@@ -108,11 +108,11 @@ def format_results_text(findings: list[dict], is_dry_run: bool = False) -> str:
   if is_dry_run:
     lines.append("[데모 실행] --dry-run 모드가 활성화되어 가상 분석 결과를 시뮬레이션한다.")
   lines.append("=" * 72)
-  lines.append("[진단 결과] 구형 제미나이(Gemini) SDK 코드 정적 진단 리포트")
+  lines.append("[진단 결과] 구형 Gemini SDK 코드 정적 진단 리포트")
   lines.append("=" * 72)
 
   if not findings:
-    lines.append("\n[안내] 대상 디렉터리에서 구형 제미나이 SDK 사용 코드를 발견하지 못했다.")
+    lines.append("\n[안내] 대상 디렉터리에서 구형 Gemini SDK 사용 코드를 발견하지 못했다.")
     lines.append("      (대상 파일 확장자: .ipynb, .py, .sh)\n")
     return "\n".join(lines)
 
@@ -143,7 +143,7 @@ from google.genai import types
 # API 키 기반 (AI Studio)
 client = genai.Client(api_key="YOUR_API_KEY")
 
-# 또는 구글 클라우드(Google Cloud) 프로젝트 기반 (Vertex AI)
+# 또는 Google Cloud 프로젝트 기반 (Vertex AI)
 # client = genai.Client(vertexai=True, project="YOUR_PROJECT_ID", location="global")
 
 # 2. 콘텐츠 생성 호출
@@ -349,7 +349,7 @@ def run_config_mode(scenario_name: str = "") -> None:
 
 def main():
   parser = argparse.ArgumentParser(
-      description="구형 제미나이 SDK 사용처 탐지 및 신규 google-genai 마이그레이션 도구"
+      description="구형 Gemini SDK 사용처 탐지 및 신규 google-genai 마이그레이션 도구"
   )
   parser.add_argument(
       "-p",
@@ -376,7 +376,7 @@ def main():
   if args.dry_run:
     findings = get_mock_findings()
   else:
-    print(f"\n[스캔 시작] '{args.path}' 경로 내 구형 제미나이 SDK 사용처를 진단하는 중...")
+    print(f"\n[스캔 시작] '{args.path}' 경로 내 구형 Gemini SDK 사용처를 진단하는 중...")
     findings = scan_directory(args.path)
 
   report_results(findings, is_dry_run=args.dry_run)

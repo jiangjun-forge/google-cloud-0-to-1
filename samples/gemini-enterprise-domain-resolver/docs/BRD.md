@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 비즈니스 요구 사항 명세서 (BRD): 제미나이 엔터프라이즈(Gemini Enterprise) 도입을 위한 도메인 충돌(domain_in_use) 진단기
+# 비즈니스 요구 사항 명세서 (BRD): Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 진단기
 
 ## 1. 배경 및 목적
 Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의해 선점되어 발생하는 도메인 충돌(domain_in_use)을 진단하고, Google Workspace 라이선스 구매 없이 Cloud Identity Free를 활용하여 독립적인 엔터프라이즈 AI 환경을 배포하도록 지원하는 진단 도구다.
@@ -23,7 +23,7 @@ Gemini Enterprise 도입 시 사내 도메인이 기존 비관리 계정에 의�
 
 | 요구 사항 ID | 요구 사항 명칭 | 상세 설명 | 우선순위 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** | **현장 장애 및 리스크 사전 탐지** | 제미나이 엔터프라이즈(Gemini Enterprise) 도입을 위한 도메인 충돌(domain_in_use) 진단기 관련 운영 리스크 및 설정 누락을 사전에 식별하여야 한다. | 필수 (P0) |
+| **BR-01** | **현장 장애 및 리스크 사전 탐지** | Gemini Enterprise 도입을 위한 도메인 충돌(domain_in_use) 진단기 관련 운영 리스크 및 설정 누락을 사전에 식별하여야 한다. | 필수 (P0) |
 | **BR-02** | **표준화된 자동 진단 체계 구축** | 수동 콘솔 점검에 따른 인적 오류와 장애 복구 지연 시간을 단축하여야 한다. | 필수 (P0) |
 | **BR-03** | **가상 실행(Dry-run) 기반 무중단 사전 검증** | 실제 GCP 과금 발생 전 가상 실행(--dry-run)으로 안전하게 정책을 검증하여야 한다. | 필수 (P0) |
 | **BR-04** | **실무자 조치 가이드 및 자원 정리(Teardown) 안내** | 비개발 직군과 운영 실무자가 즉시 참조할 수 있는 콘솔 조치 경로와 테스트 리소스 정리 절차를 제공한다. | 권장 (P1) |

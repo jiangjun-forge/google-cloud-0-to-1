@@ -10,11 +10,11 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): 제미나이(Gemini) API 비용 및 쿼터 임계치 실시간 경보 자동화 (`gemini-quota-cost-alert`)
+# 기술 상세 설계서 (TDD): Gemini API 비용 및 쿼터 임계치 실시간 경보 자동화 (`gemini-quota-cost-alert`)
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Cloud Billing 예산 임계치 도달 이벤트가 발행되면 Pub/Sub 및 Cloud Functions가 이를 비동기 수신하여 Service Usage API를 통해 Gemini 호출 쿼터를 0으로 강제 축소하고 운영팀에 슬랙 통보를 전달한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Cloud Billing 예산 임계치 도달 이벤트가 발행되면 Pub/Sub 및 Cloud Functions가 이를 비동기 수신하여 Service Usage API를 통해 Gemini 호출 쿼터를 0으로 강제 축소하고 운영팀에 Slack 통보를 전달한다.
 
 ```mermaid
 sequenceDiagram

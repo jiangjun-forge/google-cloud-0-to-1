@@ -7,7 +7,7 @@
  */
 
 var CONFIG = {
-  // 기본 캠페인 코드 및 구글 드라이브 루트 폴더명
+  // 기본 캠페인 코드 및 Google Drive 루트 폴더명
   CAMPAIGN_CODE: "cp-ignite",
 
   // 인증 방식: Google AI Studio API Key 기반 인증 (Zero-GCP Dependency)
@@ -21,7 +21,7 @@ var CONFIG = {
   GEMINI_MODEL: "gemini-3.8-flash",
   MODEL_GENERATOR: "gemini-3.8-flash", // 콘텐츠 발상 및 멀티모달 소재 생성 모델
   MODEL_JUDGE: "gemini-3.8-flash", // AI 페르소나 다면 평가 및 가드레일 판정 모델
-  MODEL_COPILOT: "gemini-3.8-flash", // AI 코파일럿 대화 및 상황 인지 고속 반응 모델 (Gemini 3.8 Flash)
+  MODEL_COPILOT: "gemini-3.8-flash", // AI 코파일럿 대화 및 상황 인지 고속 반응 모델 (Gemini Flash)
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 모델 (Veo 3.1 Fast)
   EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
@@ -32,13 +32,13 @@ var CONFIG = {
   HTTP_BASE_DELAY_MS: 1500, // 지수 백오프 기본 대기 시간 (ms)
   MAX_MEDIA_PAYLOAD_MB: 35, // Apps Script 단일 페이로드 안전 상한 (MB)
   
-  // 구글 드라이브 핵심 기획/명세/콘텐츠 문서 파일명
-  IDEA_DOC_NAME: "아이디어 메모", // 마케터 원천 아이디어 작성용 구글 독스 (캠페인 루트 직속)
+  // Google Drive 핵심 기획/명세/콘텐츠 문서 파일명
+  IDEA_DOC_NAME: "아이디어 메모", // 마케터 원천 아이디어 작성용 Google Docs (캠페인 루트 직속)
   PLAN_DOC_NAME: "PLAN", // 마케팅 캠페인 기획서 전문
   SPEC_DOC_NAME: "SPEC", // 멀티 채널 콘텐츠 제작 명세서 (이미지, 숏폼, 카피 규격)
   CONTENT_DOC_NAME: "campaign_content", // 멀티 채널 마케팅 콘텐츠 전문 (카피라이팅 및 영상 콘티)
   PERSONA_FILE_NAME: "ai_personas.json", // 타깃 AI 페르소나 마스터 데이터 (캠페인 루트 직속)
-  PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 구글 독스 보관 폴더명
+  PROMPTS_FOLDER_NAME: "prompts", // 마케터 수정용 프롬프트 Google Docs 보관 폴더명
   DIRECTIVE_DOC_NAME: "마케터 보정 지침", // 마케터 전용 의사 결정 및 보정 지침서 (AI 덮어쓰기 금지)
 
   // GitHub 퍼블릭 저장소 Raw 베이스 URL (초기화 시 최신 프롬프트 실시간 인출)
@@ -73,7 +73,7 @@ var CONFIG = {
     }
   },
 
-  // 9대 프롬프트 구글 독스 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
+  // 9대 프롬프트 Google Docs 메타데이터 및 최소 안전 폴백 (오프라인/네트워크 장애 대비용)
   DEFAULT_PROMPTS: {
     "01_idea_to_plan": {
       title: "01_idea_to_plan",
@@ -97,7 +97,7 @@ var CONFIG = {
       title: "04_content_generation",
       description: "초판 마케팅 카피라이팅 및 모바일 숏폼 영상 콘티 생성 지침",
       systemInstruction:
-        "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content 구글 독스를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
+        "당신은 크리에이티브 마케팅 디렉터이다. 기획서(PLAN)와 제작 명세서(SPEC)를 준수하여 채널별 카피라이팅과 15초 모바일 숏폼 영상(9:16) 연출 콘티가 통합된 campaign_content Google Docs를 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 일절 배제하라."
     },
     "05_persona_evaluation": {
       title: "05_persona_evaluation",
@@ -115,13 +115,13 @@ var CONFIG = {
       title: "07_feedback_summary",
       description: "고객 VoC 및 VLM 멀티모달 분석 기반 피드백 종합 분석 보고서 지침",
       systemInstruction:
-        "당신은 CMO 전속 수석 분석관이다. AI 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary 구글 독스를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
+        "당신은 CMO 전속 수석 분석관이다. AI 페르소나 다면 평가, 고객 VoC 설문 응답, 실제 제출된 미디어 VLM 분석 결과를 종합하여 feedback_summary Google Docs를 작성하라. 실제 제출 미디어가 없으면 미제출로 명시하고, 문서 하단에 AI 추천 보정 방향 요약을 포함하라. 한글 복합어는 철저히 띄어 쓰라."
     },
     "08_content_revision": {
       title: "08_content_revision",
       description: "피드백 요약서 및 독립된 마케터 보정 지침서 반영 차기 리비전 콘텐츠 보정 지침",
       systemInstruction:
-        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content 구글 독스로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
+        "당신은 총괄 크리에이티브 디렉터이다. 직전 마케팅 콘텐츠와 피드백 요약본, 그리고 독립된 '마케터 보정 지침' 문서에 명시된 마케터 최종 의사 결정을 최우선 구속력으로 반영하여 개정된 광고 카피와 숏폼 영상 콘티를 완성도 높은 campaign_content Google Docs로 작성하라. 한글 복합어는 철저히 띄어 쓰고 이모지와 중간 점은 배제하라."
     },
     "09_visual_prompt": {
       title: "09_visual_prompt",

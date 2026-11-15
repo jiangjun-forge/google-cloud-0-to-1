@@ -12,7 +12,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석기 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 공식 내장 '프롬프트 및 응답 로깅(Prompt & Response Logging)' 기능을 활용하여 빅쿼리(BigQuery)로 적재되는 데이터를 기반으로 계정별 토큰 소모량과 사용 패턴을 정량 분석하기 위한 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 Gemini Enterprise app 환경에서 공식 내장 '프롬프트 및 응답 로깅(Prompt & Response Logging)' 기능을 활용하여 BigQuery로 적재되는 데이터를 기반으로 계정별 토큰 소모량과 사용 패턴을 정량 분석하기 위한 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 
@@ -20,7 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 1. **엔터프라이즈 생성형 AI 사용량 측정 및 비용 내부 정산**:
    - 사내 전 부서에 Gemini Enterprise app이 도입됨에 따라, 어떤 부서와 계정이 AI 모델을 얼마나 활용하고 있는지 파악하여 라이선스 비용 분배 및 내부 정산을 수행해야 하는 FinOps 요구가 급증하고 있다.
-   - 복잡한 프록시나 서드파티 로깅 도구 없이 구글 클라우드 공식 내장 로깅 기능을 활성화하고 즉시 표준 리포트를 추출할 수 있는 체계가 필수적이다.
+   - 복잡한 프록시나 서드파티 로깅 도구 없이 Google Cloud 공식 내장 로깅 기능을 활성화하고 즉시 표준 리포트를 추출할 수 있는 체계가 필수적이다.
 
 2. **사내 규정 준수 및 보안 감사 이력 확보**:
    - 임직원이 AI 모델과 나눈 대화 프롬프트와 모델 응답 텍스트를 장기 보관하고, 규정 위반이나 보안 감사 발생 시 신속하게 역추적할 수 있는 중앙 로그 저장소가 요구된다.

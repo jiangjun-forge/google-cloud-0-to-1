@@ -12,13 +12,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 자율형 사내 노코드 에이전트 팩토리 기술 상세 설계서 (TDD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 환경에서 비개발자 임직원의 자율 에이전트 제작을 지원하는 메타 에이전트 팩토리의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
+본 문서는 사내 Gemini Enterprise app 환경에서 비개발자 임직원의 자율 에이전트 제작을 지원하는 메타 에이전트 팩토리의 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 클라우드 IAM 권한이 없는 사내 현업 임직원(Zero IAM)이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 노코드 에이전트 팩토리와 대화형 인터뷰를 진행하고 승인하면, 에이전트 엔진(Agent Engine) 런타임의 도구가 전용 대행 서비스 계정의 토큰을 획득하여 디스커버리 엔진(Discovery Engine) REST API를 통해 신규 커스텀 에이전트를 사내 갤러리에 자동 등록한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Cloud IAM 권한이 없는 사내 현업 임직원(Zero IAM)이 Gemini Enterprise app 대화창에서 노코드 에이전트 팩토리와 대화형 인터뷰를 진행하고 승인하면, Agent Engine 런타임의 도구가 전용 대행 서비스 계정의 토큰을 획득하여 Discovery Engine REST API를 통해 신규 커스텀 에이전트를 사내 갤러리에 자동 등록한다.
 
 ```mermaid
 sequenceDiagram
@@ -63,7 +63,7 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (메타 에이전트 배포 및 자유 프롬프팅) | **FR-01** (메타 에이전트 배포 및 자유 프롬프팅 지원) | **NFR-01** (무의존성 및 단일 파이썬 실행) | `diagnose.py` |
+| **BR-01** (메타 에이전트 배포 및 자유 프롬프팅) | **FR-01** (메타 에이전트 배포 및 자유 프롬프팅 지원) | **NFR-01** (무의존성 및 단일 Python 실행) | `diagnose.py` |
 | **BR-02** (14대 엔터프라이즈 에이전트 카탈로그) | **FR-02** (14대 엔터프라이즈 에이전트 카탈로그 및 선택기) | **NFR-02** (초경량 패키징 원칙) | `catalog.yaml`, `diagnose.py` |
 | **BR-03** (실시간 검색 보강) | **FR-03** (실시간 검색 기반 지침 합성) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` 합성 엔진 |
 | **BR-04** (무권한 대행 등록) | **FR-04** (서비스 계정 대행 등록 도구) | **NFR-01**, **NFR-02** | `diagnose.py` 배포 모듈 |
@@ -89,9 +89,9 @@ sequenceDiagram
 - 비대화형 환경이나 스크립트 실행 시 `--chip`, `--catalog`, 또는 `--prompt` 인자로 직접 지정할 수 있도록 지원한다.
 - 모든 에이전트는 Gemini Enterprise app 대화창에서 골뱅이 멘션(`@<slug>`)으로 즉시 호출할 수 있도록 핸들을 표준 매핑한다.
 
-### FR-03: 실시간 구글 검색(Google Search Grounding) 기반 지침 합성
-- 선택된 칩이나 사용자 입력 프롬프트를 시드(Seed)로 하여, 실시간 구글 검색을 통해 해당 업무 영역의 최신 규정, 업계 모범 실무 절차, 필수 확인 항목을 수집한다.
-- 수집된 정보를 바탕으로 제미나이(Gemini) 모델이 아래 5대 골든 프롬프트 규격으로 시스템 지침(Instructions)을 합성한다:
+### FR-03: 실시간 Google Search Grounding 기반 지침 합성
+- 선택된 칩이나 사용자 입력 프롬프트를 시드(Seed)로 하여, 실시간 Google Search를 통해 해당 업무 영역의 최신 규정, 업계 모범 실무 절차, 필수 확인 항목을 수집한다.
+- 수집된 정보를 바탕으로 Gemini 모델이 아래 5대 골든 프롬프트 규격으로 시스템 지침(Instructions)을 합성한다:
   1. `Role & Identity`: 업무 페르소나 및 책임 범위
   2. `Standard Workflow`: 실시간 검색으로 보강된 단계별 표준 작업 절차
   3. `Enterprise Guardrails`: 개인 식별 정보 보호 및 사실 기반 검증 수칙
@@ -128,8 +128,8 @@ sequenceDiagram
 
 ## 4. 비기능 기술 요구 사항 명세 (Non-Functional Requirements)
 
-### NFR-01: 무의존성 및 순수 파이썬 단일 실행 원칙
-- 외부 쉘 스크립트나 무거운 웹 프레임워크(FastAPI 등)에 의존하지 않고, 순수 파이썬 단일 파일(`python diagnose.py`)로 자립 실행이 가능해야 한다.
+### NFR-01: 무의존성 및 순수 Python 단일 실행 원칙
+- 외부 쉘 스크립트나 무거운 웹 프레임워크(FastAPI 등)에 의존하지 않고, 순수 Python 단일 파일(`python diagnose.py`)로 자립 실행이 가능해야 한다.
 - 크로스 플랫폼(Linux, macOS, Windows) 호환성을 지원한다.
 
 ### NFR-02: 초경량 패키징 및 단일 디렉터리 완결성

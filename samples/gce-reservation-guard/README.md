@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 컴퓨트 엔진(Compute Engine) 하드웨어 예약(Reservation) 및 CUD 용량 보장 통합 진단기
+# Compute Engine 하드웨어 예약(Reservation) 및 CUD 용량 보장 통합 진단기
 
 Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOURCE_POOL_EXHAUSTED) 사태를 감사 로그로 역추적하고, 요금 할인만 적용되고 물리적 용량 확보가 없는 무방비 약정(Unreserved CUD) 위험과 GPU/특수 머신의 Future Reservation(FR) 미제출 및 승인 지연 문제를 한 번에 진단하여 하드웨어 가용성을 보장하는 통합 인프라 진단 도구다. (As of 2026-10-17)
 
@@ -22,7 +22,7 @@ Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOU
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 주요 리전(서울, 도쿄, 아이오와 등)에서 N4, N2 또는 GPU 머신 프로비저닝 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러로 인스턴스 생성이 중단될 때
 - [ ] 1년 또는 3년 CUD(지속 사용 약정)를 체결했음에도 물리적 하드웨어 용량을 보장받지 못해 요금은 계속 나가면서 인스턴스를 띄우지 못하는 FinOps 손실이 발생할 때
 - [ ] GPU(H100, A100, L4) 대규모 프로젝트를 위해 Future Reservation을 생성했으나, 콘솔에서 제출(Submit)을 누락하여 `DRAFTING` 상태로 방치되어 있을 때
@@ -45,7 +45,7 @@ Compute Engine 특정 리전 및 존에서 발생하는 용량 고갈(ZONE_RESOU
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | CUD 대비 예약 커버리지 비율, 유휴 예약 목록, FR 제출 대기 건수 및 용량 고갈 위험 등급 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 컴퓨트 용량 정합성 보고서, 존별 예약 매핑 현황, 미제출 Future Reservation 승인 명령어 및 공유 예약 설정 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Future Reservation 즉시 제출 명령어**: 드래프트 상태의 예약을 공식 활성화하는 gcloud 명령<br/>• **공유 예약(Shared Reservation) 구성 스크립트**: 복수 프로젝트 간 예약을 유연하게 공유하는 정책<br/>• **용량 부족 감사 알림 정책**: `ZONE_RESOURCE_POOL_EXHAUSTED` 발생 시 실시간 알림 파이프라인 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **Future Reservation 즉시 제출 명령어**: 드래프트 상태의 예약을 공식 활성화하는 gcloud 명령<br/>- **공유 예약(Shared Reservation) 구성 스크립트**: 복수 프로젝트 간 예약을 유연하게 공유하는 정책<br/>- **용량 부족 감사 알림 정책**: `ZONE_RESOURCE_POOL_EXHAUSTED` 발생 시 실시간 알림 파이프라인 |
 
 ---
 
@@ -174,7 +174,7 @@ gcloud services enable compute.googleapis.com logging.googleapis.com
 | 역할 (Role) | 설명 |
 | :--- | :--- |
 | `roles/compute.viewer` | CUD 약정 및 온디맨드/Future Reservation 목록 조회 권한 |
-| `roles/logging.viewer` | 클라우드 로깅(Cloud Logging) 스톡아웃 감사 로그 조회 권한 |
+| `roles/logging.viewer` | Cloud Logging 스톡아웃 감사 로그 조회 권한 |
 
 ---
 

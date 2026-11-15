@@ -16,7 +16,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 프롬프트 마이너: In-Chat Factory 상류 발굴 엔진 (gemini-enterprise-prompt-miner)
 
-`Gemini Enterprise In-Chat Factory`의 상류(Upstream) 업무 발굴 엔진으로, 제미나이 엔터프라이즈 앱(Gemini Enterprise app)에 누적된 사용자 질의(Prompt) 로그를 빅쿼리(BigQuery)에서 수집하고, 인라인 PII 마스킹과 멀티 턴 대화 세션 묶음 정제를 거쳐 빅쿼리 내장 임베딩(`ML.GENERATE_EMBEDDING`) 및 자율 적응형(Auto-K) 군집화를 통해 임직원의 실제 3R(반복성 Repetitive, 규칙성 Rule-based, 검색 집약성 Retrieval-heavy) 마이크로 업무를 발굴하여 `GE In-Chat Factory` 5대 모듈로 즉시 전환 가능한 사내 도구(`Tool`) 및 에이전트 명세를 자동 도출하는 엔터프라이즈 실무 도구다. (As of 2026-11-07)
+`Gemini Enterprise In-Chat Factory`의 상류(Upstream) 업무 발굴 엔진으로, Gemini Enterprise app에 누적된 사용자 질의(Prompt) 로그를 BigQuery에서 수집하고, 인라인 PII 마스킹과 멀티 턴 대화 세션 묶음 정제를 거쳐 BigQuery 내장 임베딩(`ML.GENERATE_EMBEDDING`) 및 자율 적응형(Auto-K) 군집화를 통해 임직원의 실제 3R(반복성 Repetitive, 규칙성 Rule-based, 검색 집약성 Retrieval-heavy) 마이크로 업무를 발굴하여 `GE In-Chat Factory` 5대 모듈로 즉시 전환 가능한 사내 도구(`Tool`) 및 에이전트 명세를 자동 도출하는 엔터프라이즈 실무 도구다. (As of 2026-11-07)
 
 ---
 
@@ -25,7 +25,7 @@ All contents, designs, and code examples are subject to change, modification, or
 사내 엔터프라이즈 생성형 AI 거버넌스 및 전사 확산 과정에서 다음과 같은 요구가 있을 때 본 솔루션을 활용한다:
 - [ ] **임직원 프라이버시 보호 및 PII 마스킹**: 질의 로그에 포함된 주민등록번호, 계좌번호, 휴대전화번호, 이메일, IP 등 민감 정보의 안전한 인라인 마스킹 및 임직원 식별 정보 비식별화(Pseudonymization)가 필수적일 때
 - [ ] **멀티 턴 대화 세션의 단일 업무 단위 묶음 분석**: 2~3턴 이상 이어지는 후속 질문이 단편적으로 쪼개져 오라우팅되는 문제를 방지하고, 세션 전체 워크플로우 컨텍스트를 하나로 묶어 고정밀 군집화를 수행하고자 할 때
-- [ ] **빅쿼리(BigQuery) 단일 임베딩 표준 (옵션 파편화 제거)**: 복잡한 외부 SDK나 파편화된 옵션 없이, 데이터가 저장된 빅쿼리 내장 `ML.GENERATE_EMBEDDING` 하나로 안전하고 일관된 임베딩 파이프라인을 완결하고자 할 때
+- [ ] **BigQuery 단일 임베딩 표준 (옵션 파편화 제거)**: 복잡한 외부 SDK나 파편화된 옵션 없이, 데이터가 저장된 BigQuery 내장 `ML.GENERATE_EMBEDDING` 하나로 안전하고 일관된 임베딩 파이프라인을 완결하고자 할 때
 - [ ] **상투적 5대 대분류 탈피 및 실질적 자산화 파이프라인 발굴**: 누구나 상상 가능한 5개 대분류(CS, HR, IT 등)를 넘어, 수십 개의 구체적인 마이크로 업무를 자율 적응형(Auto-K)으로 발굴하여 즉시 구현 가능한 스킬 및 에이전트 전환 목록을 극대화하고자 할 때
 - [ ] **현장 실습 프롬프트 원천 확보**: 사내 워크숍이나 핸즈온 세션에서 참가자들에게 배포할 실무 맞춤형 프롬프트 예시를 실제 사내 데이터로부터 추출하고자 할 때
 
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | PII 마스킹 건수, 최적 군집 수 K, 3R 업무 군집 랭킹 및 3대 자산 유형(도구 6건, 검색 4건, 자율 2건) 요약 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 사내 보고 및 결재용 문서: 군집별 3R 적합도 점수, 임직원 비식별 가명, **추천 시스템 지침(System Instructions) 초안**, 실제 대화 질의 샘플 묶음 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Gemini Enterprise app 사내 갤러리 등록 명세**: `/r/agents`에 에이전트를 등록하기 위한 `adkAgentDefinition` 및 시스템 지침 템플릿<br/>• **API 연동 도구(Tool) 스키마**: ERP, WMS, 정산 DB 연동용 OpenAPI 규격 초안<br/>• **사내 지식 검색(RAG) 데이터스토어 매핑**: 관련 규정 문서와 Discovery Engine Data Store 연결 경로 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **Gemini Enterprise app 사내 갤러리 등록 명세**: `/r/agents`에 에이전트를 등록하기 위한 `adkAgentDefinition` 및 시스템 지침 템플릿<br/>- **API 연동 도구(Tool) 스키마**: ERP, WMS, 정산 DB 연동용 OpenAPI 규격 초안<br/>- **사내 지식 검색(RAG) 데이터스토어 매핑**: 관련 규정 문서와 Discovery Engine Data Store 연결 경로 |
 
 ---
 
@@ -231,8 +231,8 @@ BigQuery 데이터세트 및 관련 리소스 생성 시 4대 표준 라벨을 �
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
 ### 1) 한국어 특화 임베딩 모델 (`text-multilingual-embedding-002`)
-* **한국어 언어학적 특성 보존**: 영어 중심 모델(`text-embedding-005`)과 달리, 구글 클라우드 공식 GA 다국어 임베딩 모델인 `text-multilingual-embedding-002`는 한국어의 복잡한 교착어 형태소 결합, 종결 어미 변형, 사내 이커머스/도메인 전문 어휘를 의미 손실 없이 포착한다.
-* **SQL 네이티브 실행**: 복잡한 클라이언트 SDK 의존성 없이 빅쿼리 `ML.GENERATE_EMBEDDING` 단일 함수로 대량의 텍스트를 초당 수만 건 단위로 신속하게 벡터화한다.
+* **한국어 언어학적 특성 보존**: 영어 중심 모델(`text-embedding-005`)과 달리, Google Cloud 공식 GA 다국어 임베딩 모델인 `text-multilingual-embedding-002`는 한국어의 복잡한 교착어 형태소 결합, 종결 어미 변형, 사내 이커머스/도메인 전문 어휘를 의미 손실 없이 포착한다.
+* **SQL 네이티브 실행**: 복잡한 클라이언트 SDK 의존성 없이 BigQuery `ML.GENERATE_EMBEDDING` 단일 함수로 대량의 텍스트를 초당 수만 건 단위로 신속하게 벡터화한다.
 
 ### 2) 벡터 차원 최적화 트레이드오프: 512차원 스위트 스폿 (MRL)
 Matryoshka 표현 학습(Matryoshka Representation Learning, MRL)을 활용한 벡터 차원 축소 시, 군집화 성능과 계산 비용 간의 트레이드오프가 존재한다:

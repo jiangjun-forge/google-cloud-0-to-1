@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 4] 구글 드라이브 파일 탐색, 입출력 및 마크다운 독스 렌더러 (Drive Utils & Document Renderer)
+ * [모듈 4] Google Drive 파일 탐색, 입출력 및 마크다운 Google Docs 렌더러 (Drive Utils & Document Renderer)
  */
 
 /**
@@ -234,7 +234,7 @@ function generateCampaignSlug(rawName) {
 }
 
 /**
- * 현재 구글 시트의 이름이 기본 Untitled 상태이거나 초기 상태인 경우,
+ * 현재 Google Sheets의 이름이 기본 Untitled 상태이거나 초기 상태인 경우,
  * 확정된 캠페인 폴더명 및 슬러그에 맞추어 직관적인 컨트롤 타워 명칭으로 자동 변경한다.
  *
  * @param {string} [displayName] - 캠페인 폴더 표시 명칭
@@ -264,21 +264,21 @@ function syncSpreadsheetTitleWithCampaign(displayName, slug) {
       var newTitle = "[마케팅 콘텐츠 컨트롤 타워] " + targetName;
       if (currentTitle !== newTitle) {
         ss.rename(newTitle);
-        Logger.log("구글 시트 제목 자동 동기화: '" + currentTitle + "' -> '" + newTitle + "'");
+        Logger.log("Google Sheets 제목 자동 동기화: '" + currentTitle + "' -> '" + newTitle + "'");
       }
     }
   } catch (e) {
-    Logger.log("구글 시트 제목 변경 중 예외 (무시 가능): " + e);
+    Logger.log("Google Sheets 제목 변경 중 예외 (무시 가능): " + e);
   }
 }
 
 /**
  * 마케터가 생성한 캠페인 폴더를 자동 감지하고 폴더 ID로 영구 바인딩한다.
- * [UX 혁신]: 마케터가 구글 드라이브에서 자유롭게 폴더를 만들고 시트를 넣으면,
- * 1. 구글 시트의 부모 폴더를 즉시 캠페인 루트 폴더로 자동 채택
+ * [UX 혁신]: 마케터가 Google Drive에서 자유롭게 폴더를 만들고 시트를 넣으면,
+ * 1. Google Sheets의 부모 폴더를 즉시 캠페인 루트 폴더로 자동 채택
  * 2. 폴더 ID(folder.getId())를 영구 저장하여 마케터가 폴더 이름을 변경해도 완벽 추적
  * 3. 한글 폴더명을 분석하여 안전한 영문 슬러그를 자동 합성
- * 4. 구글 시트 제목이 Untitled일 경우 캠페인 명칭으로 자동 동기화
+ * 4. Google Sheets 제목이 Untitled일 경우 캠페인 명칭으로 자동 동기화
  */
 function getCampaignFolder(optDoNotCreate) {
   var props = PropertiesService.getScriptProperties();
@@ -297,7 +297,7 @@ function getCampaignFolder(optDoNotCreate) {
     }
   }
 
-  // 2. 현재 구글 시트가 위치한 부모 폴더 자동 감지
+  // 2. 현재 Google Sheets가 위치한 부모 폴더 자동 감지
   try {
     var sheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
     var sheetFile = DriveApp.getFileById(sheetId);
@@ -437,7 +437,7 @@ function saveBinaryFile(folder, fileName, base64Data, contentType) {
 }
 
 /**
- * 마크다운 인라인 서식(**bold**)을 파싱하여 구글 독스 텍스트 요소에 굵은 글씨 스타일을 적용한다.
+ * 마크다운 인라인 서식(**bold**)을 파싱하여 Google Docs 텍스트 요소에 굵은 글씨 스타일을 적용한다.
  */
 function formatInlineStyles(element, rawText) {
   var cleanText = "";
@@ -470,8 +470,8 @@ function formatInlineStyles(element, rawText) {
 }
 
 /**
- * 구글 독스 본문(Body)을 안전하게 초기화한다.
- * [마지막 단락 보호]: 구글 독스 문서 섹션에는 최소 1개의 단락이 반드시 존재해야 하므로,
+ * Google Docs 본문(Body)을 안전하게 초기화한다.
+ * [마지막 단락 보호]: Google Docs 문서 섹션에는 최소 1개의 단락이 반드시 존재해야 하므로,
  * body.clear() 대신 마지막 단락을 보존하며 텍스트를 비워 'Can't remove the last paragraph' 예외를 원천 차단한다.
  */
 function safelyClearBody(body) {
@@ -506,7 +506,7 @@ function safelyClearBody(body) {
 }
 
 /**
- * 마크다운 텍스트를 구글 독스(Google Docs) 네이티브 스타일(Title, Heading 1~3, List, Table, HorizontalRule)로 변환하여 렌더링한다.
+ * 마크다운 텍스트를 Google Docs 네이티브 스타일(Title, Heading 1~3, List, Table, HorizontalRule)로 변환하여 렌더링한다.
  */
 function renderMarkdownToDoc(doc, markdown) {
   var body = doc.getBody();
@@ -673,7 +673,7 @@ function renderMarkdownToDoc(doc, markdown) {
 }
 
 /**
- * 구글 독스(Google Docs) 문서를 생성하거나 기존 문서의 본문을 네이티브 스타일로 갱신한다.
+ * Google Docs 문서를 생성하거나 기존 문서의 본문을 네이티브 스타일로 갱신한다.
  */
 function saveGoogleDoc(folder, title, content) {
   var files = folder.getFilesByName(title);
@@ -701,7 +701,7 @@ function saveGoogleDoc(folder, title, content) {
 }
 
 /**
- * 폴더 내의 구글 독스(Google Docs) 문서를 열어 본문 텍스트를 읽는다.
+ * 폴더 내의 Google Docs 문서를 열어 본문 텍스트를 읽는다.
  */
 function readGoogleDoc(folder, title) {
   var files = folder.getFilesByName(title);
@@ -738,9 +738,9 @@ function getDefaultMediaSpec(prefix) {
 
 /**
  * 마케터가 작성/수정한 콘텐츠 제작 명세서(SPEC) 및 보정 지침을 분석하여 미디어 제작 스펙을 컴파일한다.
- * Gemini 3.8 Flash의 자연어 이해를 기반으로 하되, 비정형 텍스트 및 오프라인 환경에 대비한 결정론적 룰을 함께 적용한다.
+ * Gemini Flash의 자연어 이해를 기반으로 하되, 비정형 텍스트 및 오프라인 환경에 대비한 결정론적 룰을 함께 적용한다.
  *
- * @param {string} specContent - 마케터의 SPEC 구글 독스 본문
+ * @param {string} specContent - 마케터의 SPEC Google Docs 본문
  * @param {string} prefix - 리비전 접두사 ("00", "01" 등)
  * @param {string} [directiveText] - 마케터 보정 지침 (9단계인 경우)
  * @param {GoogleAppsScript.Drive.Folder} [targetFolder] - 저장 대상 폴더 (media_specs.json 저장용)
@@ -786,7 +786,7 @@ function compileMediaSpecFromDocs(specContent, prefix, directiveText, targetFold
   var snsExcluded = /(sns|피드|1:1|정방형)\s*(?:이미지|소재|제작)?\s*(?:은|는|이|가|을|를)?\s*(제외|생략|미제작|보류|없음|x|빼)/i.test(combinedText) ||
                     (lower.indexOf("sns 제외") !== -1 || lower.indexOf("1:1 제외") !== -1 || lower.indexOf("피드 제외") !== -1);
 
-  // 2. Gemini 3.8 Flash를 통한 지능형 자연어 컴파일 (API Key 유효 시)
+  // 2. Gemini Flash를 통한 지능형 자연어 컴파일 (API Key 유효 시)
   var apiKey = getGeminiApiKey();
   if (apiKey && typeof callGemini === "function") {
     try {
@@ -882,7 +882,7 @@ function compileMediaSpecFromDocs(specContent, prefix, directiveText, targetFold
 }
 
 /**
- * 마케터가 열어볼 campaign_content 구글 독스 최상단에 수록할 [제작 명세서 반영 현황] 헤더 블록을 생성한다.
+ * 마케터가 열어볼 campaign_content Google Docs 최상단에 수록할 [제작 명세서 반영 현황] 헤더 블록을 생성한다.
  *
  * @param {Object} mediaSpec - 컴파일된 미디어 스펙 객체
  * @return {string} 마크다운 헤더 블록
@@ -1119,8 +1119,8 @@ function generateAndSaveVisualAssets(targetFolder, prefix, visualBrief, options,
 }
 
 /**
- * campaign_content 구글 독스 본문에 모바일 세로 숏폼 영상 제작 콘티 섹션이 포함되도록 보장한다.
- * (별도 txt 파일을 생성하지 않고 마케팅 콘텐츠 단일 구글 독스 문서 내에 완전 통합)
+ * campaign_content Google Docs 본문에 모바일 세로 숏폼 영상 제작 콘티 섹션이 포함되도록 보장한다.
+ * (별도 txt 파일을 생성하지 않고 마케팅 콘텐츠 단일 Google Docs 문서 내에 완전 통합)
  */
 function ensureShortsScriptInCampaignContent(rawContent, prefix, visualBrief) {
   var content = rawContent || "";
@@ -1158,7 +1158,7 @@ function extractDynamicVisualPrompt(campaignAsset, feedbackSummary, defaultBrief
     var systemInstruction = templatePrompt || (
       "당신은 글로벌 광고 비주얼 아트 디렉터이다.\n" +
       "제공된 캠페인 카피와 고객 피드백 요약본, 그리고 최우선 구속력을 갖는 마케터의 최종 의사 결정 지침을 정밀 분석하여, " +
-      "이미지 생성 AI(Gemini 2.5 Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
+      "이미지 생성 AI(Gemini Flash Image / Imagen)에 입력할 2~3문장의 구체적이고 감각적인 영문 프롬프트(Visual Prompt)를 작성하라.\n\n" +
       "엄격한 작성 규칙:\n" +
       "1. [마케터 최종 의사 결정 및 보정 지침]에 특정 모델(예: 20대 한국인 여성, 직장인, 특정 국적 등)이나 연출 상황(카페, 출퇴근, 여행 등), 색감/무드가 지정되어 있다면 이를 절대 누락하지 말고 최우선으로 영문 프롬프트에 반영하십시오.\n" +
       "2. 마케터 코멘트에 모델에 대한 별도 언급이 없더라도 한국 시장 타깃 캠페인이므로 한국인(Korean) 모델 및 서울의 현대적인 일상/공간을 기본 배경으로 설정하십시오.\n" +
@@ -1725,7 +1725,7 @@ function projectHighDimTo2D(vectors) {
 }
 
 /**
- * 구글 시트 실시간 실행 내역 헬퍼 (아무 장식 없는 순수 기본 시트 스타일)
+ * Google Sheets 실시간 실행 내역 헬퍼 (아무 장식 없는 순수 기본 시트 스타일)
  */
 function getDashboardSheet() {
   try {
@@ -1937,7 +1937,7 @@ function initDashboardSheet() {
 
 /**
  * 실행 내역 시트에 결과를 항상 맨 아래에 새 행으로 누적 추가(Append-only)한다.
- * [기본 스타일]: 색상 배지나 테두리 등 서식 장식 없이, 구글 시트 본연의 담백한 텍스트/숫자로 기록한다.
+ * [기본 스타일]: 색상 배지나 테두리 등 서식 장식 없이, Google Sheets 본연의 담백한 텍스트/숫자로 기록한다.
  *
  * @param {string} stepId - 실행 단계 식별자
  * @param {string} stepName - 작업 명칭
@@ -2103,7 +2103,7 @@ function detectLatestRevisionRoundNum(optOutputFolder) {
 }
 
 /**
- * 마케터가 클릭 한 번으로 결과물(구글 독스, 구글 드라이브 폴더)을 즉시 열 수 있도록 산출물 정보를 기록한다.
+ * 마케터가 클릭 한 번으로 결과물(Google Docs, Google Drive 폴더)을 즉시 열 수 있도록 산출물 정보를 기록한다.
  * (스프레드시트를 가로막는 모달 팝업을 전면 배제하고, 사이드바 상단 카드 및 AI 코파일럿 채팅창 버블로 비차단 안내)
  */
 function showResultModal(title, message, btnText, btnUrl) {

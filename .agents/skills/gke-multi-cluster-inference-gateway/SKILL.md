@@ -13,7 +13,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gke-multi-cluster-inference-gateway
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gke-multi-cluster-inference-gateway: 대규모 AI/LLM 서빙 환경에서 다중 리전 및 멀티 클라우드에 분산된 수십 개 GPU/TPU 쿠버네티스 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연 시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검 및 처방하는 아키텍처 진단 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for gke-multi-cluster-inference-gateway: 대규모 AI/LLM 서빙 환경에서 다중 리전 및 멀티 클라우드에 분산된 수십 개 GPU/TPU Kubernetes 클러스터 운영 시, 기존 계층형 Istio 풀 메시(Full-mesh) 중계로 인한 지연 시간(TTFT) 증가와 GKE Fleet 라이선스 비용 누수를 진단하고, Global External ALB 및 Hybrid/Internet NEG 기반의 1홉 플랫 직결 L7 제어 평면 상태를 1분 만에 점검 및 처방하는 아키텍처 진단 도구다.
 ---
 
 # GKE Multi-Cluster Inference Gateway Skill (Autopilot & Hands-on Guide)

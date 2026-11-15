@@ -17,7 +17,7 @@
 """엔터프라이즈 AI 앱 생애 주기 및 콜드라인 냉동 거버넌스 진단기 (app-lifecycle-manager).
 
 현업 바이브 코딩과 노코드 빌더로 대량 생성된 사내 AI 앱(웹앱 SPA, Agent Engine, Cloud Run API)의
-중복 개발을 BigQuery Vector Search(gemini-embedding-001)와 Dataplex Universal Catalog로 사전 차단하고,
+중복 개발을 BigQuery Vector Search(gemini-embedding-001)와 Knowledge Catalog로 사전 차단하고,
 호출 수(Hit-Count) 및 보존 기한(TTL), BigQuery Property Graph(GQL) 멀티홉 인바운드 호출 리니지 역추적을 통해
 유휴 1회성 앱(96% 코호트)은 활성 호출자 안전 차단 후 Cloud Storage Coldline 냉동 타임캡슐(rehydrate.sh 포함)로
 동결하며, 고빈도 핵심 안착 앱(4% 코호트)은 정식 프로덕션 파이프라인으로 승격시키는 5단계 생애 주기 관리 도구다.
@@ -671,7 +671,7 @@ def _compute_semantic_similarity(query: str, app: AppRecord) -> float:
 
 
 class CatalogVectorEngine:
-    """Dataplex Universal Catalog Aspect 및 BigQuery Vector Search 쿼리 엔진."""
+    """Knowledge Catalog Aspect 및 BigQuery Vector Search 쿼리 엔진."""
 
     def __init__(
         self,
@@ -696,7 +696,7 @@ class CatalogVectorEngine:
         override_stage: Optional[str] = None,
         override_cryo_uri: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Dataplex Universal Catalog 커스텀 엔트리 및 Aspect 페이로드를 합성한다."""
+        """Knowledge Catalog 커스텀 엔트리 및 Aspect 페이로드를 합성한다."""
         stage = override_stage or app.lifecycle_stage
         cryo_uri = override_cryo_uri if override_cryo_uri is not None else app.cryo_gcs_uri
         entry_fqn = (
@@ -824,7 +824,7 @@ class HitCountTTLDetector:
                 promote_at_hits=promote_threshold,
                 action="ALREADY_ARCHIVED",
                 rationale=(
-                    f"이미 클라우드 스토리지 콜드라인 볼트({app.cryo_gcs_uri})에 냉동 보관되어 "
+                    f"이미 Cloud Storage Coldline 볼트({app.cryo_gcs_uri})에 냉동 보관되어 "
                     f"상시 컴퓨트 비용이 $0.00/월이다."
                 ),
             )
@@ -1110,11 +1110,11 @@ class CryoArchiver:
             f"      - '--labels={label_str}'\n"
         )
         checklist = [
-            "지식 카탈로그(Dataplex Universal Catalog) Aspect 상태를 `ACTIVE`(1회성)에서 `GRADUATED`(영구 운영)로 승격한다.",
-            "환경 변수 내 시크릿을 시크릿 매니저(Secret Manager)로 이관하고 90일 자동 순환 정책을 적용한다.",
-            "클라우드 아머(Cloud Armor) 및 모델 아머(Model Armor) 프롬프트 인젝션 방어 정책을 부착한다.",
-            "VPC 서비스 컨트롤(VPC Service Controls) 보안 경계와 프로덕션 전용 최소 권한 서비스 계정을 분리 적용한다.",
-            "클라우드 모니터링(Cloud Monitoring) 가용성 SLO 알림(99.9% 가용성, P95 지연 시간 2.0초 미만)을 활성화한다.",
+            "Knowledge Catalog Aspect 상태를 `ACTIVE`(1회성)에서 `GRADUATED`(영구 운영)로 승격한다.",
+            "환경 변수 내 시크릿을 Secret Manager로 이관하고 90일 자동 순환 정책을 적용한다.",
+            "Cloud Armor 및 Model Armor 프롬프트 인젝션 방어 정책을 부착한다.",
+            "VPC Service Controls 보안 경계와 프로덕션 전용 최소 권한 서비스 계정을 분리 적용한다.",
+            "Cloud Monitoring 가용성 SLO 알림(99.9% 가용성, P95 지연 시간 2.0초 미만)을 활성화한다.",
         ]
         return GraduationPackage(
             app_id=app.app_id,
@@ -1229,7 +1229,7 @@ class GovernanceReceiptGenerator:
             "## 2. 1단계: 개발 착수 전 시맨틱 중복 생성 방지 게이트 (Pre-Build Gate)",
             "",
             f"- **신규 개발 요청 아이디어**: `\"{pre_build_query}\"`",
-            "- **검색 엔진**: `BigQuery Vector Search` (`gemini-embedding-001`, 코사인 유사도) + `Dataplex Universal Catalog`",
+            "- **검색 엔진**: `BigQuery Vector Search` (`gemini-embedding-001`, 코사인 유사도) + `Knowledge Catalog`",
             "",
             "| 순위 | 기존 등록 앱 ID | 현재 수명 주기 상태 | 코사인 유사도 | 거버넌스 권고 조치 | 실행 및 1분 복원 명령어 |",
             "| :--- | :--- | :--- | :--- | :--- | :--- |",
@@ -1273,7 +1273,7 @@ class GovernanceReceiptGenerator:
                 "",
                 "---",
                 "",
-                "## 4. 3단계: 빅쿼리 그래프(`GQL`) 멀티홉 호출 리니지 및 안전 차단 내역",
+                "## 4. 3단계: BigQuery Graph(`GQL`) 멀티홉 호출 리니지 및 안전 차단 내역",
                 "",
                 "| 대상 앱 ID | 업스트림 호출자 ID | 호출자 유형 | 프로토콜 | 안전 폐기 검증 | 결정론적 차단 명령어 (Sever Command) |",
                 "| :--- | :--- | :--- | :--- | :--- | :--- |",
@@ -1291,7 +1291,7 @@ class GovernanceReceiptGenerator:
                 "",
                 "---",
                 "",
-                "## 5. 4A단계: 클라우드 스토리지 콜드라인 냉동 타임캡슐 및 1분 부활 스크립트",
+                "## 5. 4A단계: Cloud Storage Coldline 냉동 타임캡슐 및 1분 부활 스크립트",
                 "",
                 "| 냉동 앱 ID | 콜드라인 캡슐 경로 (GCS URI) | 살균된 시크릿 키 | 월간 절감액 | 1분 원클릭 부활 명령어 (Rehydrate) |",
                 "| :--- | :--- | :--- | :--- | :--- |",

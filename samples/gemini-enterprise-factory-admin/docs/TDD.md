@@ -12,13 +12,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 어드민 거버넌스 모듈 기술 상세 설계서 (TDD)
 
-본 문서는 사내 IT 어드민 및 클라우드 인프라 팀을 지원하기 위한 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 어드민 거버넌스 모듈의 시스템 아키텍처, 9대 관리 과제(스프롤 거버넌스 3종, 사용량 패턴 분석 3종, GE 앱 운영 및 일괄 제어 3종) 상세 설계, 인터페이스 규격 및 진단 로직을 정의한다.
+본 문서는 사내 IT 어드민 및 클라우드 인프라 팀을 지원하기 위한 Gemini Enterprise app 어드민 거버넌스 모듈의 시스템 아키텍처, 9대 관리 과제(스프롤 거버넌스 3종, 사용량 패턴 분석 3종, GE 앱 운영 및 일괄 제어 3종) 상세 설계, 인터페이스 규격 및 진단 로직을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사내 IT 어드민 및 운영 담당자가 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 대화창에서 질의를 입력하면, 에이전트 엔진(Agent Engine) 런타임이 내장 관리 도구 8종을 통해 Discovery Engine 에이전트 레지스트리, 데이터 저장소, BigQuery 감사 SQL 및 콘솔 딥링크를 즉시 반환한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사내 IT 어드민 및 운영 담당자가 Gemini Enterprise app 대화창에서 질의를 입력하면, Agent Engine 런타임이 내장 관리 도구 8종을 통해 Discovery Engine 에이전트 레지스트리, 데이터 저장소, BigQuery 감사 SQL 및 콘솔 딥링크를 즉시 반환한다.
 
 ```mermaid
 sequenceDiagram
@@ -62,7 +62,7 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (9대 GE 어드민 운영 과제 카탈로그 및 자유 프롬프팅) | **FR-01** (9대 어드민 카탈로그 및 자연어 프롬프트 처리기) | **NFR-01** (무의존성 단일 파이썬 실행) | `diagnose.py`, `catalog.yaml` |
+| **BR-01** (9대 GE 어드민 운영 과제 카탈로그 및 자유 프롬프팅) | **FR-01** (9대 어드민 카탈로그 및 자연어 프롬프트 처리기) | **NFR-01** (무의존성 단일 Python 실행) | `diagnose.py`, `catalog.yaml` |
 | **BR-02** (에이전트 및 데이터 저장소 현황 조회) | **FR-02** (Discovery Engine 에이전트/Data Store 조회 도구) | **NFR-02** (사내 서비스 계정 실행) | `diagnose.py` |
 | **BR-03** (활성 사용자 및 30일 미사용 계정 분석) | **FR-03** (BigQuery 활성도 및 미사용 계정 SQL 생성기) | **NFR-03** (결정론적 가상 실행 보장) | `diagnose.py` |
 | **BR-04** (토큰 소비 톱 10 및 429 쓰로틀링 역추적) | **FR-04** (BigQuery 텔레메트리 및 429 에러 추적 SQL) | **NFR-01**, **NFR-03** | `diagnose.py` |
@@ -112,7 +112,7 @@ sequenceDiagram
 - 실행 완료 시 진단 결과, 복구 스크립트, 콘솔 조치 가이드를 담은 `report.md`를 덮어쓴다.
 
 ### FR-09: 선언적 어드민 레시피 아키텍처 및 케밥 케이스 슬러그 규약
-- 파이썬 코드 수정 없이 관리 과제를 독립적으로 확장 및 배포할 수 있도록 선언적 `catalog.yaml` 분리 구조를 지원한다.
+- Python 코드 수정 없이 관리 과제를 독립적으로 확장 및 배포할 수 있도록 선언적 `catalog.yaml` 분리 구조를 지원한다.
 - 모든 과제 식별자는 `[domain]-[target]-[action]` 형태의 3단계 소문자 케밥 케이스(kebab-case) 표준을 준수한다 (예: `sprawl-ghost-agent-triage`, `telemetry-token-top10-ranking`, `ops-audit-logsink-setup`, `ops-batch-state-cleanup`, `ops-console-deeplink-guide`).
 
 ### FR-10: 에어갭 환경 회복 탄력성을 위한 4계층 캐스케이드 로더
@@ -126,7 +126,7 @@ sequenceDiagram
 
 ## 4. 비기능 기술 요구 사항 명세 (Non-Functional Requirements)
 
-### NFR-01: 무의존성 및 순수 파이썬 단일 실행 원칙
+### NFR-01: 무의존성 및 순수 Python 단일 실행 원칙
 - 외부 도구 없이 `python diagnose.py` 직접 실행만으로 동작한다.
 
 ### NFR-02: 사내 보안 및 4대 필수 라벨 준수

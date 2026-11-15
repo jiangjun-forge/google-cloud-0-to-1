@@ -16,20 +16,20 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 온프레미스 대용량 영상 STS 보안 전송 파이프라인 진단기 (storage-transfer-secure-uploader)
 
-온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 클라우드 KMS(Cloud KMS) 암호화 및 무결성 검증을 거쳐 클라우드 스토리지(Cloud Storage)로 안전하게 이관하는 진단 도구다. (As of 2026-10-17)
+온프레미스 파일 서버에 보관된 대용량 영상(400GB 이상)을 Storage Transfer Service(STS)를 통해 Cloud KMS 암호화 및 무결성 검증을 거쳐 Cloud Storage로 안전하게 이관하는 진단 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
-- [ ] 현장 온프레미스 NAS/SAN 스토리지에 적재된 수백 기가바이트 이상의 영상 데이터를 버텍스 AI(Vertex AI) 멀티모달 분석용으로 클라우드에 이전하고자 할 때
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+- [ ] 현장 온프레미스 NAS/SAN 스토리지에 적재된 수백 기가바이트 이상의 영상 데이터를 Vertex AI 멀티모달 분석용으로 클라우드에 이전하고자 할 때
 - [ ] 네트워크 대역폭 고갈을 방지하기 위해 정밀한 대역폭 제한(Bandwidth Throttling)을 적용하고 전송 에이전트 상태를 실시간 진단해야 하는 경우
 - [ ] 국가 핵심 기술 및 기업 보안 규정에 맞추어 사전 비식별화, 전송 중 CRC32c 체크섬 검증, 타깃 버킷 Cloud KMS CMEK 이중 암호화, 공개 접근 차단(PAP)을 일괄 점검하고자 하는 경우
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
-- **대상 사용자 (Target)**: 미디어 엔지니어, 빅데이터 아키텍트, 온프레미스 인프라 관리자 및 클라우드 스토리지 팀
+- **대상 사용자 (Target)**: 미디어 엔지니어, 빅데이터 아키텍트, 온프레미스 인프라 관리자 및 Cloud Storage 팀
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. 온프레미스 파일 서버에 보관된 대용량 미디어 파일(수백 GB~수 TB)을 수동 업로드하다가 네트워크 끊김이나 타임아웃으로 실패하는 문제
   2. 영상 파일 내 개인정보(차량 번호판, 행인 얼굴 등)가 비식별화되지 않은 채 클라우드로 업로드되어 발생하는 보안 위반 위험
@@ -44,7 +44,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 로컬 전처리 상태, STS 에이전트 풀 연결 여부, 버킷 보안 통제, CMEK 적용, CRC32c 검증 5대 단계 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 대용량 미디어 안전 전송 사전 진단서, 단계별 보안 정합성 검증 결과, 대역폭 제한 적용 전송 작업 생성 명령어 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **STS 전송 작업(Job) 생성 gcloud 명령어**: 대역폭 제한(100MB/s)과 정합성 해시 검증이 결합된 명령<br/>• **온프레미스 도커 에이전트 풀 설치 스크립트**: 사내 서버에 경량 에이전트를 구성하는 명령어<br/>• **타깃 버킷 보안 강화 설정**: 공개 접근 차단(PAP) 및 서울 리전 KMS 키를 강제하는 버킷 정책 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **STS 전송 작업(Job) 생성 gcloud 명령어**: 대역폭 제한(100MB/s)과 정합성 해시 검증이 결합된 명령<br/>- **온프레미스 Docker 에이전트 풀 설치 스크립트**: 사내 서버에 경량 에이전트를 구성하는 명령어<br/>- **타깃 버킷 보안 강화 설정**: 공개 접근 차단(PAP) 및 서울 리전 KMS 키를 강제하는 버킷 정책 |
 
 ---
 
@@ -119,7 +119,7 @@ flowchart TB
         TransferGuard --> ChecksumValidator
     end
 
-    subgraph Layer4["Layer 4: Target Backend & Downstream AI (타깃 클라우드 스토리지)"]
+    subgraph Layer4["Layer 4: Target Backend & Downstream AI (타깃 Cloud Storage)"]
         direction TB
         SecureBucket["Cloud Storage 보안 타깃 버킷<br/>(gs://secure-media-archive)"]
         VertexAIMultimodal["Vertex AI 멀티모달 분석 파이프라인"]
@@ -188,7 +188,7 @@ STS 에이전트 풀: on-prem-posix-pool
 단계                   점검 항목                          결과     상세 상태
 -------------------------------------------------------------------------------------
 1. 온프렘 로컬 전처리     영상 비식별화 및 개인 식별 정보/번호판 마스킹 PASS     142개 영상 파일(총 417GB) 전수 비식별화 메타데이터 태그 확인 완료
-2. STS 에이전트 풀       에이전트 풀 상태 (on-prem-posix-pool) PASS     온프레미스 도커 에이전트 4대 정상 연결 (상태: CONNECTED, 버전: 최신)
+2. STS 에이전트 풀       에이전트 풀 상태 (on-prem-posix-pool) PASS     온프레미스 Docker 에이전트 4대 정상 연결 (상태: CONNECTED, 버전: 최신)
 3. 버킷 보안 통제        타깃 버킷 공개 접근 차단 (PAP)     PASS     gs://secure-media-archive publicAccessPrevention=enforced 적용됨
 4. 데이터 암호화         Cloud KMS CMEK 암호화 적용         PASS     서울 리전(asia-northeast3) KMS 키 바인딩됨
 5. 무결성 검증 설정      CRC32c / MD5 체크섬 검증           PASS     전송 중 손상 방지를 위한 청크 단위 CRC32c 해시 대조 자동 활성화

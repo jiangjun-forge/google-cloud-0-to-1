@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 서울 워크로드 대체 컴퓨트 엔진(Compute Engine) GPU 및 인프라 리전 레이턴시/가용성 프로브 (`gce-region-latency-probe`)
+# 서울 워크로드 대체 Compute Engine GPU 및 인프라 리전 레이턴시/가용성 프로브 (`gce-region-latency-probe`)
 
 서울 리전(asia-northeast3) GPU 및 고성능 인스턴스 재고 부족 시 100ms 미만 지연 시간(RTT)을 충족하는 인접 대안 리전(도쿄, 오사카, 대만, 싱가포르)의 네트워크 레이턴시와 GPU 가용성을 1분 만에 종합 측정하고 최적 배포 리전을 추천하는 도구다. (As of 2026-10-17)
 
@@ -22,7 +22,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 서울 리전(`asia-northeast3`)에서 고성능 GPU(A100, H100, G4, L4) 및 최신 고성능 머신 타입(C4, N4 등) 할당 쿼터 부족 또는 온디맨드 인스턴스 생성 시 `ZONE_RESOURCE_POOL_EXHAUSTED` 에러가 빈번하게 발생한다.
 - [ ] 국내 데이터 레지던시 의무 규정은 없으나, 실시간 대화형 추론이나 서빙 지연 시간을 고려하여 서울 사용자 기준 100ms 미만 왕복 지연 시간(RTT)을 반드시 충족해야 한다.
 - [ ] 도쿄, 오사카, 대만, 싱가포르 등 인접 아시아 태평양(APAC) 리전 중 어떤 리전이 지연 시간이 가장 짧고 목표 GPU 및 고성능 머신 타입을 보유하고 있는지 즉각적인 비교 데이터가 부족하다.
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 리전별 실측 RTT(최소/평균/최대/지터), 100ms 충족 여부, 추천 배포 순위 및 GPU 가용성 요약 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 리전별 네트워크 레이턴시 실측 보고서, RTT 분포 차트, Fluid Compute 크로스 리전 백본 아키텍처 및 gcloud 배포 명령어 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **대체 리전 즉시 배포 gcloud 명령어**: 권장 대체 리전 대상 인스턴스 생성 스크립트<br/>• **Fluid Compute 네트워크 구성 가이드**: 구글 글로벌 프라이빗 백본 기반 Cross-Region VPC 설정<br/>• **레이턴시 모니터링 알림 정책**: 100ms 초과 시 관리자 경보를 발생하는 Cloud Monitoring 메트릭 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **대체 리전 즉시 배포 gcloud 명령어**: 권장 대체 리전 대상 인스턴스 생성 스크립트<br/>- **Fluid Compute 네트워크 구성 가이드**: 구글 글로벌 프라이빗 백본 기반 Cross-Region VPC 설정<br/>- **레이턴시 모니터링 알림 정책**: 100ms 초과 시 관리자 경보를 발생하는 Cloud Monitoring 메트릭 |
 
 ---
 
@@ -162,7 +162,7 @@ flowchart TB
 본 도구를 실행하려면 최소 아래의 IAM 권한이 필요하다:
 
 - 로컬 네트워크 소켓 레이턴시 측정에는 GCP IAM 권한이 필요하지 않다.
-- 실제 컴퓨트 엔진(Compute Engine) 인스턴스 생성 및 쿼터 조회 시:
+- 실제 Compute Engine 인스턴스 생성 및 쿼터 조회 시:
   - `roles/compute.viewer` (Compute Engine 조회)
   - `compute.regions.get`, `compute.regions.list`
 

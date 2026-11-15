@@ -16,17 +16,17 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # 임베딩 벡터 차원 축소에 따른 용량 절감 및 검색 정확도 비교 분석기
 
-버텍스 AI(Vertex AI) 및 제미나이 API(Gemini API) 임베딩 모델(다국어 및 한국어 최적화: `text-multilingual-embedding-002`, 영어/코드 특화: `text-embedding-005`)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다. (As of 2026-10-17)
+Vertex AI 및 Gemini API 임베딩 모델(다국어 및 한국어 최적화: `text-multilingual-embedding-002`, 영어/코드 특화: `text-embedding-005`)의 Matryoshka Representation Learning(MRL) 기능을 활용하여, 사내 실데이터(CSV, JSONL, TXT) 또는 1,000건의 비용 최적화 표본을 대상으로 지정된 차원들(기본값: 768, 512, 256, 128)을 큰 차원부터 작은 차원까지 일괄 테스트하고 인덱스 용량 절감량(최대 83.3%)과 검색 정확도 손실률(2.4%) 트레이드오프를 1분 만에 비교 분석하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 자사의 실제 비즈니스 도메인 데이터(질의, 문서)를 직접 주입하여 차원 축소 시 실제 검색 정확도 손실과 랭킹 품질(MRR) 변화를 정밀하게 측정해야 하는 경우
 - [ ] 대규모 임베딩 API 호출에 따른 비용 누수를 방지하기 위해 기본 평가 표본을 1,000건 수준으로 안전하게 제한하면서도 전사 100만 건 기준 인덱스 RAM/스토리지 절감량을 산정하고자 하는 경우
 - [ ] 최대 차원(768)부터 최저 차원(128)까지 지원되는 모든 차원을 한 번에 일괄 비교하거나, 특정 2개 이상의 차원만 지정하여 맞춤형 비교표를 산출하려는 경우
-- [ ] 빅쿼리(BigQuery) Vector Search 또는 버텍스 AI Vector Search 도입 전 인프라 용량 및 비용 최적화를 위한 정량적 근거 보고서가 필요한 경우
+- [ ] BigQuery Vector Search 또는 Vertex AI Vector Search 도입 전 인프라 용량 및 비용 최적화를 위한 정량적 근거 보고서가 필요한 경우
 - [ ] 모바일 또는 실시간 지연 시간 민감 워크로드에서 유사도 계산 레이턴시를 3배 이상 단축하려는 경우
 
 
@@ -46,7 +46,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 차원별 Top-1/Top-3 Recall, MRR, 평균 지연시간, 100만 건 기준 RAM 절감량 및 티어 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | MRL 차원 축소 벤치마크 결과서, 차원별 트레이드오프 분석 그래프 데이터, 한국어 모델 선정 가이드 및 프로덕션 적용 코드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **사내 실데이터 적용 파이썬 코드**: `google-genai` SDK 기반 `output_dimensionality` 주입 템플릿<br/>• **3대 최적 티어링 권고안**: Tier 1(초절감 128d), Tier 2(균형 256d/512d), Tier 3(고정밀 768d)<br/>• **Vector Search 인덱스 최적화 사양**: 축소된 차원에 맞춘 인덱스 엔드포인트 프로비저닝 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **사내 실데이터 적용 Python 코드**: `google-genai` SDK 기반 `output_dimensionality` 주입 템플릿<br/>- **3대 최적 티어링 권고안**: Tier 1(초절감 128d), Tier 2(균형 256d/512d), Tier 3(고정밀 768d)<br/>- **Vector Search 인덱스 최적화 사양**: 축소된 차원에 맞춘 인덱스 엔드포인트 프로비저닝 가이드 |
 
 ---
 

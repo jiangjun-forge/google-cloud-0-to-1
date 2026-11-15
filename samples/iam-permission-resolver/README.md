@@ -16,13 +16,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # GCP IAM 권한 거부(403) 감사 역추적 및 원클릭 복구 (iam-permission-resolver)
 
-구글 클라우드 IAM(Cloud IAM) 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-10-17)
+Google Cloud IAM 환경에서 발생하는 403 권한 거부(Permission Denied) 실패 이벤트를 감사 로그에서 정밀 역추적하고, **서비스별 최소 권한(Least Privilege) IAM 역할 및 즉시 복구 가능한 gcloud 명령어를 1분 만에 자동 처방**하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **원인 미상의 403 권한 거부**: 파이프라인이나 서비스에서 `Permission Denied` 오류가 발생했으나 정확히 어떤 IAM 역할(Role)이 누락되었는지 확인하기 어려울 때
 - [ ] **과도한 권한 부여(오버 그랜트) 방지**: 문제를 해결하겠다고 `roles/editor`나 `roles/owner`를 남발하지 않고 최소 권한 역할만 선별하여 안전하게 부여하고자 할 때
 - [ ] **감사 로그 기반의 즉각 처방**: Cloud Logging의 `cloudaudit.googleapis.com/data_access` 감사 로그를 분석하여 계정 형태(사용자 vs 서비스 계정)에 맞춘 gcloud 명령어를 원클릭으로 확보하고자 할 때
@@ -44,7 +44,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 실패 시각, 호출 주체(Principal), 대상 리소스, 거부된 권한(Permission), 추천 최소 역할 및 해결 명령 요약 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 403 권한 거부 전수 감사 보고서, 거부 사유 상세 분석, 최소 권한 추천 근거 및 즉시 실행 가능한 gcloud 명령어 세트 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **최소 권한 부여 gcloud 명령어**: 필요한 역할만 선별하여 추가하는 원클릭 복구 스크립트<br/>• **과다 권한 회수 및 롤백 가이드**: 임시 부여되었던 관리자 권한을 안전하게 제거하는 절차서<br/>• **IAM 정책 감사 로그 모니터링 룰**: 권한 거부 급증 시 실시간 알림을 트리거하는 모니터링 설정 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **최소 권한 부여 gcloud 명령어**: 필요한 역할만 선별하여 추가하는 원클릭 복구 스크립트<br/>- **과다 권한 회수 및 롤백 가이드**: 임시 부여되었던 관리자 권한을 안전하게 제거하는 절차서<br/>- **IAM 정책 감사 로그 모니터링 룰**: 권한 거부 급증 시 실시간 알림을 트리거하는 모니터링 설정 |
 
 ---
 
@@ -156,7 +156,7 @@ flowchart TB
 
 | 역할 (Role) | 권한 ID | 용도 |
 | :--- | :--- | :--- |
-| **클라우드 로깅 뷰어(roles/logging.viewer)** | `roles/logging.viewer` | Cloud Logging 데이터 액세스 감사 로그 읽기 |
+| **Cloud Logging 뷰어(roles/logging.viewer)** | `roles/logging.viewer` | Cloud Logging 데이터 액세스 감사 로그 읽기 |
 | **프로젝트 IAM 관리자(roles/resourcemanager.projectIamAdmin)** | `roles/resourcemanager.projectIamAdmin` | 추천된 IAM 역할을 계정에 최종 부여 |
 
 > [!NOTE]
@@ -188,7 +188,7 @@ flowchart TB
   - 실제 오류 내용: Permission 'aiplatform.endpoints.predict' denied on resource
   [정밀 처방 역할 추천]
     - 권장 역할: roles/aiplatform.user
-    - 역할 상세: Gemini API 호출 및 버텍스 AI(Vertex AI) 파운데이션 모델 추론 권한
+    - 역할 상세: Gemini API 호출 및 Vertex AI 파운데이션 모델 추론 권한
   [즉시 조치 가능한 원클릭 gcloud 해결 명령어]
     gcloud projects add-iam-policy-binding "my-prod-project" \
       --member="user:backend-developer@company.com" \

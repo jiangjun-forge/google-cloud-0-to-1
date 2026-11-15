@@ -20,7 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 시스템 개요 및 아키텍처 다이어그램
 
-본 도구는 Gemini Enterprise app의 Cloud Logging 감사 스트림에서 질의 데이터를 수집하고, 인라인 PII 마스킹과 멀티 턴 세션 묶음 정제를 거쳐 빅쿼리(BigQuery) 내장 임베딩(`ML.GENERATE_EMBEDDING`)과 자율 적응형(Auto-K) K-Means++ 알고리즘을 결합하여 고정 벡터 DB 없이도 임직원 3R 마이크로 업무 군집 및 스킬/에이전트 전환 파이프라인을 자동 추출하는 경량 분석 파이프라인이다.
+본 도구는 Gemini Enterprise app의 Cloud Logging 감사 스트림에서 질의 데이터를 수집하고, 인라인 PII 마스킹과 멀티 턴 세션 묶음 정제를 거쳐 BigQuery 내장 임베딩(`ML.GENERATE_EMBEDDING`)과 자율 적응형(Auto-K) K-Means++ 알고리즘을 결합하여 고정 벡터 DB 없이도 임직원 3R 마이크로 업무 군집 및 스킬/에이전트 전환 파이프라인을 자동 추출하는 경량 분석 파이프라인이다.
 
 ```mermaid
 sequenceDiagram
@@ -88,7 +88,7 @@ sequenceDiagram
 ## 3. 예외 처리 및 복원력 설계 (Resilience & Fallback)
 
 1. **BigQuery 원격 임베딩 모델 부재 시 대응**:
-   * 빅쿼리 내에 원격 모델이 아직 생성되지 않은 경우, 내장된 결정론적 직교 시뮬레이션 벡터 생성기로 자동 전환하여 클러스터링을 완결한다.
+   * BigQuery 내에 원격 모델이 아직 생성되지 않은 경우, 내장된 결정론적 직교 시뮬레이션 벡터 생성기로 자동 전환하여 클러스터링을 완결한다.
 2. **BigQuery 감사 로그 테이블 부재 시 대응**:
    * 감사 로그가 아직 활성화되지 않은 신규 프로젝트의 경우, 에러 메시지와 함께 49건(24개 세션)의 실무 모의 데이터셋으로 즉시 가상 실행(`--dry-run`) 모드를 적용한다.
 

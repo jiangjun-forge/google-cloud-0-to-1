@@ -18,8 +18,8 @@
 BigQuery Data Agent 45-Minute Hands-on Starter Kit (Standalone & Optional Gemini Enterprise app).
 
 45분 핸즈온 워크숍 내에 참석자(실무자)가 CLI 명령어 한 줄(--setup-demo)로 BigQuery 스몰셋 데이터셋(cymbal_gold)과
-실데이터를 자동 구축하고, 완전 관리형 에이전트 엔진(GDA dataAgents REST API)을 통해 CLI 원클릭(--deploy-agent)으로
-빅쿼리 데이터 에이전트를 자동 프로비저닝하며, A2A 표준 규격 기반으로 Gemini Enterprise App에 직결 연동하거나
+실데이터를 자동 구축하고, 완전 관리형 GDA dataAgents REST API를 통해 CLI 원클릭(--deploy-agent)으로
+BigQuery Data Agent를 자동 프로비저닝하며, A2A 표준 규격 기반으로 Gemini Enterprise app에 직결 연동하거나
 BigQuery Studio Agents 콘솔 UI에서 단독(Standalone)으로 실습할 수 있도록 설계된 실무 스타터 키트다.
 """
 
@@ -529,7 +529,7 @@ def send_request(
     token: Optional[str] = None,
     project_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """구글 클라우드 REST API 요청을 송신하고 JSON 응답을 반환한다."""
+    """Google Cloud REST API 요청을 송신하고 JSON 응답을 반환한다."""
     if token is None:
         token = get_access_token()
 
@@ -926,7 +926,7 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
     print(" [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]")
     print("=" * 88)
     print(f" - 대상 프로젝트 : {project_id} (프로젝트 번호: {cfg['project_number']})")
-    print(f" - 빅쿼리 리전   : {cfg['location']} (데이터셋: {dataset_id})")
+    print(f" - BigQuery 리전 : {cfg['location']} (데이터셋: {dataset_id})")
     print(f" - GDA 런타임   : {cfg['gda_location']} (에이전트 이름: {cfg['data_agent_name']})")
     print(f" - GE App 엔진  : {cfg['ge_app_id']}")
     print(f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}")
@@ -934,9 +934,9 @@ def print_workshop_guide_and_prompts(cfg: Dict[str, Any], custom_query: Optional
 
     print("\n [45분 핸즈온 워크숍 역할 분담 타임라인 (GDA 완전 관리형 골든 아키텍처)]")
     print("  * 00~05분 [Step 1 CLI 데이터 패브릭]: cymbal_gold 스몰셋 4개 테이블, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)")
-    print("  * 05~15분 [Step 2 CLI 에이전트 엔진]: 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)")
+    print("  * 05~15분 [Step 2 CLI GDA 런타임] : 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)")
     print("            [보조 확인 경로]: BigQuery Studio 콘솔 UI 수동 생성 지침 출력 (python diagnose.py --agent-config)")
-    print("  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise App 사내 갤러리 등록 (python diagnose.py --register-ge-app)")
+    print("  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise app 사내 갤러리 등록 (python diagnose.py --register-ge-app)")
     print("  * 25~45분 [Step 4 멀티턴 실습 및 종료]: 골든 프롬프트 3선 대화 질의 및 실습 종료 후 자원 정리 (python diagnose.py --teardown)")
     print("  * [올인원 모드]: Step 1~3 전체 일괄 자동 배포 실행 (python diagnose.py --all)")
     print("-" * 88)
@@ -977,7 +977,7 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         "",
         f"- **생성 모드**: {mode_str}",
         f"- **대상 프로젝트**: `{project_id}`",
-        f"- **빅쿼리 리전**: `{cfg['location']}` (데이터셋: `{dataset_id}`)",
+        f"- **BigQuery 리전**: `{cfg['location']}` (데이터셋: `{dataset_id}`)",
         f"- **GDA 런타임**: `{cfg['gda_location']}` (에이전트 이름: `{cfg['data_agent_name']}`)",
         "- **산출 목적**: 사전 예습, 실습 실행 결과 기록 및 사내 공유/복습용",
         "",
@@ -990,7 +990,7 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         " [BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone & Optional Gemini Enterprise app)]",
         "=" * 88,
         f" - 대상 프로젝트 : {project_id} (프로젝트 번호: {cfg['project_number']})",
-        f" - 빅쿼리 리전   : {cfg['location']} (데이터셋: {dataset_id})",
+        f" - BigQuery 리전 : {cfg['location']} (데이터셋: {dataset_id})",
         f" - GDA 런타임   : {cfg['gda_location']} (에이전트 이름: {cfg['data_agent_name']})",
         f" - GE App 엔진  : {cfg['ge_app_id']}",
         f" - 실행 모드     : {'가상 모의 실행 (--dry-run)' if cfg['dry_run'] else '실제 GCP 연동 실행'}",
@@ -998,9 +998,9 @@ def build_markdown_report(cfg: Dict[str, Any]) -> str:
         "",
         " [45분 핸즈온 워크숍 역할 분담 타임라인 (GDA 완전 관리형 골든 아키텍처)]",
         "  * 00~05분 [Step 1 CLI 데이터 패브릭]: cymbal_gold 스몰셋 4개 테이블, 실데이터, 시맨틱 뷰 원클릭 구축 (python diagnose.py --setup-demo)",
-        "  * 05~15분 [Step 2 CLI 에이전트 엔진]: 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)",
+        "  * 05~15분 [Step 2 CLI GDA 런타임] : 구글 1P 완전 관리형 GDA dataAgents 원클릭 프로비저닝 (python diagnose.py --deploy-agent)",
         "            [보조 확인 경로]: BigQuery Studio 콘솔 UI 수동 생성 지침 출력 (python diagnose.py --agent-config)",
-        "  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise App 사내 갤러리 등록 (python diagnose.py --register-ge-app)",
+        "  * 15~25분 [Step 3 A2A 직결 연동]   : A2A 표준 규격 기반 Gemini Enterprise app 사내 갤러리 등록 (python diagnose.py --register-ge-app)",
         "  * 25~45분 [Step 4 멀티턴 실습 및 종료]: 골든 프롬프트 3선 대화 질의 및 실습 종료 후 자원 정리 (python diagnose.py --teardown)",
         "  * [올인원 모드]: Step 1~3 전체 일괄 자동 배포 실행 (python diagnose.py --all)",
         "-" * 88,

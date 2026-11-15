@@ -23,7 +23,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
-- [ ] 사내 업무 혁신을 위해 Gemini API(버텍스 AI(Vertex AI)) 또는 Gemini Enterprise App을 도입하려 하나, 사내 정보보호팀 및 CISO의 보안성 심의 승인 장벽에 부딪혔을 때
+- [ ] 사내 업무 혁신을 위해 Gemini API(Vertex AI) 또는 Gemini Enterprise App을 도입하려 하나, 사내 정보보호팀 및 CISO의 보안성 심의 승인 장벽에 부딪혔을 때
 - [ ] 보안팀으로부터 수십 개 문항의 엑셀/워드 체크리스트(데이터 재학습 여부, 전송 암호화, 인적 검토, 접근 통제 등)를 수신했으나, 구글 공식 약관과 기술적 증적 작성이 막막할 때
 - [ ] 금융감독원/금융보안원 보안성 심의 또는 K-ISMS 심사를 앞두고, 클라우드 프로젝트의 실제 보안 설정(CMEK, Audit Logs, Bucket Lock)을 객관적으로 입증해야 할 때
 - [ ] 사내 도입 검토 초기 단계에 승인용 보안 보고서를 신속하게 확보하고자 할 때
@@ -114,7 +114,7 @@ flowchart TB
 
 ### 1단계: 완제품 소명서 확인 및 사내 제출
 실행 즉시 생성된 [report.md](report.md)를 열어 20대 핵심 보안 체크리스트 조견표와 증적 내용을 확인하고, 사내 정보보호팀 또는 규제 심의 신청 서류의 첨부 증적으로 제출한다 (세부 20대 항목 명세 및 법적 근거는 [docs/CHECKLIST.md](docs/CHECKLIST.md) 참조):
-- 구글 클라우드 생성형 AI 데이터 거버넌스 및 개인정보 보호 ( https://cloud.google.com/terms/data-processing-addendum )
+- Google Cloud 생성형 AI 데이터 거버넌스 및 개인정보 보호 ( https://cloud.google.com/terms/data-processing-addendum )
 - Google Cloud 글로벌 컴플라이언스 및 ISO 42001 인증 현황 ( https://cloud.google.com/security/compliance/iso-42001 )
 
 ### 2단계: 기술적 미흡(WARN/FAIL) 항목 보완
@@ -137,8 +137,8 @@ gcloud services enable compute.googleapis.com logging.googleapis.com cloudresour
 | 역할 (Role) | 설명 |
 | :--- | :--- |
 | `조직 뷰어(roles/resourcemanager.organizationViewer)` | 사내 조직 정책(`resourceLocations`, `allowedPolicyMemberDomains` 등) 조회 권한 |
-| `클라우드 로깅 뷰어(roles/logging.viewer)` | Cloud Audit Logs 데이터 접근 감사 로깅 활성화 상태 조회 권한 |
-| `클라우드 KMS 뷰어(roles/cloudkms.viewer)` | 클라우드 KMS(Cloud KMS) 키링 및 CMEK 적용 상태 확인 권한 |
+| `Cloud Logging 뷰어(roles/logging.viewer)` | Cloud Audit Logs 데이터 접근 감사 로깅 활성화 상태 조회 권한 |
+| `Cloud KMS 뷰어(roles/cloudkms.viewer)` | Cloud KMS 키링 및 CMEK 적용 상태 확인 권한 |
 
 ---
 

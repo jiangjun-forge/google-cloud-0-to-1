@@ -16,17 +16,17 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Google Antigravity 사용자별 사용량 모니터링 및 쿼터 캡 진단기
 
-Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클라우드 로깅(Cloud Logging) 인퍼런스 로그를 기반으로 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고, 일일/주간 쿼터 캡(Cap) 초과자를 식별하여 프로젝트 IAM 마커 역할 기반의 안전한 통제 처방을 제공하는 진단 도구다. (As of 2026-10-17)
+Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 Cloud Logging 인퍼런스 로그를 기반으로 개발자별 토큰 소비량 및 호출 횟수를 실시간 분석하고, 일일/주간 쿼터 캡(Cap) 초과자를 식별하여 프로젝트 IAM 마커 역할 기반의 안전한 통제 처방을 제공하는 진단 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 전사 개발자에게 Google Antigravity를 배포했으나, 특정 헤비 유저가 과도하게 토큰을 소비하여 전체 풀링 쿼터가 조기 소진된다.
 - [ ] Google Cloud 콘솔에서 프로젝트 총량만 보이고, 개발자 개인별 토큰(Prompt / Candidate) 소모량 현황을 파악하기 어렵다.
 - [ ] 개발자별로 일일 쿼터 상한(예: 500만 토큰)을 설정하고, 초과자를 식별하여 접근을 안전하게 일시 제어하고자 한다.
-- [ ] 구글 그룹(`group:`)이나 상위 조직 권한으로 부여된 사용자와 개별 바인딩(`user:`) 사용자를 구분하여 통제 가능 여부를 사전에 파악하고 싶다.
+- [ ] Google 그룹(`group:`)이나 상위 조직 권한으로 부여된 사용자와 개별 바인딩(`user:`) 사용자를 구분하여 통제 가능 여부를 사전에 파악하고 싶다.
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
@@ -45,7 +45,7 @@ Google Antigravity(데스크톱, CLI, IDE 확장 프로그램) 환경에서 클�
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 개발자별 호출수, 토큰 소모량, 초과 판정 상태 및 조건부 IAM 만료 명령어 요약 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 전사 사용량 지표, 쿼터 초과 계정별 상세 분석, Cloud Logging Log Analytics 표준 집계 SQL 및 자율 복구 처방전 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **조건부 만료 IAM 차단 명령어**: 익일 자정 자동 복구되는 `CustomAntigravityCapBlocked` 정책 적용<br/>• **Log Analytics SQL**: 수천 명 규모 개발 조직 전수 조사용 BigQuery 연동 쿼리<br/>• **자동화 파이프라인**: Cloud Scheduler 및 Cloud Run 연동 무인 쿼터 가드 구성 가이드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **조건부 만료 IAM 차단 명령어**: 익일 자정 자동 복구되는 `CustomAntigravityCapBlocked` 정책 적용<br/>- **Log Analytics SQL**: 수천 명 규모 개발 조직 전수 조사용 BigQuery 연동 쿼리<br/>- **자동화 파이프라인**: Cloud Scheduler 및 Cloud Run 연동 무인 쿼터 가드 구성 가이드 |
 
 ---
 
@@ -149,7 +149,7 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
 ```
 
 ### 2단계: 그룹 바인딩 계정 수동 거버넌스
-`NOT_ENFORCEABLE`로 분류된 사용자는 프로젝트 레벨의 개별 바인딩을 변경해도 그룹 권한으로 인해 접근이 유지된다. 사내 구글 워크스페이스(Google Workspace) / Cloud Identity 관리 콘솔 ( https://admin.google.com )에서 해당 개발자를 개발팀 그룹에서 일시 제외 조치한다.
+`NOT_ENFORCEABLE`로 분류된 사용자는 프로젝트 레벨의 개별 바인딩을 변경해도 그룹 권한으로 인해 접근이 유지된다. 사내 Google Workspace / Cloud Identity 관리 콘솔 ( https://admin.google.com )에서 해당 개발자를 개발팀 그룹에서 일시 제외 조치한다.
 
 ### 3단계: Cloud Logging Log Analytics (BigQuery Linked Dataset) 초고속 대용량 분석
 수천 명 규모의 대규모 개발 조직 전수 조사는 Cloud Logging Log Analytics SQL 쿼리를 통해 초 단위로 집계할 수 있다:
@@ -173,7 +173,7 @@ ORDER BY
 ```
 
 ### 4단계: 엔터프라이즈 운영 자동화(Batch Job) 및 4대 필수 라벨링 규약
-본 진단기는 읽기 전용 분석 도구다. 15분 주기 자동 캡 차단 및 매일 자정 복구를 영구 스케줄링하려면 클라우드 스케줄러(Cloud Scheduler)와 클라우드 런(Cloud Run) 잡 또는 클라우드 펑션(Cloud Functions)을 연동하여 정기 배치 파이프라인으로 구성 및 배포할 수 있다.
+본 진단기는 읽기 전용 분석 도구다. 15분 주기 자동 캡 차단 및 매일 자정 복구를 영구 스케줄링하려면 Cloud Scheduler와 Cloud Run 잡 또는 Cloud Functions를 연동하여 정기 배치 파이프라인으로 구성 및 배포할 수 있다.
 사내 거버넌스 준수를 위해 배치 리소스 생성 시 4대 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=antigravity-user-quota-cap,env=sample,created-by=customer-engineer`)을 필수로 주입한다.
 
 ---
@@ -189,7 +189,7 @@ ORDER BY
    gcloud services enable logging.googleapis.com businessaicode.googleapis.com
    ```
 2. **관리 콘솔 개발자 도구 활동 로깅(Metadata Logging)**:
-   - 구글 워크스페이스(Google Workspace) 및 Gemini Enterprise 관리 콘솔 ( https://admin.google.com ) > 생성형 AI, 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 클라우드 로깅으로 토큰 및 사용자 정보가 적재된다.
+   - Google Workspace 및 Gemini Enterprise 관리 콘솔 ( https://admin.google.com ) > 생성형 AI, 개발자 도구 설정에서 **'인퍼런스 메타데이터 로깅'**이 켜져 있어야 Cloud Logging으로 토큰 및 사용자 정보가 적재된다.
 
 ### (2) 진단 실행 계정 최소 IAM 권한
 본 도구는 순수 읽기 전용 진단 스크립트이므로 최소한의 조회 권한만 요구한다:

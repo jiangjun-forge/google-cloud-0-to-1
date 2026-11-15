@@ -23,7 +23,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
 사내 Gemini Enterprise app 환경에서 커스텀 에이전트 배포 시 다음과 같은 요구가 있을 때 사용한다:
-- [ ] **노코드 에이전트 한계**: 사내 BigQuery 질의, 복합 로직, MCP 연동 등 파이썬 하이코드(High-code) 에이전트가 필요한 경우
+- [ ] **노코드 에이전트 한계**: 사내 BigQuery 질의, 복합 로직, MCP 연동 등 Python 하이코드(High-code) 에이전트가 필요한 경우
 - [ ] **반복 패키징 부담**: 새 에이전트마다 ADK 래핑, Agent Engine 빌드, `adkAgentDefinition` 등록을 매번 CLI로 수동 처리하는 경우
 - [ ] **GitHub 저장소 기반 원클릭 배포 필요**: 사내 저장소 URL만으로 빌드와 사내 갤러리(`/r/agents`) 등록을 채팅창에서 바로 끝내고 싶은 경우
 
@@ -85,7 +85,7 @@ flowchart TB
     end
 
     subgraph L2["2. Agent Engine 팩토리"]
-        GEApp -->|"SSE 세션 전달"| Engine["Agent Engine 런타임<br/>(ResilientAdkApp / gemini-3.8-flash)"]
+        GEApp -->|"SSE 세션 전달"| Engine["Agent Engine 런타임<br/>(ResilientAdkApp / Gemini Flash)"]
         Engine -->|"show_custom_catalog_tool<br/>deploy_enterprise_agent_tool<br/>check_deployment_status_tool"| RE["신규 커스텀 Agent Engine<br/>(GCS 스테이징 빌드)"]
     end
 

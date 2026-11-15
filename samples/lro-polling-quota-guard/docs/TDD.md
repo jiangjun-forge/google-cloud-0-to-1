@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 # 기술 상세 설계서 (TDD): lro-polling-quota-guard
 
 ## 1. 아키텍처 개요 및 설계 원칙
-본 시스템은 Google Cloud LRO 비동기 작업 처리 시 클라이언트 SDK(`google-api-core`)의 내부 폴링 주기가 유발하는 쿼터 초과 현상을 분석하는 단일 파이썬 진단 도구(`diagnose.py`)로 구성되며, 터미널 출력과 함께 마크다운 리포트(`report.md`)를 자동 생성한다.
+본 시스템은 Google Cloud LRO 비동기 작업 처리 시 클라이언트 SDK(`google-api-core`)의 내부 폴링 주기가 유발하는 쿼터 초과 현상을 분석하는 단일 Python 진단 도구(`diagnose.py`)로 구성되며, 터미널 출력과 함께 마크다운 리포트(`report.md`)를 자동 생성한다.
 
 ---
 
@@ -93,7 +93,7 @@ sequenceDiagram
 
 ## 5. 비기능 요구 사항 (Non-Functional Requirements)
 
-### NFR-01: 크로스 플랫폼 순수 파이썬 직접 실행
+### NFR-01: 크로스 플랫폼 순수 Python 직접 실행
 - 쉘 래퍼 종속성 없이 `python diagnose.py` 단일 명령어로 크로스 플랫폼(Linux, macOS, Windows)에서 직접 실행된다.
 
 ### NFR-02: 가상 실행 모드 (--dry-run)

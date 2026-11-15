@@ -42,7 +42,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 2. 1단계: 개발 착수 전 시맨틱 중복 생성 방지 게이트 (Pre-Build Gate)
 
 - **신규 개발 요청 아이디어**: `"재무팀 법인세 예규 및 조세심판원 판례 검색 웹앱"`
-- **검색 엔진**: `BigQuery Vector Search` (`gemini-embedding-001`, 코사인 유사도) + `Dataplex Universal Catalog`
+- **검색 엔진**: `BigQuery Vector Search` (`gemini-embedding-001`, 코사인 유사도) + `Knowledge Catalog`
 
 | 순위 | 기존 등록 앱 ID | 현재 수명 주기 상태 | 코사인 유사도 | 거버넌스 권고 조치 | 실행 및 1분 복원 명령어 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -54,7 +54,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 | 앱 ID | 유형 | 소유 조직 | 호출 수 | 경과일 / TTL | 거버넌스 판정 | 판정 근거 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `tax-precedent-spa-001` | `SPA` | `finance-ai-guild@example.com` | `1` | `45일 / 14일` | **`ALREADY_ARCHIVED`** | 이미 클라우드 스토리지 콜드라인 볼트(gs://sample-project-id-onetime-archive/tax-precedent-spa-001/)에 냉동 보관되어 상시 컴퓨트 비용이 $0.00/월이다. |
+| `tax-precedent-spa-001` | `SPA` | `finance-ai-guild@example.com` | `1` | `45일 / 14일` | **`ALREADY_ARCHIVED`** | 이미 Cloud Storage Coldline 볼트(gs://sample-project-id-onetime-archive/tax-precedent-spa-001/)에 냉동 보관되어 상시 컴퓨트 비용이 $0.00/월이다. |
 | `q3-board-deck-kpi-visualizer` | `SPA` | `strategy-office@example.com` | `1` | `28일 / 14일` | **`CRYO_DISPOSAL`** | 1회성 사용 패턴(호출 수 1회 <= 1회) 및 보존 기한 만료(경과 28일 >= TTL 14일)가 확인되어 96% 콜드라인 냉동 타임캡슐 보관 대상이다. |
 | `partner-hackathon-contract-summarizer` | `AGENT_ENGINE` | `legal-innovation@example.com` | `0` | `21일 / 14일` | **`CRYO_DISPOSAL`** | 1회성 사용 패턴(호출 수 0회 <= 1회) 및 보존 기한 만료(경과 21일 >= TTL 14일)가 확인되어 96% 콜드라인 냉동 타임캡슐 보관 대상이다. |
 | `marketing-campaign-utm-tagger-api` | `CLOUD_RUN_API` | `growth-marketing@example.com` | `1` | `19일 / 14일` | **`CRYO_DISPOSAL`** | 1회성 사용 패턴(호출 수 1회 <= 1회) 및 보존 기한 만료(경과 19일 >= TTL 14일)가 확인되어 96% 콜드라인 냉동 타임캡슐 보관 대상이다. |
@@ -64,7 +64,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 4. 3단계: 빅쿼리 그래프(`GQL`) 멀티홉 호출 리니지 및 안전 차단 내역
+## 4. 3단계: BigQuery Graph(`GQL`) 멀티홉 호출 리니지 및 안전 차단 내역
 
 | 대상 앱 ID | 업스트림 호출자 ID | 호출자 유형 | 프로토콜 | 안전 폐기 검증 | 결정론적 차단 명령어 (Sever Command) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -76,7 +76,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ---
 
-## 5. 4A단계: 클라우드 스토리지 콜드라인 냉동 타임캡슐 및 1분 부활 스크립트
+## 5. 4A단계: Cloud Storage Coldline 냉동 타임캡슐 및 1분 부활 스크립트
 
 | 냉동 앱 ID | 콜드라인 캡슐 경로 (GCS URI) | 살균된 시크릿 키 | 월간 절감액 | 1분 원클릭 부활 명령어 (Rehydrate) |
 | :--- | :--- | :--- | :--- | :--- |
@@ -90,11 +90,11 @@ All contents, designs, and code examples are subject to change, modification, or
 ## 6. 4B단계: 상위 4% 핵심 안착 앱 프로덕션 승격 (Graduation)
 
 ### 승격 대상 앱: `enterprise-it-helpdesk-triage-agent` (전사 IT 헬프데스크 및 권한 신청 자동 분류 에이전트, 누적 호출 `412`회)
-- [x] 지식 카탈로그(Dataplex Universal Catalog) Aspect 상태를 `ACTIVE`(1회성)에서 `GRADUATED`(영구 운영)로 승격한다.
-- [x] 환경 변수 내 시크릿을 시크릿 매니저(Secret Manager)로 이관하고 90일 자동 순환 정책을 적용한다.
-- [x] 클라우드 아머(Cloud Armor) 및 모델 아머(Model Armor) 프롬프트 인젝션 방어 정책을 부착한다.
-- [x] VPC 서비스 컨트롤(VPC Service Controls) 보안 경계와 프로덕션 전용 최소 권한 서비스 계정을 분리 적용한다.
-- [x] 클라우드 모니터링(Cloud Monitoring) 가용성 SLO 알림(99.9% 가용성, P95 지연 시간 2.0초 미만)을 활성화한다.
+- [x] Knowledge Catalog Aspect 상태를 `ACTIVE`(1회성)에서 `GRADUATED`(영구 운영)로 승격한다.
+- [x] 환경 변수 내 시크릿을 Secret Manager로 이관하고 90일 자동 순환 정책을 적용한다.
+- [x] Cloud Armor 및 Model Armor 프롬프트 인젝션 방어 정책을 부착한다.
+- [x] VPC Service Controls 보안 경계와 프로덕션 전용 최소 권한 서비스 계정을 분리 적용한다.
+- [x] Cloud Monitoring 가용성 SLO 알림(99.9% 가용성, P95 지연 시간 2.0초 미만)을 활성화한다.
 
 ---
 

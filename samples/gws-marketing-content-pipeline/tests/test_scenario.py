@@ -116,7 +116,7 @@ class MarketingWorkflowScenarioTest(unittest.TestCase):
         """[Step 4] SPEC 규격 기반 초판 콘텐츠(rv-00) 세트 생성 검증."""
         rv00_dir = os.path.join(self.test_root, "output", "rv-00")
         
-        # campaign_content 구글 독스 모킹
+        # campaign_content Google Docs 모킹
         content_path = os.path.join(rv00_dir, "campaign_content.md")
         with open(content_path, "w", encoding="utf-8") as f:
             f.write("# 캠페인 초판 콘텐츠 (rv-00)\n\n## SNS 피드 카피\n도심의 소음을 끄고 당신만의 힐링을 켜세요.")

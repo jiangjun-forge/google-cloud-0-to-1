@@ -95,7 +95,7 @@ flowchart TB
 
     subgraph Layer4["Layer 4: Target Backend & Foundation Models (대상 모델 엔드포인트)"]
         VertexAI_Seoul["Vertex AI 서울 리전 엔드포인트 (asia-northeast3)"]
-        GeminiFlash["Gemini 3.8 Flash (온소일 추론)"]
+        GeminiFlash["Gemini Flash (온소일 추론)"]
         ForeignLeak["[위험] 글로벌 엔드포인트 라우팅 (데이터 국외 이전 위반)"]
     end
 

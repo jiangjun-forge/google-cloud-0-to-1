@@ -339,7 +339,7 @@ def build_markdown_report(
         "```",
         "",
         "### 처방 3: 영구 자격 증명 폐기 및 Workload Identity Federation 전환",
-        "- **깃허브 액션(GitHub Actions) 환경**: OIDC 연동 풀(Pool) 생성 후 단기 토큰 발급 체계로 전면 전환",
+        "- **GitHub Actions 환경**: OIDC 연동 풀(Pool) 생성 후 단기 토큰 발급 체계로 전면 전환",
         "- **온프레미스 서버 환경**: mTLS 기반 SPIFFE/SPIRE 또는 IdP SAML/OIDC 페더레이션 적용",
         "",
         "---",
@@ -582,7 +582,7 @@ def main() -> None:
     print("2. 악의적으로 부여된 비인가 IAM 바인딩 제거:")
     print("   gcloud projects remove-iam-policy-binding <PROJECT_ID> --member=<USER> --role=<ROLE>")
     print("3. 영구 자격 증명 폐기 및 Workload Identity Federation 전환:")
-    print("   - 깃허브 액션(GitHub Actions) 환경: OIDC 연동 풀(Pool) 생성 후 단기 토큰 발급 체계로 전면 전환")
+    print("   - GitHub Actions 환경: OIDC 연동 풀(Pool) 생성 후 단기 토큰 발급 체계로 전면 전환")
     print("   - 온프레미스 서버 환경: mTLS 기반 SPIFFE/SPIRE 또는 IdP SAML/OIDC 페더레이션 적용")
     print("=" * 80)
 

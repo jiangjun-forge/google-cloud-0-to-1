@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
         "-n",
         "--namespace",
         default=os.getenv("NAMESPACE") or "default",
-        help="쿠버네티스 네임스페이스 (기본값: default)",
+        help="Kubernetes 네임스페이스 (기본값: default)",
     )
     parser.add_argument(
         "-i",
@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="실제 GCP 및 쿠버네티스 API 호출 없이 모의 데이터로 가상 실행",
+        help="실제 GCP 및 Kubernetes API 호출 없이 모의 데이터로 가상 실행",
     )
     parser.add_argument("--config", action="store_true", default=False, help="사내 환경 대화형 설정 마법사 실행 및 .env 자동 저장")
     return parser.parse_args()
@@ -247,7 +247,7 @@ def analyze_and_report(data: Dict[str, Any], is_dry_run: bool) -> None:
     print(" GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적 리포트")
     print("=" * 80)
     if is_dry_run:
-        print("[!] 안내: 본 결과는 실제 쿠버네티스 호출이 아닌 내장 모의 인프라 데이터(Dry-Run) 기준이다.")
+        print("[!] 안내: 본 결과는 실제 Kubernetes 호출이 아닌 내장 모의 인프라 데이터(Dry-Run) 기준이다.")
 
     c_name = data.get("cluster_name", "")
     loc = data.get("location", "")
@@ -276,7 +276,7 @@ def analyze_and_report(data: Dict[str, Any], is_dry_run: bool) -> None:
             (
                 "CRITICAL",
                 "GCP 헬스 체크 프로브 대역 방화벽 규칙 누락 (FIREWALL_PROBE_BLOCKED)",
-                "구글 클라우드 로드 밸런서 헬스 체크 프로브 대역(35.191.0.0/16, 130.211.0.0/22)에서 "
+                "Google Cloud 로드 밸런서 헬스 체크 프로브 대역(35.191.0.0/16, 130.211.0.0/22)에서 "
                 "GKE 노드/파드로 들어오는 인그레스 트래픽이 차단되어 모든 백엔드가 Unhealthy로 판정됨.",
             )
         )
@@ -417,7 +417,7 @@ def build_markdown_report(
             (
                 "CRITICAL",
                 "GCP 헬스 체크 프로브 대역 방화벽 규칙 누락 (FIREWALL_PROBE_BLOCKED)",
-                "구글 클라우드 로드 밸런서 헬스 체크 프로브 대역(35.191.0.0/16, 130.211.0.0/22)에서 "
+                "Google Cloud 로드 밸런서 헬스 체크 프로브 대역(35.191.0.0/16, 130.211.0.0/22)에서 "
                 "GKE 노드/파드로 들어오는 인그레스 트래픽이 차단되어 모든 백엔드가 Unhealthy로 판정됨.",
             )
         )
@@ -555,7 +555,7 @@ def build_markdown_report(
 ================================================================================
  GKE Ingress 및 Gateway 502 Bad Gateway 원인 체인 역추적 리포트
 ================================================================================
-[!] 안내: 본 결과는 실제 쿠버네티스 호출이 아닌 내장 모의 인프라 데이터(Dry-Run) 기준이다.
+[!] 안내: 본 결과는 실제 Kubernetes 호출이 아닌 내장 모의 인프라 데이터(Dry-Run) 기준이다.
 
 [1] 점검 대상 리소스 개요:
   - GKE 클러스터: {c_name} (위치: {loc})

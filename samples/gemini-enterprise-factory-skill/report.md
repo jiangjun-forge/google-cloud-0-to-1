@@ -1,6 +1,6 @@
 # Gemini Enterprise 사내 스킬 팩토리 배포 보고서 (gemini-enterprise-factory-skill)
 
-- **배포 일시**: 2026-11-10 02:26:52 UTC
+- **배포 일시**: 2026-11-15 00:32:13 UTC
 - **대상 프로젝트**: `sample-project-id`
 - **Gemini Enterprise app 인스턴스**: `sample-ge-app-id`
 - **팩토리 에이전트**: `GE In-Chat Skill Factory (사내 스킬 팩토리)`
@@ -31,7 +31,7 @@ flowchart TB
     end
 
     subgraph L2["2. Agent Engine 팩토리"]
-        GE -->|"대화 라우팅"| F["Skill Factory 에이전트<br/>(gemini-3.8-flash)"]
+        GE -->|"대화 라우팅"| F["Skill Factory 에이전트<br/>(Gemini Flash)"]
         F -->|"슬러그 중복 검사 &<br/>SKILL.md 합성"| T["deploy_enterprise_skill_tool"]
     end
 

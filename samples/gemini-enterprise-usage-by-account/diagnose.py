@@ -3,8 +3,8 @@
 
 """Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 토큰 사용량 분석 도구.
 
-제미나이 엔터프라이즈 앱(Gemini Enterprise app) 관리 콘솔의 공식 내장 '프롬프트 및 응답 로깅
-(Prompt & Response Logging)' 기능을 활성화하고, 빅쿼리(BigQuery)로 자동 적재되는
+Gemini Enterprise app 관리 콘솔의 공식 내장 '프롬프트 및 응답 로깅
+(Prompt & Response Logging)' 기능을 활성화하고, BigQuery로 자동 적재되는
 데이터를 분석하여 사용자 및 계정별 프롬프트 호출량과 토큰 소모량을 분석한다.
 """
 
@@ -38,7 +38,7 @@ def get_default_project(is_dry_run: bool = False, fallback_demo: str = "sample-p
     code, stdout, _ = run_cmd(["gcloud", "projects", "list", "--format=value(projectId)", "--limit=5"])
     projects = [p.strip() for p in stdout.splitlines() if p.strip()] if code == 0 and stdout else []
     if projects:
-        print("\n[?] 대상 구글 클라우드(Google Cloud) 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
+        print("\n[?] 대상 Google Cloud 프로젝트가 지정되지 않았다. 현재 접근 가능한 프로젝트 목록:")
         for idx, p in enumerate(projects, 1):
             print(f"  [{idx}] {p}")
         print(f"  [{len(projects) + 1}] 직접 입력 (Custom Input)")
@@ -123,7 +123,7 @@ def build_markdown_report(project_id: str, dataset: str, days: int, is_dry_run: 
         "",
         "## 2. Gemini Enterprise app 공식 내장 프롬프트/응답 로깅 활성화 가이드",
         "",
-        "구글 클라우드 공식 관리형 기능을 통해 프롬프트와 LLM 출력을 BigQuery로 영구 보관하려면 아래 절차를 수행한다:",
+        "Google Cloud 공식 관리형 기능을 통해 프롬프트와 LLM 출력을 BigQuery로 영구 보관하려면 아래 절차를 수행한다:",
         "",
         "1. **Gemini Enterprise 관리 콘솔 접속**: `https://gemini.google.com` (또는 Cloud Console > Gemini Enterprise)",
         "2. **감사 설정 이동**: [Settings] > [Audit & Compliance] 메뉴 선택",

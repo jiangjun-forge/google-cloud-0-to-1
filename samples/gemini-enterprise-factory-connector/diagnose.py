@@ -49,7 +49,7 @@ FALLBACK_CONNECTOR_CATALOG = {
         "required_secret_keys": ['jira_client_id', 'jira_client_secret', 'jira_instance_url'],
         "sync_mode": "HOURLY_INCREMENTAL",
         "acl_mode": "IDENTITY_MAPPING_OIDC",
-        "description": "사내 개발 및 운영 지라(Jira) 프로젝트 티켓, 이슈 내역, 에픽 및 댓글 데이터를 색인하고 이슈 보안 스킴(Security Scheme)을 동기화한다.",
+        "description": "사내 개발 및 운영 Jira 프로젝트 티켓, 이슈 내역, 에픽 및 댓글 데이터를 색인하고 이슈 보안 스킴(Security Scheme)을 동기화한다.",
         "content_types": ['issues', 'comments', 'attachments'],
         "default_scope": "ORG",
     },
@@ -161,7 +161,7 @@ FALLBACK_CONNECTOR_CATALOG = {
         "required_secret_keys": ['github_org_name', 'github_pat_secret_id', 'github_repo_list'],
         "sync_mode": "HOURLY_INCREMENTAL",
         "acl_mode": "REPO_COLLABORATOR_TEAMS",
-        "description": "사내 깃허브 저장소의 마크다운 문서(README.md, docs/, RFCs) 및 OpenAPI 스펙을 팀/조직 열람 권한에 연동하여 색인한다.",
+        "description": "사내 GitHub 저장소의 마크다운 문서(README.md, docs/, RFCs) 및 OpenAPI 스펙을 팀/조직 열람 권한에 연동하여 색인한다.",
         "content_types": ['markdown_docs', 'open_api_specs'],
         "default_scope": "ORG",
     },
@@ -502,7 +502,7 @@ def run_config_mode(args):
 
     # 1. Project ID
     current_proj = os.environ.get("PROJECT_ID") or get_gcloud_config("project") or ""
-    proj_prompt = f"1. 구글 클라우드 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. 구글 클라우드 프로젝트 ID 입력: "
+    proj_prompt = f"1. Google Cloud 프로젝트 ID [기본값: {current_proj}]: " if current_proj else "1. Google Cloud 프로젝트 ID 입력: "
     if sys.stdin.isatty():
         try:
             val = input(proj_prompt).strip()
@@ -964,7 +964,7 @@ flowchart TB
    - *"사내 Atlassian Jira Cloud 이슈 및 티켓 연동 커넥터 매니페스트 생성해 줘"*
    - *"Confluence 사내 지식 베이스 위키 문서 동기화 커넥터 배포해 줘"*
    - *"Salesforce CRM 영업 리드 및 기회 데이터 저장소 연결해 줘"*
-   - *"사내 구글 드라이브(Google Drive) 및 쉐어포인트(SharePoint) 전사 문서 연동해 줘"*
+   - *"사내 Google Drive 및 SharePoint 전사 문서 연동해 줘"*
 
 3. **팩토리 에이전트 자율 동작**:
    - 커넥터 스캐폴더 에이전트가 인증 방식, 동기화 주기, 문서 레벨 ACL 요구사항을 확인하고,

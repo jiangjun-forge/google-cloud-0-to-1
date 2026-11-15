@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: bigquery-data-agent-semantic-enricher
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-semantic-enricher: BigQuery Data Agent(Gemini in BigQuery, 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, Dataplex 데이터 프로파일링 통계, Knowledge Catalog 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다.
+  Autopilot, hands-on diagnostics, and self-healing for bigquery-data-agent-semantic-enricher: BigQuery Data Agent(Gemini in BigQuery, 자연어 기반 SQL 생성 도구, NL2SQL) 도입 시 발생하는 심각한 환각(Hallucination)과 테이블 오라우팅 문제를 해결하기 위해, 대상 데이터셋의 테이블 및 컬럼 설명, Knowledge Catalog 데이터 프로파일링 통계 및 비즈니스 용어집(Glossary) 계산 공식 바인딩 상태를 종합 진단하고 지능적으로 보강(Enrichment)하는 실무 진단 도구다.
 ---
 
 # BigQuery Data Agent 시맨틱 메타데이터 준비도 진단 및 지능형 보강 가이드 (Autopilot & Hands-on Guide)
@@ -26,7 +26,7 @@ description: >-
 
 **Audience**: `#Architect`, `#DataEngineer`, `#Developer`  
 **Concern**: `#Accuracy`, `#GenAI`, `#Governance`, `#Performance`  
-**Service**: `#BigQuery`, `#Dataplex`, `#GeminiAPI`, `#KnowledgeCatalog`
+**Service**: `#BigQuery`, `#GeminiAPI`, `#KnowledgeCatalog`
 
 ---
 
@@ -45,7 +45,7 @@ flowchart TB
 
 ## 2. Stage 1: 예습 (YOLO Autopilot 모드)
 
-고객 개발자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
+사내 개발자가 "이 미니 프로젝트 욜로 모드로 먼저 시연해 줘"라고 요청할 때 에이전트가 수행하는 자율 실행 절차다.
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
 1. 현재 활성화된 gcloud 프로젝트 및 기본 리전을 확인한다:
@@ -75,7 +75,7 @@ python diagnose.py --dry-run
 
 ## 3. Stage 2: 실습 (Developer Hands-on 단계)
 
-예습을 통해 전체 흐름을 파악한 고객 개발자가 콘솔과 터미널에서 직접 명령어를 수행하는 본 실습 단계다.
+예습을 통해 전체 흐름을 파악한 사내 개발자가 콘솔과 터미널에서 직접 명령어를 수행하는 본 실습 단계다.
 
 ### Step 2.1 저장소 이동 및 의존성 확인
 ```bash

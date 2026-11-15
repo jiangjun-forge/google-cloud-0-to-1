@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Drive Marketing Content Pipeline
- * [모듈 9] 구글 시트 우측 패널(Sidebar) 모던 HTML 컨트롤 타워 UI
+ * [모듈 9] Google Sheets 우측 패널(Sidebar) 모던 HTML 컨트롤 타워 UI
  */
 
 /**
@@ -59,7 +59,7 @@ function getDeterministicFallback(userMessage, status) {
     if ((q.indexOf("기획") !== -1 || q.indexOf("plan") !== -1) && status.planDocUrl) {
       return {
         success: true,
-        reply: "캠페인 기획서(PLAN) 구글 독스 준비해 뒀어. 아래 링크 눌러서 바로 열어봐.",
+        reply: "캠페인 기획서(PLAN) Google Docs 준비해 뒀어. 아래 링크 눌러서 바로 열어봐.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -69,7 +69,7 @@ function getDeterministicFallback(userMessage, status) {
     if ((q.indexOf("명세") !== -1 || q.indexOf("spec") !== -1) && status.specDocUrl) {
       return {
         success: true,
-        reply: "멀티 채널 콘텐츠 제작 명세서(SPEC) 구글 독스야.",
+        reply: "멀티 채널 콘텐츠 제작 명세서(SPEC) Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -79,7 +79,7 @@ function getDeterministicFallback(userMessage, status) {
     if (q.indexOf("아이디어") !== -1 && status.ideaDocUrl) {
       return {
         success: true,
-        reply: "캠페인 원천 [아이디어 메모] 구글 독스야.",
+        reply: "캠페인 원천 [아이디어 메모] Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -90,7 +90,7 @@ function getDeterministicFallback(userMessage, status) {
       var rvTag = status.latestRv || "rv-00";
       return {
         success: true,
-        reply: "현재 최신 마케팅 콘텐츠(" + rvTag + ") 구글 독스야.",
+        reply: "현재 최신 마케팅 콘텐츠(" + rvTag + ") Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -101,7 +101,7 @@ function getDeterministicFallback(userMessage, status) {
       var fbTag = status.latestFb || "fb-01";
       return {
         success: true,
-        reply: "피드백 종합 분석 보고서(feedback_summary) 구글 독스야.",
+        reply: "피드백 종합 분석 보고서(feedback_summary) Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -112,7 +112,7 @@ function getDeterministicFallback(userMessage, status) {
       var fbTag2 = status.latestFb || "fb-01";
       return {
         success: true,
-        reply: "마케터 전용 [마케터 보정 지침] 구글 독스야.",
+        reply: "마케터 전용 [마케터 보정 지침] Google Docs야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -144,7 +144,7 @@ function getDeterministicFallback(userMessage, status) {
     if ((q.indexOf("폴더") !== -1 || q.indexOf("드라이브") !== -1) && status.folderUrl) {
       return {
         success: true,
-        reply: "캠페인 구글 드라이브 루트 폴더야.",
+        reply: "캠페인 Google Drive 루트 폴더야.",
         action: null,
         actionLabel: null,
         taskName: null,
@@ -409,7 +409,7 @@ function askPipelineAssistant(userMessage) {
         saveGoogleDoc(campaignFolder, (CONFIG && CONFIG.IDEA_DOC_NAME) || "아이디어 메모", ideaText);
         return {
           success: true,
-          reply: "새로운 캠페인 아이디어가 [아이디어 메모] 구글 독스에 잘 들어갔어:\n[" + ideaText + "]\n\n지금 바로 전문 기획서(PLAN)랑 제작 명세서(SPEC)를 뽑아볼까?",
+          reply: "새로운 캠페인 아이디어가 [아이디어 메모] Google Docs에 잘 들어갔어:\n[" + ideaText + "]\n\n지금 바로 전문 기획서(PLAN)랑 제작 명세서(SPEC)를 뽑아볼까?",
           action: "guardAndRunIdeaToPlan",
           actionLabel: "기획서 (PLAN & SPEC) 도출하기",
           taskName: "기획서 및 명세서 생성"
@@ -446,9 +446,9 @@ function askPipelineAssistant(userMessage) {
   ].join("\n");
 
   var systemInstruction = 
-    "당신은 구글 드라이브 마케팅 콘텐츠 파이프라인의 전담 AI 코파일럿 어시스턴트이다.\n" +
+    "당신은 Google Drive 마케팅 콘텐츠 파이프라인의 전담 AI 코파일럿 어시스턴트이다.\n" +
     "비개발자 마케터와 편안하고 전문적인 동료로서 대화하며, 캠페인을 성공적으로 이끌 수 있도록 돕는다.\n" +
-    "현재 구글 드라이브 및 스프레드시트의 파이프라인 실제 상태는 다음과 같다:\n" +
+    "현재 Google Drive 및 스프레드시트의 파이프라인 실제 상태는 다음과 같다:\n" +
     contextSummary + "\n\n" +
     "[파이프라인 지원 가능 액션 식별자 목록]\n" +
     "- 'initCampaignWorkspace': [Step 0] API Key & 작업 공간 구축\n" +
@@ -514,7 +514,7 @@ function askPipelineAssistant(userMessage) {
 }
 
 /**
- * 구글 시트 우측 패널에 마케팅 콘텐츠 파이프라인 컨트롤 타워를 표시한다.
+ * Google Sheets 우측 패널에 마케팅 콘텐츠 파이프라인 컨트롤 타워를 표시한다.
  */
 function showPipelineSidebar() {
   var ui = SpreadsheetApp.getUi();
@@ -683,7 +683,7 @@ function getPipelineStatus(optBypassCache) {
         if (contentFiles.hasNext()) {
           status.contentDocUrl = contentFiles.next().getUrl();
         } else {
-          // 이름에 content, asset, 카피가 포함되거나 구글 독스 파일 전수 스캔
+          // 이름에 content, asset, 카피가 포함되거나 Google Docs 파일 전수 스캔
           var rvAllFiles = rvFolder.getFiles();
           while (rvAllFiles.hasNext()) {
             var rvf = rvAllFiles.next();
@@ -835,7 +835,7 @@ function getPipelineStatus(optBypassCache) {
 
 /**
  * 우측 패널(Sidebar)용 모던 HTML 문자열을 생성한다.
- * [구글 워크스페이스 스타일]: Google Sans 서체, 구글 클라우드 테마 색상, 무이모지, 실시간 RPC 연동.
+ * [Google Workspace 스타일]: Google Sans 서체, Google Cloud 테마 색상, 무이모지, 실시간 RPC 연동.
  */
 function getPipelineSidebarHtml() {
   return "" +
@@ -1235,7 +1235,7 @@ function getPipelineSidebarHtml() {
     "  <div class='copilot-section'>\n" +
     "    <div class='copilot-header'>\n" +
     "      <span>AI 코파일럿 대화 및 지시</span>\n" +
-    "      <span class='step-tag'>Gemini 3.8 Flash</span>\n" +
+    "      <span class='step-tag'>Gemini Flash</span>\n" +
     "    </div>\n" +
     "    <div id='chatLog' class='chat-log'>\n" +
     "      <div class='chat-bubble bot'>\n" +
@@ -1283,7 +1283,7 @@ function getPipelineSidebarHtml() {
     "          <button class='btn' onclick='toggleIdeaBox(false)'>닫기</button>\n" +
     "        </div>\n" +
     "        <div style='margin-top: 5px; text-align: right;'>\n" +
-    "          <a id='linkIdeaDoc' href='#' target='_blank' style='font-size: 10px; color: #1a73e8; text-decoration: underline; display: none;'>[아이디어 메모] 구글 독스 직접 열기</a>\n" +
+    "          <a id='linkIdeaDoc' href='#' target='_blank' style='font-size: 10px; color: #1a73e8; text-decoration: underline; display: none;'>[아이디어 메모] Google Docs 직접 열기</a>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "\n" +
@@ -1329,7 +1329,7 @@ function getPipelineSidebarHtml() {
     "          <button class='btn' onclick='toggleDirectiveBox(false)'>닫기</button>\n" +
     "        </div>\n" +
     "        <div style='margin-top: 5px; text-align: right;'>\n" +
-    "          <a id='linkDirectiveDoc' href='#' target='_blank' style='font-size: 10px; color: #1a73e8; text-decoration: underline; display: none;'>[마케터 보정 지침] 구글 독스 직접 열기</a>\n" +
+    "          <a id='linkDirectiveDoc' href='#' target='_blank' style='font-size: 10px; color: #1a73e8; text-decoration: underline; display: none;'>[마케터 보정 지침] Google Docs 직접 열기</a>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "\n" +

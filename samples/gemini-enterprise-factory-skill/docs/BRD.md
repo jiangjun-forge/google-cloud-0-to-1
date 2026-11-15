@@ -12,7 +12,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 자율형 사내 스킬 팩토리 비즈니스 요구 사항 명세서 (BRD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 채팅창에서 비개발자 임직원과 부서 관리자가 자연어 대화만으로 업무 스킬(`SKILL.md`)을 손쉽게 생성하고, GE App 스킬 갤러리(`/r/skills`)에 즉시 등록하여 재사용할 수 있도록 지원하는 사내 스킬 팩토리 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
+본 문서는 사내 Gemini Enterprise app 채팅창에서 비개발자 임직원과 부서 관리자가 자연어 대화만으로 업무 스킬(`SKILL.md`)을 손쉽게 생성하고, GE App 스킬 갤러리(`/r/skills`)에 즉시 등록하여 재사용할 수 있도록 지원하는 사내 스킬 팩토리 솔루션의 비즈니스 요구 사항 명세서(Business Requirements Document)다.
 
 ---
 

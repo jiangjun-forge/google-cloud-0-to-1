@@ -22,7 +22,7 @@ GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] AWS EKS에서 GKE로 애플리케이션을 이전한 후, 동일한 인그레스(Kong, Nginx 등) 구성임에도 백엔드 Pod 로그에 클라이언트 실제 IP 대신 노드 내부 IP가 간헐적으로 기록된다.
 - [ ] 개인 정보 보호법 및 금융 보안 컴플라이언스상 로그인 접속자 IP 추적이 필수적인 환경에서 원본 Client IP가 유실되어 보안 감사 결함이 발생한다.
 - [ ] `externalTrafficPolicy: Cluster` 상태에서 파드가 없는 노드로 패킷이 유입된 후 2-Hop 전달 과정에서 kube-proxy SNAT(Source Network Address Translation)가 발생한다.
@@ -46,7 +46,7 @@ GKE 환경에서 Internal/External Passthrough NLB를 경유하여 인입되는 
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 서비스별 NLB 유형, externalTrafficPolicy 모드, 노드당 파드 분포, SNAT 유실 위험 및 핫스팟 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | Client IP 보존 아키텍처 진단서, 2-Hop SNAT 메커니즘 분석, 패치용 k8s 서비스 매니페스트 및 보안 감사 가이드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **Client IP 보존 k8s 매니페스트**: `externalTrafficPolicy: Local`이 적용된 최적 서비스 YAML<br/>• **파드 안티-어피니티(Anti-affinity) 템플릿**: 노드별 파드 부하 불균등을 방지하는 배포 매니페스트<br/>• **GKE 감사 로깅 검증 쿼리**: 보존된 출발지 IP가 Cloud Logging에 정상 기록되는지 확인하는 SQL |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **Client IP 보존 k8s 매니페스트**: `externalTrafficPolicy: Local`이 적용된 최적 서비스 YAML<br/>- **파드 안티-어피니티(Anti-affinity) 템플릿**: 노드별 파드 부하 불균등을 방지하는 배포 매니페스트<br/>- **GKE 감사 로깅 검증 쿼리**: 보존된 출발지 IP가 Cloud Logging에 정상 기록되는지 확인하는 SQL |
 
 ---
 

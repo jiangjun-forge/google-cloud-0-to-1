@@ -221,12 +221,12 @@ def render_rca_and_prescription(res: Dict[str, Any], project_id: str, location: 
     print("\n[2단계: 메트릭 착시 현상 및 429 RESOURCE_EXHAUSTED 근본 원인 분석 (RCA)]")
     print("1. 대시보드 메트릭 착시 (The Metric Mirage):")
     print(f"   - 운영 대시보드에서는 주 작업 요청 메트릭(`{svc['job_method']}`)만 확인하므로 정상 한도 내로 표시된다.")
-    print("   - 그러나 구글 파이썬 클라이언트 SDK 공통 기반 라이브러리인 `google-api-core`는")
+    print("   - 그러나 Google Python 클라이언트 SDK 공통 기반 라이브러리인 `google-api-core`는")
     print("     `operation.result()` 호출 시 내부적으로 `GetOperation` API를 수초 간격으로 무차별 폴링한다.")
     print("2. 숨겨진 쿼터 고갈 메커니즘 (Hidden Quota Exhaustion):")
     print(f"   - 현재 동시 작업 수({res['concurrency']}건)에서 SDK 기본 폴링 호출량은 약 {res['default_polling_rpm']} RPM에 달한다.")
     print(f"   - 이는 리전당 기본 할당량인 `{svc['operation_quota_token']}`({res['operation_requests_quota_rpm']} RPM)을 {res['default_utilization_pct']}% 수준으로 소진하여 429 장애를 촉발한다.")
-    print(f"   - 본 현상은 {svc['name']}뿐만 아니라 Document AI, Video Intelligence, Translation 등 구글 클라우드의 모든 LRO 비동기 API에서 동일하게 발생한다.")
+    print(f"   - 본 현상은 {svc['name']}뿐만 아니라 Document AI, Video Intelligence, Translation 등 Google Cloud의 모든 LRO 비동기 API에서 동일하게 발생한다.")
 
     print("\n[3단계: 현업 즉시 조치 가이드 및 코드 처방전]")
     print("-" * 88)
@@ -306,12 +306,12 @@ def build_markdown_report(
 
 1. **대시보드 메트릭 착시 (The Metric Mirage)**:
    - 운영 대시보드에서는 주 작업 요청 메트릭(`{svc['job_method']}`)만 확인하므로 정상 한도 내로 표시된다.
-   - 그러나 구글 파이썬 클라이언트 SDK 공통 기반 라이브러리인 `google-api-core`는 `operation.result()` 호출 시 내부적으로 `GetOperation` API를 수초 간격으로 무차별 폴링한다.
+   - 그러나 Google Python 클라이언트 SDK 공통 기반 라이브러리인 `google-api-core`는 `operation.result()` 호출 시 내부적으로 `GetOperation` API를 수초 간격으로 무차별 폴링한다.
 
 2. **숨겨진 쿼터 고갈 메커니즘 (Hidden Quota Exhaustion)**:
    - 현재 동시 작업 수({res['concurrency']}건)에서 SDK 기본 폴링 호출량은 약 **{res['default_polling_rpm']} RPM**에 달한다.
    - 이는 리전당 기본 할당량인 `{svc['operation_quota_token']}`({res['operation_requests_quota_rpm']} RPM)을 **{res['default_utilization_pct']}%** 수준으로 소진하여 429 장애를 촉발한다.
-   - 본 현상은 {svc['name']}뿐만 아니라 Document AI, Video Intelligence, Translation 등 구글 클라우드의 모든 LRO 비동기 API에서 동일하게 발생한다.
+   - 본 현상은 {svc['name']}뿐만 아니라 Document AI, Video Intelligence, Translation 등 Google Cloud의 모든 LRO 비동기 API에서 동일하게 발생한다.
 
 ---
 

@@ -11,7 +11,7 @@
 ```text
 [데모 실행] --dry-run 모드가 활성화되어 가상 VPC-SC 차단 리포트를 시뮬레이션한다.
 ========================================================================
-[진단 결과] 제미나이(Gemini) VPC Service Controls 경계 차단 진단 리포트
+[진단 결과] Gemini VPC Service Controls 경계 차단 진단 리포트
   - 대상 프로젝트: sample-project-id
   - 조회 기간: 최근 7일
 ========================================================================
@@ -36,7 +36,7 @@
   - 거부 사유 코드: RESOURCES_NOT_IN_SAME_PERIMETER
   - 고유 거부 ID  : vpc-sc-denial-3c7d9e1a-5b6f-42c8-89ae-123456789abc
   [권장 처방 및 복구 가이드]
-    - 원인 분석 및 해결책: 제미나이 API(aiplatform.googleapis.com)가 경계 보호 대상으로 누락되었거나, 호출 리소스와 대상 모델이 서로 다른 보안 경계로 분리되어 있다. 두 리소스를 동일한 서비스 경계로 병합하거나 경계 간 브리지(Bridge) 규칙을 구성해야 한다.
+    - 원인 분석 및 해결책: Gemini API(aiplatform.googleapis.com)가 경계 보호 대상으로 누락되었거나, 호출 리소스와 대상 모델이 서로 다른 보안 경계로 분리되어 있다. 두 리소스를 동일한 서비스 경계로 병합하거나 경계 간 브리지(Bridge) 규칙을 구성해야 한다.
     - VPC-SC 문제 해결사 콘솔 ( https://console.cloud.google.com/security/vpc-service-controls/troubleshooter )
     - 서비스 경계 관리 콘솔 ( https://console.cloud.google.com/security/vpc-service-controls )
 ------------------------------------------------------------------------

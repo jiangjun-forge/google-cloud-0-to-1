@@ -12,13 +12,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 # Gemini Enterprise 공식 프롬프트/응답 로깅 및 계정별 사용량 분석기 기술 상세 설계서 (TDD)
 
-본 문서는 사내 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 공식 내장 로깅 데이터를 빅쿼리(BigQuery)에서 집계 분석하기 위한 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
+본 문서는 사내 Gemini Enterprise app 공식 내장 로깅 데이터를 BigQuery에서 집계 분석하기 위한 시스템 아키텍처, 기술 상세 설계, 인터페이스 명세 및 검증 계획을 정의한다.
 
 ---
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사내 임직원이 제미나이 엔터프라이즈 앱(Gemini Enterprise app) 웹 대화창에서 질의를 수행하면 관리형 엔진이 감사 로그를 BigQuery로 스트리밍하고, 관리자가 CLI를 실행하여 BigQuery REST API로 계정별 토큰 사용량 및 지연 시간을 즉시 집계 분석한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 사내 임직원이 Gemini Enterprise app 웹 대화창에서 질의를 수행하면 관리형 엔진이 감사 로그를 BigQuery로 스트리밍하고, 관리자가 CLI를 실행하여 BigQuery REST API로 계정별 토큰 사용량 및 지연 시간을 즉시 집계 분석한다.
 
 ```mermaid
 sequenceDiagram
@@ -53,7 +53,7 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (공식 로깅 활성화) | **FR-01** (공식 로깅 콘솔 안내) | **NFR-01** (단일 파이썬 무의존성 실행) | `diagnose.py`, `README.md` |
+| **BR-01** (공식 로깅 활성화) | **FR-01** (공식 로깅 콘솔 안내) | **NFR-01** (단일 Python 무의존성 실행) | `diagnose.py`, `README.md` |
 | **BR-02** (계정별 토큰 집계) | **FR-02** (BigQuery 표준 집계 SQL) | **NFR-02** (초경량 단일 파일 완결성) | `diagnose.py` |
 | **BR-03** (가상 실행 검증) | **FR-03** (결정론적 가상 실행 모드) | **NFR-03** (사내 식별 정보 마스킹) | `diagnose.py` |
 | **BR-04** (최소 권한 및 무중단) | **FR-04** (IAM 권한 진단 및 리포트) | **NFR-01**, **NFR-03** | `diagnose.py`, `report.md` |
@@ -83,7 +83,7 @@ sequenceDiagram
 
 ## 4. 비기능 기술 요구 사항 명세 (Non-Functional Requirements)
 
-### NFR-01: 무의존성 및 순수 파이썬 단일 실행 원칙
+### NFR-01: 무의존성 및 순수 Python 단일 실행 원칙
 - 외부 쉘 스크립트 없이 `python diagnose.py` 직접 실행만으로 완결한다.
 
 ### NFR-02: 최소 IAM 권한 준수

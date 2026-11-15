@@ -14,19 +14,19 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이(Gemini) API 복원력 패턴 자가 진단 (`gemini-resilience-checker`)
+# Gemini API 복원력 패턴 자가 진단 (`gemini-resilience-checker`)
 
-제미나이(Gemini) API 호출 소스 코드에서 429 과부하 에러와 일시적 네트워크 장애를 방어하기 위한 **지수 백오프, 지터(무작위 대기), 최대 재시도 제약, 폴백 모델 체인 구비 여부를 1분 만에 정적 진단**하고 표준 처방 코드를 제시하는 도구다. (As of 2026-10-17)
+Gemini API 호출 소스 코드에서 429 과부하 에러와 일시적 네트워크 장애를 방어하기 위한 **지수 백오프, 지터(무작위 대기), 최대 재시도 제약, 폴백 모델 체인 구비 여부를 1분 만에 정적 진단**하고 표준 처방 코드를 제시하는 도구다. (As of 2026-10-17)
 
 ---
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] **간헐적 429 (Resource Exhausted) 장애**: 트래픽이 몰릴 때 재시도 로직이 없거나 단순 재시도로 인해 서비스 중단이 발생하는 경우
 - [ ] **폭풍 재시도(Thundering Herd) 현상**: 대기 시간 무작위화(Jitter) 없이 고정 간격으로 재시도하여 백엔드 모델 서버에 추가 부하를 주는 경우
 - [ ] **무한 루프로 인한 지연 및 비용 누수**: 재시도 횟수 제한(Max Retries)이 없어 일시 장애가 영구 행(Hang) 또는 과다 호출로 이어지는 경우
-- [ ] **주 모델 장애 시 서비스 중단**: Gemini 3.8 Pro 등 주력 모델 지연 또는 쿼터 소진 시 Gemini 3.8 Flash 등으로 자동 우회하는 폴백 로직이 누락된 경우
+- [ ] **주 모델 장애 시 서비스 중단**: Gemini Pro 등 주력 모델 지연 또는 쿼터 소진 시 Gemini Flash 등으로 자동 우회하는 폴백 로직이 누락된 경우
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
@@ -45,7 +45,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 스캔 파일 수, 파일별 지수 백오프/지터/재시도 제약/폴백 체인 4대 안전 장치 충족 여부 및 취약 라인 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | API 호출 회복 탄력성 진단서, 취약 코드 패턴 분석, Tenacity/google-genai 기반 표준 재시도 처방전 및 폴백 구현 코드 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **표준 회복 탄력성 래퍼 코드**: 지수 백오프와 Full Jitter가 결합된 프로덕션 데코레이터<br/>• **멀티 모델 폴백 체인 스니펫**: Flash 장애 시 대체 모델로 자동 전환되는 안전 호출 핸들러<br/>• **단위 테스트 및 장애 시뮬레이션 모듈**: 429 에러 발생 시 재시도 동작을 사전 검증하는 테스트 코드 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **표준 회복 탄력성 래퍼 코드**: 지수 백오프와 Full Jitter가 결합된 프로덕션 데코레이터<br/>- **멀티 모델 폴백 체인 스니펫**: Flash 장애 시 대체 모델로 자동 전환되는 안전 호출 핸들러<br/>- **단위 테스트 및 장애 시뮬레이션 모듈**: 429 에러 발생 시 재시도 동작을 사전 검증하는 테스트 코드 |
 
 ---
 
@@ -64,7 +64,7 @@ python diagnose.py --dry-run
 ```text
 [데모 실행] --dry-run 모드가 활성화되어 가상 분석 결과를 시뮬레이션한다.
 ========================================================================
-[진단 결과] 제미나이(Gemini) API 호출 복원력(Resilience) 진단 리포트
+[진단 결과] Gemini API 호출 복원력(Resilience) 진단 리포트
 ========================================================================
 진단된 API 호출 소스 파일: 2건
 [파일: app/services/llm_client.py]
@@ -113,8 +113,8 @@ flowchart TB
     end
 
     subgraph Layer4["Layer 4: Target Backend & Foundation Models (대상 모델)"]
-        PrimaryModel["주력 모델: Gemini 3.8 Pro"]
-        FallbackModel["폴백 우회 모델: Gemini 3.8 Flash"]
+        PrimaryModel["주력 모델: Gemini Pro"]
+        FallbackModel["폴백 우회 모델: Gemini Flash"]
         VertexAPI["Vertex AI GenAI API 엔드포인트"]
     end
 
@@ -135,7 +135,7 @@ flowchart TB
 - **Service Health 콘솔**: ( https://console.cloud.google.com/servicehealth )
 - **Vertex AI 콘솔**: ( https://console.cloud.google.com/vertex-ai )
 - **클라우드 인시던트 핸들링 모범 사례 가이드**: ( https://cloud.google.com/blog/topics/developers-practitioners/cloud-reliability-incident-handling-best-practices )
-- **구글 클라우드 Service Health 공식 개요**: ( https://cloud.google.com/service-health/docs/overview )
+- **Google Cloud Service Health 공식 개요**: ( https://cloud.google.com/service-health/docs/overview )
 
 ---
 ### GCP 리소스 생성 시 4대 필수 표준 라벨링 준수
@@ -171,7 +171,7 @@ flowchart TB
 
 ```text
 ========================================================================
-[진단 결과] 제미나이(Gemini) API 호출 복원력(Resilience) 진단 리포트
+[진단 결과] Gemini API 호출 복원력(Resilience) 진단 리포트
 ========================================================================
 
 진단된 API 호출 소스 파일: 2건
@@ -190,7 +190,7 @@ flowchart TB
 ------------------------------------------------------------------------
 
 ========================================================================
-[추천 표준 처방 가이드 - 파이썬 tenacity 라이브러리 연동]
+[추천 표준 처방 가이드 - Python tenacity 라이브러리 연동]
 ========================================================================
 ...
 ```

@@ -30,7 +30,7 @@ flowchart TB
     end
 
     subgraph L4["Layer 4: Target Backend & Data"]
-        G["Gemini API (gemini-3.8-flash)"]
+        G["Gemini API (Gemini Flash)"]
         H["Google Drive 캠페인 폴더 및 Google Docs / Sheets 산출물"]
     end
 

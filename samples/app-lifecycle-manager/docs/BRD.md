@@ -35,7 +35,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | 요구 사항 ID | 요구 사항 명칭 | 상세 설명 및 수용 기준 (Acceptance Criteria) | 우선순위 |
 | :---: | :--- | :--- | :---: |
 | **BR-01** | 개발 착수 전 시맨틱 중복 생성 방지 게이트 | 신규 AI 앱 생성 전 자연어 요구 사항을 BigQuery 벡터 검색(`VECTOR_SEARCH`, `gemini-embedding-001`)으로 조회하여 기존 활성 및 냉동 앱 중 코사인 유사도가 임계치 이상인 자산을 찾아 재사용(`REUSE_ACTIVE`) 또는 즉시 복원(`REHYDRATE_CRYO`)하도록 안내한다. | P0 |
-| **BR-02** | 전사 통합 앱 카탈로그 및 거버넌스 Aspect 관리 | 전사 AI 앱을 Dataplex Universal Catalog(Knowledge Catalog)의 커스텀 엔트리로 등록하고, 수명 주기 상태(`ACTIVE`, `DRAINING`, `CRYO_ARCHIVED`, `GRADUATED`), 호출 수(`hit_count`), 보존 기한(`ttl_days`), 승격 임계치(`promote_at_hits`), 냉동 경로(`cryo_gcs_uri`)를 표준 Aspect로 관리한다. | P0 |
+| **BR-02** | 전사 통합 앱 카탈로그 및 거버넌스 Aspect 관리 | 전사 AI 앱을 Knowledge Catalog의 커스텀 엔트리로 등록하고, 수명 주기 상태(`ACTIVE`, `DRAINING`, `CRYO_ARCHIVED`, `GRADUATED`), 호출 수(`hit_count`), 보존 기한(`ttl_days`), 승격 임계치(`promote_at_hits`), 냉동 경로(`cryo_gcs_uri`)를 표준 Aspect로 관리한다. | P0 |
 | **BR-03** | 호출 수 및 보존 기한 기반 96% 대 4% 자동 분류 | Cloud Monitoring 및 Cloud Logging의 실제 호출 수와 경과 일수를 스캔하여 96% 냉동 보관 대상(`hit_count <= 1` 및 `age_days >= ttl_days`), 4% 프로덕션 승격 대상(`hit_count >= promote_at_hits`), 활성 유지 대상을 자동 판별한다. | P0 |
 | **BR-04** | BigQuery Graph(`GQL`) 멀티홉 호출 리니지 역추적 | 업스트림 호출자(`Cloud Scheduler`, `Eventarc`, `Pub/Sub`, `Workflows`, `A2A Agent`)와 다운스트림 리소스(`Service Account`, `Secret Manager`, `BigQuery`)를 `CREATE PROPERTY GRAPH`로 모델링하고 `GQL` 쿼리로 블라스트 반경을 전수 규명한다. | P0 |
 | **BR-05** | 의존성 안전 차단 및 트래픽 드레이닝 자동화 | 그래프 역추적으로 식별된 업스트림 트리거 일시 중지, 이벤트 삭제, 트래픽 0% 전환(`--to-zero`) 및 IAM 권한 회수를 수행하는 결정론적 `gcloud` 명령어를 생성하고, 활성 호출처가 0건일 때만 냉동을 허용한다. | P0 |

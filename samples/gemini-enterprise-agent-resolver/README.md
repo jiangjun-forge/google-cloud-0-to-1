@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 제미나이 엔터프라이즈(Gemini Enterprise) 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-agent-resolver`)
+# Gemini Enterprise 크로스 조직 커스텀 에이전트 연동 및 조직 정책 진단기 (`gemini-enterprise-agent-resolver`)
 
 Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 커스텀 에이전트(Agent Engine) 연동 시 발생하는 도메인 제한 공유 조직 정책(Domain Restricted Sharing) 차단, 서비스 에이전트 IAM 권한 부재, VPC-SC 경계 위반을 1분 만에 자동 진단하고 복구 명령어를 처방하는 도구다. (As of 2026-10-17)
 
@@ -22,7 +22,7 @@ Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 
 
 ## 1. 발생 증상 및 진단 대상 체크리스트
 
-사내 또는 고객사 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
+사내 운영 환경에서 아래 증상이 발생한다면 즉시 진단 대상이다:
 - [ ] 사내 엔터프라이즈 환경에서 Gemini Enterprise 웹 앱(프로젝트 A, 조직 A)과 계열사/사업부별 커스텀 에이전트(Agent Engine, 프로젝트 B, 조직 B)가 서로 다른 프로젝트에 분리되어 있어 연동 시 403 Forbidden 오류가 발생한다.
 - [ ] 상대 조직의 서비스 에이전트에 권한을 부여하려 할 때, 상위 조직 정책 `constraints/iam.allowedPolicyMemberDomains`에 의해 외부 도메인 계정 바인딩이 차단된다.
 - [ ] Gemini Enterprise Agent Registry에 커스텀 에이전트 등록 시 필수 서비스 에이전트(`service-[NUM]@gcp-sa-discoveryengine.iam.gserviceaccount.com`)에 `roles/aiplatform.user` 역할이 부여되지 않아 에이전트 호출이 실패한다.
@@ -30,7 +30,7 @@ Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 
 
 
 ### 1.1 도구의 본질 및 비즈니스 해결 과제 (What & Why)
-- **대상 사용자 (Target)**: Gemini Enterprise 어드민, 클라우드 IAM 보안팀, 멀티 프로젝트 아키텍트 및 거버넌스 리드
+- **대상 사용자 (Target)**: Gemini Enterprise 어드민, Cloud IAM 보안팀, 멀티 프로젝트 아키텍트 및 거버넌스 리드
 - **해결하는 핵심 문제 (Core Pain Points)**:
   1. 타 프로젝트나 타 조직에 호스팅된 커스텀 에이전트(Agent Engine)를 Gemini Enterprise app에 연동할 때 원인 불명의 권한 오류가 발생하는 문제
   2. 조직 정책 `constraints/iam.allowedPolicyMemberDomains`(DRS)에 의해 교차 프로젝트 서비스 계정 권한 부여가 차단되는 보안 충돌
@@ -45,7 +45,7 @@ Gemini Enterprise 웹 앱 프로젝트와 타 프로젝트 또는 타 조직의 
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 양방향 IAM 권한 충족 여부, DRS 정책 제한 상태, VPC-SC 격리 검증 및 연동 상태 판정 표 |
 | **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 크로스 프로젝트 연동 진단서, 교차 권한 복구 gcloud 명령어, DRS 예외 태그 정책 및 VPC-SC 인그레스 규칙 명세 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | • **교차 프로젝트 IAM 바인딩 명령어**: GE 서비스 에이전트에 에이전트 호출 권한을 부여하는 명령<br/>• **DRS 조직 정책 예외 바인딩 스크립트**: 승인된 프로젝트 간 권한 부여를 허용하는 태그 정책<br/>• **VPC-SC 인그레스/이그레스 허용 룰 JSON**: 보안 경계를 통과하여 에이전트를 호출하는 인그레스 규칙 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **교차 프로젝트 IAM 바인딩 명령어**: GE 서비스 에이전트에 에이전트 호출 권한을 부여하는 명령<br/>- **DRS 조직 정책 예외 바인딩 스크립트**: 승인된 프로젝트 간 권한 부여를 허용하는 태그 정책<br/>- **VPC-SC 인그레스/이그레스 허용 룰 JSON**: 보안 경계를 통과하여 에이전트를 호출하는 인그레스 규칙 |
 
 ---
 

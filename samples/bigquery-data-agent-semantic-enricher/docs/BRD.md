@@ -26,7 +26,7 @@ All contents, designs, and code examples are subject to change, modification, or
 3. **수작업 메타데이터 큐레이션의 한계**: 수백, 수천 개의 테이블과 컬럼 설명을 일일이 사람이 작성하는 데 수개월이 소요되어 Data Agent의 전사 확산이 지연된다.
 
 ### 1.3 프로젝트 목표
-본 프로젝트는 구글 클라우드 공식 베스트 프랙티스에 따라 대상 데이터셋의 메타데이터 충실도를 자동 진단하여 **"Data Agent NL2SQL 준비도 점수"**를 매기고, Gemini와 Dataplex 데이터 프로파일링 통계를 결합하여 **고품질 표준 설명과 비즈니스 용어집(Glossary) 수식 템플릿을 자동으로 생성 및 지원**하는 데 목적이 있다.
+본 프로젝트는 Google Cloud 공식 베스트 프랙티스에 따라 대상 데이터셋의 메타데이터 충실도를 자동 진단하여 **"Data Agent NL2SQL 준비도 점수"**를 매기고, Gemini와 Knowledge Catalog 데이터 프로파일링 통계를 결합하여 **고품질 표준 설명과 비즈니스 용어집(Glossary) 수식 템플릿을 자동으로 생성 및 지원**하는 데 목적이 있다.
 
 ---
 
@@ -37,7 +37,7 @@ All contents, designs, and code examples are subject to change, modification, or
 | **데이터 플랫폼 리드 / 아키텍트** | Data Agent PoC 성공 및 엔터프라이즈 확산 | 메타데이터 준비도 점수를 통해 신뢰도 지표를 확보하고 전사 롤아웃 가속화 |
 | **빅 데이터 엔지니어** | 테이블/컬럼 설명 작성 자동화 | 수작업 메타데이터 등록 부담 대폭 경감 및 BigQuery 스키마 자동 패치 지원 |
 | **비즈니스 분석가 / 현업 사용자** | 자연어 질문에 대한 정확한 SQL 실행 결과 | 계산 공식 왜곡 없는 정밀한 비즈니스 메트릭 도출 및 분석 셀프서비스 달성 |
-| **AI CoE 및 거버넌스 담당자** | 시맨틱 레이어 거버넌스 표준 수립 | Dataplex Knowledge Catalog 기반 비즈니스 용어집 및 데이터 품질 연동 체계 완성 |
+| **AI CoE 및 거버넌스 담당자** | 시맨틱 레이어 거버넌스 표준 수립 | Knowledge Catalog 기반 비즈니스 용어집 및 데이터 품질 연동 체계 완성 |
 
 ---
 
@@ -46,11 +46,11 @@ All contents, designs, and code examples are subject to change, modification, or
 ### 3.1 In-Scope (자동화 및 보강 영역)
 1. BigQuery 테이블 수준 설명(Table Description) 누락 여부 검사
 2. BigQuery 컬럼 수준 설명(Column Description) 커버리지 산출
-3. Dataplex 데이터 프로파일링 통계(최솟값, 최댓값, 고유값, 널 비율) 수집 상태 점검
+3. Knowledge Catalog 데이터 프로파일링 통계(최솟값, 최댓값, 고유값, 널 비율) 수집 상태 점검
 4. Knowledge Catalog 비즈니스 용어집(Glossary) 및 수식(Formula) 연동 여부 감사
 5. 4대 핵심 지표 기반 종합 "Data Agent NL2SQL 준비도 점수(0~100점)" 산출
 6. Gemini 기반 표준 Table/Column Description 자동 생성
-7. Dataplex Knowledge Catalog 배포용 용어집 YAML 템플릿 자동 도출
+7. Knowledge Catalog 배포용 용어집 YAML 템플릿 자동 도출
 8. BigQuery 스키마 안전 패치(`--apply`) 및 가상 모의 실행(`--dry-run`)
 
 ### 3.2 Out-of-Scope (수동 승인 및 비즈니스 정책 영역)
@@ -65,8 +65,8 @@ All contents, designs, and code examples are subject to change, modification, or
 | :--- | :--- | :--- |
 | **BR-01** | 테이블 설명 감사 | 대상 데이터셋의 모든 테이블에 대해 AI 에이전트 라우팅에 충분한 길이와 의미를 가진 Table Description이 존재하는지 검사하여야 한다. |
 | **BR-02** | 컬럼 설명 감사 | 전체 컬럼 대비 명확한 설명이 기재된 컬럼의 비율(커버리지 %)을 산출하여 모호한 컬럼 존재 위험을 수치화하여야 한다. |
-| **BR-03** | 프로파일링 검증 | Dataplex Data Profile 스캔 수행 여부를 확인하여, 유효값 범위 및 고유값 목록이 LLM 그라운딩에 제공 가능한 상태인지 평가하여야 한다. |
-| **BR-04** | 용어집 공식 감사 | 주요 비즈니스 계산 메트릭에 대해 Dataplex Knowledge Catalog 용어집 수식(`Formula`)이 바인딩되어 있는지 감사하여야 한다. |
+| **BR-03** | 프로파일링 검증 | Knowledge Catalog Data Profile 스캔 수행 여부를 확인하여, 유효값 범위 및 고유값 목록이 LLM 그라운딩에 제공 가능한 상태인지 평가하여야 한다. |
+| **BR-04** | 용어집 공식 감사 | 주요 비즈니스 계산 메트릭에 대해 Knowledge Catalog 용어집 수식(`Formula`)이 바인딩되어 있는지 감사하여야 한다. |
 | **BR-05** | 준비도 점수화 | 테이블 설명(30%), 컬럼 설명(30%), 프로파일(20%), 용어집(20%) 가중치를 합산하여 100점 만점의 Data Agent 준비도 점수를 산출하여야 한다. |
 | **BR-06** | 지능형 보강 계획 | 모호하거나 누락된 컬럼에 대해 Gemini 모델을 통해 실데이터 통계가 반영된 표준 설명 텍스트를 자동 생성하여야 한다. |
 | **BR-07** | 용어집 템플릿화 | 핵심 계산 수식(예: `SAFE_DIVIDE`, `subtotal - discount + tax`)을 포함한 Knowledge Catalog 배포용 YAML 파일을 자동 생성하여야 한다. |

@@ -20,7 +20,7 @@ All contents, designs, and code examples are subject to change, modification, or
 본 도구는 산업기술의 유출방지 및 보호에 관한 법률(산업기술보호법) 및 산업통상자원부, 한국산업기술보호협회 「국가 핵심 기술 클라우드 컴퓨팅 서비스 이용을 위한 보안 관리 안내서」에 명시된 **7대 핵심 기술적 통제(Technical Controls)**를 Google Cloud 환경에서 자동 감사하고 복구 명령어를 처방하는 **경량 진단 엔진(Lightweight Diagnostic Engine)**이다.
 
 ### 1.2 핵심 설계 원칙
-1. **순수 파이썬 단일 실행 모델**: 독립 실행형 파이썬 스크립트(`diagnose.py`) 기반으로 상위 폴더 의존성 없이 단일 명령 실행을 지원한다.
+1. **순수 Python 단일 실행 모델**: 독립 실행형 Python 스크립트(`diagnose.py`) 기반으로 상위 폴더 의존성 없이 단일 명령 실행을 지원한다.
 2. **비파괴적 읽기 전용 스캔(Non-Destructive Read-Only Scan)**: 리소스의 설정 상태만 조회(`describe`, `list`, `get`)하며, 클라우드 인프라 자원을 임의로 생성, 변경, 삭제하지 않아 운영 환경에 영향을 주지 않고 안전하다.
 3. **완전 독립형 모의 실행(`--dry-run`)**: 실제 GCP 인증 정보나 관리자 IAM 권한이 없는 데모 또는 개발 환경에서도 결정론적(Deterministic) 가상 진단 데이터를 제공하여 사전 기능 검증을 보장한다.
 4. **선언적 처방(Prescriptive Remediation)**: 결격 항목(FAIL/WARN) 발생 시 산자부 안내서 기준에 부합하는 정규 `gcloud` 복구 명령어를 즉시 매핑하여 관리자의 즉각적인 조치를 지원한다.
@@ -105,7 +105,7 @@ sequenceDiagram
 
 ### 3.3 서브프로세스 래퍼 (`run_gcloud_json`)
 - 모든 gcloud 명령어를 `subprocess.run(..., capture_output=True, text=True, check=True)`로 안전하게 격리 실행.
-- `--format=json` 인자를 적용하여 JSON 형식으로 수신한 뒤 파이썬 객체로 역직렬화.
+- `--format=json` 인자를 적용하여 JSON 형식으로 수신한 뒤 Python 객체로 역직렬화.
 - API 비활성화, 권한 부족, 리소스 부재 시 예외를 포획하고 `None`을 반환하여 전체 검사가 중단되지 않는 Fail-Safe 설계 적용.
 
 ### 3.4 실사 점검 엔진 (`inspect_live_environment`)

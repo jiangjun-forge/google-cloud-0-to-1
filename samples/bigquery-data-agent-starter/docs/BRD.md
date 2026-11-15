@@ -22,7 +22,7 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ### 1.2 비즈니스 난제 (Pain Points)
 1. **초기 데이터 구성 및 에이전트 빌드 시간 과다**: 45분이라는 제한된 워크숍 시간 내에 참석자가 일일이 테이블을 설계하고 콘솔 UI에서 수동 클릭으로 에이전트를 생성하느라 정작 중요한 분석 질의 실습 시간이 부족해진다.
-2. **사내 환경 다양성 (Standalone vs Gemini Enterprise app)**: BigQuery Studio 내에서 단독으로 에이전트를 사용하는 데이터 부서와 제미나이 엔터프라이즈 앱(Gemini Enterprise App)에 게시하여 전사 포털로 통합하려는 조직이 혼재되어 있어, 두 시나리오를 모두 지원하는 유연한 아키텍처가 요구된다.
+2. **사내 환경 다양성 (Standalone vs Gemini Enterprise app)**: BigQuery Studio 내에서 단독으로 에이전트를 사용하는 데이터 부서와 Gemini Enterprise app에 게시하여 전사 포털로 통합하려는 조직이 혼재되어 있어, 두 시나리오를 모두 지원하는 유연한 아키텍처가 요구된다.
 3. **신속한 검증 환경 제공**: 순매출 및 결품 커버 시간 공식이 포함된 시맨틱 골드 뷰와 원천 테이블을 즉각 프로비저닝하여 검증 시간을 최소화해야 한다.
 
 ### 1.3 프로젝트 목표

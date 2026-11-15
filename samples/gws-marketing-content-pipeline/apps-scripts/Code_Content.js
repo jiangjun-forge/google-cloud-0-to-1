@@ -7,7 +7,7 @@
  */
 
 /**
- * [Step 1] 캠페인 아이디어 메모 구글 독스를 작성/저장한다.
+ * [Step 1] 캠페인 아이디어 메모 Google Docs를 작성/저장한다.
  *
  * @param {string} [customIdea] - 마케터가 입력한 원천 아이디어
  */
@@ -35,15 +35,15 @@ function runCampaignIdeaMemo(customIdea) {
         "캠페인 아이디어 메모",
         "완료",
         ideaFile.getUrl(),
-        "[아이디어 메모] 구글 독스 열기",
+        "[아이디어 메모] Google Docs 열기",
         durationSec,
         0,
-        "마케터 원천 아이디어 등록 완료 (구글 독스에서 직접 수정 가능)"
+        "마케터 원천 아이디어 등록 완료 (Google Docs에서 직접 수정 가능)"
       );
 
       return {
         success: true,
-        message: "캠페인 아이디어 메모가 준비되었습니다. 생성된 구글 독스에서 아이디어를 검토하신 후 [Step 2] 기획서(PLAN) 생성을 진행해 주십시오.",
+        message: "캠페인 아이디어 메모가 준비되었습니다. 생성된 Google Docs에서 아이디어를 검토하신 후 [Step 2] 기획서(PLAN) 생성을 진행해 주십시오.",
         ideaDocUrl: ideaFile.getUrl(),
         ideaContent: ideaMemo
       };
@@ -305,7 +305,7 @@ function runInitialContentGeneration(forceOverwrite) {
         "A stylish 20s Korean female commuter with lightweight premium ANC headphones in warm golden autumn sunlight on a modern Seoul street"
       );
     } else {
-      // 2. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
+      // 2. 프롬프트 템플릿 로드 (Google Docs 스마트 캐싱)
       var systemInstruction = getPromptTemplate("04_content_generation");
       var promptText =
         "다음은 이번 캠페인의 마케팅 기획서(PLAN)와 콘텐츠 제작 명세서(SPEC)이다.\n" +
@@ -355,7 +355,7 @@ function runInitialContentGeneration(forceOverwrite) {
       "초판 멀티 채널 콘텐츠 (rv-00)",
       "완료",
       rv00Folder.getUrl(),
-      "구글 드라이브 폴더 열기 (rv-00)",
+      "Google Drive 폴더 열기 (rv-00)",
       durationSec,
       getSessionTotalTokens(),
       logDetail
@@ -363,7 +363,7 @@ function runInitialContentGeneration(forceOverwrite) {
 
     showResultModal(
       "초판 마케팅 콘텐츠 생성 완료 (rv-00)",
-      "카피 및 숏폼 영상 콘티가 통합된 구글 독스(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오가 준비되었습니다.\n\n" +
+      "카피 및 숏폼 영상 콘티가 통합된 Google Docs(campaign_content)와 대표 비주얼 이미지 3종, Veo 비디오가 준비되었습니다.\n\n" +
       "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
       "* 실행 상세 내역: " + logDetail + "\n\n" +
       "아래 버튼을 눌러 초판 콘텐츠 폴더를 확인하십시오.",
@@ -495,7 +495,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt, forceOverwrite, customDir
         marketerDirective
       );
     } else {
-      // 2. 프롬프트 템플릿 로드 (구글 독스 스마트 캐싱)
+      // 2. 프롬프트 템플릿 로드 (Google Docs 스마트 캐싱)
       var systemInstruction = getPromptTemplate("08_content_revision");
       var userPrompt =
         "다음은 원천 기획 명세(PLAN), 콘텐츠 제작 명세서(SPEC), 직전 마케팅 콘텐츠(" + prevRvName + "), " +
@@ -552,7 +552,7 @@ function runReviseContent(targetRoundOpt, isSilentOpt, forceOverwrite, customDir
       stepTitle,
       "완료",
       targetRvFolder.getUrl(),
-      "구글 드라이브 폴더 열기 (" + targetRvName + ")",
+      "Google Drive 폴더 열기 (" + targetRvName + ")",
       durationSec,
       getSessionTotalTokens(),
       logDetail
@@ -564,14 +564,14 @@ function runReviseContent(targetRoundOpt, isSilentOpt, forceOverwrite, customDir
         "피드백 분석 보고서와 마케터 보정 지침이 반영된 개정본(" + targetRvName + ") 및 비주얼 에셋이 준비되었습니다.\n\n" +
         "* 처리 소요 시간: " + formatDuration(durationSec) + "\n" +
         "* 실행 상세 내역: " + logDetail + "\n\n" +
-        "[마케터 보정 지침] 구글 독스에서 언제든 수정 후 다시 보정할 수 있습니다.",
+        "[마케터 보정 지침] Google Docs에서 언제든 수정 후 다시 보정할 수 있습니다.",
         "개정본 콘텐츠 폴더 열기 (" + targetRvName + ")",
         targetRvFolder.getUrl()
       );
     }
     return {
       success: true,
-      message: "콘텐츠 보정(" + targetRvName + ")이 완료되었습니다. [마케터 보정 지침] 구글 독스에서 언제든 지침을 추가 수정할 수 있습니다.",
+      message: "콘텐츠 보정(" + targetRvName + ")이 완료되었습니다. [마케터 보정 지침] Google Docs에서 언제든 지침을 추가 수정할 수 있습니다.",
       targetRv: targetRvName,
       folderUrl: targetRvFolder.getUrl(),
       content: finalizedContent

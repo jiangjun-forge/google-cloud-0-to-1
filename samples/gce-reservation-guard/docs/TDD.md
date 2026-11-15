@@ -10,7 +10,7 @@ All contents, designs, and code examples are subject to change, modification, or
 프로덕션 환경용이 아니며, 사전 통지 없이 언제든지 수정, 변경 또는 삭제될 수 있다.
 -->
 
-# 기술 상세 설계서 (TDD): 컴퓨트 엔진(Compute Engine) 하드웨어 예약 및 CUD 용량 보장 통합 진단기
+# 기술 상세 설계서 (TDD): Compute Engine 하드웨어 예약 및 CUD 용량 보장 통합 진단기
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
@@ -87,7 +87,7 @@ sequenceDiagram
 ### NFR-01: 최소 IAM 권한 준수
 - 본 도구는 읽기 전용 진단 스크립트로서 `roles/compute.viewer` 및 `roles/logging.viewer` 권한만 요구한다.
 
-### NFR-02: 순수 파이썬 단일 실행 및 가상 모드 지원
+### NFR-02: 순수 Python 단일 실행 및 가상 모드 지원
 - 외부 의존성 없이 `python diagnose.py --dry-run` 가상 실행을 안정적으로 지원한다.
 
 ### NFR-03: 민감 정보 비식별화 및 보안 규약
