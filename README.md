@@ -24,14 +24,15 @@ All contents, designs, and code examples are subject to change, modification, or
 ```text
 .
 ├── .agents/                                    # Antigravity(agy) 및 Jetski AI 에이전트 실습 스킬
-│   └── skills/                                 # 47개 시나리오별 Autopilot 및 핸즈온 가이드
+│   └── skills/                                 # 48개 시나리오별 Autopilot 및 핸즈온 가이드
 ├── LICENSE                                     # Apache-2.0 오픈소스 라이선스
 ├── README.md                                   # 프로젝트 전체 개요 및 아키텍처 안내서
-└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (47개)
+└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (48개)
     ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
     ├── app-lifecycle-manager/                  # 바이브 코딩 AI 앱 중복 방지, GQL 리니지 차단 및 Coldline 냉동 거버넌스
     ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
     ├── bigquery-data-agent-starter/            # BigQuery Data Agent 45분 완성 스몰셋 핸즈온 스타터 키트 (Standalone 기본 및 Gemini Enterprise app 선택 연동)
+    ├── cloud-armor-java4shell-guard/           # Cloud Armor 기반 Java4Shell (CVE-2026-114938) 가상 패치 및 노출 진단
     ├── cloud-nat-port-exhaustion-guard/        # Cloud NAT 동적 포트 할당(DPA) 확장 지연 및 사일런트 패킷 드롭 진단
     ├── cloud-run-cud-optimizer/                # 서버리스 CUD 약정액 최적화 및 권장 엔진 과소 약정 트랩 분석
     ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
@@ -104,7 +105,7 @@ agy --version
 ```
 
 ### 2.3 에이전트 가동 및 미니 프로젝트 자율 실행 예시
-저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 47개 실습 스킬을 에이전트가 자동으로 로드한다:
+저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 48개 실습 스킬을 에이전트가 자동으로 로드한다:
 ```bash
 # 저장소 루트에서 Antigravity CLI 가동 (스킬 자동 인식)
 agy

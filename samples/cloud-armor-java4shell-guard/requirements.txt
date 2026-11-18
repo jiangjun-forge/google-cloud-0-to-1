@@ -1,0 +1,1 @@
+# 이 도구는 Python 3 표준 라이브러리(argparse, datetime, json, os, pathlib, re, subprocess, sys)와 gcloud CLI만 사용하므로 외부 패키지 설치가 불필요하다.
