@@ -55,12 +55,20 @@ result = operation.result(polling=custom_polling, timeout=3600)
 
 ### 처방 2: 동기식 블로킹 대기 지양 및 비동기 큐 파이프라인 분리 (엔터프라이즈 권장)
 - 워커 프로세스에서 `operation.result()`로 동기 대기하지 않고, `operation.operation.name`을 Cloud Tasks나 Pub/Sub에 적재 후 즉시 반환한다.
-- 단일 스케줄러 워커가 1분 간격으로 대기열에 있는 작업들의 상태를 일괄 조회하여 쿼터 소진을 원천 제어한다.
+- 분리된 백그라운드 워커가 일정 주기로 `GetOperationRequest`를 통해 작업 완료 상태만 단발성으로 조회한다:
 
-### 처방 3: 콘솔을 통한 필수 할당량 상향 요청 (QIR)
-- 대상 서비스: Cloud Speech-to-Text V2 (리전: us-central1)
-- 필수 상향 지표: `speech.googleapis.com/operation_requests` (기본 150 RPM -> 1,000+ RPM 권장)
-- 콘솔 경로: IAM & Admin > Quotas ( https://console.cloud.google.com/iam-admin/quotas?project=sample-project-id )
+```python
+from google.longrunning.operations_pb2 import GetOperationRequest
+
+# 큐(Cloud Tasks / Pub/Sub)에서 꺼낸 operation_name으로 상태만 1회 단발성 조회
+request = GetOperationRequest(name=operation_name)
+op = client.get_operation(request=request)
+if op.done:
+    # 완료된 결과 후처리
+    ...
+```
+
+- 참고: 대상 서비스 `Cloud Speech-to-Text V2` (us-central1)의 `speech.googleapis.com/operation_requests` 현황은 Cloud 할당량(Quotas) 콘솔 ( https://console.cloud.google.com/iam-admin/quotas?project=sample-project-id )에서 확인한다.
 
 ---
 

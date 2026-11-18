@@ -44,8 +44,8 @@ Google Cloud 비동기 장기 실행 작업(LRO, Long-Running Operations) 파이
 | 산출물 구분 | 산출물 형태 및 명칭 | 주요 포함 내용 및 실무 활용 방안 |
 | :--- | :--- | :--- |
 | **① 터미널 콘솔 요약** | Visual CLI Table | 작업 제출 RPM, SDK 기본 폴링 RPM, 할당량 대비 소진율, 429 고갈 위험 등급 및 최적 폴링 간격 요약 표 |
-| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 비동기 LRO 쿼터 고갈 분석 보고서, 커스텀 폴링 객체 주입 Python 코드, 비동기 큐 분리 아키텍처 및 QIR 상향 양식 |
-| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **커스텀 폴링 객체 주입 코드**: `initial=5.0`, `maximum=30.0` 지수 백오프가 적용된 Python 호출 모듈<br/>- **Cloud Tasks 연동 비동기 큐 파이프라인**: 블로킹 없이 작업 완료 상태를 분리 수집하는 워커 아키텍처<br/>- **LRO Quota 상향 요청 가이드**: GCP 콘솔을 통한 `operation_requests` 필수 증설 절차서 |
+| **② 정규 진단 보고서** | 마크다운 파일 (`report.md`) | 비동기 LRO 쿼터 고갈 분석 보고서, 커스텀 폴링 객체 주입 Python 코드, `GetOperationRequest` 기반 비동기 큐 분리 아키텍처 |
+| **③ 후속 조치 및 배포 자산** | Actionable Asset Specs | - **커스텀 폴링 객체 주입 코드**: `initial=5.0`, `maximum=30.0` 지수 백오프가 적용된 Python 호출 모듈<br/>- **Cloud Tasks 연동 비동기 큐 파이프라인**: `GetOperationRequest` 단발성 상태 조회로 블로킹 없이 결과를 수집하는 워커 아키텍처 |
 
 ---
 
@@ -64,13 +64,11 @@ python diagnose.py --dry-run
 ```text
 처방 2: 동기식 블로킹 대기 지양 및 비동기 큐 파이프라인 분리 (엔터프라이즈 권장)
   - 워커 프로세스에서 `operation.result()`로 동기 대기하지 않고, `operation.operation.name`을 Cloud Tasks나 Pub/Sub에 적재 후 즉시 반환한다.
-  - 단일 스케줄러 워커가 1분 간격으로 대기열에 있는 작업들의 상태를 일괄 조회하여 쿼터 소진을 원천 제어한다.
-처방 3: 콘솔을 통한 필수 할당량 상향 요청 (QIR)
-  - 콘솔 경로: IAM & Admin > Quotas ( https://console.cloud.google.com/iam-admin/quotas?project=sample-project-id )
-  - 대상 서비스: Cloud Speech-to-Text V2 (리전: us-central1)
-  - 필수 상향 지표: `speech.googleapis.com/operation_requests` (기본 150 RPM -> 1,000+ RPM 권장)
+  - 분리된 백그라운드 워커가 일정 주기로 `GetOperationRequest`를 통해 작업 완료 상태만 단발성으로 조회한다:
+
+  - 참고: Cloud 할당량(Quotas) 콘솔 ( https://console.cloud.google.com/iam-admin/quotas?project=sample-project-id )
 ========================================================================================
-[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/lro-polling-quota-guard/report.md
+[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md
 ```
 
 
@@ -155,12 +153,17 @@ flowchart TB
 
 2. **비동기 큐 분리 아키텍처 전환 (엔터프라이즈 권장)**:
    - 클라이언트에서 `operation.result()` 블로킹 대기를 제거하고, `operation.operation.name`을 Cloud Tasks 또는 Pub/Sub에 발행 후 즉시 응답을 종료한다.
-   - 단일 백그라운드 워커가 정기적으로 작업 상태를 일괄 점검하여 불필요한 쿼터 소진을 방지한다.
+   - 분리된 백그라운드 워커가 일정 주기로 `GetOperationRequest`를 통해 작업 완료 상태만 단발성으로 조회하여 불필요한 쿼터 소진을 방지한다:
+   ```python
+   from google.longrunning.operations_pb2 import GetOperationRequest
 
-3. **필수 할당량 상향 요청 (QIR)**:
-   - 콘솔 경로: IAM & Admin > Quotas ( https://console.cloud.google.com/iam-admin/quotas )
-   - 대상 서비스: Cloud Speech-to-Text API, Document AI API 등
-   - 필수 상향 지표: `operation_requests` (기본 120~150 RPM을 운영 트래픽에 맞추어 1,000+ RPM으로 상향)
+   # 큐(Cloud Tasks / Pub/Sub)에서 꺼낸 operation_name으로 상태만 1회 단발성 조회
+   request = GetOperationRequest(name=operation_name)
+   op = client.get_operation(request=request)
+   if op.done:
+       # 완료된 결과 후처리
+       ...
+   ```
 
 ---
 ## 5. 사전 준비 사항 (필요 IAM 권한)
