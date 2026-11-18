@@ -14,13 +14,13 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Vertex AI 임베딩 모델의 MRL(Matryoshka Representation Learning) 기능을 활용하여 기준 최대 차원(768d)과 축소 대상 차원들(512d, 256d, 128d)의 검색 정확도(Top-1/Top-3 Recall, MRR) 및 인덱스 RAM/스토리지 절감량을 1분 만에 비교 분석한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. Vertex AI 임베딩 모델(`gemini-embedding-001`)의 MRL(Matryoshka Representation Learning) 기능을 활용하여 기준 최대 차원(3072d)과 축소 대상 차원들(1536d, 768d, 512d, 256d, 128d)의 검색 정확도(Top-1/Top-3 Recall, MRR) 및 인덱스 RAM/스토리지 절감량을 비교 분석한다.
 
 ```mermaid
 sequenceDiagram
     actor DS as 데이터 과학자 / AI 엔지니어
     participant CLI as 진단 CLI (diagnose.py)
-    participant Model as Vertex AI (text-multilingual-embedding-002)
+    participant Model as Vertex AI (gemini-embedding-001)
     participant Evaluator as 유사도 및 품질 평가 엔진
     participant Report as 진단 리포트 생성기 (report.md)
 
@@ -28,14 +28,14 @@ sequenceDiagram
     
     rect rgb(240, 245, 255)
     note right of CLI: 1단계: 사내 표본 데이터 로드 및 기준점 벡터 생성
-    CLI->>CLI: 표본 코퍼스(1,000건) 로드 및 차원 목록 정렬 (768d -> 128d)
-    CLI->>Model: get_embeddings(texts, output_dimensionality=768)
-    Model-->>CLI: BaselineEmbeddings (768차원 기준점 벡터)
+    CLI->>CLI: 표본 코퍼스(1,000건) 로드 및 차원 목록 정렬 (3072d -> 128d)
+    CLI->>Model: get_embeddings(texts, output_dimensionality=3072)
+    Model-->>CLI: BaselineEmbeddings (3072차원 기준점 벡터)
     end
 
     rect rgb(245, 240, 255)
     note right of Evaluator: 2단계: 축소 차원 MRL 추출 및 정확도/용량 평가
-    loop 축소 차원별 (512d, 256d, 128d)
+    loop 축소 차원별 (1536d, 768d, 512d, 256d, 128d)
         CLI->>Model: get_embeddings(texts, output_dimensionality=dim)
         Model-->>CLI: ReducedEmbeddings
         CLI->>Evaluator: 코사인 유사도 랭킹 산출 (Top-1 / Top-3 Recall, MRR)

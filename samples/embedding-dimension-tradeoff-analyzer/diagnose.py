@@ -47,14 +47,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-m",
         "--model",
-        default=os.getenv("MODEL_NAME") or "text-multilingual-embedding-002",
-        help="임베딩 파운데이션 모델 이름 (기본값: text-multilingual-embedding-002 - 한국어/다국어 최적화 권장. 영어/코드 워크로드: text-embedding-005)",
+        default=os.getenv("MODEL_NAME") or "gemini-embedding-001",
+        help="임베딩 파운데이션 모델 이름 (기본값: gemini-embedding-001 - 한국어/다국어/영어/코드 통합 MRL 지원. 영어/코드 전용: text-embedding-005. 참고: text-multilingual-embedding-002는 고정 768d로 MRL 미지원)",
     )
     parser.add_argument(
         "-d",
         "--dimensions",
-        default=os.getenv("DIMENSIONS") or "768,512,256,128",
-        help="비교할 임베딩 차원 목록 (콤마 구분, 2개 이상 필수, 기본값: 768,512,256,128)",
+        default=os.getenv("DIMENSIONS") or "3072,1536,768,512,256,128",
+        help="비교할 임베딩 차원 목록 (콤마 구분, 2개 이상 필수, 기본값: 3072,1536,768,512,256,128)",
     )
     sample_env = os.getenv("SAMPLE_COUNT")
     vector_env = os.getenv("PROJECTED_VECTOR_COUNT")
@@ -136,7 +136,7 @@ def detect_project_id(cli_project: str, is_dry_run: bool = False) -> str:
     return "demo-embedding-analysis-project"
 
 
-def parse_dimension_list(raw_dims: str) -> List[int]:
+def parse_dimension_list(raw_dims: str, model_name: str = "gemini-embedding-001") -> List[int]:
     """차원 인자 문자열을 파싱하고 내림차순(큰 차원 -> 작은 차원)으로 정렬한다."""
     try:
         parts = [int(p.strip()) for p in raw_dims.split(",") if p.strip()]
@@ -144,13 +144,17 @@ def parse_dimension_list(raw_dims: str) -> List[int]:
         print(f"오류: 차원 인자(--dimensions: '{raw_dims}')는 정수 목록이어야 한다.")
         sys.exit(1)
 
+    max_dim = 3072 if "gemini-embedding" in model_name else 768
+    if model_name == "text-multilingual-embedding-002":
+        print("[주의] text-multilingual-embedding-002는 고정 768차원 모델로 MRL(output_dimensionality)을 지원하지 않는다.")
+
     unique_sorted = sorted(list(set(parts)), reverse=True)
     valid_dims = []
     for d in unique_sorted:
-        if d > 768:
-            print(f"[경고] {d}차원은 text-embedding-005 지원 상한(최대 768)을 초과하여 768로 조정되거나 제외된다.")
-            if 768 not in valid_dims:
-                valid_dims.append(768)
+        if d > max_dim:
+            print(f"[경고] {d}차원은 {model_name} 지원 상한(최대 {max_dim})을 초과하여 {max_dim}으로 조정되거나 제외된다.")
+            if max_dim not in valid_dims:
+                valid_dims.append(max_dim)
         elif d < 1:
             print(f"[경고] {d}차원은 유효하지 않은 차원이므로 제외된다.")
         else:
@@ -158,7 +162,7 @@ def parse_dimension_list(raw_dims: str) -> List[int]:
 
     unique_sorted = sorted(list(set(valid_dims)), reverse=True)
     if len(unique_sorted) < 2:
-        unique_sorted = [768, 512, 256, 128]
+        unique_sorted = [3072, 1536, 768, 512, 256, 128] if max_dim == 3072 else [768, 512, 256, 128]
 
     return unique_sorted
 
@@ -279,13 +283,14 @@ def fetch_live_embeddings(texts: List[str], dim: int, model_name: str, project_i
         client = genai.Client(vertexai=True, project=project_id, location=location)
 
         vectors = []
-        batch_size = 50
+        batch_size = 10
+        embed_cfg = None if model_name == "text-multilingual-embedding-002" else {"output_dimensionality": dim}
         for i in range(0, len(texts), batch_size):
             chunk = texts[i : i + batch_size]
             res = client.models.embed_content(
                 model=model_name,
                 contents=chunk,
-                config={"output_dimensionality": dim},
+                config=embed_cfg,
             )
             for emb in res.embeddings:
                 vectors.append(emb.values)
@@ -308,6 +313,9 @@ def evaluate_dimension(
     """특정 차원에서의 인덱싱 용량, 지연 시간, 검색 정확도를 평가한다."""
     start_time = time.perf_counter()
 
+    import operator
+
+    print(f"[진단] {dim}차원 임베딩 및 유사도 검색 평가 중 ({len(docs)}건 문서 / {len(queries)}건 질의)...", flush=True)
     if is_dry_run:
         doc_vectors = [generate_mock_vector(d, dim, base_dim) for d in docs]
         query_vectors = [generate_mock_vector(q["query"], dim, base_dim) for q in queries]
@@ -316,20 +324,28 @@ def evaluate_dimension(
         query_texts = [q["query"] for q in queries]
         query_vectors = fetch_live_embeddings(query_texts, dim, model_name, project_id, location)
 
+    def _normalize(vec: List[float]) -> List[float]:
+        norm = math.sqrt(sum(map(operator.mul, vec, vec)))
+        return [x / norm for x in vec] if norm > 0.0 else vec
+
+    norm_docs = [_normalize(v) for v in doc_vectors]
+    norm_queries = [_normalize(v) for v in query_vectors]
+
     top1_hits = 0
     top3_hits = 0
     reciprocal_ranks = []
 
-    # 전체 질의에 대해 유사도 랭킹 산출
-    eval_sample_size = min(len(queries), 200)
+    # 전체 질의에 대해 유사도 랭킹 산출 (벡터 검색 순수 연산 시간 계측 포함)
+    search_start = time.perf_counter()
+    eval_sample_size = len(queries)
     for idx in range(eval_sample_size):
-        q_vec = query_vectors[idx]
+        q_vec = norm_queries[idx]
         target_id = queries[idx]["target_doc_id"]
 
-        similarities = []
-        for d_id, d_vec in enumerate(doc_vectors):
-            sim = cosine_similarity(q_vec, d_vec)
-            similarities.append((d_id, sim))
+        similarities = [
+            (d_id, sum(map(operator.mul, q_vec, d_vec)))
+            for d_id, d_vec in enumerate(norm_docs)
+        ]
 
         similarities.sort(key=lambda x: x[1], reverse=True)
         ranked_ids = [item[0] for item in similarities]
@@ -342,22 +358,27 @@ def evaluate_dimension(
         rank = ranked_ids.index(target_id) + 1 if target_id in ranked_ids else len(ranked_ids)
         reciprocal_ranks.append(1.0 / rank)
 
-    elapsed_ms = (time.perf_counter() - start_time) * 1000.0 / eval_sample_size
-
+    search_elapsed_ms = (time.perf_counter() - search_start) * 1000.0 / max(1, eval_sample_size)
     dim_ratio = min(1.0, float(dim) / float(base_dim)) if base_dim > 0 else 1.0
 
-    if dim >= base_dim:
-        top1_recall = 100.0
-        top3_recall = 100.0
-        mrr = 1.000
-        avg_latency = round(15.0 + (dim / 768.0) * 5.5, 1)
+    if is_dry_run:
+        if dim >= base_dim:
+            top1_recall = 100.0
+            top3_recall = 100.0
+            mrr = 1.000
+            avg_latency = round(15.0 + (dim / 768.0) * 5.5, 1)
+        else:
+            # --dry-run 가상 실행용 MRL 이론 곡선 시뮬레이션
+            retention = 1.0 - (0.052 * (1.0 - math.pow(dim_ratio, 0.35)))
+            top1_recall = round(retention * 100.0, 1)
+            top3_recall = round(min(100.0, (1.0 - (0.015 * (1.0 - math.pow(dim_ratio, 0.35)))) * 100.0), 1)
+            mrr = round(1.0 - (0.040 * (1.0 - math.pow(dim_ratio, 0.35))), 3)
+            avg_latency = round(max(3.2, 4.0 + (dim / float(base_dim)) * 16.5), 1)
     else:
-        # MRL 이론 곡선 기반 보정 (차원 축소비 대비 높은 정보 보존율 반영)
-        retention = 1.0 - (0.052 * (1.0 - math.pow(dim_ratio, 0.35)))
-        top1_recall = round(retention * 100.0, 1)
-        top3_recall = round(min(100.0, (1.0 - (0.015 * (1.0 - math.pow(dim_ratio, 0.35)))) * 100.0), 1)
-        mrr = round(1.0 - (0.040 * (1.0 - math.pow(dim_ratio, 0.35))), 3)
-        avg_latency = round(max(3.2, 4.0 + (dim / float(base_dim)) * 16.5), 1)
+        top1_recall = round((top1_hits / max(1, eval_sample_size)) * 100.0, 1)
+        top3_recall = round((top3_hits / max(1, eval_sample_size)) * 100.0, 1)
+        mrr = round(sum(reciprocal_ranks) / max(1, eval_sample_size), 3)
+        avg_latency = round(max(0.1, search_elapsed_ms), 2)
 
     return {
         "dimension": dim,
@@ -470,8 +491,8 @@ def print_multi_dimension_report(
     print(f"   - [Tier 3: 고정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> {base_dim}d 최대 차원 유지")
     print()
     print("3. 한국어 및 다국어 모델 최적 선택 가이드:")
-    print("   - 한국어 및 다국어 코퍼스에서는 다국어 전용 모델인 'text-multilingual-embedding-002'가 형태소와 조사 구조를 정밀하게 파악하여 영어/코드 특화 모델('text-embedding-005') 대비 월등한 검색 품질(MRR, Recall)을 제공한다.")
-    print("   - 두 모델 모두 'output_dimensionality' 기반 MRL 차원 축소(768, 512, 256, 128)를 지원하므로, 한국어 환경에서는 'text-multilingual-embedding-002'에 차원 축소를 적용하는 것이 가장 이상적이다.")
+    print("   - 한국어, 영어 및 코드 통합 워크로드에서는 'gemini-embedding-001'이 100+개 언어 지원과 네이티브 MRL(output_dimensionality: 최대 3072d -> 1536/768/512/256/128d)을 동시에 제공한다.")
+    print("   - 영어 및 코드 특화 경량 워크로드는 'text-embedding-005'(최대 768d, MRL 지원)를 선택할 수 있으며, 'text-multilingual-embedding-002'는 고정 768차원 모델로 MRL(output_dimensionality)을 지원하지 않는다.")
     print()
     print("4. 사내 실데이터 적용 코드:")
     print("   from google import genai")
@@ -599,8 +620,8 @@ def build_markdown_report(
         f"   - [Tier 3: 고정밀]: 법률, 금융, 의료 등 극도의 1위 매칭 정확도가 요구되는 워크로드 -> {base_dim}d 최대 차원 유지",
         "",
         "3. 한국어 및 다국어 모델 최적 선택 가이드:",
-        "   - 한국어 및 다국어 코퍼스에서는 다국어 전용 모델인 'text-multilingual-embedding-002'가 형태소와 조사 구조를 정밀하게 파악하여 영어/코드 특화 모델('text-embedding-005') 대비 월등한 검색 품질(MRR, Recall)을 제공한다.",
-        "   - 두 모델 모두 'output_dimensionality' 기반 MRL 차원 축소(768, 512, 256, 128)를 지원하므로, 한국어 환경에서는 'text-multilingual-embedding-002'에 차원 축소를 적용하는 것이 가장 이상적이다.",
+        "   - 한국어, 영어 및 코드 통합 워크로드에서는 'gemini-embedding-001'이 100+개 언어 지원과 네이티브 MRL(output_dimensionality: 최대 3072d -> 1536/768/512/256/128d)을 동시에 제공한다.",
+        "   - 영어 및 코드 특화 경량 워크로드는 'text-embedding-005'(최대 768d, MRL 지원)를 선택할 수 있으며, 'text-multilingual-embedding-002'는 고정 768차원 모델로 MRL(output_dimensionality)을 지원하지 않는다.",
         "",
         "4. 사내 실데이터 적용 코드:",
         "   from google import genai",
@@ -633,7 +654,7 @@ def build_markdown_report(
         "## 3. 실무자 즉각 조치 가이드 및 처방전",
         "",
         "### 1단계: 한국어/다국어 특화 모델 선택 및 최적 차원 파라미터 적용",
-        f"- 한국어 코퍼스에서는 다국어에 특화된 `text-multilingual-embedding-002` 모델을 우선 채택하여 한국어 형태소 및 문맥 보존 품질을 극대화한다.",
+        f"- 한국어 및 다국어 MRL 워크로드에서는 통합 플래그십 모델인 `gemini-embedding-001`을 우선 채택하여 한국어 형태소 보존과 유연한 차원 축소를 동시에 확보한다.",
         f"- `google-genai` 최신 통일 SDK에서 `output_dimensionality` 매개변수를 결정된 축소 차원({smallest['dimension']}d 등)으로 지정하여 인프라 비용을 절감한다.",
         "- Vertex AI 텍스트 임베딩 생성 ( https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings )",
         "",
@@ -785,7 +806,7 @@ def main() -> None:
     reported_project = "sample-project-id" if args.dry_run else project_id
 
     # 1. 차원 목록 파싱 및 내림차순 정렬 (2개 이상 필수)
-    dimensions = parse_dimension_list(args.dimensions)
+    dimensions = parse_dimension_list(args.dimensions, args.model)
     base_dim = dimensions[0]
 
     # 2. 데이터셋 로드 (사내 실데이터 또는 기본 벤치마크, 1,000건 표본 제어)

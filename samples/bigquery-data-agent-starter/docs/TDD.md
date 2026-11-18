@@ -24,7 +24,7 @@ All contents, designs, and code examples are subject to change, modification, or
 1. **순수 Python 단일 실행 모델**: 쉘 래퍼 스크립트에 의존하지 않고 크로스 플랫폼에서 일관되게 동작하는 `python diagnose.py` 직접 실행 체계 구축.
 2. **구글 1P 관리형 런타임 표준**: 커스텀 컨테이너 빌드나 유휴 VM 호스팅 없이, GDA REST API를 호출하여 구글 관리형 테넌트에서 1초 만에 데이터 에이전트를 프로비저닝.
 3. **A2A 표준 프로토콜 바인딩**: A2UI, stateless, starter_prompts 확장을 내장한 A2A Agent Card 표준 규격(`a2a_agent_card.json`)을 생성하고 사내 갤러리에 직결 등록.
-4. **계층형 캐스케이드 설정 탐색(Cascade Fallback)**: CLI 인자 > `.env` > `gcloud config` > 대화형 번호 선택기(`interactive_select`) > 사내 권장 기본값(`asia-northeast3`, `global`) 순으로 무중단 설정 확정.
+4. **계층형 캐스케이드 설정 탐색(Cascade Fallback)**: CLI 인자 > `.env` > `gcloud config` > 대화형 번호 선택기(`interactive_select`) > 기본 권장값(`asia-northeast3`, `global`) 순으로 무중단 설정 확정.
 5. **독립 완결성(Zero Dependency)**: 외부 모듈이나 다른 샘플에 대한 코드 의존성 없이 자체 완결적으로 동작.
 
 ---

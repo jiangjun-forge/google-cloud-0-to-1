@@ -110,7 +110,7 @@ def load_env_file(filepath: str = ".env") -> None:
 
 
 def resolve_config(cli_args: argparse.Namespace) -> Dict[str, Any]:
-    """CLI 인자 > .env > gcloud config > 대화형 선택기 > 사내 권장 기본값 순으로 설정을 확정한다."""
+    """CLI 인자 > .env > gcloud config > 대화형 선택기 > 기본 권장값 순으로 설정을 확정한다."""
     load_env_file()
     project_id = cli_args.project or os.environ.get("PROJECT_ID", "").strip()
     if cli_args.dry_run:
