@@ -69,7 +69,7 @@ GKE ComputeClass(CCC) 및 MIG instanceSelections 다중 머신 유연성을 동�
   - env: sample
   - created-by: customer-engineer
 ================================================================================================
-[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/gce-reservation-guard/report.md
+[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md
 ```
 
 
