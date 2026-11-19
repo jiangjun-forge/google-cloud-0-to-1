@@ -51,17 +51,17 @@ sequenceDiagram
 
 ## 2. 기능적 기술 요구 사항 (Functional Requirements)
 
-| 요구 사항 ID | 모듈/컴포넌트 | 기술 구현 상세 |
-| :---: | :--- | :--- |
-| **FR-01** | `CatalogVectorEngine.pre_build_semantic_gate` | 국문/영문 형태소 및 동의어 정규화 토큰과 BigQuery `VECTOR_SEARCH`(`gemini-embedding-001`) SQL 생성기를 결합하여 신규 앱 아이디어와 기존 인벤토리 간 코사인 유사도를 산출하고 `REHYDRATE_CRYO` 또는 `REUSE_ACTIVE`를 판정한다. |
-| **FR-02** | `CatalogVectorEngine.register_or_update_aspect` | Knowledge Catalog 커스텀 엔트리(`one-time-ai-app`) 및 `app-lifecycle-governance` Aspect 페이로드를 합성하고 4대 필수 라벨을 주입한다. |
-| **FR-03** | `HitCountTTLDetector.evaluate_fleet` | Cloud Monitoring MQL 쿼리(`run.googleapis.com/request_count`) 또는 인벤토리 메트릭을 기반으로 `ALREADY_ARCHIVED`, `CRYO_DISPOSAL`(`hit_count <= 1` 및 `age_days >= ttl_days`), `PRODUCTION_GRADUATION`(`hit_count >= 50`), `KEEP_ACTIVE` 4개 코호트로 분류한다. |
-| **FR-04** | `LineageGraphEngine.build_property_graph_ddl` | `CREATE OR REPLACE PROPERTY GRAPH` DDL과 `GRAPH ... MATCH (caller:UpstreamCaller)-[inv:INVOKES]->(app:OneTimeApp)-[dep:DEPENDS_ON]->(res:GCPResource)` GQL 쿼리를 생성한다. |
-| **FR-05** | `LineageGraphEngine.analyze_and_sever` | 업스트림 호출자별 결정론적 차단 명령어(`gcloud scheduler jobs pause`, `gcloud eventarc triggers delete`, `gcloud run services update-traffic --to-zero`, `gcloud pubsub subscriptions modify-push-config`)와 다운스트림 서비스 계정 IAM 회수 명령어를 합성한다. |
-| **FR-06** | `CryoArchiver.create_cryo_capsule` | 환경 변수 키 중 `KEY|SECRET|TOKEN|PASSWORD|BEARER` 패턴을 `<REDACTED_SECRET_MANAGER_REF>`로 살균한 뒤 Coldline 캡슐 매니페스트와 60초 부활 스크립트(`rehydrate.sh`)를 생성한다. |
-| **FR-07** | `CryoArchiver.build_graduation_package` | 상위 4% 안착 앱을 위한 Cloud Build 프로덕션 배포 명세와 5대 보안 하드닝 체크리스트(Secret Manager 90일 순환, Cloud/Model Armor, VPC-SC, SLO 알림)를 생성한다. |
-| **FR-08** | `CatalogVectorEngine.search_to_restore` | `CRYO_ARCHIVED` 상태 앱을 대상으로 자연어 검색을 수행하여 코사인 유사도 순위와 원클릭 부활 명령어(`gcloud storage cat .../rehydrate.sh \| bash`)를 반환한다. |
-| **FR-09** | `GovernanceReceiptGenerator.render_markdown_report` | 회수된 월간 총 컴퓨트 비용에서 Coldline 보관료(캡슐당 월 `$0.02`)를 차감한 순 절감액(월 `$245.42`, 연 `$2,945.04`)과 회수된 인스턴스/NHI/IAM/트리거 지표를 `report.md`로 출력한다. |
+| 요구 사항 ID | 연관 BR | 모듈/컴포넌트 | 기술 구현 상세 |
+| :---: | :---: | :--- | :--- |
+| **FR-01** | `BR-01` | `CatalogVectorEngine.pre_build_semantic_gate` | 국문/영문 형태소 및 동의어 정규화 토큰과 BigQuery `VECTOR_SEARCH`(`gemini-embedding-001`) SQL 생성기를 결합하여 신규 앱 아이디어와 기존 인벤토리 간 코사인 유사도를 산출하고 `REHYDRATE_CRYO` 또는 `REUSE_ACTIVE`를 판정한다. |
+| **FR-02** | `BR-02`, `BR-10` | `CatalogVectorEngine.register_or_update_aspect` | Knowledge Catalog 커스텀 엔트리(`one-time-ai-app`) 및 `app-lifecycle-governance` Aspect 페이로드를 합성하고 4대 필수 라벨을 주입한다. |
+| **FR-03** | `BR-03` | `HitCountTTLDetector.evaluate_fleet` | Cloud Monitoring MQL 쿼리(`run.googleapis.com/request_count`) 또는 인벤토리 메트릭을 기반으로 `ALREADY_ARCHIVED`, `CRYO_DISPOSAL`(`hit_count <= 1` 및 `age_days >= ttl_days`), `PRODUCTION_GRADUATION`(`hit_count >= 50`), `KEEP_ACTIVE` 4개 코호트로 분류한다. |
+| **FR-04** | `BR-04` | `LineageGraphEngine.build_property_graph_ddl`, `build_gql_blast_radius_query` | `CREATE OR REPLACE PROPERTY GRAPH` DDL과 `GRAPH ... MATCH (caller:UpstreamCaller)-[inv:INVOKES]->(app:OneTimeApp)-[dep:DEPENDS_ON]->(res:GCPResource)` GQL 쿼리를 생성한다. |
+| **FR-05** | `BR-05` | `LineageGraphEngine.analyze_and_sever` | 업스트림 호출자별 결정론적 차단 명령어(`gcloud scheduler jobs pause`, `gcloud eventarc triggers delete`, `gcloud run services update-traffic --to-zero`, `gcloud pubsub subscriptions modify-push-config`)와 다운스트림 서비스 계정 IAM 회수 명령어를 합성한다. |
+| **FR-06** | `BR-06`, `BR-07` | `CryoArchiver.create_cryo_capsule` | 환경 변수 키 중 `KEY|SECRET|TOKEN|PASSWORD|BEARER` 패턴을 `<REDACTED_SECRET_MANAGER_REF>`로 살균한 뒤 Coldline 캡슐 매니페스트와 60초 부활 스크립트(`rehydrate.sh`)를 생성한다. |
+| **FR-07** | `BR-08` | `CryoArchiver.build_graduation_package` | 상위 4% 안착 앱을 위한 Cloud Build 프로덕션 배포 명세와 5대 보안 하드닝 체크리스트(Secret Manager 90일 순환, Cloud/Model Armor, VPC-SC, SLO 알림)를 생성한다. |
+| **FR-08** | `BR-07` | `CatalogVectorEngine.search_to_restore` | `CRYO_ARCHIVED` 상태 앱을 대상으로 자연어 검색을 수행하여 코사인 유사도 순위와 원클릭 부활 명령어(`gcloud storage cat .../rehydrate.sh \| bash`)를 반환한다. |
+| **FR-09** | `BR-09`, `BR-10` | `GovernanceReceiptGenerator.render_markdown_report` | 회수된 월간 총 컴퓨트 비용에서 Coldline 보관료(캡슐당 월 `$0.02`)를 차감한 순 절감액(월 `$245.42`, 연 `$2,945.04`)과 회수된 인스턴스/NHI/IAM/트리거 지표를 `report.md`로 출력한다. |
 
 ---
 

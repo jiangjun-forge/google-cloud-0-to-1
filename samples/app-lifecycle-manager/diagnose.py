@@ -915,6 +915,30 @@ class LineageGraphEngine:
         self.dataset_id = dataset_id
         self.graph_name = graph_name
 
+    def build_property_graph_ddl(self) -> str:
+        """호출자-앱-리소스 3중 리니지용 BigQuery Property Graph DDL을 생성한다."""
+        fq_ds = f"{self.project_id}.{self.dataset_id}"
+        return (
+            f"CREATE OR REPLACE PROPERTY GRAPH `{fq_ds}.{self.graph_name}`\n"
+            f"NODE TABLES (\n"
+            f"  `{fq_ds}.upstream_callers` KEY (caller_id) LABEL UpstreamCaller,\n"
+            f"  `{fq_ds}.one_time_apps` KEY (app_id) LABEL OneTimeApp,\n"
+            f"  `{fq_ds}.gcp_resources` KEY (resource_id) LABEL GCPResource\n"
+            f")\n"
+            f"EDGE TABLES (\n"
+            f"  `{fq_ds}.caller_invokes_app`\n"
+            f"    KEY (caller_id, app_id)\n"
+            f"    SOURCE KEY (caller_id) REFERENCES upstream_callers (caller_id)\n"
+            f"    DESTINATION KEY (app_id) REFERENCES one_time_apps (app_id)\n"
+            f"    LABEL INVOKES,\n"
+            f"  `{fq_ds}.app_depends_on_resource`\n"
+            f"    KEY (app_id, resource_id)\n"
+            f"    SOURCE KEY (app_id) REFERENCES one_time_apps (app_id)\n"
+            f"    DESTINATION KEY (resource_id) REFERENCES gcp_resources (resource_id)\n"
+            f"    LABEL DEPENDS_ON\n"
+            f");"
+        )
+
     def build_gql_blast_radius_query(self, app_id: str) -> str:
         """업스트림 호출자와 다운스트림 리소스를 역추적하는 GQL 쿼리를 생성한다."""
         fq_graph = f"{self.project_id}.{self.dataset_id}.{self.graph_name}"
