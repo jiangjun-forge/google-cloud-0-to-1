@@ -309,7 +309,7 @@ def evaluate_rubric(brd_text: str, sdd_text: str) -> List[Dict[str, Any]]:
     has_sec = bool(re.search(r"(?:CMEK|Cloud KMS)", sdd_text, re.I)) and bool(re.search(r"(?:Secret Manager|VPC-SC|VPC Service Controls)", sdd_text, re.I))
     add_check("3. SAIF 보안, 프라이버시 및 컴플라이언스", "R-10", "암호화(CMEK), 시크릿 및 네트워크 경계", "PASS" if has_sec else "WARN", "CMEK, Secret Manager 또는 VPC-SC 경계 통제 확인" if has_sec else "CMEK, Secret Manager, VPC-SC 중 일부 보안 통제가 누락되었다.")
 
-    has_pii_leak = bool(re.search(r"AIza[0-9A-Za-z\-_]{35}|sk-[A-Za-z0-9]{20,}|/Users/|/home/", combined))
+    has_pii_leak = bool(re.search(r"AIza[0-9A-Za-z\-_]{35}|sk-[A-Za-z0-9]{20,}|/Users/|/home/|C:\\Users\\", combined))
     add_check("3. SAIF 보안, 프라이버시 및 컴플라이언스", "R-11", "설계서 내 PII 및 시크릿 미노출", "FAIL" if has_pii_leak else "PASS", "로컬 경로 또는 시크릿 토큰 패턴이 검출되었다." if has_pii_leak else "민감 시크릿 및 로컬 홈 경로 노출 없음")
 
     # 4. Reliability, Resiliency & State Integrity (R-12 ~ R-14)
@@ -346,7 +346,7 @@ def evaluate_rubric(brd_text: str, sdd_text: str) -> List[Dict[str, Any]]:
     has_phases = bool(re.search(r"(?:Phase\s*1|MVP|1단계)", sdd_text, re.I)) and bool(re.search(r"(?:Phase\s*2|Scale|2단계)", sdd_text, re.I))
     add_check("7. ADR, 모순 교차 검증 및 가독성", "R-21", "단계적 출시 범위 분리 (MVP vs Scale)", "PASS" if has_phases else "WARN", "MVP와 확장 단계 범위가 명시 분리됨" if has_phases else "Phase 1(MVP)과 Phase 2(확장) 범위 분리가 명시되지 않았다.")
 
-    logic_contradictions = detect_internal_contradictions(sdd_text)
+    logic_contradictions = detect_internal_contradictions(combined)
     add_check(
         "7. ADR, 모순 교차 검증 및 가독성",
         "R-22",
@@ -515,7 +515,7 @@ def main() -> None:
     print(f"- 평가 대상: {source_desc}")
     print(f"- 종합 점수: {total_score} / 100점 (PASS {passes}건, WARN {warns}건, FAIL {fails}건)")
     print("-" * 72)
-    print(f"[완료] 상세 평가 리포트가 저장되었다: {report_path}")
+    print(f"[완료] 상세 평가 리포트가 저장되었다: {report_path.name}")
 
 
 if __name__ == "__main__":
