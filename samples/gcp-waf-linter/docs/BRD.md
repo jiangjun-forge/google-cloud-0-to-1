@@ -14,12 +14,12 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 비즈니스 요구 사항 명세서 (BRD): Google Cloud 아키텍처 명세 실전 루브릭 평가기 (As of 2026-11-19)
+# 비즈니스 요구 사항 명세서 (BRD): Google Cloud Well-Architected Framework(WAF) 명세 린터 (`gcp-waf-linter`) (As of 2026-11-19)
 
 ## 1. 배경 및 목적
 AI 에이전트를 활용한 Spec-Driven Development 환경에서는 문서의 문장과 형식은 유려하지만, 실제 엔터프라이즈 운영에 필수적인 비기능 요구 사항(보안 경계, 읽기 전용 에이전트 권한 분리, 비용 상한, 장애 격리)이 누락되거나 원시 자료에 없는 SLA 수치가 임의로 생성(환각)되는 문제가 빈번하다.
 
-본 미니 프로젝트(`gcp-architecture-evaluator`)는 기업과 프로젝트마다 상이한 파일 명명 관례에 구애받지 않고 사용자가 지정한 경로의 모든 마크다운(`*.md`) 명세 문서를 일괄 입력받아 (1) 요구 사항 ID 교차 참조 및 모순 해소 여부, (2) 원문 근거 대비 미태깅 추정 수치 검출, (3) 에이전트 제어 경계(Read-Only vs 실행 서비스 분리, HITL, 양방향 마스킹), (4) Google Cloud Architecture Framework 및 SAIF 기반 7대 아키텍처 차원 실전 체크리스트, (5) 명세 내부 논리 모순, 가독성, 비식별화 및 정규 명칭 준수 여부를 25개 항목 100점 만점으로 자동 채점하여 평가 리포트(`report.md`)를 산출하는 정적 게이트 평가기다.
+본 미니 프로젝트(`gcp-waf-linter`)는 기업과 프로젝트마다 상이한 파일 명명 관례에 구애받지 않고 사용자가 지정한 경로의 모든 마크다운(`*.md`) 명세 문서를 일괄 입력받아 (1) 요구 사항 ID 교차 참조 및 모순 해소 여부, (2) 원문 근거 대비 미태깅 추정 수치 검출, (3) 에이전트 제어 경계(Read-Only vs 실행 서비스 분리, HITL, 양방향 마스킹), (4) Google Cloud Well-Architected Framework(WAF) 및 SAIF 기반 7대 아키텍처 차원 실전 체크리스트, (5) 명세 내부 논리 모순, 가독성, 비식별화 및 정규 명칭 준수 여부를 25개 항목 100점 만점으로 자동 채점하여 평가 리포트(`report.md`)를 산출하는 정적 린터다.
 
 ---
 

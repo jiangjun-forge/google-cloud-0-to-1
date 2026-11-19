@@ -15,14 +15,14 @@ All contents, designs, and code examples are subject to change, modification, or
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
 ---
-name: gcp-architecture-evaluator
+name: gcp-waf-linter
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gcp-architecture-evaluator: AI 에이전트 기반 Spec-Driven Development 환경에서 작성된 지정 경로 하위 모든 마크다운(*.md) 명세 문서를 파일명 제약 없이 대상으로 삼아 7대 아키텍처 차원, 명세 내부 논리 모순 교차 검증 및 가독성/모호어까지 25개 항목 100점 만점 루브릭으로 자동 채점하는 평가기다.
+  Autopilot, hands-on diagnostics, and self-healing for gcp-waf-linter: AI 에이전트 기반 Spec-Driven Development 환경에서 작성된 지정 경로 하위 모든 마크다운(*.md) 명세 문서를 파일명 제약 없이 대상으로 삼아 Google Cloud Well-Architected Framework(WAF) 7대 아키텍처 차원, 명세 내부 논리 모순 교차 검증 및 가독성/모호어까지 25개 항목 100점 만점 루브릭으로 자동 채점하는 정적 린터다.
 ---
 
-# Google Cloud 아키텍처 명세 실전 루브릭 평가기 (Autopilot & Hands-on Guide)
+# Google Cloud Well-Architected Framework(WAF) 명세 린터 (Autopilot & Hands-on Guide)
 
-본 스킬은 사내 엔지니어와 실무자가 `gcp-architecture-evaluator` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 보완)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다. (As of 2026-11-19)
+본 스킬은 사내 엔지니어와 실무자가 `gcp-waf-linter` 미니 프로젝트를 **"예습(YOLO 자율 주행) -> 실습(단계별 핸즈온) -> 복습(심화 검증 및 보완)"** 3단계 학습 사이클로 완주할 수 있도록 지원하는 실행 가이드다. (As of 2026-11-19)
 
 **Audience**: `#Architect`, `#Developer`, `#FinOps`, `#SecOps`  
 **Concern**: `#Architecture`, `#Governance`, `#Security`  
@@ -49,13 +49,13 @@ flowchart TB
 
 ### Step 1.1 환경 자동 감지 및 설정 세팅 (Pre-flight)
 1. 현재 활성화된 gcloud 프로젝트를 확인한다 (`gcloud config get-value project`).
-2. `samples/gcp-architecture-evaluator/.env.example`을 참조하여 `.env` 파일이 없을 경우 자동 생성한다.
+2. `samples/gcp-waf-linter/.env.example`을 참조하여 `.env` 파일이 없을 경우 자동 생성한다.
 3. 본 도구는 로컬 마크다운 명세 문서를 정적 분석하므로 별도의 GCP IAM 쓰기/읽기 권한이나 과금 없이 동작함을 안내한다.
-4. 설계서 내 GCP 리소스 택소노미 검사 시 4대 필수 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=gcp-architecture-evaluator,env=sample,created-by=customer-engineer`)이 반영되어야 함을 설명한다.
+4. 설계서 내 GCP 리소스 택소노미 검사 시 4대 필수 표준 라벨(`--labels=managed-by=google-cloud-0-to-1,scenario=gcp-waf-linter,env=sample,created-by=customer-engineer`)이 반영되어야 함을 설명한다.
 
 ### Step 1.2 가상 모의 실행 및 아키텍처 브리핑 (Smoke Test)
 ```bash
-cd samples/gcp-architecture-evaluator
+cd samples/gcp-waf-linter
 python diagnose.py --dry-run
 ```
 
@@ -67,7 +67,7 @@ python diagnose.py --dry-run
 
 ### Step 2.1 환경 설정 및 평가 실행
 ```bash
-cd samples/gcp-architecture-evaluator
+cd samples/gcp-waf-linter
 python diagnose.py --config
 python diagnose.py
 ```

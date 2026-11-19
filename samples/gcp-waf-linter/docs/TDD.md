@@ -14,7 +14,7 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# 기술 상세 설계서 (TDD): Google Cloud 아키텍처 명세 실전 루브릭 평가기 (As of 2026-11-19)
+# 기술 상세 설계서 (TDD): Google Cloud Well-Architected Framework(WAF) 명세 린터 (`gcp-waf-linter`) (As of 2026-11-19)
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 

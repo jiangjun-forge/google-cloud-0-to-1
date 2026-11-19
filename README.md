@@ -38,10 +38,10 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
     ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
     ├── fcm-push-quota-guard/                   # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
-    ├── gcp-architecture-evaluator/             # Google Cloud 아키텍처 명세(BRD/SDD) 실전 루브릭 평가
     ├── gce-instance-flexibility-planner/       # GCE & GKE 인스턴스 유연성 및 CCC/MIG 스톡아웃 방어 설계
     ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
     ├── gce-reservation-guard/                  # CUD 약정 대비 물리적 Reservation 확보율 및 Future Reservation 진단
+    ├── gcp-waf-linter/                         # Google Cloud Well-Architected Framework(WAF) 명세(*.md) 정적 린터
     ├── gemini-billing-spike/                   # 감사 로그 부재 시 지표 기반 비용 급증 자격 증명 진단
     ├── gemini-enterprise-agent-resolver/       # 커스텀 에이전트 연동 권한 및 조직 정책 진단
     ├── gemini-enterprise-analytics-exporter/   # 사용자 채택률 및 유휴 라이선스 회수 분석

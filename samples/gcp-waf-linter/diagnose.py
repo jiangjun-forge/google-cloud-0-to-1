@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Google Cloud 아키텍처 명세(*.md 전수 스캔) 실전 루브릭 평가기."""
+"""Google Cloud Well-Architected Framework(WAF) 명세(*.md 전수 스캔) 정적 린터."""
 
 import argparse
 import collections
@@ -26,7 +26,7 @@ import subprocess
 import sys
 from typing import Any, Dict, List, Tuple
 
-SCENARIO_SLUG = "gcp-architecture-evaluator"
+SCENARIO_SLUG = "gcp-waf-linter"
 STANDARD_LABELS = (
     f"managed-by=google-cloud-0-to-1,scenario={SCENARIO_SLUG},"
     "env=sample,created-by=customer-engineer"
@@ -53,7 +53,7 @@ def load_dotenv_file(env_path: pathlib.Path) -> None:
 def parse_args() -> argparse.Namespace:
     """명령줄 인자를 파싱한다."""
     parser = argparse.ArgumentParser(
-        description="Google Cloud 아키텍처 명세(*.md 전수 스캔) 실전 루브릭 평가기"
+        description="Google Cloud Well-Architected Framework(WAF) 명세(*.md 전수 스캔) 정적 린터"
     )
     parser.add_argument(
         "-p",
@@ -474,9 +474,9 @@ def generate_markdown_report(
         "",
         "> [!IMPORTANT]",
         "> **구글 (Google LLC) 참조용 샘플 고지 사항**:",
-        "> 본 리포트는 Google LLC 참조용 샘플 평가기의 출력 결과다.",
+        "> 본 리포트는 Google LLC 참조용 샘플 린터의 출력 결과다.",
         "",
-        "# Google Cloud 아키텍처 명세 실전 루브릭 평가 리포트",
+        "# Google Cloud Well-Architected Framework(WAF) 명세 린터 리포트",
         "",
         f"- **평가 일시**: {now_str}",
         f"- **실행 모드**: `{'DRY-RUN (모의 명세 시뮬레이션)' if is_dry_run else 'LIVE (로컬 명세 감사)'}`",
@@ -573,7 +573,7 @@ def main() -> None:
     warns = sum(1 for r in results if r["status"] == "WARN")
     passes = len(results) - fails - warns
     print("=" * 72)
-    print("Google Cloud 아키텍처 명세 실전 루브릭 평가 결과")
+    print("Google Cloud Well-Architected Framework(WAF) 명세 린터 결과")
     print("=" * 72)
     print(f"- 참고 프로젝트: {project_id}")
     print(f"- 평가 대상: {source_desc}")

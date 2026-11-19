@@ -14,9 +14,9 @@ All contents, designs, and code examples are subject to change, modification, or
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
 > 본 프로젝트의 모든 소스 코드와 문서는 Google LLC의 소유이며, Apache-2.0 라이선스에 따라 오직 **참조용 샘플 (Sample / Reference Only)** 목적으로만 제공된다. 프로덕션 환경에 그대로 사용할 수 없으며, 사전 통지 없이 언제든 내용이 수정, 변경 또는 삭제될 수 있다.
 
-# Google Cloud 아키텍처 명세 실전 루브릭 평가기
+# Google Cloud Well-Architected Framework(WAF) 명세 린터 (`gcp-waf-linter`)
 
-AI 에이전트 기반 Spec-Driven Development 환경에서 작성된 프로젝트의 모든 마크다운(`*.md`) 명세 문서(요구 사항, 기술 및 시스템 설계서, ADR 등 파일명 제약 없음)를 대상으로 7대 아키텍처 차원(자율성 경계, Agent 토폴로지, SAIF 보안, 신뢰성, 관측성, 지연/토큰 경제성, ADR), 명세 내부 논리 모순 교차 검증 및 가독성/모호어까지 25개 항목 100점 만점 루브릭으로 자동 채점하는 정적 게이트 평가기다. (As of 2026-11-19)
+AI 에이전트 기반 Spec-Driven Development 환경에서 작성된 프로젝트의 모든 마크다운(`*.md`) 명세 문서(요구 사항, 기술 및 시스템 설계서, ADR 등 파일명 제약 없음)를 대상으로 Google Cloud Well-Architected Framework(WAF) 7대 아키텍처 차원(자율성 경계, Agent 토폴로지, SAIF 보안, 신뢰성, 관측성, 지연/토큰 경제성, ADR), 명세 내부 논리 모순 교차 검증 및 가독성/모호어까지 25개 항목 100점 만점 루브릭으로 자동 채점하는 정적 린터다. (As of 2026-11-19)
 
 ---
 
@@ -49,7 +49,7 @@ python diagnose.py
 터미널 출력 미리보기:
 ```text
 ========================================================================
-Google Cloud 아키텍처 명세 실전 루브릭 평가 결과
+Google Cloud Well-Architected Framework(WAF) 명세 린터 결과
 ========================================================================
 - 참고 프로젝트: sample-project-id
 - 평가 대상: 내장 모의 명세 표본 (sample-corp)
@@ -96,7 +96,7 @@ flowchart TB
 1. **고아 요구 사항 및 `(Proposed)` 미태깅 해소**: 명세에 정의된 `BR-*`/`REQ-*`/`FR-*`/`NFR-*` ID가 설계 및 구현 섹션에서 빠짐없이 교차 참조되도록 보완하고, 원문에 근거가 없는 추정 수치에는 `(Proposed)`를 명시한다.
 2. **에이전트 제어 평면 및 4대 표준 라벨 적용**: 읽기 전용 에이전트와 상태 변경 실행 서비스를 분리하고, 설계서 내 GCP 리소스 택소노미에 4대 표준 라벨을 반영한다:
 ```bash
---labels=managed-by=google-cloud-0-to-1,scenario=gcp-architecture-evaluator,env=sample,created-by=customer-engineer
+--labels=managed-by=google-cloud-0-to-1,scenario=gcp-waf-linter,env=sample,created-by=customer-engineer
 ```
 - Google Cloud Architecture Framework ( https://cloud.google.com/architecture/framework )
 - Google Cloud Security Best Practices ( https://cloud.google.com/security/best-practices )

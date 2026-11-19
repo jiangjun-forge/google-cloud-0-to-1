@@ -8,11 +8,11 @@ It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRO
 
 > [!IMPORTANT]
 > **구글 (Google LLC) 참조용 샘플 고지 사항**:
-> 본 리포트는 Google LLC 참조용 샘플 평가기의 출력 결과다.
+> 본 리포트는 Google LLC 참조용 샘플 린터의 출력 결과다.
 
-# Google Cloud 아키텍처 명세 실전 루브릭 평가 리포트
+# Google Cloud Well-Architected Framework(WAF) 명세 린터 리포트
 
-- **평가 일시**: 2026-11-19 12:16:58 UTC
+- **평가 일시**: 2026-11-19 19:02:24 UTC
 - **실행 모드**: `DRY-RUN (모의 명세 시뮬레이션)`
 - **참고 프로젝트**: `sample-project-id`
 - **평가 대상**: 내장 모의 명세 표본 (sample-corp)
@@ -62,6 +62,6 @@ It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRO
 
 ## 3. 사내 거버넌스 4대 필수 표준 라벨링 및 참고 문서
 
-- **표준 라벨 규약**: `--labels=managed-by=google-cloud-0-to-1,scenario=gcp-architecture-evaluator,env=sample,created-by=customer-engineer`
+- **표준 라벨 규약**: `--labels=managed-by=google-cloud-0-to-1,scenario=gcp-waf-linter,env=sample,created-by=customer-engineer`
 - Google Cloud Architecture Framework ( https://cloud.google.com/architecture/framework )
 - Google Cloud Security Best Practices ( https://cloud.google.com/security/best-practices )
