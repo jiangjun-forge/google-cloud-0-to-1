@@ -24,10 +24,10 @@ All contents, designs, and code examples are subject to change, modification, or
 ```text
 .
 ├── .agents/                                    # Antigravity(agy) 및 Jetski AI 에이전트 실습 스킬
-│   └── skills/                                 # 48개 시나리오별 Autopilot 및 핸즈온 가이드
+│   └── skills/                                 # 49개 시나리오별 Autopilot 및 핸즈온 가이드
 ├── LICENSE                                     # Apache-2.0 오픈소스 라이선스
 ├── README.md                                   # 프로젝트 전체 개요 및 아키텍처 안내서
-└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (48개)
+└── samples/                                    # 주요 시나리오별 진단 및 실습 샘플 (49개)
     ├── antigravity-user-quota-cap/             # Antigravity 사용자별 토큰 소비량 모니터링 및 쿼터 캡 진단
     ├── app-lifecycle-manager/                  # 바이브 코딩 AI 앱 중복 방지, GQL 리니지 차단 및 Coldline 냉동 거버넌스
     ├── bigquery-data-agent-semantic-enricher/  # BigQuery Data Agent NL2SQL 정확도 극대화를 위한 메타데이터 준비도 진단 및 지능형 보강
@@ -38,6 +38,7 @@ All contents, designs, and code examples are subject to change, modification, or
     ├── cloud-run-direct-vpc-egress-checker/    # Direct VPC Egress 구성 및 서브넷 IP 고갈 위험 진단
     ├── embedding-dimension-tradeoff-analyzer/  # 임베딩 차원 축소에 따른 용량 절감 및 정확도 비교
     ├── fcm-push-quota-guard/                   # FCM 대량 푸시 쿼터 고갈 방어 및 429 쓰로틀링 복원력 진단
+    ├── gcp-architecture-evaluator/             # Google Cloud 아키텍처 명세(BRD/SDD) 실전 루브릭 평가
     ├── gce-instance-flexibility-planner/       # GCE & GKE 인스턴스 유연성 및 CCC/MIG 스톡아웃 방어 설계
     ├── gce-region-latency-probe/               # 서울 대체 GPU 및 인프라 리전 100ms RTT 프로브 및 추천
     ├── gce-reservation-guard/                  # CUD 약정 대비 물리적 Reservation 확보율 및 Future Reservation 진단
@@ -105,7 +106,7 @@ agy --version
 ```
 
 ### 2.3 에이전트 가동 및 미니 프로젝트 자율 실행 예시
-저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 48개 실습 스킬을 에이전트가 자동으로 로드한다:
+저장소 루트(`google-cloud-0-to-1/`)에서 `agy`를 실행하면 `.agents/skills/`에 등록된 49개 실습 스킬을 에이전트가 자동으로 로드한다:
 ```bash
 # 저장소 루트에서 Antigravity CLI 가동 (스킬 자동 인식)
 agy
