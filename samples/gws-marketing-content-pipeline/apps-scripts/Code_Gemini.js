@@ -600,7 +600,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
 }
 
 /**
- * 한국어 및 다국어 특화 텍스트 임베딩 모델(text-multilingual-embedding-002)을 호출하여
+ * 한국어 및 다국어 통합 MRL 지원 텍스트 임베딩 모델(gemini-embedding-001)을 호출하여
  * 텍스트 목록을 128차원(MRL) 벡터 배열로 일괄 변환한다.
  *
  * @param {Array<string>} texts - 임베딩할 세부 의견 텍스트 배열
@@ -613,7 +613,7 @@ function callGeminiBatchEmbeddings(texts, optDim) {
   }
 
   var dim = optDim || CONFIG.EMBEDDING_DIM || 128;
-  var embedModel = CONFIG.EMBEDDING_MODEL || "text-multilingual-embedding-002";
+  var embedModel = CONFIG.EMBEDDING_MODEL || "gemini-embedding-001";
   var apiKey = getGeminiApiKey();
   if (!apiKey) {
     throw new Error("Gemini API Key가 등록되지 않았습니다. 사이드바 상단 온보딩 배너의 [API Key 등록] 버튼을 눌러 키를 입력해 주십시오.");

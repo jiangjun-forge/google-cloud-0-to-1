@@ -1431,8 +1431,8 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
     }
   }
 
-  // 5. 실제 text-multilingual-embedding-002 모델을 통한 128차원 MRL 임베딩 취득 및 2D 정사영 투영
-  Logger.log("총 " + allPoints.length + "개 세부 의견 포인트 128차원 텍스트 임베딩 생성 시작 (text-multilingual-embedding-002)");
+  // 5. 실제 gemini-embedding-001 모델을 통한 128차원 MRL 임베딩 취득 및 2D 정사영 투영
+  Logger.log("총 " + allPoints.length + "개 세부 의견 포인트 128차원 텍스트 임베딩 생성 시작 (gemini-embedding-001)");
   try {
     var embeddings128d = callGeminiBatchEmbeddings(allTexts, CONFIG.EMBEDDING_DIM || 128);
     var coords2D = projectHighDimTo2D(embeddings128d);

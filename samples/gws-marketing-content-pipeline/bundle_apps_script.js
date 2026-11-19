@@ -36,7 +36,7 @@ var CONFIG = {
   MODEL_COPILOT: "gemini-3.8-flash", // AI 코파일럿 대화 및 상황 인지 고속 반응 모델 (Gemini Flash)
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 모델 (Veo 3.1 Fast)
-  EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
+  EMBEDDING_MODEL: "gemini-embedding-001", // 한국어 및 다국어 통합 MRL 지원 텍스트 임베딩 모델
   EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
 
   // API 호출 회복 탄력성(Resilience) 및 런타임 제약 가드레일
@@ -749,7 +749,7 @@ function callGeminiVideo(prompt, aspectRatio, durationSeconds) {
 }
 
 /**
- * 한국어 및 다국어 특화 텍스트 임베딩 모델(text-multilingual-embedding-002)을 호출하여
+ * 한국어 및 다국어 통합 MRL 지원 텍스트 임베딩 모델(gemini-embedding-001)을 호출하여
  * 텍스트 목록을 128차원(MRL) 벡터 배열로 일괄 변환한다.
  *
  * @param {Array<string>} texts - 임베딩할 세부 의견 텍스트 배열
@@ -762,7 +762,7 @@ function callGeminiBatchEmbeddings(texts, optDim) {
   }
 
   var dim = optDim || CONFIG.EMBEDDING_DIM || 128;
-  var embedModel = CONFIG.EMBEDDING_MODEL || "text-multilingual-embedding-002";
+  var embedModel = CONFIG.EMBEDDING_MODEL || "gemini-embedding-001";
   var apiKey = getGeminiApiKey();
   if (!apiKey) {
     throw new Error("Gemini API Key가 등록되지 않았습니다. 사이드바 상단 온보딩 배너의 [API Key 등록] 버튼을 눌러 키를 입력해 주십시오.");
@@ -2444,8 +2444,8 @@ function generateLivePersonaFeedbacks(campaignFolder, feedbackFolder, prevRvName
     }
   }
 
-  // 5. 실제 text-multilingual-embedding-002 모델을 통한 128차원 MRL 임베딩 취득 및 2D 정사영 투영
-  Logger.log("총 " + allPoints.length + "개 세부 의견 포인트 128차원 텍스트 임베딩 생성 시작 (text-multilingual-embedding-002)");
+  // 5. 실제 gemini-embedding-001 모델을 통한 128차원 MRL 임베딩 취득 및 2D 정사영 투영
+  Logger.log("총 " + allPoints.length + "개 세부 의견 포인트 128차원 텍스트 임베딩 생성 시작 (gemini-embedding-001)");
   try {
     var embeddings128d = callGeminiBatchEmbeddings(allTexts, CONFIG.EMBEDDING_DIM || 128);
     var coords2D = projectHighDimTo2D(embeddings128d);

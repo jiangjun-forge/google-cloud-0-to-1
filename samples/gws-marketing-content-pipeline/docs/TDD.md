@@ -83,7 +83,7 @@ sequenceDiagram
    - `gemini-3.8-flash`: 빠른 응답 속도와 긴 컨텍스트 처리를 위한 아이디어 구체화, PLAN 기획서 및 SPEC 명세서 컴파일, AI 페르소나 다면 평가 및 VLM 비디오 VoC 심층 분석, 복합 피드백 기반 1차(rv-01), 2차(rv-02) 콘텐츠 심층 보정
    - `gemini-nano-banana-2.1`: 16:9 가로 배너, 9:16 모바일 포스터, 1:1 정방형 SNS 피드 이미지 규격에 최적화된 고효율 비주얼 소재 생성 (보조: `gemini-3.1-flash-image`, `imagen-4.0-generate-001`)
    - `veo-3.1-fast-generate-preview`: 브라우저 타임아웃을 방어하며 9:16 모바일 숏폼 영상(shorts) 콘티 기반 세로 비디오 소재를 생성하는 고속 모델 (보조: `veo-3.1-generate-preview`)
-   - `text-multilingual-embedding-002`: 한국어 및 다국어 특화 텍스트 임베딩 모델로, 128차원 MRL(Matryoshka Representation Learning) 축소 차원을 적용하여 페르소나로부터 도출된 세부 의견 포인트를 고속 임베딩
+   - `gemini-embedding-001`: 한국어 및 다국어 통합 MRL 지원 텍스트 임베딩 모델로, 128차원 MRL(Matryoshka Representation Learning) 축소 차원을 적용하여 페르소나로부터 도출된 세부 의견 포인트를 고속 임베딩
 3. **외부 경량 시각화 및 데이터 REST API**:
    - QuickChart REST API (`https://quickchart.io/qr`): Google Forms 모바일 설문 접속용 QR 코드 이미지를 실시간 렌더링하여 Google Sheets 및 폼에 자동 바인딩
    - Hugging Face Datasets Server REST API (`https://datasets-server.huggingface.co/rows`): 공개 데이터셋으로부터 타깃 인구통계 페르소나 데이터 직접 인출 및 표준 정규화

@@ -24,7 +24,7 @@ var CONFIG = {
   MODEL_COPILOT: "gemini-3.8-flash", // AI 코파일럿 대화 및 상황 인지 고속 반응 모델 (Gemini Flash)
   IMAGE_MODEL_NAME: "gemini-nano-banana-2.1", // 광고 소재 비주얼 이미지 생성 최신 공식 GA 모델 (Nano Banana 2.1)
   VIDEO_MODEL_NAME: "veo-3.1-fast-generate-preview", // 모바일 숏폼 영상 생성 25초 모델 (Veo 3.1 Fast)
-  EMBEDDING_MODEL: "text-multilingual-embedding-002", // 한국어 및 다국어 특화 텍스트 임베딩 모델
+  EMBEDDING_MODEL: "gemini-embedding-001", // 한국어 및 다국어 통합 MRL 지원 텍스트 임베딩 모델
   EMBEDDING_DIM: 128, // Matryoshka Representation Learning(MRL) 축소 차원 규격
 
   // API 호출 회복 탄력성(Resilience) 및 런타임 제약 가드레일
