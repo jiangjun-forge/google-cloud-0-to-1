@@ -17,7 +17,7 @@ All contents, designs, and code examples are subject to change, modification, or
 ---
 name: gcp-architecture-evaluator
 description: >-
-  Autopilot, hands-on diagnostics, and self-healing for gcp-architecture-evaluator: AI 에이전트 기반 Spec-Driven Development(SDD) 환경에서 작성된 BRD 및 SDD/TDD 설계 문서를 대상으로 7대 아키텍처 차원, 명세 내부 논리 모순 교차 검증 및 가독성/모호어까지 25개 항목 100점 만점 루브릭으로 자동 채점하는 평가기다.
+  Autopilot, hands-on diagnostics, and self-healing for gcp-architecture-evaluator: AI 에이전트 기반 Spec-Driven Development 환경에서 작성된 지정 경로 하위 모든 마크다운(*.md) 명세 문서를 파일명 제약 없이 대상으로 삼아 7대 아키텍처 차원, 명세 내부 논리 모순 교차 검증 및 가독성/모호어까지 25개 항목 100점 만점 루브릭으로 자동 채점하는 평가기다.
 ---
 
 # Google Cloud 아키텍처 명세 실전 루브릭 평가기 (Autopilot & Hands-on Guide)
@@ -36,7 +36,7 @@ description: >-
 flowchart TB
     A["Stage 1: 예습 (YOLO Autopilot)"] -->|환경 자동 감지 및 가상 실행| B["--dry-run 100점 루브릭 채점 브리핑"]
     B --> C["Stage 2: 실습 (Developer Hands-on)"]
-    C -->|로컬 BRD/SDD 문서 지정| D["실제 설계서 정적 감사 및 report.md 검증"]
+    C -->|지정 경로 하위 *.md 전수 스캔| D["실제 명세 문서 정적 감사 및 report.md 검증"]
     D --> E["Stage 3: 복습 (Deep-dive & Remediation)"]
     E -->|FAIL/WARN 항목 보완| F["보완 후 재채점 및 구현 착수 게이트 통과"]
 ```
@@ -63,7 +63,7 @@ python diagnose.py --dry-run
 
 ## 3. Stage 2: 실습 (Developer Hands-on 단계)
 
-예습을 통해 전체 흐름을 파악한 사내 개발자가 실제 설계 문서(`BRD.md`, `SDD.md` 또는 `TDD.md`)를 대상으로 루브릭 채점을 수행하는 단계다.
+예습을 통해 전체 흐름을 파악한 사내 개발자가 실제 프로젝트의 지정 경로 하위 모든 마크다운(`*.md`) 명세 문서를 파일명 제약 없이 일괄 대상으로 삼아 루브릭 채점을 수행하는 단계다.
 
 ### Step 2.1 환경 설정 및 평가 실행
 ```bash
@@ -79,4 +79,4 @@ python diagnose.py
 > [!IMPORTANT]
 > **비파괴 정적 감사 원칙**: 본 도구는 입력 문서를 읽기 전용으로만 분석하며 클라우드 리소스를 생성, 변경, 삭제하지 않는다.
 
-1. `report.md`에서 `FAIL` 및 `WARN`으로 검출된 고아 요구 사항(`R-01`), 읽기 전용 Agent 경계(`R-02`), 미태깅 추정치(`R-04`), 양방향 PII 마스킹(`R-08`), 4대 라벨링(`R-17`), 내부 논리 모순(`R-22`), 가독성 및 모호어(`R-23`~`R-24`), 구형 명칭(`R-25`)을 보완한 뒤 재평가한다.
+1. `report.md`에서 `FAIL` 및 `WARN`으로 검출된 고아 요구 사항(`R-01`), 읽기 전용 Agent 경계(`R-02`), 미태깅 추정치(`R-04`), 양방향 PII 마스킹(`R-08`), 4대 라벨링(`R-17`), 내부 논리 모순(`R-22`), 가독성 및 모호어(`R-23`~`R-24`), 최신 Google Cloud 서비스/모델/SDK 업그레이드(`R-25`)를 보완한 뒤 재평가한다.

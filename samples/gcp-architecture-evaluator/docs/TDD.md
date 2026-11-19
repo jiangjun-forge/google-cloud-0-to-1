@@ -18,20 +18,20 @@ All contents, designs, and code examples are subject to change, modification, or
 
 ## 1. 시스템 아키텍처 및 런타임 상호작용 시퀀스
 
-본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 아키텍트가 `BRD.md` 및 `SDD.md` 경로를 지정하거나 `--dry-run` 모드를 호출하면, `diagnose.py`가 계층형 설정을 해석한 뒤 7대 아키텍처 차원 및 명세 내부 논리 모순, 가독성 루브릭(25개 항목)을 순차 평가하고 종합 점수 및 보완 처방 리포트(`report.md`)를 출력한다.
+본 도구의 런타임 제어 및 데이터 상호작용 흐름은 아래 시퀀스 다이어그램과 같다. 아키텍트가 평가 대상 파일 또는 디렉터리 경로(`--path`)를 지정하거나 `--dry-run` 모드를 호출하면, `diagnose.py`가 지정 경로 하위 모든 마크다운(`*.md`) 문서를 파일명 제약 없이 일괄 수집한 뒤 7대 아키텍처 차원 및 명세 내부 논리 모순, 가독성 루브릭(25개 항목)을 순차 평가하고 종합 점수 및 보완 처방 리포트(`report.md`)를 출력한다.
 
 ```mermaid
 sequenceDiagram
     actor Arch as 클라우드 아키텍트 / 리뷰어
     participant CLI as 평가 CLI (diagnose.py)
-    participant Loader as 문서 로더 (BRD / SDD / Mock)
+    participant Loader as 마크다운 로더 (*.md 전수 스캔 / Mock)
     participant Logic as 모순 및 가독성 분석기
     participant Rubric as 7대 아키텍처 차원 루브릭 엔진
     participant Report as 평가 리포트 생성기 (report.md)
 
-    Arch->>CLI: python diagnose.py (또는 --dry-run / --sdd / --brd)
-    CLI->>Loader: 대상 BRD 및 SDD 마크다운 로드 (미지정 시 자동 탐색 또는 내장 표본)
-    Loader-->>CLI: 원문 텍스트 및 섹션 구조 반환
+    Arch->>CLI: python diagnose.py (또는 --dry-run / --path)
+    CLI->>Loader: 지정 경로 하위 모든 *.md 수집 (report.md 및 숨김 폴더 제외)
+    Loader-->>CLI: 합산 원문 텍스트 및 섹션 구조 반환
 
     rect rgb(240, 245, 255)
     note right of CLI: 7대 아키텍처 차원 및 모순, 가독성 정적 감사 (25개 항목)
@@ -51,11 +51,11 @@ sequenceDiagram
 
 | 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 비기능적 기술 요구 사항 (NFR) | 구현 파일 및 모듈 |
 | :--- | :--- | :--- | :--- |
-| **BR-01** (요구 사항 추적성 및 내부 논리 모순 검증) | **FR-02** (요구 사항 ID 역참조 및 논리 모순 교차 검출) | **NFR-01** (결정론적 로컬 실행) | `diagnose.py` (`evaluate_rubric`, `detect_internal_contradictions`) |
+| **BR-01** (요구 사항 추적성 및 내부 논리 모순 검증) | **FR-02** (요구 사항 ID 교차 참조 및 논리 모순 검출) | **NFR-01** (결정론적 로컬 실행) | `diagnose.py` (`evaluate_rubric`, `detect_internal_contradictions`) |
 | **BR-02** (수치 환각 방지 및 가독성 평가) | **FR-03** (`(Proposed)` 태깅 및 장문, 모호어 분석) | **NFR-01** (결정론적 로컬 실행) | `diagnose.py` (`evaluate_rubric`, `analyze_readability`) |
 | **BR-03** (Google Cloud 7대 아키텍처 차원 및 SAIF 채점) | **FR-04** (7대 차원 25개 항목 100점 루브릭 채점) | **NFR-02** (비대화형 환경 호환성) | `diagnose.py` (`evaluate_rubric`) |
-| **BR-04** (Dry-run 및 로컬 파일 평가 지원) | **FR-01**, **FR-05** (환경 설정 탐지 및 `--dry-run` 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`auto_detect_doc`, `get_mock_bundle`) |
-| **BR-05** (비식별화, 구형 명칭 제거 및 라벨링) | **FR-04** (PII/시크릿/구형 명칭 감사 및 라벨 안내) | **NFR-04** (자원 거버넌스 및 라벨링 규약) | `diagnose.py` (`evaluate_rubric`, `generate_markdown_report`) |
+| **BR-04** (Dry-run 및 지정 경로 `*.md` 전수 평가 지원) | **FR-01**, **FR-05** (`*.md` 전수 스캔 및 `--dry-run` 모드) | **NFR-03** (민감 정보 비식별화) | `diagnose.py` (`collect_markdown_files`, `auto_detect_docs`, `get_mock_bundle`) |
+| **BR-05** (비식별화, Google Cloud 최신 업그레이드 및 라벨링) | **FR-04** (PII/시크릿/최신 서비스, 모델, SDK 감사 및 라벨 안내) | **NFR-04** (자원 거버넌스 및 라벨링 규약) | `diagnose.py` (`evaluate_rubric`, `detect_gcp_upgrade_recommendations`, `generate_markdown_report`) |
 
 ---
 
@@ -63,11 +63,11 @@ sequenceDiagram
 
 | 요구 사항 ID | 연관 BR | 기술 요구 사항 명칭 | 구현 상세 및 검증 기준 |
 | :--- | :--- | :--- | :--- |
-| **FR-01** | **BR-04** | **계층형 환경 설정 및 대상 문서 자동 탐색** | CLI 인자(`--config`, `--dry-run`, `-p/--project`, `--sdd`, `--brd`) > `.env` 및 환경 변수 > `gcloud config` 활성 프로젝트 > 현재 디렉터리 내 `docs/TDD.md`, `docs/BRD.md` 자동 탐색 순으로 입력을 확정한다. |
-| **FR-02** | **BR-01** | **요구 사항 ID 추적성 및 내부 논리 모순 교차 검출** | `BRD`에 정의된 `BR-*`, `FR-*`, `NFR-*`, `CON-*` ID가 `SDD`/`TDD`에서 참조되는지 대조하고, `Read-Only` 선언 대 직접 DML 충돌, PII 마스킹 대 원문 로깅 충돌, SLA 대 동기 타임아웃 역전을 교차 검출한다. |
+| **FR-01** | **BR-04** | **계층형 환경 설정 및 디렉터리 하위 `*.md` 전수 스캔** | 최소 4개 CLI 인자(`--config`, `--dry-run`, `-p/--project`, `--path`, 파일 및 디렉터리 혼합과 쉼표 복수 경로 지원) > `.env`(`SPEC_PATH`) > `gcloud config` 활성 프로젝트 > 현재 디렉터리 `docs/` 또는 루트 하위 모든 `*.md` 전수 수집(`report.md` 및 숨김 폴더 제외, 파일명 제약 없음) 순으로 입력을 확정한다. |
+| **FR-02** | **BR-01** | **요구 사항 ID 교차 참조 및 내부 논리 모순 검출** | 전체 `*.md` 합본 내에서 정의된 요구 사항 ID(`BR-*`, `REQ-*`, `PRD-*`, `CON-*`, `FR-*`, `NFR-*`)가 파일명과 무관하게 2회 이상 교차 참조되는지 검증하고, `Read-Only` 선언 대 직접 DML 충돌, PII 마스킹 대 원문 로깅 충돌, SLA 대 동기 타임아웃 역전을 검출한다. |
 | **FR-03** | **BR-02** | **수치 근거성(`(Proposed)` 태깅) 및 가독성 분석** | 지연 시간(`ms`/`s`), 가용성/정확도(`%`), 비용(`$`/`USD`), 동시성(`RPS`/`QPS`) 수치가 포함된 문장의 근거 표기 누락과 180자 초과 장문 만연체, 헤딩 계층 건너뛰기, 검증 불가 모호어를 탐지한다. |
-| **FR-04** | **BR-03, BR-05** | **7대 아키텍처 차원 및 산출물 위생 감사** | 총 25개 실전 루브릭 항목(항목당 4점 = 100점 만점: 자율성 경계, Agent 토폴로지, SAIF 보안, 신뢰성/멱등성, 관측성/Eval/WORM/4대 라벨링, 지연/토큰 경제성, ADR/모순/가독성/구형 명칭 제거)을 채점한다. |
-| **FR-05** | **BR-04** | **가상 실행(`--dry-run`) 스모크 테스트 모드** | `--dry-run` 실행 시 의도적 설계 결함이 포함된 `sample-corp` 모의 BRD/SDD 쌍을 평가하여 감점 검출 및 보완 처방 생성이 정상 동작함을 1초 이내에 검증한다. |
+| **FR-04** | **BR-03, BR-05** | **7대 아키텍처 차원 및 최신 GCP 버전 업그레이드 감사** | 총 25개 실전 루브릭 항목(항목당 4점 = 100점 만점: 자율성 경계, Agent 토폴로지, SAIF 보안, 신뢰성/멱등성, 관측성/Eval/WORM/4대 라벨링, 지연/토큰 경제성, ADR/모순/가독성/구형 명칭, 퇴역 AI 모델, 구형 SDK 및 레거시 인프라 업그레이드 가이드)을 채점한다. |
+| **FR-05** | **BR-04** | **가상 실행(`--dry-run`) 스모크 테스트 모드** | `--dry-run` 실행 시 의도적 설계 결함이 포함된 `sample-corp` 모의 명세 표본을 평가하여 감점 검출 및 보완 처방 생성이 정상 동작함을 1초 이내에 검증한다. |
 
 ---
 

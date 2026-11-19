@@ -12,7 +12,7 @@ It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRO
 
 # Google Cloud 아키텍처 명세 실전 루브릭 평가 리포트
 
-- **평가 일시**: 2026-11-19 09:52:34 UTC
+- **평가 일시**: 2026-11-19 12:16:58 UTC
 - **실행 모드**: `DRY-RUN (모의 명세 시뮬레이션)`
 - **참고 프로젝트**: `sample-project-id`
 - **평가 대상**: 내장 모의 명세 표본 (sample-corp)
@@ -24,7 +24,7 @@ It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRO
 
 | 영역 | ID | 점검 항목 | 상태 | 배점 | 평가 상세 |
 | :--- | :---: | :--- | :---: | :---: | :--- |
-| 1. 자율성 경계 및 성공 기준 | `R-01` | BRD-SDD 요구 사항 역참조 완전성 | `PASS` | 4/4 | BRD 내 4개 ID 전수 참조됨 |
+| 1. 자율성 경계 및 성공 기준 | `R-01` | 요구 사항 ID 교차 참조 완전성 | `PASS` | 4/4 | 전체 명세 내 4개 요구 사항 ID 전수 교차 참조됨 |
 | 1. 자율성 경계 및 성공 기준 | `R-02` | 읽기 전용 Agent와 실행 평면 분리 | `PASS` | 4/4 | 읽기 전용 에이전트 권한과 상태 변경 실행 평면 분리 확인 |
 | 1. 자율성 경계 및 성공 기준 | `R-03` | 고위험 작업 HITL 승인 게이트 | `PASS` | 4/4 | HITL 승인 임계치 및 게이트 명시됨 |
 | 1. 자율성 경계 및 성공 기준 | `R-04` | SLA/비용 수치 근거 및 (Proposed) 태깅 | `WARN` | 2/4 | 정량 수치 3건 중 2건에 출처 ID 또는 (Proposed) 태깅 누락 |
@@ -48,13 +48,13 @@ It is strictly provided as an EXAMPLE/REFERENCE ONLY and is NOT INTENDED FOR PRO
 | 7. ADR, 모순 교차 검증 및 가독성 | `R-22` | 명세 내부 논리 모순 교차 검출 | `PASS` | 4/4 | Read-Only 경계, PII 로깅, SLA-타임아웃 간 내부 모순 없음 |
 | 7. ADR, 모순 교차 검증 및 가독성 | `R-23` | 가독성: 장문 만연체 및 헤딩 계층 정합성 | `PASS` | 4/4 | 문장 호흡이 간결하고 헤딩 계층(H1->H2->H3)이 일관됨 |
 | 7. ADR, 모순 교차 검증 및 가독성 | `R-24` | 명확성: 검증 불가 모호어(Weasel Words) 배제 | `PASS` | 4/4 | 검증 불가능한 모호한 형용, 부사 미사용 |
-| 7. ADR, 모순 교차 검증 및 가독성 | `R-25` | 구형 제품 명칭 제거 및 정규 명칭 준수 | `FAIL` | 0/4 | 구형 제품 명칭 잔존: Vertex AI Agent Builder |
+| 7. ADR, 모순 교차 검증 및 가독성 | `R-25` | Google Cloud 최신 서비스, 모델 및 SDK 버전 준수 | `FAIL` | 0/4 | 명칭 갱신(Vertex AI Agent Builder/GEAP -> Agent Platform / Agent Engine) |
 
 ---
 
 ## 2. 우선 보완 처방 (Action Items)
 
-- **`[FAIL] R-25 (구형 제품 명칭 제거 및 정규 명칭 준수)`**: 구형 제품 명칭 잔존: Vertex AI Agent Builder
+- **`[FAIL] R-25 (Google Cloud 최신 서비스, 모델 및 SDK 버전 준수)`**: 명칭 갱신(Vertex AI Agent Builder/GEAP -> Agent Platform / Agent Engine)
 - **`[WARN] R-04 (SLA/비용 수치 근거 및 (Proposed) 태깅)`**: 정량 수치 3건 중 2건에 출처 ID 또는 (Proposed) 태깅 누락
 - **`[WARN] R-06 (도구 스키마 및 상태/메모리 경계)`**: 에이전트 도구 인터페이스 또는 메모리/세션 경계 설계가 부족하다.
 
