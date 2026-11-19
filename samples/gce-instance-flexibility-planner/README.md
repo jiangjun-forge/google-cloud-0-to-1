@@ -69,7 +69,7 @@ python diagnose.py --dry-run
   * GKE 노드 풀 및 Compute Engine 인스턴스 템플릿/MIG 생성 시 4대 표준 라벨 필수 적용:
     --labels=managed-by=google-cloud-0-to-1,scenario=gce-instance-flexibility-planner,env=sample,created-by=customer-engineer
 ================================================================================================
-[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/gce-instance-flexibility-planner/report.md
+[안내] 복습 및 사내 공유용 진단 리포트가 생성(덮어쓰기)되었다: report.md
 ```
 
 
