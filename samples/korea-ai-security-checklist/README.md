@@ -46,7 +46,7 @@ python diagnose.py --dry-run
 * 본 진단 결과는 report.md 파일에 완제품 'AI 보안성 심의 소명서' 양식으로 자동 생성되었다.
   * 사내 보안팀 또는 금융감독원/금융보안원 보안성 심의 질의서 대응 시 report.md 표를 즉시 활용할 수 있다.
 ========================================================================================================
-[안내] 복습 및 사내 보안팀 제출용 소명서가 생성(덮어쓰기)되었다: /usr/local/google/home/stanleychoi/Projects/google-cloud-0-to-1/samples/korea-ai-security-checklist/report.md
+[안내] 복습 및 사내 보안팀 제출용 소명서가 생성(덮어쓰기)되었다: report.md
 ```
 
 

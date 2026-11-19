@@ -479,12 +479,13 @@ def save_markdown_report(report_md: str, output_path: Optional[str] = None) -> N
     if output_path is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_path = os.path.join(script_dir, "report.md")
+    display_path = os.path.basename(output_path) or output_path
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_md)
-        print(f"\n[안내] 복습 및 사내 보안팀 제출용 소명서가 생성(덮어쓰기)되었다: {output_path}")
+        print(f"\n[안내] 복습 및 사내 보안팀 제출용 소명서가 생성(덮어쓰기)되었다: {display_path}")
     except Exception as e:
-        print(f"[경고] 리포트 파일 저장 실패 ({output_path}): {e}")
+        print(f"[경고] 리포트 파일 저장 실패 ({display_path}): {e}")
 
 
 
