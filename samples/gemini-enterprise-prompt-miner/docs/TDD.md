@@ -73,7 +73,7 @@ sequenceDiagram
 
 ### 2) BigQuery 내장 임베딩 API 호출 규격
 * **함수 명**: `ML.GENERATE_EMBEDDING` (또는 `AI.GENERATE_EMBEDDING`)
-* **임베딩 모델**: BigQuery 원격 모델 (`text-multilingual-embedding-002` 엔드포인트 연동)
+* **임베딩 모델**: BigQuery 원격 모델 (`gemini-embedding-001` 엔드포인트 연동, MRL 차원 축소 지원)
 * **태스크 타입 및 차원**: `STRUCT('CLUSTERING' AS task_type, 512 AS output_dimensionality)` (한국어 이커머스 질의의 과응집 및 과분산 방지)
 * **단일 파이프라인 장점**: 별도 Vertex AI SDK 의존성 없이 `google-cloud-bigquery` 단일 클라이언트로 완결.
 
@@ -99,3 +99,15 @@ sequenceDiagram
 * **프라이버시 인라인 보호**: 인라인 정규식 살균 엔진으로 주민등록번호, 계좌번호, 전화번호, 이메일, IP를 전처리 단계에서 선제 마스킹.
 * **사용자 가명화**: 임직원 계정을 SHA-256 솔트 해시 기반 가명(`emp-xxxx`)으로 변환하여 보고서 내 노출 방지.
 * **로컬 무상주**: 분석 종료 후 남겨진 임시 산출물은 `rm -f report.md prompts.jsonl` 명령어로 완전 삭제할 수 있다.
+
+---
+
+## 5. 요구 사항 추적성 매핑 (Traceability Matrix)
+
+| 비즈니스 요구 사항 (BRD) | 기능적 기술 요구 사항 (FR) | 구현 상세 |
+| :--- | :--- | :--- |
+| **BR-01** (프롬프트 로그 수집 및 멀티 턴 세션 묶음) | **FR-01** | `diagnose.py` (`cloudaudit_googleapis_com_data_access` 세션 병합 쿼리) |
+| **BR-02** (인라인 PII 마스킹 및 임직원 비식별화) | **FR-02** | `diagnose.py` (6대 PII 정규식 살균 및 `emp-xxxx` 솔트 해시) |
+| **BR-03** (BigQuery 단일 내장 임베딩 파이프라인) | **FR-03** | `diagnose.py` (`ML.GENERATE_EMBEDDING` + `gemini-embedding-001`) |
+| **BR-04** (자율 적응형 Auto-K 마이크로 업무 군집화) | **FR-04** | `diagnose.py` (Auto-K 결정식 및 K-Means++ 코사인 군집화) |
+| **BR-05** (3R 기반 에이전트/스킬 전환 대시보드) | **FR-05** | `diagnose.py` (자산 유형 매핑 및 `report.md` 생성) |

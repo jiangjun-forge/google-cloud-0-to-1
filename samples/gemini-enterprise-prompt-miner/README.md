@@ -200,11 +200,11 @@ BigQuery 내장 SQL에서 한국어 전용 임베딩 모델을 호출하기 위�
 CREATE OR REPLACE CONNECTION `asia-northeast3.vertex-ai-conn`
 OPTIONS (type = 'CLOUD_RESOURCE');
 
--- 2. text-multilingual-embedding-002 원격 모델 생성
-CREATE OR REPLACE MODEL `gemini_logging.text_multilingual_embedding_002`
+-- 2. gemini-embedding-001 원격 모델 생성 (한국어/다국어 MRL 지원)
+CREATE OR REPLACE MODEL `gemini_logging.gemini_embedding_001`
 REMOTE WITH CONNECTION `asia-northeast3.vertex-ai-conn`
 OPTIONS (
-  ENDPOINT = 'text-multilingual-embedding-002'
+  ENDPOINT = 'gemini-embedding-001'
 );
 ```
 
@@ -230,15 +230,15 @@ BigQuery 데이터세트 및 관련 리소스 생성 시 4대 표준 라벨을 �
 
 ## 6. 기술적 배경 및 아키텍처 원리 (Deep Dive)
 
-### 1) 한국어 특화 임베딩 모델 (`text-multilingual-embedding-002`)
-* **한국어 언어학적 특성 보존**: 영어 중심 모델(`text-embedding-005`)과 달리, Google Cloud 공식 GA 다국어 임베딩 모델인 `text-multilingual-embedding-002`는 한국어의 복잡한 교착어 형태소 결합, 종결 어미 변형, 사내 이커머스/도메인 전문 어휘를 의미 손실 없이 포착한다.
+### 1) 한국어 및 다국어 통합 MRL 임베딩 모델 (`gemini-embedding-001`)
+* **한국어 언어학적 특성 보존 및 MRL 지원**: 영어 중심 모델(`text-embedding-005`)이나 고정 768차원 모델(`text-multilingual-embedding-002`, MRL 미지원)과 달리, `gemini-embedding-001`은 한국어의 복잡한 교착어 형태소 결합, 종결 어미 변형, 사내 이커머스/도메인 전문 어휘를 의미 손실 없이 포착하면서 `output_dimensionality` MRL 차원 축소를 네이티브 지원한다.
 * **SQL 네이티브 실행**: 복잡한 클라이언트 SDK 의존성 없이 BigQuery `ML.GENERATE_EMBEDDING` 단일 함수로 대량의 텍스트를 초당 수만 건 단위로 신속하게 벡터화한다.
 
 ### 2) 벡터 차원 최적화 트레이드오프: 512차원 스위트 스폿 (MRL)
 Matryoshka 표현 학습(Matryoshka Representation Learning, MRL)을 활용한 벡터 차원 축소 시, 군집화 성능과 계산 비용 간의 트레이드오프가 존재한다:
 * **저차원(128~256차원)의 한계 (과도한 응집, Over-cohesion)**:
   - 심한 정보 압축 손실로 인해 서로 다른 도메인 질의(예: '정산 문의' vs '결제 장애 복구') 간의 각도가 좁아져, 상이한 업무들이 소수의 거대 덩어리(Blob)로 뭉개지는 현상이 발생한다.
-* **고차원(768 풀 차원)의 한계 (과도한 분산, Over-dispersion)**:
+* **고차원(3072 풀 차원)의 한계 (과도한 분산, Over-dispersion)**:
   - 고차원 유클리드 공간의 '차원의 저주(Curse of Dimensionality)'로 인해 질의들이 의미 공간 전체에 균등하게 흩어져 유의미한 군집을 형성하지 못하고 노이즈로 흩어진다.
 * **스위트 스폿 (512차원)**:
   - 512차원은 군집 간 분리도(Separation)와 군집 내 응집도(Cohesion)를 균형 있게 만족하여, 사내 마이크로 업무를 10~30개 단위로 가장 정밀하게 분화해내는 엔터프라이즈 최적 차원이다.
